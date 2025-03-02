@@ -1,0 +1,16 @@
+{
+    "name": "Click",
+    "rootNamespace": "SparFlame.System.Click",
+    "references": [
+        "GUID:ab16d1152636c504194f597e758dc94b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
