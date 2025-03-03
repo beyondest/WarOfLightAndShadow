@@ -122,8 +122,8 @@ GameObject:
   - component: {fileID: 3389932212799520344}
   - component: {fileID: 8331532873051729347}
   - component: {fileID: 29324363833160561}
-  - component: {fileID: 1077013165796194092}
-  - component: {fileID: 6694741850066596201}
+  - component: {fileID: 5899450811731215638}
+  - component: {fileID: 4200119451690395736}
   m_Layer: 7
   m_Name: TT
   m_TagString: Untagged
@@ -221,7 +221,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1077013165796194092
+--- !u!114 &5899450811731215638
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -230,12 +230,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 6218424444873088941}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7b94124ff22c094c81601e8448e0371, type: 3}
+  m_Script: {fileID: 11500000, guid: 137be161b279b4e4ca77b7dbdb0dd308, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   baseTag: 0
   teamTag: 0
---- !u!114 &6694741850066596201
+--- !u!114 &4200119451690395736
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -244,6 +244,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 6218424444873088941}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 856931eb679f86e4e88f6fa2405123e8, type: 3}
+  m_Script: {fileID: 11500000, guid: 87c13afa9d2568e479ef57ae4e6991ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
