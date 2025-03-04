@@ -6,45 +6,31 @@ using Unity.Mathematics;
 
 namespace SparFlame.System.Spawn
 {
+    [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct SpawnSystem : ISystem
     {
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<SpawnSystemData>();
             state.RequireForUpdate<SpawnSystemConfig>();
-            state.RequireForUpdate<PrefabDisableChildIndices>();
+            state.RequireForUpdate<Spawnable>();
+            state.RequireForUpdate<SpawnedData>();
         }
-
-
 
         public void OnUpdate(ref SystemState state)
         {
-            var config = SystemAPI.GetSingleton<SpawnSystemConfig>();
-            var data = SystemAPI.GetSingleton<SpawnSystemData>();
-            var prefabDisableChildIndices = SystemAPI.GetSingletonBuffer<PrefabDisableChildIndices>();
-            
-            if (!Input.GetKey(config.SpawnKey)) return;
+            //var config = SystemAPI.GetSingleton<SpawnSystemConfig>();
 
-            var bufferLookup = SystemAPI.GetBufferLookup<LinkedEntityGroup>();
-            
-            var spawned = state.EntityManager.Instantiate(config.SpawnPrefab);
-            state.EntityManager.SetComponentData(spawned, new LocalTransform
+            foreach (var spawnable in SystemAPI.Query<RefRO<SpawnedData>>().WithAll<Spawnable>())
             {
-                Position = data.SpawnPos,
-                Rotation = quaternion.identity,
-                Scale = 1
-            });
-            
-            if (bufferLookup.TryGetBuffer(spawned, out var linkedEntities))
-            {
-                foreach (var disableIndex in prefabDisableChildIndices)
+
+                if (!Input.GetKeyDown(spawnable.ValueRO.SpawnKey)) continue;
+                var spawned = state.EntityManager.Instantiate(spawnable.ValueRO.SpawnPrefab);
+                state.EntityManager.SetComponentData(spawned, new LocalTransform
                 {
-                    if (disableIndex.Value >= linkedEntities.Length)
-                    {
-                        continue;
-                    }
-                    state.EntityManager.SetEnabled(linkedEntities[disableIndex.Value].Value,false);
-                }
+                    Position = spawnable.ValueRO.SpawnPos,
+                    Rotation = quaternion.identity,
+                    Scale = 1
+                });
             }
         }
     }

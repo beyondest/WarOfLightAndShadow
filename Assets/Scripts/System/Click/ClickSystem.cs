@@ -41,10 +41,10 @@ namespace SparFlame.System.Click
         protected override void OnUpdate()
         {
             var clickSystemData = SystemAPI.GetSingletonEntity<ClickSystemData>();
-            ClickFlag clickFlag = ClickFlag.None;
-            ClickType clickType = ClickType.None;
-            Entity hitEntity = Entity.Null;
-            float3 hitPosition = float3.zero;
+            var clickFlag = ClickFlag.None;
+            var clickType = ClickType.None;
+            var hitEntity = Entity.Null;
+            var hitPosition = float3.zero;
             float3 mousePosition = Input.mousePosition;
             _isDoubleClick = false;
 
@@ -63,14 +63,112 @@ namespace SparFlame.System.Click
         /// <summary>
         /// Only Detect Clickable Layer
         /// </summary>
-        /// <param name="hitEntity"></param>
-        /// <param name="hitPosition"></param>
         /// <returns></returns>
+        private void CheckMouseInput(ref ClickFlag clickFlag, ref ClickType clickType, ref Entity hitEntity,
+            ref float3 hitPos, ref float3 mousePosition)
+        {
+            if (Input.GetMouseButtonDown(_leftClickIndex))
+            {
+                if (_clickThreshold < _doubleClickThreshold)
+                {
+                    _isDoubleClick = true;
+                }
+
+                clickType = ClickType.Left;
+                clickFlag = ClickFlag.Start;
+                if (MouseCastOnEntity(out var entity, out var hitPosition))
+                {
+                    hitEntity = entity;
+                    hitPos = hitPosition;
+                }
+            }
+
+            if (Input.GetMouseButton(_leftClickIndex))
+            {
+                clickType = ClickType.Left;
+                clickFlag = (clickFlag == ClickFlag.Start) ? ClickFlag.Start : ClickFlag.Clicking;
+            }
+
+            if (Input.GetMouseButtonUp(_leftClickIndex))
+            {
+                clickType = ClickType.Left;
+                clickFlag = ClickFlag.End;
+            }
+
+            if (Input.GetMouseButtonDown(_rightClickIndex))
+            {
+                if (_clickThreshold < _doubleClickThreshold)
+                {
+                    _isDoubleClick = true;
+                }
+
+                clickType = ClickType.Right;
+                clickFlag = ClickFlag.Start;
+                if (MouseCastOnEntity(out var entity, out var hitPosition))
+                {
+                    hitEntity = entity;
+                    hitPos = hitPosition;
+                }
+            }
+
+            if (Input.GetMouseButton(_rightClickIndex))
+            {
+                clickType = ClickType.Right;
+                clickFlag = (clickFlag == ClickFlag.Start) ? ClickFlag.Start : ClickFlag.Clicking;
+            }
+
+            if (Input.GetMouseButtonUp(_rightClickIndex))
+            {
+                clickType = ClickType.Right;
+                clickFlag = ClickFlag.End;
+            }
+
+            if (Input.GetMouseButtonDown(2))
+            {
+                clickType = ClickType.Middle;
+                clickFlag = ClickFlag.Start;
+                if (MouseCastOnGroundPlane(out var hitPosition))
+                {
+                    hitPos = hitPosition;
+                }
+            }
+            
+            if (Input.GetMouseButton(2))
+            {
+                clickType = ClickType.Middle;
+                clickFlag = ClickFlag.Clicking;
+                if (MouseCastOnGroundPlane(out var hitPosition))
+                {
+                    hitPos = hitPosition;
+                }
+            }
+
+            if (Input.GetMouseButtonUp(2))
+            {
+                clickType = ClickType.Middle;
+                clickFlag = ClickFlag.End;
+            }
+            
+            // Check if double click
+            if (clickFlag != ClickFlag.Start)
+            {
+                _clickThreshold += SystemAPI.Time.DeltaTime;
+                _clickThreshold = math.min(10000, _clickThreshold);
+            }
+            else
+            {
+                clickFlag = _isDoubleClick ? ClickFlag.DoubleClick : ClickFlag.Start;
+                _clickThreshold = 0;
+            }
+        }
+
+        #region MathRayCast
+        
         private bool MouseCastOnEntity(out Entity hitEntity, out float3 hitPosition)
         {
-            UnityEngine.Ray camRay = _camera.ScreenPointToRay(Input.mousePosition);
+            var camRay = _camera.ScreenPointToRay(Input.mousePosition);
             float3 rayStart = camRay.origin;
-            float3 rayEnd = rayStart + (float3)camRay.direction * _raycastDistance;
+            var rayEnd = rayStart + (float3)camRay.direction * _raycastDistance;
             var raycastInput = new RaycastInput
             {
                 Start = rayStart,
@@ -104,81 +202,41 @@ namespace SparFlame.System.Click
             return false;
         }
 
-        private void CheckMouseInput(ref ClickFlag clickFlag, ref ClickType clickType, ref Entity hitEntity,
-            ref float3 hitPos, ref float3 mousePosition)
+        private bool MouseCastOnGroundPlane(out float3 hitPosition)
         {
-            if (Input.GetMouseButtonDown(_leftClickIndex))
+            var camRay = _camera.ScreenPointToRay(Input.mousePosition);
+            if (PlaneRaycast(camRay.origin, camRay.direction, out hitPosition))
             {
-                if (_clickThreshold < _doubleClickThreshold)
-                {
-                    _isDoubleClick = true;
-                }
-
-                clickType = ClickType.Left;
-                clickFlag = ClickFlag.Start;
-                if (MouseCastOnEntity(out Entity entity, out float3 hitPosition))
-                {
-                    hitEntity = entity;
-                    hitPos = hitPosition;
-                }
+                return true;
             }
-
-            if (Input.GetMouseButton(_leftClickIndex))
-            {
-                clickType = ClickType.Left;
-                clickFlag = (clickFlag == ClickFlag.Start) ? ClickFlag.Start : ClickFlag.Clicking;
-            }
-
-            if (Input.GetMouseButtonUp(_leftClickIndex))
-            {
-                clickType = ClickType.Left;
-                clickFlag = ClickFlag.End;
-            }
-
-            if (Input.GetMouseButtonDown(_rightClickIndex))
-            {
-                if (_clickThreshold < _doubleClickThreshold)
-                {
-                    _isDoubleClick = true;
-                }
-
-                clickType = ClickType.Right;
-                clickFlag = ClickFlag.Start;
-                if (MouseCastOnEntity(out Entity entity, out float3 hitPosition))
-                {
-                    hitEntity = entity;
-                    hitPos = hitPosition;
-                }
-            }
-
-            if (Input.GetMouseButton(_rightClickIndex))
-            {
-                clickType = ClickType.Right;
-                clickFlag = (clickFlag == ClickFlag.Start) ? ClickFlag.Start : ClickFlag.Clicking;
-            }
-
-            if (Input.GetMouseButtonUp(_rightClickIndex))
-            {
-                clickType = ClickType.Right;
-                clickFlag = ClickFlag.End;
-            }
-
-            if (Input.GetMouseButton(2))
-            {
-                clickType = ClickType.Middle;
-                clickFlag = ClickFlag.Clicking;
-            }
-
-            if (clickFlag != ClickFlag.Start)
-            {
-                _clickThreshold += SystemAPI.Time.DeltaTime;
-                _clickThreshold = math.min(10000, _clickThreshold);
-            }
-            else
-            {
-                clickFlag = _isDoubleClick ? ClickFlag.DoubleClick : ClickFlag.Start;
-                _clickThreshold = 0;
-            }
+            hitPosition = float3.zero;
+            return false;
         }
+        
+        private static bool PlaneRaycast(in float3 rayOrigin,in float3 rayDirection, out float3 hitPoint)
+        {
+            var planeNormal = new float3(0f, 1f, 0f);
+            var planePoint  = float3.zero;
+
+            var cosTheta = math.dot(rayDirection, planeNormal);
+            // If not parallel to plane
+            if (math.abs(cosTheta) > 1e-6f)
+            {
+                // Calculate distance between rayOrigin and hitPoint:
+                // t = dot(planePoint - rayOrigin, planeNormal) / dot(rayDirection, planeNormal)
+                // t = (Vertical Distance / Cos theta)
+                var t = math.dot(planePoint - rayOrigin, planeNormal) / cosTheta;
+                if (t >= 0f)
+                {
+                    hitPoint = rayOrigin + rayDirection * t;
+                    return true;
+                }
+            }
+            hitPoint = float3.zero;
+            return false;
+        }
+        
+        #endregion
+
     }
 }

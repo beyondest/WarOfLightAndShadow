@@ -25,9 +25,6 @@ namespace SparFlame.System.UnitSelection
         }
     }
 
-
-
-
     public struct Selected : IComponentData, IEnableableComponent
     {
     }

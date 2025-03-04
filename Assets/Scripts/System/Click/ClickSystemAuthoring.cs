@@ -17,7 +17,6 @@ namespace SparFlame.System.Click
         {
             public override void Bake(ClickSystemAuthoring authoring)
             {
-                Debug.Log(authoring.clickableLayer.value);
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new ClickSystemConfig
                 {
@@ -36,7 +35,7 @@ namespace SparFlame.System.Click
                     MousePosition = float3.zero
                 });
             }
-        }
+        } 
     }
 
     public enum ClickFlag

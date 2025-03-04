@@ -4,11 +4,14 @@ using Unity.Mathematics;
 using Unity.Collections;
 using SparFlame.System.General;
 using SparFlame.System.Click;
+using Unity.Burst;
 
 namespace SparFlame.System.UnitSelection
 {
+    [BurstCompile]
     public partial struct UnitSelectionSystem : ISystem
     {
+        [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ClickSystemData>();
@@ -16,7 +19,7 @@ namespace SparFlame.System.UnitSelection
             state.RequireForUpdate<UnitSelectionConfig>();
         }
 
-
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var unitSelectionConfig = SystemAPI.GetSingleton<UnitSelectionConfig>();
