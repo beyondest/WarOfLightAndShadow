@@ -14,6 +14,9 @@ namespace SparFlame.System.Cam
         public float sensitivity = 1f;
         public float edgeMarginSize = 50f;
         public KeyCode fasterMoveKey = KeyCode.LeftShift;
+        public float zoomSpeed = 5f;
+        public float minHeight = 5f;
+        public float maxHeight = 20f;
 
         class Baker : Baker<CameraAuthoring>
         {
@@ -27,6 +30,9 @@ namespace SparFlame.System.Cam
                     EdgeMarginSize = authoring.edgeMarginSize,
                     Sensitivity = authoring.sensitivity,
                     FasterMoveKey = authoring.fasterMoveKey,
+                    ZoomSpeed = authoring.zoomSpeed,
+                    MinHeight = authoring.minHeight,
+                    MaxHeight = authoring.maxHeight,
                 });
                 AddComponent(entity, new CameraData
                 {
@@ -48,7 +54,11 @@ namespace SparFlame.System.Cam
                 AddComponent(entity, new DragMoveData
                 {
                     DragStartPos = float3.zero,
-                    isDragging = false
+                    IsDragging = false
+                });
+                AddComponent(entity, new MouseScrollData
+                {
+                    State = MouseScrollState.Nothing
                 });
             }
         }
@@ -63,6 +73,13 @@ namespace SparFlame.System.Cam
         Nothing
     }
 
+    public enum MouseScrollState
+    {
+        ZoomIn,
+        ZoomOut,
+        Nothing
+    }
+    
     public struct CameraControlConfig : IComponentData
     {
         public float NormalSpeed;
@@ -70,6 +87,9 @@ namespace SparFlame.System.Cam
         public float Sensitivity;
         public float EdgeMarginSize;
         public KeyCode FasterMoveKey;
+        public float ZoomSpeed;
+        public float MinHeight;
+        public float MaxHeight;
     }
 
     public struct CameraData : IComponentData
@@ -95,6 +115,11 @@ namespace SparFlame.System.Cam
     public struct DragMoveData : IComponentData
     {
         public float3 DragStartPos;
-        public bool isDragging;
+        public bool IsDragging;
+    }
+
+    public struct MouseScrollData : IComponentData
+    {
+        public MouseScrollState State;
     }
 }

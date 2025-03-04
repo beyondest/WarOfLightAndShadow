@@ -42,8 +42,11 @@ namespace SparFlame.System.Calculation
                 var clipSpacePos = math.mul(VpMatrix, new float4(transform.Position, 1.0f));
                 var ndcPos = clipSpacePos.xyz / clipSpacePos.w;
                 screenPos.ScreenPosition = new float2(
-                (ndcPos.x + 1.0f) * 0.5f * ScreenWidth,
-                (0.5f + ndcPos.y * 0.5f ) * ScreenHeight);
+                //(ndcPos.x + 1.0f) * 0.5f * ScreenWidth 
+                //(1.0f + ndcPos.y ) * 0.5f  * ScreenHeight
+                // if use Camera Type to asign camera data, use + all; if use ecs type, use - all;
+                (1.0f + ndcPos.x) * 0.5f *  ScreenWidth,
+                (1.0f + ndcPos.y ) * 0.5f  * ScreenHeight);
             }
         }
     }

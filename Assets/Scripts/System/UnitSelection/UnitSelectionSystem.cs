@@ -259,9 +259,6 @@ namespace SparFlame.System.UnitSelection
         {
             if (!bufferLookup.TryGetBuffer(entity, out var linkedEntities))
             {
-#if DEBUG_UnitSelectionSystem
-                Debug.LogWarning("Select entity has no linked entity group");
-#endif
                 return;
             }
             ecb.SetEnabled(linkedEntities[unitSelectionConfig.SelectedIndicatorIndex].Value, isEnable);

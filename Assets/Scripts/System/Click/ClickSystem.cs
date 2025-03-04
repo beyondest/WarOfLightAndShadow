@@ -136,7 +136,7 @@ namespace SparFlame.System.Click
             if (Input.GetMouseButton(2))
             {
                 clickType = ClickType.Middle;
-                clickFlag = ClickFlag.Clicking;
+                clickFlag =clickFlag == ClickFlag.Start? ClickFlag.Start : ClickFlag.Clicking;
                 if (MouseCastOnGroundPlane(out var hitPosition))
                 {
                     hitPos = hitPosition;

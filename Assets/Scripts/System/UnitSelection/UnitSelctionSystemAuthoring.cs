@@ -9,13 +9,13 @@ namespace SparFlame.System.UnitSelection
     public class UnitSelectionSystemAuthoring : MonoBehaviour
     {
         public KeyCode addUnitKey = KeyCode.LeftShift;
-        public float dragMinDistance;
+        public float dragMinDistance = 0.01f;
 
         /// <summary>
         /// If Indicator is first child object, then index is 1
         /// </summary>
-        public int selectedIndicatorIndex;
-        public TeamTag initSelectableTeam;
+        public int selectedIndicatorIndex = 1;
+        public TeamTag initSelectableTeam = TeamTag.Ally;
 
         class Baker : Baker<UnitSelectionSystemAuthoring>
         {

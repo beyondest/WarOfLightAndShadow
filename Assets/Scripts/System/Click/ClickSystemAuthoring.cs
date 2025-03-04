@@ -8,10 +8,10 @@ namespace SparFlame.System.Click
     {
         public LayerMask clickableLayer;
         public LayerMask mouseRayLayer;
-        public float raycastDistance;
-        public float doubleClickThreshold;
+        public float raycastDistance = 1000f;
+        public float doubleClickThreshold = 0.15f;
 
-        public int leftClickIndex;
+        public int leftClickIndex = 0;
 
         class Baker : Baker<ClickSystemAuthoring>
         {
