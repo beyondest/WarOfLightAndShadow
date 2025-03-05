@@ -2,7 +2,7 @@ using Unity.Entities;
 using UnityEngine;
 using Unity.Transforms;
 using Unity.Mathematics;
-
+using SparFlame.System.General;
 
 namespace SparFlame.System.Spawn
 {
@@ -11,6 +11,7 @@ namespace SparFlame.System.Spawn
     {
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<SpawnSystemConfig>();
             state.RequireForUpdate<Spawnable>();
             state.RequireForUpdate<SpawnedData>();
@@ -22,7 +23,6 @@ namespace SparFlame.System.Spawn
 
             foreach (var spawnable in SystemAPI.Query<RefRO<SpawnedData>>().WithAll<Spawnable>())
             {
-
                 if (!Input.GetKeyDown(spawnable.ValueRO.SpawnKey)) continue;
                 var spawned = state.EntityManager.Instantiate(spawnable.ValueRO.SpawnPrefab);
                 state.EntityManager.SetComponentData(spawned, new LocalTransform

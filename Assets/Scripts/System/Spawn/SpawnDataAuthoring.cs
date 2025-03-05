@@ -18,7 +18,7 @@ namespace SparFlame.System.Spawn
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new SpawnedData()
                 {
-                    SpawnPos = authoring.spawnPos.position,
+                    SpawnPos = authoring.spawnPos == null ? authoring.spawnPos.position : Vector3.zero,
                     SpawnPrefab = GetEntity(authoring.spawnPrefab, TransformUsageFlags.Dynamic),
                     SpawnKey = authoring.spawnKey
                 }); 

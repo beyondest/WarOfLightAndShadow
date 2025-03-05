@@ -3,11 +3,23 @@ using Unity.Mathematics;
 using UnityEngine;
 using Unity.Transforms;
 using SparFlame.System.Click;
+using SparFlame.System.General;
+
 namespace SparFlame.System.Cam
 {
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial class CameraSystem : SystemBase
     {
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<CameraData>();
+            RequireForUpdate<CameraControlConfig>();
+            RequireForUpdate<ClickSystemData>();
+        }
+
+
         protected override void OnUpdate()
         {
             var cam = Camera.main;

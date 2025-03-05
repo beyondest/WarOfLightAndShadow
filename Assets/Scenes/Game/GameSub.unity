@@ -6775,7 +6775,7 @@ Transform:
   m_GameObject: {fileID: 2100964567}
   serializedVersion: 2
   m_LocalRotation: {x: 0.35355338, y: 0.35355338, z: -0.1464466, w: 0.8535535}
-  m_LocalPosition: {x: -16.468105, y: 20, z: -13.544619}
+  m_LocalPosition: {x: -19.437891, y: 20, z: -16.51451}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6839,7 +6839,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cam: {fileID: 2100964569}
   startFollowTransform: {fileID: 0}
-  normalSpeed: 0.01
+  normalSpeed: 0.02
   fastSpeed: 0.05
   sensitivity: 1
   edgeMarginSize: 50
