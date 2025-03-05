@@ -14,11 +14,11 @@ TagManager:
   - 
   - Water
   - UI
-  - Ground
+  - Terrain
   - Clickable
-  - Blue
-  - Red
-  - Env
+  - Projectile
+  - PopNumber
+  - 
   - 
   - 
   - 

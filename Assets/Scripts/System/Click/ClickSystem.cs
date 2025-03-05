@@ -19,6 +19,13 @@ namespace SparFlame.System.Click
         private float _clickThreshold;
         private bool _isDoubleClick;
 
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<ClickSystemData>();
+            RequireForUpdate<ClickSystemConfig>();
+        }
 
         protected override void OnStartRunning()
         {
@@ -30,12 +37,7 @@ namespace SparFlame.System.Click
             _mouseRayLayerMask = clickSystemConfig.MouseRayLayerMask;
             _leftClickIndex = clickSystemConfig.LeftClickIndex;
             _rightClickIndex = _leftClickIndex == 0 ? 1 : 0;
-#if DEBUG_ClickSystem
-            if (Camera.main == null)
-            {
-                Debug.LogError("No camera found");
-            }
-#endif
+
         }
 
         protected override void OnUpdate()

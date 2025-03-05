@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Burst;
 using Unity.Transforms;
+using SparFlame.System.General;
 using SparFlame.System.Cam;
 using SparFlame.System.UnitSelection;
 namespace SparFlame.System.Calculation
@@ -11,6 +12,7 @@ namespace SparFlame.System.Calculation
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<ScreenPos>();
             state.RequireForUpdate<CameraData>();
         }

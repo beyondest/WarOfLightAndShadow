@@ -14,6 +14,7 @@ namespace SparFlame.System.UnitSelection
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<ClickSystemData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<UnitSelectionConfig>();
