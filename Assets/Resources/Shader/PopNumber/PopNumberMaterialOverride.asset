@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1c49a92ef1771844b9c93a4037158cd, type: 3}
+  m_Name: PopNumberMaterialOverride
+  m_EditorClassIdentifier: 
+  overrideList:
+  - name: _PopNumberColor
+    displayName: _PopNumberColor
+    shaderName: Assets/Resources/Shader/PopNumber/PopNumber.shadergraph
+    materialName: PopNumber
+    type: 0
+    value: {x: 0.7375948, y: 0.7843137, z: 0.20784304, w: 1}
+    instanceOverride: 0
+  - name: _PopNumberID
+    displayName: _PopNumberID
+    shaderName: Assets/Resources/Shader/PopNumber/PopNumber.shadergraph
+    materialName: PopNumber
+    type: 2
+    value: {x: 5, y: 0, z: 0, w: 0}
+    instanceOverride: 0
+  material: {fileID: -876546973899608171, guid: 86b5ae96af8bb7c4abd4625b9f097c4a, type: 3}
