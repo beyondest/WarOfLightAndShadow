@@ -341,7 +341,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_RenderShadows: 1
+  m_RenderShadows: 0
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 1
@@ -2702,6 +2702,10 @@ PrefabInstance:
     - target: {fileID: 2844520007434600174, guid: 8cb7f137c5de9ed4aada12deefbfea91, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319863150139282129, guid: 8cb7f137c5de9ed4aada12deefbfea91, type: 3}
+      propertyPath: glyphWidth
+      value: 0.64
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6943,7 +6947,15 @@ PrefabInstance:
       value: Main Camera
       objectReference: {fileID: 0}
     - target: {fileID: 3297768664661496077, guid: e31cede84c0dd794186824d0224039d1, type: 3}
+      propertyPath: m_Antialiasing
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3297768664661496077, guid: e31cede84c0dd794186824d0224039d1, type: 3}
       propertyPath: m_Cameras.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3297768664661496077, guid: e31cede84c0dd794186824d0224039d1, type: 3}
+      propertyPath: m_RenderPostProcessing
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3297768664661496077, guid: e31cede84c0dd794186824d0224039d1, type: 3}

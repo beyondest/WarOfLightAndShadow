@@ -1,7 +1,7 @@
 using Unity.Collections;
 using Unity.Entities;
 using Random = Unity.Mathematics.Random;
-using SparFlame.System.PopNumber;
+using SparFlame.GamePlaySystem.PopNumber;
 
 namespace SparFlame.Test
 {
