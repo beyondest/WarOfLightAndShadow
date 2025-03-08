@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using SparFlame.BootStrapper;
 using UnityEngine.UI;
@@ -21,9 +22,9 @@ namespace SparFlame.UI.Menu.Out
             resumeButton.onClick.AddListener((HidePauseMenu));
             goToMainMenuButton.onClick.AddListener(ShowMainMenu);
             goToMainMenuButton.onClick.AddListener(HidePauseMenu);
+            goToMainMenuButton.onClick.AddListener((() => GameController.instance.GoToMainMenu()));
             exitButton.onClick.AddListener(Application.Quit);
         }
-
 
 
 

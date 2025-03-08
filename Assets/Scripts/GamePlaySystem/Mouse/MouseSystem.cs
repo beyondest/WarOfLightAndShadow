@@ -42,6 +42,8 @@ namespace SparFlame.GamePlaySystem.Mouse
 
         protected override void OnUpdate()
         {
+            _camera = Camera.main;
+            if(_camera == null)return;
             var clickSystemData = SystemAPI.GetSingletonEntity<MouseSystemData>();
             var clickFlag = ClickFlag.None;
             var clickType = ClickType.None;

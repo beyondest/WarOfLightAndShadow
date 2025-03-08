@@ -45,19 +45,21 @@ namespace SparFlame.GamePlaySystem.General
                 UnityEngine.Time.timeScale = 0;
                 var pauseEntity = SystemAPI.GetSingletonEntity<NotPauseTag>();
                 EntityManager.SetEnabled(pauseEntity, false);
-                _isPaused = false;
+                _isPaused = true;
             }
             else
             {
                 UnityEngine.Time.timeScale = 1;
-                foreach (var (_, pauseEntity) in SystemAPI.Query<RefRO<NotPauseTag>>().WithEntityAccess()
-                             .WithOptions(EntityQueryOptions.IncludeDisabledEntities))
-                {
-                    EntityManager.SetEnabled(pauseEntity, true);
-                    return;
-                }
-
-                _isPaused = true;
+                var e = EntityManager.CreateEntityQuery(new EntityQueryDesc
+                 {
+                     All = new ComponentType[] { typeof(NotPauseTag) },
+                     Options = EntityQueryOptions.IncludeDisabledEntities // 允许查找被禁用的组件
+                 });
+                 if (e.TryGetSingletonEntity<NotPauseTag>(out var entity))
+                 {
+                     EntityManager.SetEnabled(entity, true);
+                 }
+                _isPaused = false;
             }
         }
     }

@@ -15,9 +15,9 @@ namespace SparFlame.BootStrapper
 
         private EntityManager _em;
         private bool _isPaused;
+        private bool _isGaming = true;
         private void Awake()
         {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             if (instance == null)
             {
                 instance = this;
@@ -28,21 +28,25 @@ namespace SparFlame.BootStrapper
                 Destroy(gameObject);
             }
         }
+        
 
         private void OnEnable()
         {
             OnPause += Pause;
             OnResume += Resume;
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
+
+       
 
         private void Update()
         {
-            if (!Application.isFocused || Input.GetKeyDown(pauseKey))
+            if (!_isPaused && _isGaming && (!Application.isFocused || Input.GetKeyDown(pauseKey)))
             {
                 OnPause?.Invoke();
             }
 
-            if (Application.isFocused && Input.GetKeyDown(pauseKey) && _isPaused)
+            else if (_isPaused&&_isGaming && Application.isFocused && Input.GetKeyDown(pauseKey))
             {
                 OnResume?.Invoke();
             }
@@ -59,9 +63,17 @@ namespace SparFlame.BootStrapper
         public void Resume()
         {
             if (!_isPaused)return;
+            // TODO : why this line need to be added, it will throw em is deallocated if you do not add this
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             var resumeRequest = _em.CreateEntity();
             _em.AddComponent<ResumeRequest>(resumeRequest);
             _isPaused = false;
+        }
+
+        public void GoToMainMenu()
+        {
+            Debug.LogWarning("You haven't taken any measures to ensure the game can safely transition from the paused state to the main menu.");
+            _isGaming = false;
         }
     }
 }

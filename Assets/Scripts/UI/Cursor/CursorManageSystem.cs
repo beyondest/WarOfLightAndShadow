@@ -1,6 +1,5 @@
 ﻿using Unity.Entities;
 using Unity.Burst;
-using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.GamePlaySystem.Building;

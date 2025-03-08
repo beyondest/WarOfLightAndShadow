@@ -21,27 +21,36 @@ namespace SparFlame.UI.Cursor
         [SerializeField] private Image cursorRightImage;
         public RectTransform cursorLeftRectTransform;
         public RectTransform cursorRightRectTransform;
-        [SerializeField] private Vector3 cursorLeftOffset;
-        [SerializeField] private Vector3 cursorRightOffset;
+
         [Tooltip("Asset/Resources/UI/Cursor/CursorAttack.png, then this should be set to UI/Cursor. Notice that all the cursors in that path should be Cursor + Enum(CursorType) name")]
         [SerializeField] private string cursorSpritePath = "UI/Cursor";
         
         
         private Dictionary<CursorType, Sprite> _cursorDictionary;
         private EntityManager _em;
+        [SerializeField] private Vector3 cursorLeftOffset;
+        [SerializeField] private Vector3 cursorRightOffset;
+        private Quaternion _cursorLeftRotation;
+        private Quaternion _cursorRightRotation;
         
         private void Awake()
         {
             _cursorDictionary = new Dictionary<CursorType, Sprite>();
             LoadCursorSprites();
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             UnityEngine.Cursor.visible = false;
             UnityEngine.Cursor.lockState = CursorLockMode.Confined;
+        }
+
+        private void OnEnable()
+        {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
 
         private void Start()
         {
             SetDefaultCursor();
+            _cursorLeftRotation = cursorLeftImage.rectTransform.rotation;
+            _cursorRightRotation = cursorRightImage.rectTransform.rotation;
         }
 
         private void Update()
@@ -49,15 +58,17 @@ namespace SparFlame.UI.Cursor
             HandleFocus();
             cursorLeftRectTransform.position = Input.mousePosition + cursorLeftOffset; // 让 UI 鼠标跟随鼠标
             cursorRightRectTransform.position = Input.mousePosition + cursorRightOffset;
+            cursorLeftRectTransform.rotation = _cursorLeftRotation;
+            cursorRightRectTransform.rotation = _cursorRightRotation;
             // When game paused, set default cursor
-            if (!_em.Exists(_em.CreateEntityQuery(typeof(NotPauseTag)).GetSingletonEntity()))
+            if (!_em.CreateEntityQuery(typeof(NotPauseTag)).TryGetSingletonEntity< NotPauseTag>(out var _))
             {
                 SetDefaultCursor();
                 return;
             }
 
-            if (!_em.Exists(_em.CreateEntityQuery(typeof(CursorManageData)).GetSingletonEntity())) return;
-            var cursorManageData = _em.CreateEntityQuery(typeof(CursorManageData)).GetSingleton<CursorManageData>();
+            if (!_em.CreateEntityQuery(typeof(CursorManageData)).TryGetSingletonEntity< CursorManageData>(out var dataEntity)) return;
+            var cursorManageData = _em.GetComponentData<CursorManageData>(dataEntity);
             cursorLeftImage.sprite = _cursorDictionary[cursorManageData.LeftCursorType];
             cursorRightImage.sprite = _cursorDictionary[cursorManageData.RightCursorType];
 
