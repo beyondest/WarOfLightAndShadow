@@ -18,9 +18,9 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<PopNumberConfig>();
             state.RequireForUpdate<PopNumberColorConfig>();
-            state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<PopNumberRequest>();
         }
         

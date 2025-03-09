@@ -44,6 +44,10 @@ namespace SparFlame.GamePlaySystem.CameraControl
             camData.ValueRW.ScreenSize = new float2(Screen.width, Screen.height);
         }
 
+
+        #region CameraControlMethods
+
+
         private void MouseDrag(ref CameraControlData data, ref float3 newPos,
             in MouseSystemData mouseSystemData,  Transform transform)
         {
@@ -125,5 +129,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             newHeight = math.clamp(newHeight, cameraControlConfig.MinHeight, cameraControlConfig.MaxHeight);
             newPos.y = newHeight;
         }
+        #endregion
+
     }
 }

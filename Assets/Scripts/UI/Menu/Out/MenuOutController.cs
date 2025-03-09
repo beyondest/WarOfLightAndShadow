@@ -1,53 +1,89 @@
-using System;
 using UnityEngine;
 using SparFlame.BootStrapper;
-using UnityEngine.UI;
-
 namespace SparFlame.UI.Menu.Out
 {
     public class MenuOutController : MonoBehaviour
     {
         [SerializeField] private GameObject pauseMenu;
         [SerializeField] private GameObject mainMenu;
-        [SerializeField] private Button resumeButton;
-        [SerializeField] private Button goToMainMenuButton;
-        [SerializeField] private Button exitButton;
+   
         // Start is called once before the first execution of Update after the MonoBehaviour is created
 
         private void OnEnable()
         {
-            GameController.OnPause += ShowPauseMenu;
-            GameController.OnResume += HidePauseMenu;
-            resumeButton.onClick.AddListener((() => GameController.instance.Resume()));
-            resumeButton.onClick.AddListener((HidePauseMenu));
-            goToMainMenuButton.onClick.AddListener(ShowMainMenu);
-            goToMainMenuButton.onClick.AddListener(HidePauseMenu);
-            goToMainMenuButton.onClick.AddListener((() => GameController.instance.GoToMainMenu()));
-            exitButton.onClick.AddListener(Application.Quit);
+            GameController.instance.OnPause += ShowPauseMenu;
+            GameController.instance.OnResume += HidePauseMenu;
+            
         }
 
 
 
-        private void ShowPauseMenu()
+
+        #region MenuMethods
+
+        
+
+        public void ShowPauseMenu()
         {
             pauseMenu.SetActive(true);
         }
 
-        private void HidePauseMenu()
+        public void HidePauseMenu()
         {
             pauseMenu.SetActive(false);
         }
 
-        private void ShowMainMenu()
+        public void ShowMainMenu()
         {
             mainMenu.SetActive(true);
         }
 
-        private void HideMainMenu()
+        public void HideMainMenu()
         {
             mainMenu.SetActive(false);
         }
+        #endregion
 
 
+        #region ButtonMethods
+
+        public void ButtonPauseClicked()
+        {
+            ShowPauseMenu();
+            GameController.instance.PauseGame();
+        }
+
+        public void ButtonResumeClicked()
+        {
+            HidePauseMenu();
+            GameController.instance.ResumeGame();
+        }
+
+        public void ButtonExitClicked()
+        {
+            GameController.instance.ExitGame();
+        }
+
+        public void ButtonGoToMainMenuClicked()
+        {
+            HidePauseMenu();
+            ShowMainMenu();
+            GameController.instance.EndGameToMainMenu();
+        }
+
+        public void ButtonPlayClicked()
+        {
+            HideMainMenu();
+            GameController.instance.StartGame();
+        }
+
+        public void ButtonContinueClicked()
+        {
+            Debug.LogWarning("Continue to last saving is not implemented yet");
+        }
+        
+        #endregion
+
+        
     }
 }

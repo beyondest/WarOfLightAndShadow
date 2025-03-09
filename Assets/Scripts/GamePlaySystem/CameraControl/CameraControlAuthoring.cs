@@ -7,7 +7,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
 {
     public class CameraControlAuthoring : MonoBehaviour
     {
-        public Camera cam;
         public Transform startFollowTransform;
         public float normalSpeed = 0.01f;
         public float fastSpeed = 0.05f;
@@ -17,7 +16,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
         public float zoomSpeed = 5f;
         public float minHeight = 5f;
         public float maxHeight = 20f;
-
         class Baker : Baker<CameraControlAuthoring>
         {
             public override void Bake(CameraControlAuthoring authoring)
@@ -36,8 +34,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
                 });
                 AddComponent(entity, new CameraData
                 {
-                    ViewMatrix = authoring.cam.worldToCameraMatrix,
-                    ProjectionMatrix = authoring.cam.projectionMatrix,
                     ScreenSize = new float2(Screen.width, Screen.height)
                 });
                 AddComponent(entity, new CameraTrackData

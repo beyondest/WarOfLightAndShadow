@@ -1,3 +1,4 @@
+using SparFlame.GamePlaySystem.General;
 using Unity.Collections;
 using Unity.Entities;
 using Random = Unity.Mathematics.Random;
@@ -5,7 +6,7 @@ using SparFlame.GamePlaySystem.PopNumber;
 
 namespace SparFlame.Test
 {
-    public partial class TestSpawnerSystem : SystemBase
+    public partial class TestPopNumberSystem : SystemBase
     {
         private Random _rnd;
         private int count;
@@ -13,6 +14,7 @@ namespace SparFlame.Test
         protected override void OnCreate()
         {
             _rnd = new Random(8);
+            RequireForUpdate<NotPauseTag>();
             RequireForUpdate<PopNumberColorConfig>();
             RequireForUpdate<TestSpawner>();
             count = 60;

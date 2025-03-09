@@ -2,6 +2,8 @@ using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
 using System.Runtime.CompilerServices;
+using SparFlame.GamePlaySystem.General;
+
 namespace SparFlame.GamePlaySystem.PopNumber
 {
 
@@ -11,6 +13,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<PopNumberConfig>();
         }
 

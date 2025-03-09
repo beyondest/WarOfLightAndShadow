@@ -1,28 +1,27 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Eflatun.SceneReference;
 using SparFlame.Utils;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace SparFlame.BootStrapper
 {
     public class SceneGroupManager
     {
-        public event Action<SceneReference> OnSceneLoaded;
-        public event Action<SceneReference> OnSceneUnloaded;
 
-        private readonly int _awaitInterval;
         private readonly List<SceneType> _alwaysLoadedSceneTypes = new List<SceneType> { SceneType.AlwaysLoaded };
 
-        public SceneGroupManager(int awaitInterval = 100)
-        {
-            _awaitInterval = awaitInterval;
-        }
 
-        public async Task LoadSceneGroupAsync(SceneGroup toLoadSceneGroup, IProgress<float> loadingProgress,
-            bool reloadDupScenes = false)
+        /// <summary>
+        /// Load a group of scene asynchronously
+        /// </summary>
+        /// <param name="toLoadSceneGroup"></param>
+        /// <param name="loadingProgress">This is used for getting the group average loading progress, if null, will not use</param>
+        /// <param name="reloadDupScenes"></param>
+        /// <param name="onSceneGroupLoaded"></param>
+        /// <returns></returns>
+        public IEnumerator LoadSceneGroupAsync(SceneGroup toLoadSceneGroup, LoadingProgress loadingProgress,
+            bool reloadDupScenes = false, Action<SceneGroup> onSceneGroupLoaded = null)
         {
             // Find scenes that already loaded or is loading/unloading
             var loadedSceneBuildIdx = new List<int>();
@@ -32,31 +31,23 @@ namespace SparFlame.BootStrapper
             }
 
             // Load the scenes that are not loaded already, if you set reloadDupScenes to false
-            var operationsGroup = new AsyncOperationGroup(toLoadSceneGroup.Scenes.Count);
-            foreach (var sceneData in toLoadSceneGroup.Scenes)
+            var operationsGroup = new AsyncOperationGroup(toLoadSceneGroup.scenes.Count);
+            foreach (var sceneData in toLoadSceneGroup.scenes)
             {
-                if (!reloadDupScenes && loadedSceneBuildIdx.Contains(sceneData.SceneRef.BuildIndex)) continue;
-                var operation = SceneManager.LoadSceneAsync(sceneData.SceneRef.BuildIndex, LoadSceneMode.Additive);
+                if (!reloadDupScenes && loadedSceneBuildIdx.Contains(sceneData.sceneRef.BuildIndex)) continue;
+                var operation = SceneManager.LoadSceneAsync(sceneData.sceneRef.BuildIndex, LoadSceneMode.Additive);
                 operationsGroup.Add(operation);
                 // Tell listeners that Scene(Name) begins to load
-                OnSceneLoaded?.Invoke(sceneData.SceneRef);
             }
 
-            try
+            // Begin loading and report
+            while (!operationsGroup.IsDone)
             {
-                // Begin loading and report
-                while (!operationsGroup.IsDone)
-                {
-                    loadingProgress.Report(operationsGroup.AverageProgress);
-                    await Task.Delay(_awaitInterval);
-                }
+                loadingProgress?.Report(operationsGroup.AverageProgress);
+                yield return null;
             }
-            catch (Exception e)
-            {
-                Debug.Log($"Loading Scene Group failed: {e}");
-                throw;
-            }
-
+            
+            
             // This part is only executed when while is completed, but it will not block the main thread
             // Active the FirstActive Scene if there is one
             var firstActiveSceneRef = toLoadSceneGroup.FindSceneRefByType(SceneType.FirstActive);
@@ -69,9 +60,11 @@ namespace SparFlame.BootStrapper
                     SceneManager.SetActiveScene(shouldActiveScene);
                 }
             }
+            onSceneGroupLoaded?.Invoke(toLoadSceneGroup);
+
         }
 
-        public async Task UnloadSceneGroupAsync(SceneGroup unloadSceneGroup)
+        public IEnumerator UnloadSceneGroupAsync(SceneGroup unloadSceneGroup, Action<SceneGroup> onSceneGroupUnloaded = null)
         {
             // Get loaded scene
             var loadedSceneBuildIdx = new List<int>();
@@ -80,35 +73,29 @@ namespace SparFlame.BootStrapper
                 loadedSceneBuildIdx.Add(SceneManager.GetSceneAt(i).buildIndex);
             }
 
-            var operationGroup = new AsyncOperationGroup(unloadSceneGroup.Scenes.Count);
+            var operationGroup = new AsyncOperationGroup(unloadSceneGroup.scenes.Count);
 
-            foreach (var sceneData in unloadSceneGroup.Scenes)
+            foreach (var sceneData in unloadSceneGroup.scenes)
             {
                 // If not loaded, continue
-                if (!loadedSceneBuildIdx.Contains(sceneData.SceneRef.BuildIndex)) continue;
+                if (!loadedSceneBuildIdx.Contains(sceneData.sceneRef.BuildIndex)) continue;
                 // If always loaded, continue
-                if (_alwaysLoadedSceneTypes.Contains(sceneData.SceneType)) continue;
+                if (_alwaysLoadedSceneTypes.Contains(sceneData.sceneType)) continue;
 
-                var operation = SceneManager.UnloadSceneAsync(sceneData.SceneRef.BuildIndex);
+                var operation = SceneManager.UnloadSceneAsync(sceneData.sceneRef.BuildIndex);
                 operationGroup.Add(operation);
-                OnSceneUnloaded?.Invoke(sceneData.SceneRef);
             }
 
-            try
+            while (!operationGroup.IsDone)
             {
-                while (!operationGroup.IsDone)
-                {
-                    await Task.Delay(_awaitInterval);
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Log($"Unloading Scene Group failed: {e}");
-                throw;
+                yield return null;
             }
 
             // This will release all the assets which are not being used in the loading scenes hierarchy
             //await Resources.UnloadUnusedAssets();
+            
+            onSceneGroupUnloaded?.Invoke(unloadSceneGroup);
+
         }
     }
 }

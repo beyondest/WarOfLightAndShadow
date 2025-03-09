@@ -1,6 +1,8 @@
 fileFormatVersion: 2
-guid: e31cede84c0dd794186824d0224039d1
-PrefabImporter:
+guid: 0758fdf476218a24f91f9677bfaa266a
+labels:
+- Subscene
+DefaultImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 

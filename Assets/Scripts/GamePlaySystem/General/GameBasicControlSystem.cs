@@ -1,6 +1,5 @@
 ﻿using Unity.Collections;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.General
 {
@@ -10,12 +9,9 @@ namespace SparFlame.GamePlaySystem.General
     /// </summary>
     public partial class GameBasicControlSystem : SystemBase
     {
-        private bool _isPaused = false;
+        private bool _isPaused;
 
-        protected override void OnCreate()
-        {
-            base.OnCreate();
-        }
+
 
         protected override void OnUpdate()
         {
@@ -43,19 +39,23 @@ namespace SparFlame.GamePlaySystem.General
             if (isPausing)
             {
                 UnityEngine.Time.timeScale = 0;
-                var pauseEntity = SystemAPI.GetSingletonEntity<NotPauseTag>();
-                EntityManager.SetEnabled(pauseEntity, false);
+                var entityQuery = EntityManager.CreateEntityQuery(new EntityQueryDesc
+                {
+                    All = new ComponentType[] { typeof(NotPauseTag) },
+                });
+                if (!entityQuery.TryGetSingletonEntity<NotPauseTag>(out var entity)) return;
+                EntityManager.SetEnabled(entity, false);
                 _isPaused = true;
             }
             else
             {
                 UnityEngine.Time.timeScale = 1;
-                var e = EntityManager.CreateEntityQuery(new EntityQueryDesc
+                var entityQuery = EntityManager.CreateEntityQuery(new EntityQueryDesc
                  {
                      All = new ComponentType[] { typeof(NotPauseTag) },
-                     Options = EntityQueryOptions.IncludeDisabledEntities // 允许查找被禁用的组件
+                     Options = EntityQueryOptions.IncludeDisabledEntities 
                  });
-                 if (e.TryGetSingletonEntity<NotPauseTag>(out var entity))
+                 if (entityQuery.TryGetSingletonEntity<NotPauseTag>(out var entity))
                  {
                      EntityManager.SetEnabled(entity, true);
                  }

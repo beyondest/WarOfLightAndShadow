@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Linq;
+using UnityEngine;
 using SparFlame.Utils;
 namespace SparFlame.BootStrapper
 {
@@ -6,12 +8,10 @@ namespace SparFlame.BootStrapper
     {
         public static SceneController instance;
         [SerializeField] private SceneGroup[] sceneGroups;
-        [SerializeField] int awaitInterval = 100;
+        public event Action<SceneGroup> OnSceneGroupLoaded;
+        public event Action<SceneGroup> OnSceneGroupUnloaded;
         
-        
-        
-        private LoadingProgress _awaitProgress;
-        public SceneGroupManager SceneGroupManager;
+        private SceneGroupManager _sceneGroupManager;
 
 
         private void Awake()
@@ -22,38 +22,31 @@ namespace SparFlame.BootStrapper
                 DontDestroyOnLoad(gameObject);
             }
             else Destroy(gameObject);
-            SceneGroupManager = new SceneGroupManager(awaitInterval);
-            _awaitProgress = new LoadingProgress();
-            
+            _sceneGroupManager = new SceneGroupManager();
         }
 
-        private void OnEnable()
-        {
 
-            SceneGroupManager.OnSceneUnloaded += reference => Debug.Log("Scene Unloaded: " + reference.Name);
-            SceneGroupManager.OnSceneLoaded += reference => Debug.Log("Scene Loaded: " + reference.Name);  
-            _awaitProgress.ProgressChanged+= f => Debug.Log("Group 1 loading progress : " + f);
-        }
-
-        private void Start()
+    
+        public void LoadSceneGroup(string sceneGroupName, LoadingProgress progress = null)
         {
-            Debug.Log("Scene groups 0 start loading");
-            var _ = SceneGroupManager.LoadSceneGroupAsync(sceneGroups[0], _awaitProgress);
-            // t.wait or t.result will cause deadlock
-        }
-
-        
-        
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.Space))
+            var sceneGroup = sceneGroups.FirstOrDefault(group => group.groupName == sceneGroupName);
+            if (sceneGroup == null)
             {
-                Debug.Log("All scene groups start unloading");
-                var _ =  SceneGroupManager.UnloadSceneGroupAsync(sceneGroups[0]);
+                Debug.LogWarning("Scene group not found: " + sceneGroupName);
+                return;
             }
+            StartCoroutine(_sceneGroupManager.LoadSceneGroupAsync(sceneGroup, progress,false, OnSceneGroupLoaded));
         }
 
-
-
+        public void UnloadSceneGroup(string sceneGroupName)
+        {
+            var sceneGroup = sceneGroups.FirstOrDefault(group => group.groupName == sceneGroupName);
+            if (sceneGroup == null)
+            {
+                Debug.LogWarning("Scene group not found: " + sceneGroupName);
+                return;
+            }
+            StartCoroutine(_sceneGroupManager.UnloadSceneGroupAsync(sceneGroup, OnSceneGroupUnloaded));
+        }
     }
 }

@@ -7,28 +7,26 @@ namespace SparFlame.BootStrapper
 {
     public enum SceneType
     {
-        OutUI,
-        InUI,
+        None = 0x0,
+        OutUI = 0x1,
+        InUI = 0x2,
         /// <summary>
         /// AlwaysLoaded scene will not be unloaded using the scene group manager method
         /// </summary>
-        AlwaysLoaded,
-        Normal,
+        AlwaysLoaded = 0x3,
+        Normal = 0x4,
         /// <summary>
         /// FirstActive scene will be set to active in this group when they are loaded
         /// </summary>
-        FirstActive,
-        
-        
-        None
+        FirstActive = 0x5,
     }
 
     [Serializable]
     public class SceneData
     {
-        public SceneReference SceneRef;
-        public string Name => SceneRef.Name;
-        public SceneType SceneType ;
+        public SceneReference sceneRef;
+        public string Name => sceneRef.Name;
+         public SceneType sceneType ;
     }
     
     
@@ -36,21 +34,21 @@ namespace SparFlame.BootStrapper
     public class SceneGroup
     {
         public string groupName = "New Scene Group";
-        public List<SceneData> Scenes;
+        public List<SceneData> scenes;
         public SceneReference FindSceneRefByType(SceneType sceneType)
         {
-            return Scenes.FirstOrDefault(sceneData => sceneData.SceneType == sceneType)?.SceneRef;
+            return scenes.FirstOrDefault(sceneData => sceneData.sceneType == sceneType)?.sceneRef;
         }
         public SceneReference FindSceneRefByBuildIndex(int buildIndex)
         {
-            return Scenes.FirstOrDefault(sceneData => sceneData.SceneRef.BuildIndex == buildIndex)?.SceneRef;
+            return scenes.FirstOrDefault(sceneData => sceneData.sceneRef.BuildIndex == buildIndex)?.sceneRef;
         }
         public bool FindSceneTypeByBuildIndex(int buildIndex, out SceneType sceneType)
         {
-            var sceneData = Scenes.FirstOrDefault(sceneData => sceneData.SceneRef.BuildIndex == buildIndex);
+            var sceneData = scenes.FirstOrDefault(sceneData => sceneData.sceneRef.BuildIndex == buildIndex);
             if (sceneData != null)
             {
-                sceneType = sceneData.SceneType;
+                sceneType = sceneData.sceneType;
                 return true;
             }
             sceneType = SceneType.None;
@@ -58,10 +56,10 @@ namespace SparFlame.BootStrapper
         }
         public bool FindSceneTypeByName(string name, out SceneType sceneType)
         {
-            var sceneData = Scenes.FirstOrDefault(sceneData => sceneData.SceneRef.Name == name);
+            var sceneData = scenes.FirstOrDefault(sceneData => sceneData.sceneRef.Name == name);
             if (sceneData != null)
             {
-                sceneType = sceneData.SceneType;
+                sceneType = sceneData.sceneType;
                 return true;
             }
             sceneType = SceneType.None;

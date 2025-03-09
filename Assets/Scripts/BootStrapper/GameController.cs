@@ -9,13 +9,20 @@ namespace SparFlame.BootStrapper
         public static GameController instance;
         
         [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
-        public static event Action OnPause;
-        public static event Action OnResume;
+        [SerializeField] private string mainMenuGroupName = "MainMenuGroup";
+        [SerializeField] private string gamingGroupName = "GamingGroup";
+        
+        public event Action OnPause;
+        public event Action OnResume;
 
 
         private EntityManager _em;
         private bool _isPaused;
-        private bool _isGaming = true;
+        private bool _isReadyForPlayer;
+        private bool _isGaming ;
+        
+        
+        
         private void Awake()
         {
             if (instance == null)
@@ -28,31 +35,38 @@ namespace SparFlame.BootStrapper
                 Destroy(gameObject);
             }
         }
-        
 
         private void OnEnable()
         {
-            OnPause += Pause;
-            OnResume += Resume;
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
 
-       
+        private void Start()
+        {
+            SceneController.instance.OnSceneGroupLoaded += CheckLoadingState;
+            SceneController.instance.OnSceneGroupUnloaded += CheckUnloadingState;
+            SceneController.instance.LoadSceneGroup(mainMenuGroupName);
+        }
+
+        
+
 
         private void Update()
         {
+            if(!_isReadyForPlayer) return;
             if (!_isPaused && _isGaming && (!Application.isFocused || Input.GetKeyDown(pauseKey)))
             {
                 OnPause?.Invoke();
+                PauseGame();
             }
-
             else if (_isPaused&&_isGaming && Application.isFocused && Input.GetKeyDown(pauseKey))
             {
                 OnResume?.Invoke();
+                ResumeGame();
             }
         }
 
-        public void Pause()
+        public void PauseGame()
         {
             if (_isPaused)return;
             var pauseRequest = _em.CreateEntity();
@@ -60,7 +74,7 @@ namespace SparFlame.BootStrapper
             _isPaused = true;
         }
 
-        public void Resume()
+        public void ResumeGame()
         {
             if (!_isPaused)return;
             // TODO : why this line need to be added, it will throw em is deallocated if you do not add this
@@ -70,10 +84,42 @@ namespace SparFlame.BootStrapper
             _isPaused = false;
         }
 
-        public void GoToMainMenu()
+        public void EndGameToMainMenu()
         {
-            Debug.LogWarning("You haven't taken any measures to ensure the game can safely transition from the paused state to the main menu.");
+            ResumeGame();
+            _isReadyForPlayer = false;
+            SceneController.instance.UnloadSceneGroup(gamingGroupName);
+            Debug.LogWarning("Go to main menu without saving.");
             _isGaming = false;
+        }
+
+        public void ExitGame()
+        {
+            Debug.LogWarning("Exit without saving the game.");
+            _isGaming = false;
+            Application.Quit();
+        }
+
+        public void StartGame()
+        {
+            if (!_isReadyForPlayer) return;
+            Debug.Log("Starting game.");
+            SceneController.instance.LoadSceneGroup(gamingGroupName);
+        }
+        
+        
+        private void CheckLoadingState(SceneGroup sceneGroup)
+        {
+            if(sceneGroup.groupName == mainMenuGroupName)
+                _isReadyForPlayer = true;
+            if(sceneGroup.groupName == gamingGroupName)
+                _isGaming = true;
+        }
+
+        private void CheckUnloadingState(SceneGroup sceneGroup)
+        {
+            if(sceneGroup.groupName == gamingGroupName)
+                _isReadyForPlayer = true;
         }
     }
 }
