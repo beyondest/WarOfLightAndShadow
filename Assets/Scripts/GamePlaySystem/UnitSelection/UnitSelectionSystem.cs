@@ -23,6 +23,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            // TODO This code can be optimized, query can be made in onCreate method
             var unitSelectionConfig = SystemAPI.GetSingleton<UnitSelectionConfig>();
             var unitSelectionData = SystemAPI.GetSingletonRW<UnitSelectionData>();
             var clickSystemData = SystemAPI.GetSingleton<MouseSystemData>();

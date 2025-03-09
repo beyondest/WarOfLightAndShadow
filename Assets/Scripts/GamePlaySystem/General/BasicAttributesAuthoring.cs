@@ -34,7 +34,7 @@ namespace SparFlame.GamePlaySystem.General
     {
         Units,
         Buildings,
-        Env,
+        Walkable,
         Resources
     }
 

@@ -16,6 +16,8 @@ namespace SparFlame.GamePlaySystem.CameraControl
         public float zoomSpeed = 5f;
         public float minHeight = 5f;
         public float maxHeight = 20f;
+        public bool edgeMoveEnabled = true;
+        
         class Baker : Baker<CameraControlAuthoring>
         {
             public override void Bake(CameraControlAuthoring authoring)
@@ -31,6 +33,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
                     ZoomSpeed = authoring.zoomSpeed,
                     MinHeight = authoring.minHeight,
                     MaxHeight = authoring.maxHeight,
+                    EdgeMoveEnabled = authoring.edgeMoveEnabled,
                 });
                 AddComponent(entity, new CameraData
                 {
@@ -96,6 +99,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
         public float ZoomSpeed;
         public float MinHeight;
         public float MaxHeight;
+        public bool EdgeMoveEnabled;
     }
 
     public struct CameraData : IComponentData

@@ -100,7 +100,7 @@ namespace SparFlame.UI.Cursor
                     {
                         (TeamTag.Neutral, BaseTag.Resources) when resourceAttr.State == ResourceState.Available => (
                             CursorType.CheckInfo, CursorType.Harvest),
-                        (TeamTag.Neutral, BaseTag.Env) => (CursorType.None, CursorType.March),
+                        (TeamTag.Neutral, BaseTag.Walkable) => (CursorType.None, CursorType.March),
                         (TeamTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.Heal),
                         (TeamTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
                             CursorType.Gather, CursorType.Garrison),

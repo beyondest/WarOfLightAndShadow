@@ -34,7 +34,9 @@ namespace SparFlame.GamePlaySystem.CameraControl
             
             var newPos = (float3)cam.transform.position;
             MouseDrag(ref cameraControlData.ValueRW, ref newPos, in clickSystemData,  cam.transform);
-            EdgeScrolling(ref cameraControlData.ValueRW, ref newPos, in cameraControlConfig,  cam.transform);
+            
+            if(cameraControlConfig.EdgeMoveEnabled)
+                EdgeScrolling(ref cameraControlData.ValueRW, ref newPos, in cameraControlConfig,  cam.transform);
             MouseScrollZoom(ref cameraControlData.ValueRW, ref newPos, in cameraControlConfig,  cam.transform);
             //cam.transform.position = newPos;
             cam.transform.position = newPos;

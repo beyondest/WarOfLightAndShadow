@@ -144,12 +144,12 @@
             {
                 "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
                 "key": "ShapeBuilder.ActiveShapeIndex",
-                "value": "{\"m_Value\":3}"
+                "value": "{\"m_Value\":1}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cube",
-                "value": "{\"m_Value\":{\"x\":1.0,\"y\":1.0,\"z\":1.0}}"
+                "value": "{\"m_Value\":{\"x\":4.212236404418945,\"y\":1.9319971799850464,\"z\":-1.9362878799438477}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -169,7 +169,7 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cone",
-                "value": "{\"m_Value\":{\"x\":-1.2206146717071534,\"y\":1.0,\"z\":-0.6285738945007324}}"
+                "value": "{\"m_Value\":{\"x\":-1.1433091163635255,\"y\":2.487342357635498,\"z\":-1.902564525604248}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -179,7 +179,7 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Pipe",
-                "value": "{\"m_Value\":{\"x\":-1.5,\"y\":0.0,\"z\":-1.5}}"
+                "value": "{\"m_Value\":{\"x\":1.5843143463134766,\"y\":1.6447192430496216,\"z\":1.3954496383666993}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -189,12 +189,17 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Plane",
-                "value": "{\"m_Value\":{\"x\":2517.992919921875,\"y\":0.0,\"z\":-3209.24462890625}}"
+                "value": "{\"m_Value\":{\"x\":-15.805912971496582,\"y\":0.0,\"z\":9.374073028564454}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Arch",
                 "value": "{\"m_Value\":{\"x\":4.418916702270508,\"y\":2.9503278732299806,\"z\":-2.6836671829223635}}"
+            },
+            {
+                "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.LastSize.Prism",
+                "value": "{\"m_Value\":{\"x\":-1.7261433601379395,\"y\":2.9401302337646486,\"z\":-2.4286422729492189}}"
             },
             {
                 "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -244,6 +249,11 @@
             {
                 "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastRotation.Arch",
+                "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
+            },
+            {
+                "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.LastRotation.Prism",
                 "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
             },
             {
@@ -299,6 +309,11 @@
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.PivotLocation.Arch",
+                "value": "{\"m_Value\":0}"
+            },
+            {
+                "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.PivotLocation.Prism",
                 "value": "{\"m_Value\":0}"
             },
             {
@@ -369,6 +384,11 @@
             {
                 "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.Arch",
+                "value": "{}"
+            },
+            {
+                "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "key": "ShapeBuilder.Prism",
                 "value": "{}"
             },
             {
