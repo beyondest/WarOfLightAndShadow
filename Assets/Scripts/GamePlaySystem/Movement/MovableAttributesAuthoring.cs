@@ -6,36 +6,42 @@ namespace SparFlame.GamePlaySystem.Movement
 {
     public class MovableAttributesAuthoring : MonoBehaviour
     {
-        public Transform targetTransform;
-        public float moveSpeed = 3f;
 
         [Tooltip("This interval determines how long the path calculation is executed once")]
         public float calculateInterval = 1.0f;
 
-        [Tooltip(" Extents determines the map location in navMesh of target position, if too small, for buildings center as target position,\n " +
-                 "then it will fail to find the path to the building  " +
-                 " Suggest setting as the collider volume of the target")]
-        public float3 extents = new float3(1, 1, 1);
+        
         private class Baker : Baker<MovableAttributesAuthoring>
         {
             public override void Bake(MovableAttributesAuthoring authoring)
             {
-                var authoringEntity = GetEntity(TransformUsageFlags.Dynamic);
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
 
-                AddComponent(authoringEntity, new NavAgentComponent
+                AddComponent(entity, new NavAgentComponent
                 {
-                    TargetPosition = authoring.targetTransform.position,
+                    TargetPosition = float3.zero,
                     CalculateInterval = authoring.calculateInterval,
-                    Extents = authoring.extents,
-                    Reachable = true
+                    Extents = float3.zero,
+                    EnableCalculation = false,
+                    CalculationComplete = false,
+                    CurrentWaypoint = 0,
+                    IsNavQuerySet = false,
                 });
                 
-                AddComponent(authoringEntity, new MovableData
+                AddComponent(entity, new MovableData
                 {
-                    MoveSpeed = authoring.moveSpeed,
-                    ShouldMove = true
+                    MoveSpeed = 0f,
+                    TargetCenterPos = float3.zero,
+                    TargetColliderShapeXZ = float2.zero,
+                    MovementCommandType = MovementCommandType.None,
+                    InteractiveRangeSq = 0f,
+                    DetailInfo = DetailInfo.None,
+                    MovementState = MovementState.NotMoving
                 });
-                AddBuffer<WaypointBuffer>(authoringEntity);
+                AddBuffer<WaypointBuffer>(entity);
+                AddComponent<HaveTarget>(entity);
+                SetComponentEnabled<HaveTarget>(entity, false);
+                
             }
         }
     }
@@ -44,24 +50,80 @@ namespace SparFlame.GamePlaySystem.Movement
     public struct MovableData : IComponentData
     {
         public float MoveSpeed;
-        public bool ShouldMove;
-
+        public float3 TargetCenterPos;
+        public float2 TargetColliderShapeXZ;
+        public MovementCommandType MovementCommandType;
+        public MovementState MovementState;
+        public DetailInfo DetailInfo;
+        /// <summary>
+        /// This range is attack range for attack movement, garrison range for garrison movement...
+        /// </summary>
+        public float InteractiveRangeSq;
+        
     }
         
     public struct NavAgentComponent : IComponentData
     {
+        public bool EnableCalculation;
         public float3 TargetPosition;
-        public bool PathCalculated;
+        public bool CalculationComplete;
         public int CurrentWaypoint;
         public float NextPathCalculateTime;
         public bool IsNavQuerySet;
         public float CalculateInterval;
         public float3 Extents;
-        public bool Reachable;
     }
 
     public struct WaypointBuffer : IBufferElementData
     {
         public float3 WayPoint;
     }
+
+
+
+    public struct HaveTarget : IComponentData, IEnableableComponent
+    {
+        
+    }
+    
+    public enum MovementCommandType
+    {
+        None,
+        /// <summary>
+        /// Interactive includes attack, heal, garrison, harvest
+        /// </summary>
+        Interactive,
+        March,
+    }
+
+    public enum MovementState
+    {
+        
+        NotMoving ,
+        /// <summary>
+        /// Is moving 
+        /// </summary>
+        IsMoving ,
+        /// <summary>
+        /// Target reachable and reach
+        /// </summary>
+        MovementComplete ,
+        /// <summary>
+        /// Only reach the closest point , cause target not reachable
+        /// </summary>
+        MovementPartialComplete
+    }
+
+    public enum DetailInfo
+    {
+        None,
+        Reachable,
+        NotReachable,
+        /// <summary>
+        /// Calculation not complete or fail will return this
+        /// </summary>
+        CalculationFailed
+    }
+
+    
 }

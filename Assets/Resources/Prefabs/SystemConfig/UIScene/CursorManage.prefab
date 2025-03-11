@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4326919121189933183}
   - component: {fileID: 7139067981050219614}
   m_Layer: 0
-  m_Name: CursorManageSystem
+  m_Name: CursorManage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

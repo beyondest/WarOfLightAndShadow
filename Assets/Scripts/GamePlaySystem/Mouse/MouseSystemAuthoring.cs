@@ -64,7 +64,7 @@ namespace SparFlame.GamePlaySystem.Mouse
 
 
     /// <summary>
-    /// The Only Reason to use the click system is to reduce the times of using raycast
+    /// The Only Reason to use the mouse system is to reduce the times of using raycast
     /// </summary>
     public struct MouseSystemData : IComponentData
     {

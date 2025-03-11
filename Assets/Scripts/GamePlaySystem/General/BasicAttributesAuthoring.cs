@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Entities;
+using UnityEngine.Serialization;
 
 
 namespace SparFlame.GamePlaySystem.General
@@ -8,7 +9,7 @@ namespace SparFlame.GamePlaySystem.General
     public class BasicAttributesAuthoring : MonoBehaviour
     {
         public BaseTag baseTag;
-        public TeamTag teamTag;
+        [FormerlySerializedAs("teamTag")] public FactionTag factionTag;
 
 
 
@@ -18,10 +19,10 @@ namespace SparFlame.GamePlaySystem.General
             {
                 var entity = GetEntity(authoring.baseTag == BaseTag.Units ? TransformUsageFlags.Dynamic : TransformUsageFlags.None);
 
-                AddComponent(entity, new BasicAttributes
+                AddComponent(entity, new BasicAttr
                 {
                     BaseTag = authoring.baseTag,
-                    TeamTag = authoring.teamTag,
+                    FactionTag = authoring.factionTag,
                 });
             }
         }
@@ -38,7 +39,7 @@ namespace SparFlame.GamePlaySystem.General
         Resources
     }
 
-    public enum TeamTag
+    public enum FactionTag
     {
         Ally,
         Enemy,
@@ -46,9 +47,9 @@ namespace SparFlame.GamePlaySystem.General
     }
 
 
-    public struct BasicAttributes : IComponentData
+    public struct BasicAttr : IComponentData
     {
         public BaseTag BaseTag;
-        public TeamTag TeamTag;
+        public FactionTag FactionTag;
     }
 }

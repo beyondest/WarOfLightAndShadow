@@ -184,7 +184,7 @@ namespace SparFlame.GamePlaySystem.Mouse
             {
                 hitEntity = physicsWorld.PhysicsWorld.Bodies[raycastHit.RigidBodyIndex].Entity;
                 hitPosition = raycastHit.Position;
-                if (EntityManager.Exists(hitEntity) && EntityManager.HasComponent<BasicAttributes>(hitEntity))
+                if (EntityManager.Exists(hitEntity) && EntityManager.HasComponent<BasicAttr>(hitEntity))
                 {
                     return true;
                 }

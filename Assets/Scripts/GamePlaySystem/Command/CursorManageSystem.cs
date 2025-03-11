@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using System.Runtime.CompilerServices;
+using Unity.Entities;
 using Unity.Burst;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -7,7 +8,7 @@ using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.Mouse;
 
-namespace SparFlame.UI.Cursor
+namespace SparFlame.GamePlaySystem.Command
 {
     public partial struct CursorManageSystem : ISystem
     {
@@ -15,7 +16,7 @@ namespace SparFlame.UI.Cursor
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<CursorManageData>();
+            state.RequireForUpdate<CursorData>();
             state.RequireForUpdate<MouseSystemData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<CameraControlData>();
@@ -25,7 +26,7 @@ namespace SparFlame.UI.Cursor
         public void OnUpdate(ref SystemState state)
         {
             var mouseSystemData = SystemAPI.GetSingleton<MouseSystemData>();
-            var cursorManageData = SystemAPI.GetSingletonRW<CursorManageData>();
+            var cursorManageData = SystemAPI.GetSingletonRW<CursorData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             var cameraControlData = SystemAPI.GetSingleton<CameraControlData>();
 
@@ -46,22 +47,22 @@ namespace SparFlame.UI.Cursor
                 return;
 
             // Clickable 
-            var basicAttr = SystemAPI.GetComponent<BasicAttributes>(mouseSystemData.HitEntity);
-            BuildingAttributes buildingAttr = new BuildingAttributes
+            var basicAttr = SystemAPI.GetComponent<BasicAttr>(mouseSystemData.HitEntity);
+            BuildingAttr buildingAttr = new BuildingAttr
             {
                 State = BuildingState.Idle
             };
-            ResourceAttributes resourceAttr = new ResourceAttributes
+            ResourceAttr resourceAttr = new ResourceAttr
             {
                 State = ResourceState.Depleted
             };
             switch (basicAttr.BaseTag)
             {
                 case BaseTag.Buildings:
-                    buildingAttr = SystemAPI.GetComponent<BuildingAttributes>(mouseSystemData.HitEntity);
+                    buildingAttr = SystemAPI.GetComponent<BuildingAttr>(mouseSystemData.HitEntity);
                     break;
                 case BaseTag.Resources:
-                    resourceAttr = SystemAPI.GetComponent<ResourceAttributes>(mouseSystemData.HitEntity);
+                    resourceAttr = SystemAPI.GetComponent<ResourceAttr>(mouseSystemData.HitEntity);
                     break;
             }
 
@@ -72,23 +73,24 @@ namespace SparFlame.UI.Cursor
 
         #region CursorSwitchLogic
 
-        private static void CheckMouseHovering(ref RefRW<CursorManageData> cursorManageData,
+        
+        private static void CheckMouseHovering(ref RefRW<CursorData> cursorManageData,
             in UnitSelectionData unitSelectionData,
-            in BasicAttributes basicAttr, in BuildingAttributes buildingAttr, in ResourceAttributes resourceAttr)
+            in BasicAttr basicAttr, in BuildingAttr buildingAttr, in ResourceAttr resourceAttr)
         {
             // None unit selected
             if (unitSelectionData.CurrentSelectCount == 0)
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (basicAttr.TeamTag, basicAttr.BaseTag) switch
+                    (TeamTag: basicAttr.FactionTag, basicAttr.BaseTag) switch
                     {
-                        (TeamTag.Neutral, BaseTag.Resources) => (CursorType.CheckInfo, CursorType.None),
-                        (TeamTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.None),
-                        (TeamTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
+                        (FactionTag.Neutral, BaseTag.Resources) => (CursorType.CheckInfo, CursorType.None),
+                        (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.None),
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
                             CursorType.Gather, CursorType.None),
-                        (TeamTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Produced => (
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Produced => (
                             CursorType.ControlSelect, CursorType.None),
-                        (TeamTag.Enemy, _) => (CursorType.CheckInfo, CursorType.None),
+                        (FactionTag.Enemy, _) => (CursorType.CheckInfo, CursorType.None),
                         (_, _) => (CursorType.UI, CursorType.None),
                     };
             }
@@ -96,23 +98,24 @@ namespace SparFlame.UI.Cursor
             else
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (basicAttr.TeamTag, basicAttr.BaseTag) switch
+                    (TeamTag: basicAttr.FactionTag, basicAttr.BaseTag) switch
                     {
-                        (TeamTag.Neutral, BaseTag.Resources) when resourceAttr.State == ResourceState.Available => (
+                        (FactionTag.Neutral, BaseTag.Resources) when resourceAttr.State == ResourceState.Available => (
                             CursorType.CheckInfo, CursorType.Harvest),
-                        (TeamTag.Neutral, BaseTag.Walkable) => (CursorType.None, CursorType.March),
-                        (TeamTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.Heal),
-                        (TeamTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
+                        (FactionTag.Neutral, BaseTag.Walkable) => (CursorType.None, CursorType.March),
+                        (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.Heal),
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
                             CursorType.Gather, CursorType.Garrison),
-                        (TeamTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Produced => (
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Produced => (
                             CursorType.ControlSelect, CursorType.Garrison),
-                        (TeamTag.Enemy, _) => (CursorType.CheckInfo, CursorType.Attack),
+                        (FactionTag.Enemy, _) => (CursorType.CheckInfo, CursorType.Attack),
                         (_, _) => (CursorType.UI, CursorType.None),
                     };
             }
         }
 
-        private static bool IsZoomingCamera(ref RefRW<CursorManageData> cursorManageData,
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsZoomingCamera(ref RefRW<CursorData> cursorManageData,
             in CameraControlData cameraControlData)
         {
             cursorManageData.ValueRW.LeftCursorType = cameraControlData.ZState switch
@@ -124,7 +127,7 @@ namespace SparFlame.UI.Cursor
             return cursorManageData.ValueRW.LeftCursorType != CursorType.UI;
         }
 
-        private static bool IsEdgeScrolling(ref RefRW<CursorManageData> cursorManageData,
+        private static bool IsEdgeScrolling(ref RefRW<CursorData> cursorManageData,
             in CameraControlData cameraControlData)
         {
             cursorManageData.ValueRW.LeftCursorType =
@@ -143,7 +146,8 @@ namespace SparFlame.UI.Cursor
             return cursorManageData.ValueRW.LeftCursorType != CursorType.UI;
         }
 
-        private static bool IsDraggingCamera(ref RefRW<CursorManageData> cursorManageData,
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsDraggingCamera(ref RefRW<CursorData> cursorManageData,
             in CameraControlData cameraControlData)
         {
             if (!cameraControlData.IsDragging) return false;

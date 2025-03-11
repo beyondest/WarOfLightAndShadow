@@ -46,12 +46,12 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 if (clickSystemData.HitEntity != Entity.Null)
                 {
                     var basicAttributes =
-                        state.EntityManager.GetComponentData<BasicAttributes>(clickSystemData.HitEntity);
+                        state.EntityManager.GetComponentData<BasicAttr>(clickSystemData.HitEntity);
                     if (basicAttributes.BaseTag == BaseTag.Units)
                     {
                         isClickOnValid = true;
                         // Left click on Valid : Same Team Unit
-                        if (unitSelectionData.ValueRW.CurrentSelectTeam == basicAttributes.TeamTag)
+                        if (unitSelectionData.ValueRW.CurrentSelectFaction == basicAttributes.FactionTag)
                         {
                             // Not Press AddUnitKey
                             if (isDeselectAll)
@@ -156,12 +156,12 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             CalculateMinMax(unitSelectionData.ValueRW.SelectionBoxStartPos,
                 unitSelectionData.ValueRW.SelectionBoxEndPos, out float2 min, out float2 max);
 
-            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<BasicAttributes>>()
+            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<BasicAttr>>()
                          .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess())
             {
                 // Inside selection box
 
-                if (basicAttr.ValueRO.TeamTag == unitSelectionData.ValueRO.CurrentSelectTeam &&
+                if (basicAttr.ValueRO.FactionTag == unitSelectionData.ValueRO.CurrentSelectFaction &&
                     IsInsideBox(screenPos.ValueRO.ScreenPosition, min, max))
                 {
                     SelectOne(ref state, ref ecb, ref bufferLookup,ref unitSelectionData, entity, unitSelectionConfig,true);

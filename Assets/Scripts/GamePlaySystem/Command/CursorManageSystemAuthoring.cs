@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.UI.Cursor
+namespace SparFlame.GamePlaySystem.Command
 {
     public class CursorManageSystemAuthoring : MonoBehaviour
     {
@@ -11,7 +11,7 @@ namespace SparFlame.UI.Cursor
             public override void Bake(CursorManageSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new CursorManageData
+                AddComponent(entity, new CursorData
                 {
                     LeftCursorType = CursorType.UI,
                     RightCursorType = CursorType.None
@@ -21,7 +21,7 @@ namespace SparFlame.UI.Cursor
     }
 
 
-    public struct CursorManageData : IComponentData
+    public struct CursorData : IComponentData
     {
         public CursorType LeftCursorType;
         public CursorType RightCursorType;

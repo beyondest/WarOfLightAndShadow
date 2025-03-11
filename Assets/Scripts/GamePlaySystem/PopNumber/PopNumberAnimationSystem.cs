@@ -25,7 +25,6 @@ namespace SparFlame.GamePlaySystem.PopNumber
             new MoveJob
             {
                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
-                DeltaTime = SystemAPI.Time.DeltaTime,
                 ECBWriter = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 LifeTime = config.MovementTime,
                 VerticalMovementOffset = config.VerticalMovementOffset,
@@ -38,7 +37,6 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public partial struct MoveJob : IJobEntity
         {
             public float ElapsedTime;
-            public float DeltaTime;
             public EntityCommandBuffer.ParallelWriter ECBWriter;
             public float LifeTime;
             public float VerticalMovementOffset;

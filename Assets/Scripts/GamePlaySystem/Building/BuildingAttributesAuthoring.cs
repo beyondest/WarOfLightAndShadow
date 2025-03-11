@@ -1,6 +1,6 @@
 ﻿using Unity.Entities;
 using UnityEngine;
-
+using Unity.Mathematics;
 namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingAttributesAuthoring : MonoBehaviour
@@ -9,6 +9,14 @@ namespace SparFlame.GamePlaySystem.Building
         {
             public override void Bake(BuildingAttributesAuthoring authoring)
             {
+                var entity = GetEntity(TransformUsageFlags.WorldSpace);
+                var boxCollider = authoring.GetComponent<BoxCollider>();
+                AddComponent(entity, new BuildingAttr
+                {
+                    State = BuildingState.Constructing,
+                    BoxColliderSize = boxCollider.size,
+                });
+
             }
         }
     }
@@ -20,8 +28,10 @@ namespace SparFlame.GamePlaySystem.Building
         Produced,
         Idle
     }
-    public struct BuildingAttributes : IComponentData
+    
+    public struct BuildingAttr : IComponentData
     {
         public BuildingState State;
+        public float3 BoxColliderSize;
     }
 }

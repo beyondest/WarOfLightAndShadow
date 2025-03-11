@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
+using UnityEngine.Serialization;
 
 
 namespace SparFlame.GamePlaySystem.UnitSelection
@@ -15,7 +16,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         /// If Indicator is first child object, then index is 1
         /// </summary>
         public int selectedIndicatorIndex = 1;
-        public TeamTag initSelectableTeam = TeamTag.Ally;
+        [FormerlySerializedAs("initSelectableTeam")] public FactionTag initSelectableFaction = FactionTag.Ally;
 
         class Baker : Baker<UnitSelectionSystemAuthoring>
         {
@@ -25,7 +26,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 AddComponent(entity, new UnitSelectionData
                 {
                     CurrentSelectCount = 0,
-                    CurrentSelectTeam = authoring.initSelectableTeam
+                    CurrentSelectFaction = authoring.initSelectableFaction
                 });
                 AddComponent(entity, new UnitSelectionConfig
                 {
@@ -45,10 +46,11 @@ namespace SparFlame.GamePlaySystem.UnitSelection
     }
 
 
+    
     public struct UnitSelectionData : IComponentData
     {
         public int CurrentSelectCount;
-        public TeamTag CurrentSelectTeam;
+        public FactionTag CurrentSelectFaction;
         public float2 SelectionBoxStartPos;
         public float2 SelectionBoxEndPos;
     }

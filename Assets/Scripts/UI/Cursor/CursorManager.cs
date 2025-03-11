@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using SparFlame.GamePlaySystem.General;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Entities;
-
+using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Command;
 namespace SparFlame.UI.Cursor
 {
 
@@ -67,8 +67,8 @@ namespace SparFlame.UI.Cursor
                 return;
             }
 
-            if (!_em.CreateEntityQuery(typeof(CursorManageData)).TryGetSingletonEntity< CursorManageData>(out var dataEntity)) return;
-            var cursorManageData = _em.GetComponentData<CursorManageData>(dataEntity);
+            if (!_em.CreateEntityQuery(typeof(CursorData)).TryGetSingletonEntity< CursorData>(out var dataEntity)) return;
+            var cursorManageData = _em.GetComponentData<CursorData>(dataEntity);
             cursorLeftImage.sprite = _cursorDictionary[cursorManageData.LeftCursorType];
             cursorRightImage.sprite = _cursorDictionary[cursorManageData.RightCursorType];
 

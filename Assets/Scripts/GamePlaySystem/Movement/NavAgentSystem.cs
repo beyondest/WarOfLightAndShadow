@@ -55,6 +55,11 @@ namespace SparFlame.GamePlaySystem.Movement
 
             for (var i = 0; i < _entities.Length; i++)
             {
+                // Only calculate for the enable calculation agents
+                if(!navAgents[i].EnableCalculation)continue;
+                // Only recalculate the path once in an interval
+                // TODO Only calculate the path once in an interval and the target is updated
+                if (!(navAgents[i].NextPathCalculateTime < SystemAPI.Time.ElapsedTime)) continue;
                 
                 // Only recalculate navMeshQueries when entity's navMeshQuery is not set yet
                 if (!navAgents[i].IsNavQuerySet)
@@ -65,21 +70,15 @@ namespace SparFlame.GamePlaySystem.Movement
                     navAgents[i] = navAgent;
                 }
                 
-                
-                // Only recalculate the path once in an interval
-                // TODO Only calculate the path once in an interval and the target is updated
-                if (!(navAgents[i].NextPathCalculateTime < SystemAPI.Time.ElapsedTime)) continue;
-                
                 var calculatePathJob = new CalculatePathJob
                 {
                     Entity = _entities[i],
                     NavAgent = navAgents[i],
-                    FromPosition = localTransforms[i].Position,
+                    FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
                     ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                     Extents = navAgents[i].Extents,
-                    ReachableDistance = config.ReachableDistance,
                     Iterations = config.MaxIterations,
                     MaxPathSize = config.MaxPathSize
                 };
@@ -124,16 +123,14 @@ namespace SparFlame.GamePlaySystem.Movement
             [ReadOnly] public float3 FromPosition;
             [ReadOnly] public float3 Extents;
             [ReadOnly] public float ElapsedTime;
-            [ReadOnly] public float ReachableDistance;
             [ReadOnly] public int MaxPathSize;
             [ReadOnly] public int Iterations;
 
             public void Execute()
             {
                 NavAgent.NextPathCalculateTime = ElapsedTime + NavAgent.CalculateInterval;
-                NavAgent.PathCalculated = false;
+                NavAgent.CalculationComplete = false;
                 ECB.SetComponent(Entity, NavAgent);
-                
                 
                 var toPosition = NavAgent.TargetPosition;
 
@@ -196,13 +193,8 @@ namespace SparFlame.GamePlaySystem.Movement
                         }
                     }
 
-                    var disThreshold = ReachableDistance + math.max(Extents.x, Extents.z); 
-                    var dis = math.distancesq(result[straightPathCount - 1].position, toPosition);
-                    if (dis > disThreshold * disThreshold)
-                        NavAgent.Reachable = false;
-
                     NavAgent.CurrentWaypoint = 0;
-                    NavAgent.PathCalculated = true;
+                    NavAgent.CalculationComplete = true;
                     ECB.SetComponent(Entity, NavAgent);
                 }
 

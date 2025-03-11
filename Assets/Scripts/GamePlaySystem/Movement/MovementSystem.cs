@@ -4,7 +4,11 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Transforms;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+
+// ReSharper disable UseIndexFromEndExpression
+
 
 namespace SparFlame.GamePlaySystem.Movement
 {
@@ -14,7 +18,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<MovementConfig>();
             _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
@@ -24,48 +28,178 @@ namespace SparFlame.GamePlaySystem.Movement
         public void OnUpdate(ref SystemState state)
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
-            var ecbSingleton = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>();
             _waypointLookup.Update(ref state);
+            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+
             // PathCalculated is set to true only if calculation is done successfully
             new MoveJob
             {
-                DeltaTime = SystemAPI.Time.DeltaTime,
                 ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 WayPointsLookup = _waypointLookup,
-                WayPointDistanceSq = config.WayPointDistanceSq
+                DeltaTime = SystemAPI.Time.DeltaTime,
+                WayPointDistanceSq = config.WayPointDistanceSq,
+                MarchExtent = config.MarchExtent,
             }.ScheduleParallel();
         }
     }
 
 
+    /// <summary>
+    /// Move the movable entity to their target. According to the movement command type, will execute different logic
+    /// </summary>
     [BurstCompile]
+    [WithAll(typeof(HaveTarget))]
     public partial struct MoveJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public float WayPointDistanceSq;
+        [ReadOnly] public float MarchExtent;
 
-        private void Execute([ChunkIndexInQuery] int chunkIndex, ref MovableData movableData, ref NavAgentComponent navAgent, ref LocalTransform transform,
-             Entity entity)
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref NavAgentComponent navAgent, ref LocalTransform transform,
+            Entity entity)
         {
-            if(!(movableData.ShouldMove && navAgent.PathCalculated) )return;
-            // Check if entity is already reaching the current waypoint
-            if (WayPointsLookup.TryGetBuffer(entity, out var waypointBuffer)
-                && math.distancesq(transform.Position, waypointBuffer[navAgent.CurrentWaypoint].WayPoint) < WayPointDistanceSq
-                )
-            {
-                if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length)
-                {
-                    navAgent.CurrentWaypoint += 1;
-                }
+            navAgent.TargetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
+            var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
+            var curPos2D = new float2(transform.Position.x, transform.Position.z);
+            var curPos = new float3(transform.Position.x, 0f, transform.Position.z);
+            var interactiveRangeSq = movableData.InteractiveRangeSq;
+            var shouldMove = false;
+            // This line should always be false, cause agent has buffer 
+            if (!WayPointsLookup.TryGetBuffer(entity, out var waypointBuffer)) return;
 
-                ECB.SetComponent(chunkIndex,entity, navAgent);
+            switch (movableData.MovementCommandType)
+            {
+                // If Interactive movement
+                case MovementCommandType.Interactive:
+                {
+                    navAgent.Extents = new float3
+                    {
+                        x = movableData.TargetColliderShapeXZ.x,
+                        y = 1f,
+                        z = movableData.TargetColliderShapeXZ.y
+                    };
+                    var curDisSqPointToRect =
+                        DistanceSqPointToRect(targetCenterPos2D, movableData.TargetColliderShapeXZ, curPos2D);
+                    // Current pos in Interactive range. This should be checked before the last waypoint,
+                    // cause interactive movement DO NOT NEED or SHOULD NOT reach the last waypoint
+                    if (curDisSqPointToRect < interactiveRangeSq)
+                    {
+                        navAgent.EnableCalculation = false;
+                        movableData.MovementState = MovementState.MovementComplete;
+                        movableData.DetailInfo = DetailInfo.None;
+                    }
+                    // Current pos not in Interactive range
+                    else
+                    {
+                        navAgent.EnableCalculation = true;
+                        // Calculation Complete
+                        if (navAgent.CalculationComplete)
+                        {
+                            // Calculate if target reachable
+                            var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].WayPoint.x,
+                                waypointBuffer[waypointBuffer.Length - 1].WayPoint.z);
+                            var endDisSqPointToRect = DistanceSqPointToRect(targetCenterPos2D,
+                                movableData.TargetColliderShapeXZ, endPos2D);
+                            movableData.DetailInfo = endDisSqPointToRect < interactiveRangeSq
+                                ? DetailInfo.Reachable
+                                : DetailInfo.NotReachable;
+                            // If reach the last waypoint. Not using the index because moving takes time,
+                            // Even if the index is the last one, the object may not reach the last waypoint yet
+                            if (math.distancesq(endPos2D, curPos2D) < WayPointDistanceSq)
+                            {
+                                movableData.MovementState = movableData.DetailInfo == DetailInfo.Reachable
+                                    ? MovementState.MovementComplete
+                                    : MovementState.MovementPartialComplete;
+                                navAgent.EnableCalculation = false;
+                                navAgent.CalculationComplete = false;
+                                movableData.MovementCommandType = MovementCommandType.None;
+                                ECB.SetBuffer<WaypointBuffer>(index,entity);
+                            }
+                            // Not reach the last waypoint. Try moving
+                            else
+                            {
+                                if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length && 
+                                    math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPos) < WayPointDistanceSq)
+                                {
+                                    navAgent.CurrentWaypoint += 1;
+                                }
+
+                                movableData.MovementState = MovementState.IsMoving;
+                                shouldMove = true;
+                            }
+                        }
+                        // Calculation Not Complete
+                        else
+                        {
+                            movableData.MovementState = MovementState.NotMoving;
+                            movableData.DetailInfo = DetailInfo.CalculationFailed;
+                        }
+                    }
+
+                    break;
+                }
+                // If march movement. Target position should be void
+                case MovementCommandType.March:
+                {
+                    navAgent.Extents = new float3(MarchExtent, 1f, MarchExtent);
+                    navAgent.EnableCalculation = true;
+                    // Calculation complete
+                    if (navAgent.CalculationComplete)
+                    {
+                        // Calculate if target reachable
+                        var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].WayPoint.x,
+                            waypointBuffer[waypointBuffer.Length - 1].WayPoint.z);
+                        var endDisToTarget = math.distancesq(targetCenterPos2D, endPos2D);
+                        movableData.DetailInfo = endDisToTarget < WayPointDistanceSq
+                            ? DetailInfo.Reachable
+                            : DetailInfo.NotReachable;
+                        // If reach the last waypoint. Not using the index because moving takes time,
+                        // Even if the index is the last one, the object may not reach the last waypoint yet
+                        if (math.distancesq(endPos2D, curPos2D) < WayPointDistanceSq)
+                        {
+                            movableData.MovementState = movableData.DetailInfo == DetailInfo.Reachable
+                                ? MovementState.MovementComplete
+                                : MovementState.MovementPartialComplete;
+                            navAgent.EnableCalculation = false;
+                            navAgent.CalculationComplete = false;
+                            movableData.MovementCommandType = MovementCommandType.None;
+                            ECB.SetBuffer<WaypointBuffer>(index,entity);
+                        }
+                        // Not reach the last waypoint. Try moving
+                        else
+                        {
+                            if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length &&
+                                math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPos) < WayPointDistanceSq)
+                            {
+                                navAgent.CurrentWaypoint += 1;
+                            }
+
+                            movableData.MovementState = MovementState.IsMoving;
+                            shouldMove = true;
+                        }
+                    }
+                    // Calculation Not Complete
+                    else
+                    {
+                        movableData.MovementState = MovementState.NotMoving;
+                        movableData.DetailInfo = DetailInfo.CalculationFailed;
+                    }
+
+                    break;
+                }
+                // No command
+                case MovementCommandType.None:
+                default:
+                    return;
             }
 
-            var direction = waypointBuffer[navAgent.CurrentWaypoint].WayPoint - transform.Position;
+            if (!shouldMove) return;
+            var movePos = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
+            var direction = movePos - curPos;
             var angle = math.degrees(math.atan2(direction.z, direction.x));
-
             transform.Rotation = math.slerp(
                 transform.Rotation,
                 quaternion.Euler(new float3(0, angle, 0)),
@@ -73,9 +207,26 @@ namespace SparFlame.GamePlaySystem.Movement
 
             transform.Position +=
                 math.normalize(direction) * DeltaTime * movableData.MoveSpeed;
-            ECB.SetComponent(chunkIndex,entity, transform);
+        }
+
+
+        /// <summary>
+        /// This method calculates the min distance between pos and a rect with centerPos and size
+        /// </summary>
+        /// <param name="centerPos"></param>
+        /// <param name="size"></param>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float DistanceSqPointToRect(float2 centerPos, float2 size, float2 pos)
+        {
+            var halfSize = size * 0.5f;
+            var min = centerPos - halfSize;
+            var max = centerPos + halfSize;
+
+            // this clamp method is what you know in scalar, and also works in vector
+            var clampedPos = math.clamp(pos, min, max);
+            return math.distancesq(pos, clampedPos);
         }
     }
 }
-
-
