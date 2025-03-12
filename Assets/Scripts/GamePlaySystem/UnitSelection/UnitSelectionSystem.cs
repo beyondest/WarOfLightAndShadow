@@ -209,6 +209,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         {
             unitSelectionData.ValueRW.SelectionBoxEndPos = new float2
                 { x = mouseSystemData.MousePosition.x, y = mouseSystemData.MousePosition.y };
+            unitSelectionData.ValueRW.IsDragSelecting = true;
         }
 
         private void ResetSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
@@ -216,6 +217,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         {
             unitSelectionData.ValueRW.SelectionBoxStartPos = float2.zero;
             unitSelectionData.ValueRW.SelectionBoxEndPos = float2.zero;
+            unitSelectionData.ValueRW.IsDragSelecting = false;
         }
 
         #endregion

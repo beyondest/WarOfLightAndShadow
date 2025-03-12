@@ -11,9 +11,12 @@ namespace SparFlame.UI.Menu.Out
 
         private void OnEnable()
         {
+            if (GameController.instance == null)
+            {
+                Debug.LogError("BootStrapper scene needs to be placed at first place");
+            }
             GameController.instance.OnPause += ShowPauseMenu;
             GameController.instance.OnResume += HidePauseMenu;
-            
         }
 
 

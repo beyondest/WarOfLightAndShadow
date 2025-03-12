@@ -26,7 +26,8 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 AddComponent(entity, new UnitSelectionData
                 {
                     CurrentSelectCount = 0,
-                    CurrentSelectFaction = authoring.initSelectableFaction
+                    CurrentSelectFaction = authoring.initSelectableFaction,
+                    IsDragSelecting = false
                 });
                 AddComponent(entity, new UnitSelectionConfig
                 {
@@ -53,6 +54,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         public FactionTag CurrentSelectFaction;
         public float2 SelectionBoxStartPos;
         public float2 SelectionBoxEndPos;
+        public bool IsDragSelecting;
     }
 
 }

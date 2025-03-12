@@ -13,7 +13,7 @@ using UnityEngine.Experimental.AI;
 namespace SparFlame.GamePlaySystem.Movement
 {
     
-    //[BurstCompile]
+    [BurstCompile]
     [UpdateAfter(typeof(MovementSystem))]
     [Obsolete("Obsolete")]
     public partial struct NavAgentSystem : ISystem
@@ -25,7 +25,7 @@ namespace SparFlame.GamePlaySystem.Movement
         private const int PathNodePoolSize = 1000;
 
 
-        //[BurstCompile]
+        [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NotPauseTag>();
@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.Movement
             _navMeshQueries = new NativeList<NavMeshQuery>(Allocator.Persistent);
         }
 
-        //[BurstCompile]
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var  config = SystemAPI.GetSingleton<NavAgentSystemConfig>();
@@ -115,7 +115,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
        
 
-        //[BurstCompile]
+        [BurstCompile]
         private struct CalculatePathJob : IJob
         {
             public Entity Entity;
