@@ -13,7 +13,7 @@ using UnityEngine.Experimental.AI;
 namespace SparFlame.GamePlaySystem.Movement
 {
     
-    [BurstCompile]
+    //[BurstCompile]
     [UpdateAfter(typeof(MovementSystem))]
     [Obsolete("Obsolete")]
     public partial struct NavAgentSystem : ISystem
@@ -25,7 +25,7 @@ namespace SparFlame.GamePlaySystem.Movement
         private const int PathNodePoolSize = 1000;
 
 
-        [BurstCompile]
+        //[BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NotPauseTag>();
@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.Movement
             _navMeshQueries = new NativeList<NavMeshQuery>(Allocator.Persistent);
         }
 
-        [BurstCompile]
+        //[BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var  config = SystemAPI.GetSingleton<NavAgentSystemConfig>();
@@ -58,14 +58,8 @@ namespace SparFlame.GamePlaySystem.Movement
 
             for (var i = 0; i < _entities.Length; i++)
             {
-                // Only calculate for the enable calculation agents
-                if(!navAgents[i].EnableCalculation)continue;
-                
-                // Only recalculate the path once in an interval OR the target is updated
-                var curTime = SystemAPI.Time.ElapsedTime;
-                if (!(navAgents[i].ForceCalculate || navAgents[i].NextPathCalculateTime < curTime)) continue;
-                
                 // Only recalculate navMeshQueries when entity's navMeshQuery is not set yet
+                // This code must be executed before the enableCalculation check, or will throw index wrong
                 if (!navAgents[i].IsNavQuerySet)
                 {
                     var navAgent = navAgents[i];
@@ -73,6 +67,13 @@ namespace SparFlame.GamePlaySystem.Movement
                     navAgent.IsNavQuerySet = true;
                     navAgents[i] = navAgent;
                 }
+                
+                // Only calculate for the enable calculation agents
+                if(!navAgents[i].EnableCalculation)continue;
+                // Only recalculate the path once in an interval OR the target is updated
+                var curTime = SystemAPI.Time.ElapsedTime;
+                if (!(navAgents[i].ForceCalculate || navAgents[i].NextPathCalculateTime < curTime)) continue;
+                // Start calculate                
                 var calculatePathJob = new CalculatePathJob
                 {
                     Entity = _entities[i],
@@ -114,7 +115,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
        
 
-        [BurstCompile]
+        //[BurstCompile]
         private struct CalculatePathJob : IJob
         {
             public Entity Entity;
