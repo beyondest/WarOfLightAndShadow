@@ -26,6 +26,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     CalculationComplete = false,
                     CurrentWaypoint = 0,
                     IsNavQuerySet = false,
+                    ForceCalculate = false
                 });
                 
                 AddComponent(entity, new MovableData
@@ -36,7 +37,8 @@ namespace SparFlame.GamePlaySystem.Movement
                     MovementCommandType = MovementCommandType.None,
                     InteractiveRangeSq = 0f,
                     DetailInfo = DetailInfo.None,
-                    MovementState = MovementState.NotMoving
+                    MovementState = MovementState.NotMoving,
+                    ForceCalculate = false
                 });
                 AddBuffer<WaypointBuffer>(entity);
                 AddComponent<HaveTarget>(entity);
@@ -59,7 +61,8 @@ namespace SparFlame.GamePlaySystem.Movement
         /// This range is attack range for attack movement, garrison range for garrison movement...
         /// </summary>
         public float InteractiveRangeSq;
-        
+        public bool ForceCalculate;
+
     }
         
     public struct NavAgentComponent : IComponentData
@@ -72,6 +75,7 @@ namespace SparFlame.GamePlaySystem.Movement
         public bool IsNavQuerySet;
         public float CalculateInterval;
         public float3 Extents;
+        public bool ForceCalculate;
     }
 
     public struct WaypointBuffer : IBufferElementData
@@ -122,7 +126,7 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// Calculation not complete or fail will return this
         /// </summary>
-        CalculationFailed
+        CalculationNotComplete
     }
 
     

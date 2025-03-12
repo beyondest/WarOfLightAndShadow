@@ -12,6 +12,9 @@ using UnityEngine.Experimental.AI;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
+    
+    [BurstCompile]
+    [UpdateAfter(typeof(MovementSystem))]
     [Obsolete("Obsolete")]
     public partial struct NavAgentSystem : ISystem
     {
@@ -57,9 +60,10 @@ namespace SparFlame.GamePlaySystem.Movement
             {
                 // Only calculate for the enable calculation agents
                 if(!navAgents[i].EnableCalculation)continue;
-                // Only recalculate the path once in an interval
-                // TODO Only calculate the path once in an interval and the target is updated
-                if (!(navAgents[i].NextPathCalculateTime < SystemAPI.Time.ElapsedTime)) continue;
+                
+                // Only recalculate the path once in an interval OR the target is updated
+                var curTime = SystemAPI.Time.ElapsedTime;
+                if (!(navAgents[i].ForceCalculate || navAgents[i].NextPathCalculateTime < curTime)) continue;
                 
                 // Only recalculate navMeshQueries when entity's navMeshQuery is not set yet
                 if (!navAgents[i].IsNavQuerySet)
@@ -69,7 +73,6 @@ namespace SparFlame.GamePlaySystem.Movement
                     navAgent.IsNavQuerySet = true;
                     navAgents[i] = navAgent;
                 }
-                
                 var calculatePathJob = new CalculatePathJob
                 {
                     Entity = _entities[i],
@@ -83,7 +86,6 @@ namespace SparFlame.GamePlaySystem.Movement
                     MaxPathSize = config.MaxPathSize
                 };
                 jobHandles[i] = calculatePathJob.Schedule();
-
             }
             
             JobHandle.CompleteAll(jobHandles);
@@ -130,8 +132,8 @@ namespace SparFlame.GamePlaySystem.Movement
             {
                 NavAgent.NextPathCalculateTime = ElapsedTime + NavAgent.CalculateInterval;
                 NavAgent.CalculationComplete = false;
+                NavAgent.ForceCalculate = false;
                 ECB.SetComponent(Entity, NavAgent);
-                
                 var toPosition = NavAgent.TargetPosition;
 
                 var fromLocation = Query.MapLocation(FromPosition, Extents, 0);
@@ -144,7 +146,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 // Notice : If target is not reachable, and extents is also not reachable, it will return Failure this step
                 // The status only return one main status binding with a detailed status
                 // Main Status : InProgress, Success, Failure
-                if((status & PathQueryStatus.InProgress) == 0 )return;
+                if(status is not (PathQueryStatus.InProgress or PathQueryStatus.Success) )return;
                 
                 status = Query.UpdateFindPath(Iterations, out _);
                 

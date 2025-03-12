@@ -10,9 +10,11 @@ using SparFlame.GamePlaySystem.Units;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEditor;
 
 namespace SparFlame.GamePlaySystem.Command
 {
+    [UpdateBefore(typeof(MovementSystem))]
     public partial struct CommandSystem : ISystem
     {
         [BurstCompile]
@@ -64,7 +66,7 @@ namespace SparFlame.GamePlaySystem.Command
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                         TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = targetColliderXz
+                        TargetColliderShapeXz = targetColliderXz,
                     }.ScheduleParallel();
 
                     break;
@@ -80,7 +82,7 @@ namespace SparFlame.GamePlaySystem.Command
                         BuildingInteractiveRangeSq = buildingConfig.BuildingGarrisonRadiusSq,
                         TargetCenterPos = transform.Position,
                         TargetColliderShapeXz = new float2(buildingAttr.BoxColliderSize.x,
-                            buildingAttr.BoxColliderSize.z)
+                            buildingAttr.BoxColliderSize.z),
                     }.ScheduleParallel();
                     break;
                 }
@@ -93,7 +95,7 @@ namespace SparFlame.GamePlaySystem.Command
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                         TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = new float2(resourceAttr.BoxColliderSize.x, resourceAttr.BoxColliderSize.z)
+                        TargetColliderShapeXz = new float2(resourceAttr.BoxColliderSize.x, resourceAttr.BoxColliderSize.z),
                     }.ScheduleParallel();
                     break;
                 }
@@ -106,7 +108,7 @@ namespace SparFlame.GamePlaySystem.Command
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                         TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = new float2(unitAttr.BoxColliderSize.x, unitAttr.BoxColliderSize.z)
+                        TargetColliderShapeXz = new float2(unitAttr.BoxColliderSize.x, unitAttr.BoxColliderSize.z),
                     }.ScheduleParallel();
                     break;
                 }
@@ -116,7 +118,7 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementMarchJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetCenterPos = mouseData.HitPosition
+                        TargetCenterPos = mouseData.HitPosition,
                     }.ScheduleParallel();
                     break;
                 }
@@ -151,6 +153,7 @@ namespace SparFlame.GamePlaySystem.Command
             movableData.InteractiveRangeSq = unitAttr.AttackRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
             movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.ForceCalculate = true;
             ECB.SetComponentEnabled<HaveTarget>(index,entity, true);
         }
     }
@@ -162,12 +165,14 @@ namespace SparFlame.GamePlaySystem.Command
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetCenterPos;
 
+
         private void Execute([ChunkIndexInQuery] int index,ref MovableData movableData, in BasicAttr basicAttr, in UnitAttr unitAttr,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.March;
             movableData.TargetCenterPos = TargetCenterPos;
             movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.ForceCalculate = true;
             ECB.SetComponentEnabled<HaveTarget>(index,entity, true);
         }
     }
@@ -189,6 +194,7 @@ namespace SparFlame.GamePlaySystem.Command
             movableData.InteractiveRangeSq = healingAbility.HealingRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
             movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.ForceCalculate = false;
             ECB.SetComponentEnabled<HaveTarget>(index,entity, true);
         }
     }
@@ -210,6 +216,7 @@ namespace SparFlame.GamePlaySystem.Command
             movableData.InteractiveRangeSq = harvestAbility.HarvestingRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
             movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.ForceCalculate = false;
             ECB.SetComponentEnabled<HaveTarget>(index,entity, true);
         }
     }
@@ -231,6 +238,7 @@ namespace SparFlame.GamePlaySystem.Command
             movableData.InteractiveRangeSq = BuildingInteractiveRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
             movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.ForceCalculate = false;
             ECB.SetComponentEnabled<HaveTarget>(index,entity, true);
         }
     }

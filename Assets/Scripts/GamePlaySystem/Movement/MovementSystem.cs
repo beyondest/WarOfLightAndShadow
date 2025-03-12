@@ -5,13 +5,13 @@ using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Transforms;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 
 // ReSharper disable UseIndexFromEndExpression
 
 
 namespace SparFlame.GamePlaySystem.Movement
 {
+    
     public partial struct MovementSystem : ISystem
     {
         private BufferLookup<WaypointBuffer> _waypointLookup;
@@ -29,12 +29,10 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
             _waypointLookup.Update(ref state);
-            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
             // PathCalculated is set to true only if calculation is done successfully
             new MoveJob
             {
-                ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 WayPointsLookup = _waypointLookup,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 WayPointDistanceSq = config.WayPointDistanceSq,
@@ -51,13 +49,12 @@ namespace SparFlame.GamePlaySystem.Movement
     [WithAll(typeof(HaveTarget))]
     public partial struct MoveJob : IJobEntity
     {
-        public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public float WayPointDistanceSq;
         [ReadOnly] public float MarchExtent;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+        private void Execute(ref MovableData movableData,
             ref NavAgentComponent navAgent, ref LocalTransform transform,
             Entity entity)
         {
@@ -67,9 +64,10 @@ namespace SparFlame.GamePlaySystem.Movement
             var curPos = new float3(transform.Position.x, 0f, transform.Position.z);
             var interactiveRangeSq = movableData.InteractiveRangeSq;
             var shouldMove = false;
+            //navAgent.EnableCalculation = true;
             // This line should always be false, cause agent has buffer 
             if (!WayPointsLookup.TryGetBuffer(entity, out var waypointBuffer)) return;
-
+            
             switch (movableData.MovementCommandType)
             {
                 // If Interactive movement
@@ -87,14 +85,22 @@ namespace SparFlame.GamePlaySystem.Movement
                     // cause interactive movement DO NOT NEED or SHOULD NOT reach the last waypoint
                     if (curDisSqPointToRect < interactiveRangeSq)
                     {
-                        navAgent.EnableCalculation = false;
                         movableData.MovementState = MovementState.MovementComplete;
                         movableData.DetailInfo = DetailInfo.None;
+                        navAgent.EnableCalculation = false;
+                        navAgent.CalculationComplete = false;
+                        movableData.MovementCommandType = MovementCommandType.None;
                     }
                     // Current pos not in Interactive range
                     else
                     {
+                        // Enable Calculation
                         navAgent.EnableCalculation = true;
+                        if (movableData.ForceCalculate)
+                        {
+                            navAgent.ForceCalculate = true;
+                            movableData.ForceCalculate = false;
+                        }
                         // Calculation Complete
                         if (navAgent.CalculationComplete)
                         {
@@ -116,7 +122,6 @@ namespace SparFlame.GamePlaySystem.Movement
                                 navAgent.EnableCalculation = false;
                                 navAgent.CalculationComplete = false;
                                 movableData.MovementCommandType = MovementCommandType.None;
-                                ECB.SetBuffer<WaypointBuffer>(index,entity);
                             }
                             // Not reach the last waypoint. Try moving
                             else
@@ -135,7 +140,7 @@ namespace SparFlame.GamePlaySystem.Movement
                         else
                         {
                             movableData.MovementState = MovementState.NotMoving;
-                            movableData.DetailInfo = DetailInfo.CalculationFailed;
+                            movableData.DetailInfo = DetailInfo.CalculationNotComplete;
                         }
                     }
 
@@ -145,66 +150,89 @@ namespace SparFlame.GamePlaySystem.Movement
                 case MovementCommandType.March:
                 {
                     navAgent.Extents = new float3(MarchExtent, 1f, MarchExtent);
-                    navAgent.EnableCalculation = true;
-                    // Calculation complete
-                    if (navAgent.CalculationComplete)
+                    // March already arrived
+                    if (math.distancesq(targetCenterPos2D, curPos2D) < WayPointDistanceSq)
                     {
-                        // Calculate if target reachable
-                        var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].WayPoint.x,
-                            waypointBuffer[waypointBuffer.Length - 1].WayPoint.z);
-                        var endDisToTarget = math.distancesq(targetCenterPos2D, endPos2D);
-                        movableData.DetailInfo = endDisToTarget < WayPointDistanceSq
-                            ? DetailInfo.Reachable
-                            : DetailInfo.NotReachable;
-                        // If reach the last waypoint. Not using the index because moving takes time,
-                        // Even if the index is the last one, the object may not reach the last waypoint yet
-                        if (math.distancesq(endPos2D, curPos2D) < WayPointDistanceSq)
-                        {
-                            movableData.MovementState = movableData.DetailInfo == DetailInfo.Reachable
-                                ? MovementState.MovementComplete
-                                : MovementState.MovementPartialComplete;
-                            navAgent.EnableCalculation = false;
-                            navAgent.CalculationComplete = false;
-                            movableData.MovementCommandType = MovementCommandType.None;
-                            ECB.SetBuffer<WaypointBuffer>(index,entity);
-                        }
-                        // Not reach the last waypoint. Try moving
-                        else
-                        {
-                            if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length &&
-                                math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPos) < WayPointDistanceSq)
-                            {
-                                navAgent.CurrentWaypoint += 1;
-                            }
-
-                            movableData.MovementState = MovementState.IsMoving;
-                            shouldMove = true;
-                        }
+                        movableData.MovementState = MovementState.MovementComplete;
+                        movableData.DetailInfo = DetailInfo.None;
+                        navAgent.EnableCalculation = false;
+                        navAgent.CalculationComplete = false;
+                        movableData.MovementCommandType = MovementCommandType.None;
                     }
-                    // Calculation Not Complete
+                    // March not arrived yet
                     else
                     {
-                        movableData.MovementState = MovementState.NotMoving;
-                        movableData.DetailInfo = DetailInfo.CalculationFailed;
-                    }
+                        // Enable Calculation
+                        navAgent.EnableCalculation = true;
+                        if (movableData.ForceCalculate)
+                        {
+                            navAgent.ForceCalculate = true;
+                            movableData.ForceCalculate = false;
+                        }
+                        // Calculation complete
+                        if (navAgent.CalculationComplete)
+                        {
+                            // Calculate if target reachable
+                            var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].WayPoint.x,
+                                waypointBuffer[waypointBuffer.Length - 1].WayPoint.z);
+                            var endDisToTarget = math.distancesq(targetCenterPos2D, endPos2D);
+                            movableData.DetailInfo = endDisToTarget < WayPointDistanceSq
+                                ? DetailInfo.Reachable
+                                : DetailInfo.NotReachable;
+                            // If reach the last waypoint. Not using the index because moving takes time,
+                            // Even if the index is the last one, the object may not reach the last waypoint yet
+                            if (math.distancesq(endPos2D, curPos2D) < WayPointDistanceSq)
+                            {
+                                movableData.MovementState = movableData.DetailInfo == DetailInfo.Reachable
+                                    ? MovementState.MovementComplete
+                                    : MovementState.MovementPartialComplete;
+                                navAgent.EnableCalculation = false;
+                                navAgent.CalculationComplete = false;
+                                movableData.MovementCommandType = MovementCommandType.None;
+                            }
+                            // Not reach the last waypoint. Try moving
+                            else
+                            {
+                                if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length &&
+                                    math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPos) <
+                                    WayPointDistanceSq)
+                                {
+                                    navAgent.CurrentWaypoint += 1;
+                                }
 
+                                movableData.MovementState = MovementState.IsMoving;
+                                shouldMove = true;
+                            }
+                        }
+                        // Calculation Not Complete
+                        else
+                        {
+                            movableData.MovementState = MovementState.NotMoving;
+                            movableData.DetailInfo = DetailInfo.CalculationNotComplete;
+                        }
+                    }
                     break;
                 }
                 // No command
                 case MovementCommandType.None:
+                {
+                    break;
+                }
                 default:
                     return;
             }
 
             if (!shouldMove) return;
+
             var movePos = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
             var direction = movePos - curPos;
+            // This line is crucial because math.normalize will return NAN sometimes without this line
+            if(math.length(direction) < 0.1f)return;
             var angle = math.degrees(math.atan2(direction.z, direction.x));
             transform.Rotation = math.slerp(
                 transform.Rotation,
                 quaternion.Euler(new float3(0, angle, 0)),
                 DeltaTime);
-
             transform.Position +=
                 math.normalize(direction) * DeltaTime * movableData.MoveSpeed;
         }

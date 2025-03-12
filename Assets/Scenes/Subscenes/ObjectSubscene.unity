@@ -861,6 +861,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxPathSize: 100
   maxIterations: 100
+  realTimeResponseInterval: 0.3
 --- !u!43 &251947024
 Mesh:
   m_ObjectHideFlags: 32
@@ -3160,7 +3161,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1149092472220268282, guid: 0c95e83591e57bc46935ab6071665cb4, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1
+      value: 0.97
       objectReference: {fileID: 0}
     - target: {fileID: 1149092472220268282, guid: 0c95e83591e57bc46935ab6071665cb4, type: 3}
       propertyPath: m_LocalPosition.z
@@ -6427,7 +6428,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1149092472220268282, guid: 0c95e83591e57bc46935ab6071665cb4, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.85
+      value: 1.12
       objectReference: {fileID: 0}
     - target: {fileID: 1149092472220268282, guid: 0c95e83591e57bc46935ab6071665cb4, type: 3}
       propertyPath: m_LocalPosition.z
@@ -6738,7 +6739,7 @@ PrefabInstance:
     - target: {fileID: 1053406149245500433, guid: 7c5ac5e6146e7764a8a8809c2530a98d, type: 3}
       propertyPath: spawnPosition
       value: 
-      objectReference: {fileID: 2724885689307333480}
+      objectReference: {fileID: 1810970225}
     - target: {fileID: 6419840677660091603, guid: 7c5ac5e6146e7764a8a8809c2530a98d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 4.973554
@@ -7534,7 +7535,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5904672b66a89ad4ea5303f8b808bbda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 1
+  attackRange: 10
   moveSpeed: 5
   attackSpeed: 1
   attackCount: 1
