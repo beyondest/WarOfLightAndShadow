@@ -13,7 +13,6 @@ namespace SparFlame.BootStrapper
         
         private SceneGroupManager _sceneGroupManager;
 
-
         private void Awake()
         {
             if (instance == null)
