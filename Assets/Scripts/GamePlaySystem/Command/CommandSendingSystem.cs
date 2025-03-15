@@ -39,6 +39,8 @@ namespace SparFlame.GamePlaySystem.Command
             if(unitSelectionData.CurrentSelectCount == 0) return;
             if (mouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right }) return;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            
+            
             switch (cursorData.RightCursorType)
             {
                 case CursorType.Attack:
@@ -126,6 +128,9 @@ namespace SparFlame.GamePlaySystem.Command
                 default:
                     return;
             }
+            
+            
+            
         }
 
         [BurstCompile]

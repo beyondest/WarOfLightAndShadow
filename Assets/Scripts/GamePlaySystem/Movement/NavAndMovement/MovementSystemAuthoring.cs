@@ -10,6 +10,8 @@ namespace SparFlame.GamePlaySystem.Movement
         
         [Tooltip("This is the extent float for the march movement, considering march movement as the target position is void")]
         public float marchExtent = 0.5f;
+        public float rotationSpeed = 5f;
+
         private class MovementSystemAuthoringBaker : Baker<MovementSystemAuthoring>
         {
             public override void Bake(MovementSystemAuthoring authoring)
@@ -19,6 +21,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 {
                     WayPointDistanceSq = authoring.waypointDistanceThreshold * authoring.waypointDistanceThreshold,
                     MarchExtent = authoring.marchExtent,
+                    RotationSpeed = authoring.rotationSpeed,
                 });
             }
         }
@@ -28,6 +31,7 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         public float WayPointDistanceSq;
         public float MarchExtent;
+        public float RotationSpeed;
     }
 
     

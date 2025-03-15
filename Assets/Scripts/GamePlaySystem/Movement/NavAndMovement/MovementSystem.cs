@@ -11,11 +11,12 @@ using System.Runtime.CompilerServices;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
-    
+    [BurstCompile]
     public partial struct MovementSystem : ISystem
     {
         private BufferLookup<WaypointBuffer> _waypointLookup;
 
+        [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -24,7 +25,7 @@ namespace SparFlame.GamePlaySystem.Movement
             _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
         }
 
-
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
@@ -37,6 +38,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 WayPointDistanceSq = config.WayPointDistanceSq,
                 MarchExtent = config.MarchExtent,
+                RotationSpeed = config.RotationSpeed
             }.ScheduleParallel();
         }
     }
@@ -53,6 +55,7 @@ namespace SparFlame.GamePlaySystem.Movement
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public float WayPointDistanceSq;
         [ReadOnly] public float MarchExtent;
+        [ReadOnly] public float RotationSpeed;
 
         private void Execute(ref MovableData movableData,
             ref NavAgentComponent navAgent, ref LocalTransform transform,
@@ -223,16 +226,20 @@ namespace SparFlame.GamePlaySystem.Movement
             }
 
             if (!shouldMove) return;
-
+            
+            // Move Target towards waypoint
             var movePos = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
             var direction = movePos - curPos;
             // This line is crucial because math.normalize will return NAN sometimes without this line
             if(math.length(direction) < 0.1f)return;
-            var angle = math.degrees(math.atan2(direction.z, direction.x));
-            transform.Rotation = math.slerp(
-                transform.Rotation,
-                quaternion.Euler(new float3(0, angle, 0)),
-                DeltaTime);
+            // var angle = math.degrees(math.atan2(direction.z, direction.x));
+            // transform.Rotation = math.slerp(
+            //     transform.Rotation,
+            //     quaternion.Euler(new float3(0, angle, 0)),
+            //     DeltaTime);
+            var targetRotation = quaternion.LookRotationSafe(-direction, math.up());
+            transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * RotationSpeed );
+            
             transform.Position +=
                 math.normalize(direction) * DeltaTime * movableData.MoveSpeed;
         }
