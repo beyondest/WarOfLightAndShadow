@@ -15,8 +15,15 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             public override void Bake(MovableAttributesAuthoring authoring)
             {
+                if (!authoring.TryGetComponent<BoxCollider>(out var collider))
+                {
+                    Debug.LogError("Movable unit must have a Box Collider");
+                    return;
+                }
+                var colliderRadius = 0.5f * math.length(new float2(collider.size.x, collider.size.z));
+                
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-
+                
                 AddComponent(entity, new NavAgentComponent
                 {
                     TargetPosition = float3.zero,
@@ -38,11 +45,15 @@ namespace SparFlame.GamePlaySystem.Movement
                     InteractiveRangeSq = 0f,
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
-                    ForceCalculate = false
+                    ForceCalculate = false,
+                    ColliderRadius = colliderRadius
                 });
                 AddBuffer<WaypointBuffer>(entity);
                 AddComponent<HaveTarget>(entity);
                 SetComponentEnabled<HaveTarget>(entity, false);
+       
+                
+                
                 
             }
         }
@@ -53,6 +64,10 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         public float MoveSpeed;
         public float3 TargetCenterPos;
+        /// <summary>
+        /// Target collider shape is used for calculating
+        /// the extents of nav agent, extra radius for reachable check
+        /// </summary>
         public float2 TargetColliderShapeXZ;
         public MovementCommandType MovementCommandType;
         public MovementState MovementState;
@@ -62,6 +77,11 @@ namespace SparFlame.GamePlaySystem.Movement
         /// </summary>
         public float InteractiveRangeSq;
         public bool ForceCalculate;
+        /// <summary>
+        /// This is the collider of object itself, used for raycast for obstacle avoidance 
+        /// </summary>
+        public float ColliderRadius;
+        public Entity OnTheWayTargetEntity;
 
     }
         

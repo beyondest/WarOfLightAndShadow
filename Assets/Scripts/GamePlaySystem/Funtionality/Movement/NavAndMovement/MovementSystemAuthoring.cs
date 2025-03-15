@@ -1,5 +1,6 @@
 ﻿using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
@@ -11,7 +12,9 @@ namespace SparFlame.GamePlaySystem.Movement
         [Tooltip("This is the extent float for the march movement, considering march movement as the target position is void")]
         public float marchExtent = 0.5f;
         public float rotationSpeed = 5f;
-
+        
+        public LayerMask clickableLayerMask;
+        public LayerMask movementRayBelongsToLayerMask;
         private class MovementSystemAuthoringBaker : Baker<MovementSystemAuthoring>
         {
             public override void Bake(MovementSystemAuthoring authoring)
@@ -22,6 +25,8 @@ namespace SparFlame.GamePlaySystem.Movement
                     WayPointDistanceSq = authoring.waypointDistanceThreshold * authoring.waypointDistanceThreshold,
                     MarchExtent = authoring.marchExtent,
                     RotationSpeed = authoring.rotationSpeed,
+                    ClickableLayerMask = (uint)authoring.clickableLayerMask.value,
+                    MovementRayBelongsToLayerMask =(uint) authoring.movementRayBelongsToLayerMask.value,
                 });
             }
         }
@@ -32,6 +37,8 @@ namespace SparFlame.GamePlaySystem.Movement
         public float WayPointDistanceSq;
         public float MarchExtent;
         public float RotationSpeed;
+        public uint ClickableLayerMask;
+        public uint MovementRayBelongsToLayerMask;
     }
 
     
