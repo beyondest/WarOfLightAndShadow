@@ -41,5 +41,13 @@ namespace SparFlame.GamePlaySystem.Movement
         public uint MovementRayBelongsToLayerMask;
     }
 
+
+    public enum TryMoveResult
+    {
+        Success,
+        FrontObstacle,
+        FrontLeftObstacle,
+        FrontLeftRightObstacle
+    }
     
 }

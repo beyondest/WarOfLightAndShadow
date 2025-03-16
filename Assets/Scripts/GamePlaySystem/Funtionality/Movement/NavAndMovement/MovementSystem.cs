@@ -67,8 +67,7 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
         [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
-        [NativeDisableParallelForRestriction]
-        public ComponentLookup<MovableData> MovableLookup;
+        [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableLookup;
         [ReadOnly] public ComponentLookup<BasicAttr> BasicAttrLookup;
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public float WayPointDistanceSq;
@@ -80,9 +79,9 @@ namespace SparFlame.GamePlaySystem.Movement
         private void Execute(
             ref NavAgentComponent navAgent, ref LocalTransform transform, in PhysicsCollider collider,
             Entity entity)
-        { 
+        {
             var refMoveRW = MovableLookup.GetRefRW(entity);
-            var movableData = refMoveRW.ValueRW;
+            ref var movableData = ref refMoveRW.ValueRW;
             navAgent.TargetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
             var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
             var curPos2D = new float2(transform.Position.x, transform.Position.z);
@@ -253,38 +252,39 @@ namespace SparFlame.GamePlaySystem.Movement
 
             if (!shouldMove) return;
             var movePos = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
+            // Move Target towards waypoint
 
-            // Both front, left, right has an obstacle, and current waypoint not arrived, then TryMove will return false
-            var moveSuccess = TryMove(ref transform, ref movableData, ref PhysicsWorld, navAgent, movePos, curPos,
+            var moveResult = TryMove(ref transform, ref movableData, ref PhysicsWorld, navAgent, movePos, curPos,
                 DeltaTime,
                 RotationSpeed,
                 ClickableLayerMask, MovementRayBelongsToLayerMask, out var frontObstacleEntity);
-            Debug.Log($"transform {transform.Position}");
-            if (!moveSuccess)
+            if (moveResult == TryMoveResult.Success) return;
+            // Not Move successfully, and analyze the obstacle 
+            
+            var basicAttr = BasicAttrLookup[frontObstacleEntity];
+            //when focus attack move on a target, while another enemy is on the way, will go into this situation
+            if (basicAttr.FactionTag == FactionTag.Enemy)
             {
-                var basicAttr = BasicAttrLookup[frontObstacleEntity];
-                // when focus attack move on a target, while another enemy is on the way, will go into this situation
-                // if (basicAttr.FactionTag == FactionTag.Enemy)
-                // {
-                //     movableData.OnTheWayTargetEntity = frontObstacleEntity;
-                //     movableData.MovementState = MovementState.MovementPartialComplete;
-                //     navAgent.EnableCalculation = false;
-                //     navAgent.CalculationComplete = false;
-                //     movableData.MovementCommandType = MovementCommandType.None;
-                //     return;
-                // }
-                var frontMovable = MovableLookup[frontObstacleEntity];
-                
-                // if (frontMovable.MovementState == MovementState.IsMoving || frontMovable.MovementState == MovementState.NotMoving) return;
-                // // When is blocked by not moving ally, should transfer the state
-                // movableData.MovementState = frontMovable.MovementState;
-                // navAgent.EnableCalculation = false;
-                // navAgent.CalculationComplete = false;
-                // movableData.MovementCommandType = MovementCommandType.None;
+                movableData.OnTheWayTargetEntity = frontObstacleEntity;
+                movableData.MovementState = MovementState.MovementPartialComplete;
+                navAgent.EnableCalculation = false;
+                navAgent.CalculationComplete = false;
+                movableData.MovementCommandType = MovementCommandType.None;
+                return;
             }
+
+            var frontMovable = MovableLookup[frontObstacleEntity];
+
+            if (frontMovable.MovementState == MovementState.IsMoving) return;
+            // When is blocked by not moving ally, should transfer the state
+            movableData.MovementState = frontMovable.MovementState;
+            navAgent.EnableCalculation = false;
+            navAgent.CalculationComplete = false;
+            movableData.MovementCommandType = MovementCommandType.None;
         }
+
         // [BurstCompile]
-        private static bool TryMove(ref LocalTransform transform, ref MovableData movableData,
+        private static TryMoveResult TryMove(ref LocalTransform transform, ref MovableData movableData,
             ref PhysicsWorldSingleton physicsWorld,
             in NavAgentComponent navAgent,
             in float3 movePos, in float3 curPos, in float deltaTime,
@@ -294,56 +294,57 @@ namespace SparFlame.GamePlaySystem.Movement
             out Entity frontObstacleEntity
         )
         {
+            frontObstacleEntity = Entity.Null;
+            var returnValue = TryMoveResult.Success;
             // Move Target towards waypoint
             var direction = movePos - curPos;
             var shouldRecalculate = false;
             // This line is crucial because math.normalize will return NAN sometimes without this line
             if (math.length(direction) < 0.1f)
             {
-                frontObstacleEntity = Entity.Null;
-                return true;
+                return returnValue;
             }
 
             direction = math.normalize(direction);
             var moveDelta = deltaTime * movableData.MoveSpeed;
-            // Check front, left, right direction, if there are obstacles in three directions, return false
-            // if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
-            //         movementRayBelongsToLayerMask, direction, moveDelta, out var hitEntityFront))
-            // {
-            //     direction = GetLeftOrRight(direction, true);
-            //     if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
-            //             movementRayBelongsToLayerMask, direction, moveDelta,
-            //             out _))
-            //     {
-            //         direction = GetLeftOrRight(direction, false);
-            //         if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
-            //                 movementRayBelongsToLayerMask, direction, moveDelta,
-            //                 out _))
-            //         {
-            //             frontObstacleEntity = hitEntityFront;
-            //             // return false;
-            //         }
-            //         else
-            //         {
-            //             shouldRecalculate = true;
-            //         }
-            //     }
-            //     else
-            //     {
-            //         shouldRecalculate = true;
-            //     }
-            // }
-            
+            //Check front, left, right direction, if there are obstacles in three directions, return false
+            if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
+                    movementRayBelongsToLayerMask, direction, moveDelta, out var hitEntityFront))
+            {
+                direction = GetLeftOrRight(direction, true);
+                returnValue = TryMoveResult.FrontObstacle;
+                frontObstacleEntity = hitEntityFront;
+                if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
+                        movementRayBelongsToLayerMask, direction, moveDelta,
+                        out _))
+                {
+                    direction = GetLeftOrRight(direction, false);
+                    returnValue = TryMoveResult.FrontLeftObstacle;
+                    if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
+                            movementRayBelongsToLayerMask, direction, moveDelta,
+                            out _))
+                    {
+                        returnValue = TryMoveResult.FrontLeftRightObstacle;
+                        return returnValue;
+                    }
+                    else
+                    {
+                        shouldRecalculate = true;
+                    }
+                }
+                else
+                {
+                    shouldRecalculate = true;
+                }
+            }
+
             var targetRotation = quaternion.LookRotationSafe(-direction, math.up());
             transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, deltaTime * rotationSpeed);
             transform.Position += moveDelta * direction;
-            frontObstacleEntity = Entity.Null;
             // Change the path to left and right
-            // if (shouldRecalculate) movableData.ForceCalculate = true;
-            
-            Debug.Log($"Should move to : {transform.Position}");
-            Debug.Log($"Move delta : {moveDelta}");
-            return true;
+            if (shouldRecalculate) movableData.ForceCalculate = true;
+
+            return returnValue;
         }
 
         // [BurstCompile]
@@ -351,7 +352,7 @@ namespace SparFlame.GamePlaySystem.Movement
             float3 curPos, uint clickableLayerMask,
             uint movementRayBelongsToLayerMask, float3 direction, float3 castLength, out Entity entity)
         {
-            var rayOrigin = curPos + direction * colliderRadius + new float3(0, 0.5f, 0);
+            var rayOrigin = curPos + direction * colliderRadius + new float3(0, 0.1f, 0);
             var rayEnd = rayOrigin + direction * castLength;
             var raycastInput = new RaycastInput
             {
@@ -367,7 +368,6 @@ namespace SparFlame.GamePlaySystem.Movement
             if (physicsWorld.PhysicsWorld.CollisionWorld.CastRay(raycastInput, out var raycastHit))
             {
                 entity = physicsWorld.PhysicsWorld.Bodies[raycastHit.RigidBodyIndex].Entity;
-                Debug.Log($"Entity {entity.Index} ");
                 return true;
             }
             else
