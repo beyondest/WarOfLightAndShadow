@@ -6,13 +6,14 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using System.Runtime.CompilerServices;
 using Unity.Physics;
+using UnityEngine;
 
 // ReSharper disable UseIndexFromEndExpression
 
 
 namespace SparFlame.GamePlaySystem.Movement
 {
-    [BurstCompile]
+    // [BurstCompile]
     public partial struct MovementSystem : ISystem
     {
         private BufferLookup<WaypointBuffer> _waypointLookup;
@@ -31,7 +32,7 @@ namespace SparFlame.GamePlaySystem.Movement
             _basicAttrLookup = state.GetComponentLookup<BasicAttr>(true);
         }
 
-        [BurstCompile]
+        // [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
@@ -60,7 +61,7 @@ namespace SparFlame.GamePlaySystem.Movement
     /// <summary>
     /// Move the movable entity to their target. According to the movement command type, will execute different logic
     /// </summary>
-    [BurstCompile]
+    // [BurstCompile]
     [WithAll(typeof(HaveTarget))]
     public partial struct MoveJob : IJobEntity
     {
@@ -254,29 +255,32 @@ namespace SparFlame.GamePlaySystem.Movement
             var movePos = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
 
             // Both front, left, right has an obstacle, and current waypoint not arrived, then TryMove will return false
-            if (!TryMove(ref transform, ref movableData, ref PhysicsWorld, navAgent, movePos, curPos, DeltaTime,
-                    RotationSpeed,
-                    ClickableLayerMask, MovementRayBelongsToLayerMask, out var frontObstacleEntity))
+            var moveSuccess = TryMove(ref transform, ref movableData, ref PhysicsWorld, navAgent, movePos, curPos,
+                DeltaTime,
+                RotationSpeed,
+                ClickableLayerMask, MovementRayBelongsToLayerMask, out var frontObstacleEntity);
+            Debug.Log($"transform {transform.Position}");
+            if (!moveSuccess)
             {
                 var basicAttr = BasicAttrLookup[frontObstacleEntity];
                 // when focus attack move on a target, while another enemy is on the way, will go into this situation
-                if (basicAttr.FactionTag == FactionTag.Enemy)
-                {
-                    movableData.OnTheWayTargetEntity = frontObstacleEntity;
-                    movableData.MovementState = MovementState.MovementPartialComplete;
-                    navAgent.EnableCalculation = false;
-                    navAgent.CalculationComplete = false;
-                    movableData.MovementCommandType = MovementCommandType.None;
-                    return;
-                }
+                // if (basicAttr.FactionTag == FactionTag.Enemy)
+                // {
+                //     movableData.OnTheWayTargetEntity = frontObstacleEntity;
+                //     movableData.MovementState = MovementState.MovementPartialComplete;
+                //     navAgent.EnableCalculation = false;
+                //     navAgent.CalculationComplete = false;
+                //     movableData.MovementCommandType = MovementCommandType.None;
+                //     return;
+                // }
                 var frontMovable = MovableLookup[frontObstacleEntity];
                 
-                if (frontMovable.MovementState == MovementState.IsMoving) return;
-                // When is blocked by not moving ally, should transfer the state
-                movableData.MovementState = frontMovable.MovementState;
-                navAgent.EnableCalculation = false;
-                navAgent.CalculationComplete = false;
-                movableData.MovementCommandType = MovementCommandType.None;
+                // if (frontMovable.MovementState == MovementState.IsMoving || frontMovable.MovementState == MovementState.NotMoving) return;
+                // // When is blocked by not moving ally, should transfer the state
+                // movableData.MovementState = frontMovable.MovementState;
+                // navAgent.EnableCalculation = false;
+                // navAgent.CalculationComplete = false;
+                // movableData.MovementCommandType = MovementCommandType.None;
             }
         }
         // [BurstCompile]
@@ -301,41 +305,44 @@ namespace SparFlame.GamePlaySystem.Movement
             }
 
             direction = math.normalize(direction);
-            var moveDelta = direction * deltaTime * movableData.MoveSpeed;
+            var moveDelta = deltaTime * movableData.MoveSpeed;
             // Check front, left, right direction, if there are obstacles in three directions, return false
-            if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
-                    movementRayBelongsToLayerMask, direction, moveDelta, out var hitEntityFront))
-            {
-                direction = GetLeftOrRight(direction, true);
-                if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
-                        movementRayBelongsToLayerMask, direction, moveDelta,
-                        out _))
-                {
-                    direction = GetLeftOrRight(direction, false);
-                    if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
-                            movementRayBelongsToLayerMask, direction, moveDelta,
-                            out _))
-                    {
-                        frontObstacleEntity = hitEntityFront;
-                        return false;
-                    }
-                    else
-                    {
-                        shouldRecalculate = true;
-                    }
-                }
-                else
-                {
-                    shouldRecalculate = true;
-                }
-            }
-
+            // if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
+            //         movementRayBelongsToLayerMask, direction, moveDelta, out var hitEntityFront))
+            // {
+            //     direction = GetLeftOrRight(direction, true);
+            //     if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
+            //             movementRayBelongsToLayerMask, direction, moveDelta,
+            //             out _))
+            //     {
+            //         direction = GetLeftOrRight(direction, false);
+            //         if (ObstacleInDirection(ref physicsWorld, movableData.ColliderRadius, curPos, clickableLayerMask,
+            //                 movementRayBelongsToLayerMask, direction, moveDelta,
+            //                 out _))
+            //         {
+            //             frontObstacleEntity = hitEntityFront;
+            //             // return false;
+            //         }
+            //         else
+            //         {
+            //             shouldRecalculate = true;
+            //         }
+            //     }
+            //     else
+            //     {
+            //         shouldRecalculate = true;
+            //     }
+            // }
+            
             var targetRotation = quaternion.LookRotationSafe(-direction, math.up());
             transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, deltaTime * rotationSpeed);
-            transform.Position += moveDelta;
+            transform.Position += moveDelta * direction;
             frontObstacleEntity = Entity.Null;
             // Change the path to left and right
-            if (shouldRecalculate) movableData.ForceCalculate = true;
+            // if (shouldRecalculate) movableData.ForceCalculate = true;
+            
+            Debug.Log($"Should move to : {transform.Position}");
+            Debug.Log($"Move delta : {moveDelta}");
             return true;
         }
 
@@ -344,7 +351,7 @@ namespace SparFlame.GamePlaySystem.Movement
             float3 curPos, uint clickableLayerMask,
             uint movementRayBelongsToLayerMask, float3 direction, float3 castLength, out Entity entity)
         {
-            var rayOrigin = curPos + direction * colliderRadius + new float3(0, 0.1f, 0);
+            var rayOrigin = curPos + direction * colliderRadius + new float3(0, 0.5f, 0);
             var rayEnd = rayOrigin + direction * castLength;
             var raycastInput = new RaycastInput
             {
@@ -360,6 +367,7 @@ namespace SparFlame.GamePlaySystem.Movement
             if (physicsWorld.PhysicsWorld.CollisionWorld.CastRay(raycastInput, out var raycastHit))
             {
                 entity = physicsWorld.PhysicsWorld.Bodies[raycastHit.RigidBodyIndex].Entity;
+                Debug.Log($"Entity {entity.Index} ");
                 return true;
             }
             else

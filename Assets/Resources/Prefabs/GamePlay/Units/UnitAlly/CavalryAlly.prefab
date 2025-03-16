@@ -8,6 +8,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1127392488116031041, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1226861216482656651, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1821794169150553466, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: m_VersionIndex
       value: 472
@@ -23,6 +31,10 @@ PrefabInstance:
     - target: {fileID: 3587199606924437896, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: m_Center.y
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3915479467474424272, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4600516659176170958, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -51,6 +63,10 @@ PrefabInstance:
     - target: {fileID: 7989618343521745371, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: m_Name
       value: CavalryAlly
+      objectReference: {fileID: 0}
+    - target: {fileID: 8082537750389500386, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8653307351298315784, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
