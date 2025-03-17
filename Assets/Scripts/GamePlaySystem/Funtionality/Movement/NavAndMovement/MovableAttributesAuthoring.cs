@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
-
+using UnityEngine.AI;
 namespace SparFlame.GamePlaySystem.Movement
 {
     public class MovableAttributesAuthoring : MonoBehaviour
@@ -20,6 +20,12 @@ namespace SparFlame.GamePlaySystem.Movement
                     Debug.LogError("Movable unit must have a Box Collider");
                     return;
                 }
+                if (!authoring.TryGetComponent(out NavMeshAgent agent))
+                {
+                    Debug.Log("Movable unit requires NavMeshAgent component");
+                    return;
+                }
+                
                 var colliderRadius = 0.5f * math.length(new float2(collider.size.x, collider.size.z));
                 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
@@ -33,7 +39,8 @@ namespace SparFlame.GamePlaySystem.Movement
                     CalculationComplete = false,
                     CurrentWaypoint = 0,
                     IsNavQuerySet = false,
-                    ForceCalculate = false
+                    ForceCalculate = false,
+                    AgentId = agent.agentTypeID
                 });
                 
                 AddComponent(entity, new MovableData
@@ -96,6 +103,7 @@ namespace SparFlame.GamePlaySystem.Movement
         public float CalculateInterval;
         public float3 Extents;
         public bool ForceCalculate;
+        public int AgentId;
     }
 
     public struct WaypointBuffer : IBufferElementData

@@ -1,6 +1,5 @@
 ﻿using Unity.Entities;
 using UnityEngine;
-
 namespace SparFlame.GamePlaySystem.Movement
 {
     public class NavAgentSystemAuthoring : MonoBehaviour
@@ -16,11 +15,12 @@ namespace SparFlame.GamePlaySystem.Movement
                  " then the calculation will begin," +
                  "ignored the calculation interval. But this timely calculation will only happen once for one command ")]
         public float realTimeResponseInterval = 0.3f;
-
+        
         private class NavAgentSystemAuthoringBaker : Baker<NavAgentSystemAuthoring>
         {
             public override void Bake(NavAgentSystemAuthoring authoring)
             {
+                
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new NavAgentSystemConfig
                 {

@@ -126,6 +126,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3422276805624679388, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
+      propertyPath: m_AgentTypeID
+      value: -1372625422
+      objectReference: {fileID: 0}
     - target: {fileID: 3633769672874852452, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -145,6 +149,10 @@ PrefabInstance:
     - target: {fileID: 6673981836854908118, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
       propertyPath: m_Layer
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7108501533388707545, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
+      propertyPath: factionTag
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7308605199363001159, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
       propertyPath: m_Layer

@@ -31,7 +31,7 @@ namespace SparFlame.GamePlaySystem.Command
         {
             public EntityCommandBuffer.ParallelWriter ECB;
 
-            private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData, in BasicAttr basicAttr,
+            private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData, in InteractableAttr interactableAttr,
                 Entity entity)
             {
                 if (movableData.MovementState == MovementState.MovementComplete)

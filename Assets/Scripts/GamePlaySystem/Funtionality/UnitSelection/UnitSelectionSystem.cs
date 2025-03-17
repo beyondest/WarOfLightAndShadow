@@ -42,11 +42,11 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                     isDeselectAll = false;  
                     LockSelected(ref state, ref ecb, true);
                 }
-                // Left click on clickable
-                if (clickSystemData.HitEntity != Entity.Null)
+                // Left click on clickable. Clickable layer consists of interactable layer and terrain layer. Interactable layer has basic attr always
+                if (clickSystemData.HitEntity != Entity.Null && state.EntityManager.HasComponent<InteractableAttr>(clickSystemData.HitEntity))
                 {
                     var basicAttributes =
-                        state.EntityManager.GetComponentData<BasicAttr>(clickSystemData.HitEntity);
+                        state.EntityManager.GetComponentData<InteractableAttr>(clickSystemData.HitEntity);
                     if (basicAttributes.BaseTag == BaseTag.Units)
                     {
                         isClickOnValid = true;
@@ -156,7 +156,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             CalculateMinMax(unitSelectionData.ValueRW.SelectionBoxStartPos,
                 unitSelectionData.ValueRW.SelectionBoxEndPos, out float2 min, out float2 max);
 
-            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<BasicAttr>>()
+            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<InteractableAttr>>()
                          .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess())
             {
                 // Inside selection box

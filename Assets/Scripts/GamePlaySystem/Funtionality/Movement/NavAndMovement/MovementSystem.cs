@@ -18,7 +18,7 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         private BufferLookup<WaypointBuffer> _waypointLookup;
         private ComponentLookup<MovableData> _movableLookup;
-        private ComponentLookup<BasicAttr> _basicAttrLookup;
+        private ComponentLookup<InteractableAttr> _basicAttrLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -29,7 +29,7 @@ namespace SparFlame.GamePlaySystem.Movement
             state.RequireForUpdate<MovementConfig>();
             _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
             _movableLookup = state.GetComponentLookup<MovableData>();
-            _basicAttrLookup = state.GetComponentLookup<BasicAttr>(true);
+            _basicAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
         }
 
         // [BurstCompile]
@@ -68,7 +68,7 @@ namespace SparFlame.GamePlaySystem.Movement
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
         [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
         [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableLookup;
-        [ReadOnly] public ComponentLookup<BasicAttr> BasicAttrLookup;
+        [ReadOnly] public ComponentLookup<InteractableAttr> BasicAttrLookup;
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public float WayPointDistanceSq;
         [ReadOnly] public float MarchExtent;
@@ -268,19 +268,18 @@ namespace SparFlame.GamePlaySystem.Movement
                 movableData.OnTheWayTargetEntity = frontObstacleEntity;
                 movableData.MovementState = MovementState.MovementPartialComplete;
                 navAgent.EnableCalculation = false;
-                navAgent.CalculationComplete = false;
+                //navAgent.CalculationComplete = false;
                 movableData.MovementCommandType = MovementCommandType.None;
-                return;
             }
 
-            var frontMovable = MovableLookup[frontObstacleEntity];
-
-            if (frontMovable.MovementState == MovementState.IsMoving) return;
-            // When is blocked by not moving ally, should transfer the state
-            movableData.MovementState = frontMovable.MovementState;
-            navAgent.EnableCalculation = false;
-            navAgent.CalculationComplete = false;
-            movableData.MovementCommandType = MovementCommandType.None;
+            // var frontMovable = MovableLookup[frontObstacleEntity];
+            //
+            // if (frontMovable.MovementState == MovementState.IsMoving) return;
+            // // When is blocked by not moving ally, should transfer the state
+            // movableData.MovementState = frontMovable.MovementState;
+            // navAgent.EnableCalculation = false;
+            // navAgent.CalculationComplete = false;
+            // movableData.MovementCommandType = MovementCommandType.None;
         }
 
         // [BurstCompile]

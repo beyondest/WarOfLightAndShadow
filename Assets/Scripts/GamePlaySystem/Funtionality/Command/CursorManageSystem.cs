@@ -46,8 +46,26 @@ namespace SparFlame.GamePlaySystem.Command
             if (mouseSystemData.HitEntity == Entity.Null)
                 return;
 
-            // Clickable 
-            var basicAttr = SystemAPI.GetComponent<BasicAttr>(mouseSystemData.HitEntity);
+            // Clickable = Interactable Layer + Terrain Layer
+
+            // Hover on terrain
+            if (!SystemAPI.HasComponent<InteractableAttr>(mouseSystemData.HitEntity))
+            {
+                if (unitSelectionData.CurrentSelectCount == 0)
+                {
+                    cursorManageData.ValueRW.LeftCursorType = CursorType.UI;
+                    cursorManageData.ValueRW.RightCursorType = CursorType.None;
+                }
+                else
+                {
+                    cursorManageData.ValueRW.LeftCursorType = CursorType.None;
+                    cursorManageData.ValueRW.RightCursorType = CursorType.March;
+                }
+                return;
+            }
+            
+            // Hover on interactable
+            var basicAttr = SystemAPI.GetComponent<InteractableAttr>(mouseSystemData.HitEntity);
             BuildingAttr buildingAttr = new BuildingAttr
             {
                 State = BuildingState.Idle
@@ -76,13 +94,13 @@ namespace SparFlame.GamePlaySystem.Command
         
         private static void CheckMouseHovering(ref RefRW<CursorData> cursorManageData,
             in UnitSelectionData unitSelectionData,
-            in BasicAttr basicAttr, in BuildingAttr buildingAttr, in ResourceAttr resourceAttr)
+            in InteractableAttr interactableAttr, in BuildingAttr buildingAttr, in ResourceAttr resourceAttr)
         {
             // None unit selected
             if (unitSelectionData.CurrentSelectCount == 0)
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (TeamTag: basicAttr.FactionTag, basicAttr.BaseTag) switch
+                    (TeamTag: interactableAttr.FactionTag, interactableAttr.BaseTag) switch
                     {
                         (FactionTag.Neutral, BaseTag.Resources) => (CursorType.CheckInfo, CursorType.None),
                         (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.None),
@@ -98,11 +116,10 @@ namespace SparFlame.GamePlaySystem.Command
             else
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (TeamTag: basicAttr.FactionTag, basicAttr.BaseTag) switch
+                    (TeamTag: interactableAttr.FactionTag, interactableAttr.BaseTag) switch
                     {
                         (FactionTag.Neutral, BaseTag.Resources) when resourceAttr.State == ResourceState.Available => (
                             CursorType.CheckInfo, CursorType.Harvest),
-                        (FactionTag.Neutral, BaseTag.Walkable) => (CursorType.None, CursorType.March),
                         (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.Heal),
                         (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
                             CursorType.Gather, CursorType.Garrison),

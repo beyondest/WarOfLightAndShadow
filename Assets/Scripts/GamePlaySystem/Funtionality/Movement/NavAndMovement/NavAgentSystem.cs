@@ -137,22 +137,23 @@ namespace SparFlame.GamePlaySystem.Movement
                 ECB.SetComponent(Entity, NavAgent);
                 var toPosition = NavAgent.TargetPosition;
 
-                var fromLocation = Query.MapLocation(FromPosition, Extents, 0);
-                var toLocation = Query.MapLocation(toPosition, Extents, 0);
-                
+                var fromLocation = Query.MapLocation(FromPosition, Extents, NavAgent.AgentId);
+                var toLocation = Query.MapLocation(toPosition, Extents, NavAgent.AgentId);
                 if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
+                Debug.Log($"is valid ");
+
                 var status = Query.BeginFindPath(fromLocation, toLocation);
-                // Original code : if (!(status == PathQueryStatus.InProgress | status == PathQueryStatus.Success)) return;
-                // According to API, this will only return InProgress or Failure. 
+                
                 // Notice : If target is not reachable, and extents is also not reachable, it will return Failure this step
                 // The status only return one main status binding with a detailed status
                 // Main Status : InProgress, Success, Failure
                 if(status is not (PathQueryStatus.InProgress or PathQueryStatus.Success) )return;
-                
+                Debug.Log("Begin Find Path");
                 status = Query.UpdateFindPath(Iterations, out _);
                 
-                //Original code : if(status != PathQueryStatus.Success) return;
                 if ((status & PathQueryStatus.Success) == 0) return;
+                Debug.Log("Find success");
+                
                 Query.EndFindPath(out var pathSize);
 
                 var result =
@@ -199,6 +200,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     NavAgent.CurrentWaypoint = 0;
                     NavAgent.CalculationComplete = true;
                     ECB.SetComponent(Entity, NavAgent);
+                    Debug.Log("Strait Path success");
                 }
 
                 straightPathFlag.Dispose();

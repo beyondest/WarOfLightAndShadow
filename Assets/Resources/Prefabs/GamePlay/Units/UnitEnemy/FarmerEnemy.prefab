@@ -78,6 +78,10 @@ PrefabInstance:
       propertyPath: m_VersionIndex
       value: 442
       objectReference: {fileID: 0}
+    - target: {fileID: 4293561121413560513, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: factionTag
+      value: -2
+      objectReference: {fileID: 0}
     - target: {fileID: 5471071548562914582, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -141,6 +145,10 @@ PrefabInstance:
     - target: {fileID: 7958745273267865675, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: m_VersionIndex
       value: 442
+      objectReference: {fileID: 0}
+    - target: {fileID: 8524731299559974340, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_AgentTypeID
+      value: -334000983
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

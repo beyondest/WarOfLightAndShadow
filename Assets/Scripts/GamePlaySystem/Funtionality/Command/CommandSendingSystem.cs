@@ -46,7 +46,7 @@ namespace SparFlame.GamePlaySystem.Command
                 case CursorType.Attack:
                 {
                     float2 targetColliderXz;
-                    var basicAttr = SystemAPI.GetComponent<BasicAttr>(mouseData.HitEntity);
+                    var basicAttr = SystemAPI.GetComponent<InteractableAttr>(mouseData.HitEntity);
                     var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
                     if (basicAttr.BaseTag == BaseTag.Buildings)
                     {
@@ -128,14 +128,6 @@ namespace SparFlame.GamePlaySystem.Command
                 default:
                     return;
             }
-            
-            
-            
-        }
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
         }
     }
 
@@ -150,7 +142,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float2 TargetColliderShapeXz;
         [ReadOnly] public float3 TargetCenterPos;
 
-        private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData, in BasicAttr basicAttr, in UnitAttr unitAttr,
+        private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData, in InteractableAttr interactableAttr, in UnitAttr unitAttr,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.Interactive;
@@ -171,7 +163,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float3 TargetCenterPos;
 
 
-        private void Execute([ChunkIndexInQuery] int index,ref MovableData movableData, in BasicAttr basicAttr, in UnitAttr unitAttr,
+        private void Execute([ChunkIndexInQuery] int index,ref MovableData movableData, in InteractableAttr interactableAttr, in UnitAttr unitAttr,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.March;
@@ -190,7 +182,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float2 TargetColliderShapeXz;
         [ReadOnly] public float3 TargetCenterPos;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData, in BasicAttr basicAttr, in UnitAttr unitAttr,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData, in InteractableAttr interactableAttr, in UnitAttr unitAttr,
             in HealingAbility healingAbility,
             Entity entity)
         {
@@ -212,7 +204,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float2 TargetColliderShapeXz;
         [ReadOnly] public float3 TargetCenterPos;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData, in BasicAttr basicAttr, in UnitAttr unitAttr,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData, in InteractableAttr interactableAttr, in UnitAttr unitAttr,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
@@ -235,7 +227,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float3 TargetCenterPos;
         [ReadOnly] public float BuildingInteractiveRangeSq;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData, in BasicAttr basicAttr, in UnitAttr unitAttr,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData, in InteractableAttr interactableAttr, in UnitAttr unitAttr,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.Interactive;

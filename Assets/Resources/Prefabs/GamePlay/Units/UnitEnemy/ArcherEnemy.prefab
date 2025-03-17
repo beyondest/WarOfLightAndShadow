@@ -60,6 +60,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3422276805624679388, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
+      propertyPath: m_AgentTypeID
+      value: -334000983
+      objectReference: {fileID: 0}
     - target: {fileID: 3633769672874852452, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -76,6 +80,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: d5d745c18a6fdaa418a2225c499f36be, type: 2}
+    - target: {fileID: 7108501533388707545, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
+      propertyPath: factionTag
+      value: -2
+      objectReference: {fileID: 0}
     - target: {fileID: 8322789479150254204, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
       propertyPath: m_VersionIndex
       value: 454

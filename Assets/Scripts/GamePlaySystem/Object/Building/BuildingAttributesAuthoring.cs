@@ -5,6 +5,8 @@ namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingAttributesAuthoring : MonoBehaviour
     {
+        public float interactRange;
+        public Tier tier = Tier.Tier1;
         private class BuildingAttributesAuthoringBaker : Baker<BuildingAttributesAuthoring>
         {
             public override void Bake(BuildingAttributesAuthoring authoring)
@@ -15,8 +17,9 @@ namespace SparFlame.GamePlaySystem.Building
                 {
                     State = BuildingState.Constructing,
                     BoxColliderSize = boxCollider.size,
+                    InteractRange = authoring.interactRange,
+                    Tier = authoring.tier,
                 });
-
             }
         }
     }
@@ -26,12 +29,15 @@ namespace SparFlame.GamePlaySystem.Building
         Constructed,
         Producing,
         Produced,
-        Idle
+        Idle,
+        UnderAttack
     }
     
     public struct BuildingAttr : IComponentData
     {
         public BuildingState State;
         public float3 BoxColliderSize;
+        public float InteractRange;
+        public Tier Tier;
     }
 }
