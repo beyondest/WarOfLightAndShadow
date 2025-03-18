@@ -76,5 +76,6 @@ namespace SparFlame.GamePlaySystem.Mouse
         public Entity HitEntity;
         public float3 HitPosition;
         public float3 MousePosition;
+        public bool Focus;
     }
 }

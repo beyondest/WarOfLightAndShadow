@@ -53,15 +53,19 @@ namespace SparFlame.GamePlaySystem.Movement
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
-                    ColliderRadius = colliderRadius
+                    SelfColliderRadius = colliderRadius
                 });
+                AddComponent(entity, new Surroundings
+                {
+                    MoveResult = TryMoveResult.Success,
+                    FrontEntity = Entity.Null,
+                    LeftEntity = Entity.Null,
+                    RightEntity = Entity.Null,
+                });
+                
                 AddBuffer<WaypointBuffer>(entity);
-                AddComponent<HaveTarget>(entity);
-                SetComponentEnabled<HaveTarget>(entity, false);
-       
-                
-                
-                
+                AddComponent<MovingStateTag>(entity);
+                SetComponentEnabled<MovingStateTag>(entity, false);
             }
         }
     }
@@ -87,11 +91,19 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// This is the collider of object itself, used for raycast for obstacle avoidance 
         /// </summary>
-        public float ColliderRadius;
-        public Entity OnTheWayTargetEntity;
-
+        public float SelfColliderRadius;
     }
-        
+
+    public struct Surroundings : IComponentData
+    {
+        public TryMoveResult MoveResult;
+        public Entity FrontEntity;
+        public Entity LeftEntity;
+        public Entity RightEntity;
+        public int CompromiseTimes;
+        public float3 FrontDirection;
+    }
+    
     public struct NavAgentComponent : IComponentData
     {
         public bool EnableCalculation;
@@ -113,7 +125,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
 
 
-    public struct HaveTarget : IComponentData, IEnableableComponent
+    public struct MovingStateTag : IComponentData, IEnableableComponent
     {
         
     }
@@ -130,7 +142,6 @@ namespace SparFlame.GamePlaySystem.Movement
 
     public enum MovementState
     {
-        
         NotMoving ,
         /// <summary>
         /// Is moving 
@@ -143,7 +154,7 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// Only reach the closest point , cause target not reachable
         /// </summary>
-        MovementPartialComplete
+        MovementPartialComplete,
     }
 
     public enum DetailInfo
@@ -154,8 +165,8 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// Calculation not complete or fail will return this
         /// </summary>
-        CalculationNotComplete
+        CalculationNotComplete,
+        AutoGiveWay,
+        Stuck
     }
-
-    
 }

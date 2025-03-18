@@ -4,32 +4,33 @@ using Unity.Entities;
 using Unity.Transforms;
 using Unity.Collections;
 using UnityEngine;
-using static Unity.Entities.SystemAPI;
 
 namespace SparFlame.GamePlaySystem.Animation
 {
     public partial struct SingleClipPlayerSystem : ISystem
     {
         private BufferLookup<AnimationEventRequest> _bufferLookup;
-        private float _lastEt;
 
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<AnimationPlayData>();
+
             _bufferLookup = state.GetBufferLookup<AnimationEventRequest>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
             _bufferLookup.Update(ref state);
+            var data = SystemAPI.GetSingletonRW<AnimationPlayData>();
             // var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var curTime = (float)SystemAPI.Time.ElapsedTime;
             new ExposedJob
                 {
-                    ClipLookup = GetComponentLookup<SingleClip>(true),
+                    ClipLookup = SystemAPI.GetComponentLookup<SingleClip>(true),
                     Et = curTime,
-                    LastEt = _lastEt,
+                    LastEt = data.ValueRW.LastEt,
                     BufferLookup = _bufferLookup
                 }
                 .ScheduleParallel();
@@ -38,7 +39,7 @@ namespace SparFlame.GamePlaySystem.Animation
             {
                 Et = curTime,
             }.ScheduleParallel();
-            _lastEt = curTime;
+            data.ValueRW.LastEt = curTime;
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }

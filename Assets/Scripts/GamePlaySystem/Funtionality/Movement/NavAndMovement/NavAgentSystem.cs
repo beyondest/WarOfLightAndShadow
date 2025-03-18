@@ -22,7 +22,6 @@ namespace SparFlame.GamePlaySystem.Movement
         private BufferLookup<WaypointBuffer> _waypointLookup;
         private NativeArray<Entity> _entities;
         private NativeList<NavMeshQuery> _navMeshQueries;
-        private const int PathNodePoolSize = 1000;
 
 
         [BurstCompile]
@@ -34,7 +33,9 @@ namespace SparFlame.GamePlaySystem.Movement
             _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
             _navMeshQueries = new NativeList<NavMeshQuery>(Allocator.Persistent);
         }
-
+        
+        
+        // TODO Change to Parallel code
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -63,7 +64,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 if (!navAgents[i].IsNavQuerySet)
                 {
                     var navAgent = navAgents[i];
-                    _navMeshQueries.Add(new NavMeshQuery(_navMeshWorld, Allocator.Persistent, PathNodePoolSize));
+                    _navMeshQueries.Add(new NavMeshQuery(_navMeshWorld, Allocator.Persistent, config.PathNodePoolSize));
                     navAgent.IsNavQuerySet = true;
                     navAgents[i] = navAgent;
                 }
@@ -140,19 +141,16 @@ namespace SparFlame.GamePlaySystem.Movement
                 var fromLocation = Query.MapLocation(FromPosition, Extents, NavAgent.AgentId);
                 var toLocation = Query.MapLocation(toPosition, Extents, NavAgent.AgentId);
                 if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
-                Debug.Log($"is valid ");
-
+                
                 var status = Query.BeginFindPath(fromLocation, toLocation);
                 
                 // Notice : If target is not reachable, and extents is also not reachable, it will return Failure this step
                 // The status only return one main status binding with a detailed status
                 // Main Status : InProgress, Success, Failure
                 if(status is not (PathQueryStatus.InProgress or PathQueryStatus.Success) )return;
-                Debug.Log("Begin Find Path");
                 status = Query.UpdateFindPath(Iterations, out _);
                 
                 if ((status & PathQueryStatus.Success) == 0) return;
-                Debug.Log("Find success");
                 
                 Query.EndFindPath(out var pathSize);
 
@@ -200,7 +198,6 @@ namespace SparFlame.GamePlaySystem.Movement
                     NavAgent.CurrentWaypoint = 0;
                     NavAgent.CalculationComplete = true;
                     ECB.SetComponent(Entity, NavAgent);
-                    Debug.Log("Strait Path success");
                 }
 
                 straightPathFlag.Dispose();

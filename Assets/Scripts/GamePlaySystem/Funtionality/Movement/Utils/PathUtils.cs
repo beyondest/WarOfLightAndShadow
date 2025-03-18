@@ -17,6 +17,7 @@
 //
 
 // The original source code has been modified by Unity Technologies.
+// The original source code has been modified by SparFlame
 
 using System;
 using Unity.Collections;

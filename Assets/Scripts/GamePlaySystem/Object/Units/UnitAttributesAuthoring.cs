@@ -92,5 +92,7 @@ namespace SparFlame.GamePlaySystem.Units
         public float HarvestingSpeed ;
         public int HarvestingCount ;
     }
+
+
     
 }

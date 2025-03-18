@@ -26,11 +26,10 @@ namespace SparFlame.GamePlaySystem.Command
         
         
         [BurstCompile]
-        [WithAll(typeof(HaveTarget))]
+        [WithAll(typeof(MovingStateTag))]
         public partial struct MovementRecJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-
             private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData, in InteractableAttr interactableAttr,
                 Entity entity)
             {
