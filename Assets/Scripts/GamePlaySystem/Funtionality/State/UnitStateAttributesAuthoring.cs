@@ -19,7 +19,7 @@ namespace SparFlame.GamePlaySystem.State
                 });
                 AddComponent<IdleStateTag>(entity);
                 SetComponentEnabled<IdleStateTag>(entity,true);
-                
+                AddBuffer<TargetList>(entity);
             }
         }
     }
@@ -37,7 +37,10 @@ namespace SparFlame.GamePlaySystem.State
         
     }
 
-    
+    public struct TargetList : IBufferElementData
+    {
+        public Entity Target;
+    }
     
     
 }

@@ -2,6 +2,7 @@
 using Unity.Entities;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Mouse;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
@@ -57,7 +58,7 @@ namespace SparFlame.GamePlaySystem.Command
                     }
                     else if (interactableAttr.BaseTag == BaseTag.Units)
                     {
-                        var unitAttr = SystemAPI.GetComponent<UnitAttr>(mouseData.HitEntity);
+                        var unitAttr = SystemAPI.GetComponent<UnitBasicAttr>(mouseData.HitEntity);
                         targetColliderXz = new float2(unitAttr.BoxColliderSize.x, unitAttr.BoxColliderSize.z);
                     }
                     else
@@ -111,7 +112,7 @@ namespace SparFlame.GamePlaySystem.Command
                 
                 case CursorType.Heal:
                 {
-                    var unitAttr = SystemAPI.GetComponent<UnitAttr>(mouseData.HitEntity);
+                    var unitAttr = SystemAPI.GetComponent<UnitBasicAttr>(mouseData.HitEntity);
                     var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
                     new MovementHealJob
                     {
@@ -155,14 +156,14 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr, 
-            in UnitAttr unitAttr,
+            in UnitBasicAttr unitBasicAttr, in AttackAbility attackAbility,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.Interactive;
             movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
-            movableData.InteractiveRangeSq = unitAttr.AttackRangeSq;
+            movableData.InteractiveRangeSq = attackAbility.AttackRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
             movableData.ForceCalculate = true;
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
@@ -180,12 +181,12 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float3 TargetCenterPos;
         [ReadOnly] public bool Focus;
 
-        private void Execute([ChunkIndexInQuery] int index,ref MovableData movableData,ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr, in UnitAttr unitAttr,
+        private void Execute([ChunkIndexInQuery] int index,ref MovableData movableData,ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.March;
             movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
             movableData.ForceCalculate = true;
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
@@ -206,7 +207,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData,
-            in InteractableAttr interactableAttr, in UnitAttr unitAttr,
+            in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             in HealingAbility healingAbility,
             Entity entity)
         {
@@ -214,7 +215,7 @@ namespace SparFlame.GamePlaySystem.Command
             movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
             movableData.InteractiveRangeSq = healingAbility.HealingRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
             movableData.ForceCalculate = false;
             
             unitBasicStateData.TargetState = UnitState.Moving;
@@ -236,15 +237,15 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData,
-            in InteractableAttr interactableAttr, in UnitAttr unitAttr,
+            in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.Interactive;
             movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
-            movableData.InteractiveRangeSq = harvestAbility.HarvestingRangeSq;
+            movableData.InteractiveRangeSq = harvestAbility.HarvestRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
             movableData.ForceCalculate = false;
             
             unitBasicStateData.TargetState = UnitState.Moving;
@@ -267,14 +268,14 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData,
-            in InteractableAttr interactableAttr, in UnitAttr unitAttr,
+            in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             Entity entity)
         {
             movableData.MovementCommandType = MovementCommandType.Interactive;
             movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
             movableData.InteractiveRangeSq = BuildingInteractiveRangeSq;
             movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitAttr.MoveSpeed;
+            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
             movableData.ForceCalculate = false;
             
             unitBasicStateData.TargetState = UnitState.Moving;
