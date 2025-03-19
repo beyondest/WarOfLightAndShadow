@@ -13,7 +13,7 @@ using SparFlame.GamePlaySystem.General;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
-    // [BurstCompile]
+    [BurstCompile]
     public partial struct MovementSystem : ISystem
     {
         private BufferLookup<WaypointBuffer> _waypointLookup;
@@ -28,7 +28,7 @@ namespace SparFlame.GamePlaySystem.Movement
             _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
         }
 
-        // [BurstCompile]
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
@@ -53,7 +53,7 @@ namespace SparFlame.GamePlaySystem.Movement
     /// <summary>
     /// Move the movable entity to their target. According to the movement command type, will execute different logic
     /// </summary>
-    // [BurstCompile]
+    [BurstCompile]
     [WithAll(typeof(MovingStateTag))]
     public partial struct MoveJob : IJobEntity
     {
@@ -74,7 +74,7 @@ namespace SparFlame.GamePlaySystem.Movement
             navAgent.TargetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
             var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
             var curPos2D = new float2(transform.Position.x, transform.Position.z);
-            var curPos = new float3(transform.Position.x, 0f, transform.Position.z);
+            var curPosY0 = new float3(transform.Position.x, 0f, transform.Position.z);
             var interactiveRangeSq = movableData.InteractiveRangeSq;
             var shouldMove = false;
 
@@ -105,10 +105,12 @@ namespace SparFlame.GamePlaySystem.Movement
                     {
                         // Enable Calculation
                         navAgent.EnableCalculation = true;
+                        // First time command come
                         if (movableData.ForceCalculate)
                         {
                             navAgent.ForceCalculate = true;
                             movableData.ForceCalculate = false;
+                            MovementUtils.ResetSurroundings(ref surroundings);
                         }
 
                         // Calculation Complete
@@ -135,7 +137,7 @@ namespace SparFlame.GamePlaySystem.Movement
                             else
                             {
                                 if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length &&
-                                    math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPos) <
+                                    math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPosY0) <
                                     WayPointDistanceSq)
                                 {
                                     navAgent.CurrentWaypoint += 1;
@@ -176,6 +178,7 @@ namespace SparFlame.GamePlaySystem.Movement
                         {
                             navAgent.ForceCalculate = true;
                             movableData.ForceCalculate = false;
+                            MovementUtils.ResetSurroundings(ref surroundings);
                         }
 
                         // Calculation complete
@@ -201,7 +204,7 @@ namespace SparFlame.GamePlaySystem.Movement
                             else
                             {
                                 if (navAgent.CurrentWaypoint + 1 < waypointBuffer.Length &&
-                                    math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPos) <
+                                    math.distancesq(waypointBuffer[navAgent.CurrentWaypoint].WayPoint, curPosY0) <
                                     WayPointDistanceSq)
                                 {
                                     navAgent.CurrentWaypoint += 1;
@@ -232,105 +235,115 @@ namespace SparFlame.GamePlaySystem.Movement
             }
 
             if (!shouldMove) return;
-            
-            var movePos = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
-            var direction = movePos - curPos;
-            var moveResult = TryMoveResult.Success;
-            
+
+            var movePosY0 = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
+            var idealDirection = movePosY0 - curPosY0;
+            surroundings.MoveSuccess = true;
             // If < 0.1f normalize will fail
-            if (math.length(direction) > 0.1f)
+            if (math.length(idealDirection) > 0.1f)
             {
-                direction = math.normalize(direction);
-                // Try To Move Target towards waypoint, if failed, try 3 directions
-                 moveResult = TryMove(ref transform, ref movableData, navAgent,in direction, curPos,
-                    out var frontObstacleEntity,
-                    out var leftObstacleEntity,
-                    out var rightObstacleEntity);
-                 surroundings.FrontEntity = frontObstacleEntity;
-                 surroundings.LeftEntity = leftObstacleEntity;
-                 surroundings.RightEntity = rightObstacleEntity;
-                 surroundings.FrontDirection = direction;
+                idealDirection = math.normalize(idealDirection);
+                // Try To Move Target towards waypoint. Only success if front is void
+                surroundings.MoveSuccess = TryMove(ref transform, ref movableData,ref surroundings, 
+                    navAgent, in idealDirection, curPosY0
+                    );
+                surroundings.IdealDirection = idealDirection;
             }
-            surroundings.MoveResult = moveResult;
             // Count the times it chooses another way
-            if (moveResult != TryMoveResult.Success)
+            if (!surroundings.MoveSuccess)
             {
                 surroundings.CompromiseTimes += 1;
-            }
-            else
-            {
-                surroundings.CompromiseTimes = 0;
-            }
-
-            // Try move failed in 3 directions
-            if (moveResult == TryMoveResult.FrontLeftRightObstacle)
-            {
                 movableData.MovementState = MovementState.NotMoving;
                 movableData.DetailInfo = DetailInfo.Stuck;
             }
-
-            
+            else
+            {
+                MovementUtils.ResetSurroundings(ref surroundings);
+            }
         }
-
-
-        // [BurstCompile]
-        private TryMoveResult TryMove(ref LocalTransform transform, ref MovableData movableData,
+        [BurstCompile]
+        private bool TryMove(ref LocalTransform transform, ref MovableData movableData,
+            ref Surroundings surroundings,
             in NavAgentComponent navAgent,
-            in float3 direction, in float3 curPos,
-            out Entity frontObstacleEntity,
-            out Entity leftObstacleEntity,
-            out Entity rightObstacleEntity
+            in float3 idealFront, in float3 curPosY0
         )
         {
-            frontObstacleEntity = Entity.Null;
-            leftObstacleEntity = Entity.Null;
-            rightObstacleEntity = Entity.Null;
-            var tryMoveResult = TryMoveResult.Success;
-            var dir = direction;
-            // Move Target towards waypoint
-            var shouldRecalculate = false;
-            // This line is crucial because math.normalize will return NAN sometimes without this line
-            var moveDelta = DeltaTime * movableData.MoveSpeed;
-            //Check front, left, right direction, if there are obstacles in three directions, return false
-            if (MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderRadius, curPos,
-                    ClickableLayerMask,
-                    MovementRayBelongsToLayerMask, dir, moveDelta, out frontObstacleEntity))
+            var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
+            var left = MovementUtils.GetLeftOrRight(realFront, true);
+            var right = MovementUtils.GetLeftOrRight(realFront, false);
+            var moveLength = DeltaTime * movableData.MoveSpeed;
+            // If speed too slow, front overlap may adjust too much and unit will go in circle
+            if (moveLength < 0.03) moveLength = 0.03f;
+            
+            var head = curPosY0 + realFront * movableData.SelfColliderShapeXz.y * 0.51f;
+            var tail = curPosY0 - realFront * movableData.SelfColliderShapeXz.y * 0.51f;
+            var frontObstacle = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.y,
+                curPosY0,
+                ClickableLayerMask, MovementRayBelongsToLayerMask,
+                realFront,
+                moveLength,
+                out surroundings.FrontEntity);
+
+            var leftOverlap = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                head,
+                ClickableLayerMask,
+                MovementRayBelongsToLayerMask,
+                left,
+                movableData.SelfColliderShapeXz.x * 0.1f, out surroundings.LeftEntity);
+            var rightOverlap = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                head,
+                ClickableLayerMask,
+                MovementRayBelongsToLayerMask,
+                right,
+                movableData.SelfColliderShapeXz.x * 0.1f, out surroundings.RightEntity);
+            
+            var leftTailOverlap = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                tail,
+                ClickableLayerMask,
+                MovementRayBelongsToLayerMask,
+                left,
+                movableData.SelfColliderShapeXz.x * 0.1f, out surroundings.LeftTailEntity);
+            var rightTailOverlap = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                tail,
+                ClickableLayerMask,
+                MovementRayBelongsToLayerMask,
+                right,
+                movableData.SelfColliderShapeXz.x * 0.1f, out surroundings.RightTailEntity);
+            
+            
+
+            if (frontObstacle)
             {
-                dir = MovementUtils.GetLeftOrRight(dir, true);
-                tryMoveResult = TryMoveResult.FrontObstacle;
-                if (MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderRadius, curPos,
-                        ClickableLayerMask,
-                        MovementRayBelongsToLayerMask, dir, moveDelta,
-                        out leftObstacleEntity))
+                // Check front overlap
+                if (MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.y,
+                        curPosY0,
+                        ClickableLayerMask, MovementRayBelongsToLayerMask,
+                        realFront,
+                        0.03f, out _))
                 {
-                    dir = MovementUtils.GetLeftOrRight(dir, false);
-                    tryMoveResult = TryMoveResult.FrontLeftObstacle;
-                    if (MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderRadius,
-                            curPos, ClickableLayerMask,
-                            MovementRayBelongsToLayerMask, dir, moveDelta,
-                            out rightObstacleEntity))
-                    {
-                        tryMoveResult = TryMoveResult.FrontLeftRightObstacle;
-                        return tryMoveResult;
-                    }
-                    else
-                    {
-                        shouldRecalculate = true;
-                    }
-                }
-                else
-                {
-                    shouldRecalculate = true;
+                    transform.Position -= realFront * 0.2f * moveLength;
                 }
             }
 
-            var targetRotation = quaternion.LookRotationSafe(-dir, math.up());
-            transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * RotationSpeed);
-            transform.Position += moveDelta * dir;
-            // Change the path to left and right
-            if (shouldRecalculate) movableData.ForceCalculate = true;
+            if (leftOverlap && !rightOverlap)
+            {
+                transform.Position -= left * 0.1f * movableData.SelfColliderShapeXz.x;
+            }
 
-            return tryMoveResult;
+            if (rightOverlap && !leftOverlap)
+            {
+                transform.Position -= right * 0.1f * movableData.SelfColliderShapeXz.x;
+            }
+            
+            var targetRotation = quaternion.LookRotationSafe(-idealFront, math.up());
+            transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * RotationSpeed);
+            if (!frontObstacle)
+            {
+                transform.Position += moveLength * idealFront;
+                return true;
+            }
+
+            return false;
         }
 
 

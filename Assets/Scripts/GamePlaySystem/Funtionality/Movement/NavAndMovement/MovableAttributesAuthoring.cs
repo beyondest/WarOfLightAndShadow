@@ -1,7 +1,11 @@
-﻿using UnityEngine;
+﻿using System;
+using Unity.Collections;
+using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.AI;
+using UnityEngine.Experimental.AI;
+
 namespace SparFlame.GamePlaySystem.Movement
 {
     public class MovableAttributesAuthoring : MonoBehaviour
@@ -26,7 +30,6 @@ namespace SparFlame.GamePlaySystem.Movement
                     return;
                 }
                 
-                var colliderRadius = 0.5f * math.length(new float2(collider.size.x, collider.size.z));
                 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 
@@ -53,11 +56,11 @@ namespace SparFlame.GamePlaySystem.Movement
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
-                    SelfColliderRadius = colliderRadius
+                    SelfColliderShapeXz = new float2(collider.size.x, collider.size.z),
                 });
                 AddComponent(entity, new Surroundings
                 {
-                    MoveResult = TryMoveResult.Success,
+                    MoveSuccess = true,
                     FrontEntity = Entity.Null,
                     LeftEntity = Entity.Null,
                     RightEntity = Entity.Null,
@@ -66,6 +69,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 AddBuffer<WaypointBuffer>(entity);
                 AddComponent<MovingStateTag>(entity);
                 SetComponentEnabled<MovingStateTag>(entity, false);
+               
             }
         }
     }
@@ -91,17 +95,21 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// This is the collider of object itself, used for raycast for obstacle avoidance 
         /// </summary>
-        public float SelfColliderRadius;
+        public float2 SelfColliderShapeXz;
     }
 
     public struct Surroundings : IComponentData
     {
-        public TryMoveResult MoveResult;
+        public bool MoveSuccess;
         public Entity FrontEntity;
         public Entity LeftEntity;
         public Entity RightEntity;
+        public Entity LeftTailEntity;
+        public Entity RightTailEntity;
         public int CompromiseTimes;
-        public float3 FrontDirection;
+        public float3 IdealDirection;
+        public bool ChooseRight;
+        public int SlideTimes;
     }
     
     public struct NavAgentComponent : IComponentData
@@ -116,6 +124,7 @@ namespace SparFlame.GamePlaySystem.Movement
         public float3 Extents;
         public bool ForceCalculate;
         public int AgentId;
+        public int QueryIndex;
     }
 
     public struct WaypointBuffer : IBufferElementData
@@ -129,6 +138,8 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         
     }
+    
+
     
     public enum MovementCommandType
     {
@@ -169,4 +180,6 @@ namespace SparFlame.GamePlaySystem.Movement
         AutoGiveWay,
         Stuck
     }
+
+
 }

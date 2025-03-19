@@ -10,6 +10,7 @@ namespace SparFlame.GamePlaySystem.State
     {
         public static void SwitchState(ref UnitBasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb, Entity entity,int index)
         {
+            if(stateData.TargetState == stateData.CurState)return;
             switch (stateData.TargetState)
             {
                 case UnitState.Idle:

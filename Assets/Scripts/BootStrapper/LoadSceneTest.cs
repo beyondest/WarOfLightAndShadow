@@ -15,10 +15,10 @@ namespace SparFlame.BootStrapper
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.L))
-                SceneController.instance.LoadSceneGroup("0",_progress);
-            if(Input.GetKeyDown(KeyCode.U))
-                SceneController.instance.UnloadSceneGroup("0");
+            // if (Input.GetKeyDown(KeyCode.L))
+            //     SceneController.instance.LoadSceneGroup("0",_progress);
+            // if(Input.GetKeyDown(KeyCode.U))
+            //     SceneController.instance.UnloadSceneGroup("0");
 
         }
         

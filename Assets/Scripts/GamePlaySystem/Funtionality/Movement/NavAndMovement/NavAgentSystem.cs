@@ -43,7 +43,9 @@ namespace SparFlame.GamePlaySystem.Movement
 
             var entityQuery = SystemAPI.QueryBuilder()
                 .WithAll<NavAgentComponent>()
+                .WithAll<MovingStateTag>()
                 .WithAll<LocalTransform>().Build();
+            if(entityQuery.IsEmpty)return;
             _entities = entityQuery.ToEntityArray(Allocator.TempJob);
             var ecbs = new NativeArray<EntityCommandBuffer>(_entities.Length, Allocator.TempJob);
             for (var i = 0; i < _entities.Length; i++)

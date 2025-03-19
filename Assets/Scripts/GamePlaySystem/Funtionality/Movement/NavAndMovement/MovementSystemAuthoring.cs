@@ -42,12 +42,6 @@ namespace SparFlame.GamePlaySystem.Movement
     }
 
 
-    public enum TryMoveResult
-    {
-        Success,
-        FrontObstacle,
-        FrontLeftObstacle,
-        FrontLeftRightObstacle
-    }
+    
     
 }

@@ -9,6 +9,7 @@ using SparFlame.GamePlaySystem.UnitSelection;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
+    [BurstCompile]
     [UpdateAfter(typeof(MovementSystem))]
     public partial struct AutoGiveWaySystem : ISystem
     {
@@ -97,9 +98,13 @@ namespace SparFlame.GamePlaySystem.Movement
                 if (data is { ElapsedTime: 0, IfGoBack: false })
                 {
                     // Detect if it can give way. Can only give way when front is nothing or front is unselected ally unit
-                    if (MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderRadius,
+                    if (MovementUtils.ObstacleInDirection(ref PhysicsWorld, 
+                            math.max(movableData.SelfColliderShapeXz.x, movableData.SelfColliderShapeXz.y),
                             transform.Position,
-                            ObstacleLayerMask, DetectRayBelongsTo, direction, moveDelta, out var hitEntity))
+                            ObstacleLayerMask,
+                            DetectRayBelongsTo, 
+                            direction,
+                            moveDelta, out var hitEntity))
                     {
                         // Try pass data to unselected ally unit in the way
                         if (InteractAttrLookup.TryGetComponent(hitEntity, out var interactableAttr)
@@ -123,6 +128,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     // Enter auto give way mode
                     movableData.MovementState = MovementState.IsMoving;
                     movableData.DetailInfo = DetailInfo.AutoGiveWay;
+                    
                 }
 
                 // Move gradually
@@ -146,6 +152,9 @@ namespace SparFlame.GamePlaySystem.Movement
                         break;
                 }
             }
+            
+            
+            
         }
     }
 }

@@ -2,6 +2,7 @@
 using Unity.Physics;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 
 namespace SparFlame.GamePlaySystem.Movement
@@ -9,24 +10,28 @@ namespace SparFlame.GamePlaySystem.Movement
     public struct MovementUtils
     {
         /// <summary>
-        /// 
+        /// Will cast 2 rays in one direction, one is left corner ray, the other is right corner ray.
         /// </summary>
         /// <param name="physicsWorld"></param>
-        /// <param name="colliderRadius">This is the collider radius of mover, not the one being detected</param>
+        /// <param name="colliderDirectionSize">This is the collider radius of mover, not the one being detected</param>
         /// <param name="curPos"></param>
         /// <param name="collideWith"></param>
         /// <param name="belongs"></param>
         /// <param name="direction">Detect ray direction</param>
         /// <param name="detectLength">the ray cast length</param>
         /// <param name="hitEntity"></param>
-        /// <returns></returns>
-        public static bool ObstacleInDirection(ref PhysicsWorldSingleton physicsWorld, float colliderRadius,
+        /// <returns>Only when 2 rays hit nothing, will return false.
+        /// Otherwise, return true, and hitEntity will be the left hit one or right hit one,
+        /// depends on which side hits</returns>
+        public static bool ObstacleInDirection(ref PhysicsWorldSingleton physicsWorld, float colliderDirectionSize,
             float3 curPos, uint collideWith,
             uint belongs, float3 direction, float detectLength, out Entity hitEntity)
         {
-            var rayOrigin = curPos + direction * colliderRadius + new float3(0, 0.1f, 0);
+            var rayOrigin = curPos + direction * colliderDirectionSize * 0.51f + new float3(0, 0.1f, 0);
             var rayEnd = rayOrigin + direction * detectLength;
-            var raycastInput = new RaycastInput
+            //Debug.DrawLine(rayOrigin,rayEnd,Color.red);
+
+            var raycast = new RaycastInput
             {
                 Start = rayOrigin,
                 End = rayEnd,
@@ -37,16 +42,15 @@ namespace SparFlame.GamePlaySystem.Movement
                     GroupIndex = 0
                 }
             };
-            if (physicsWorld.PhysicsWorld.CollisionWorld.CastRay(raycastInput, out var raycastHit))
+            if (physicsWorld.PhysicsWorld.CollisionWorld.CastRay(raycast, out var raycastHit))
             {
                 hitEntity = physicsWorld.PhysicsWorld.Bodies[raycastHit.RigidBodyIndex].Entity;
                 return true;
             }
-            else
-            {
-                hitEntity = Entity.Null;
-                return false;
-            }
+            
+
+            hitEntity = Entity.Null;
+            return false;
         }
 
         
@@ -62,6 +66,16 @@ namespace SparFlame.GamePlaySystem.Movement
             navAgentComponent.ForceCalculate = false;
             navAgentComponent.EnableCalculation = false;
             navAgentComponent.CalculationComplete = false;
+        }
+
+        public static void ResetSurroundings(ref Surroundings surroundings)
+        {
+            surroundings.MoveSuccess = true;
+            surroundings.IdealDirection = float3.zero;
+            surroundings.FrontEntity = Entity.Null;
+            surroundings.LeftEntity = Entity.Null;
+            surroundings.RightEntity = Entity.Null;
+            surroundings.CompromiseTimes = 0;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -82,7 +96,20 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             var toPoint = point2 - point1;
             var cross = dirFrom1To2.x * toPoint.z - dirFrom1To2.z * toPoint.x;
-            return cross > 0 ? true : false;
+            return cross > 0;
+        }
+        
+        
+        
+        public static float3 GetLeftRight30(float3 forward, bool isLeft)
+        {
+            if (isLeft)
+            {
+                var leftRotation = quaternion.AxisAngle(math.up(), math.radians(30f));
+                return math.mul(leftRotation, forward);
+            }
+            var rightRotation = quaternion.AxisAngle(math.up(), math.radians(-30f));
+            return math.mul(rightRotation, forward);
         }
     }
 }

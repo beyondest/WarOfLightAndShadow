@@ -126,8 +126,6 @@ namespace SparFlame.GamePlaySystem.Command
 
                 case CursorType.March:
                 {
-                    // TODO No idle tag, debug output but not move
-                    Debug.Log("March");
                     new MovementMarchJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),

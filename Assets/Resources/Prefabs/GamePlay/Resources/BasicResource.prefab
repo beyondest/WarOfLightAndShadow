@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7759712664653943402}
   - component: {fileID: 691200165073467411}
   - component: {fileID: 4067515277419015678}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: BasicResource
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -110,6 +110,10 @@ PrefabInstance:
     - target: {fileID: 3058750742479930313, guid: bba3dc5e070a72347972df2f1d2981c3, type: 3}
       propertyPath: m_Name
       value: ResourceModel
+      objectReference: {fileID: 0}
+    - target: {fileID: 3058750742479930313, guid: bba3dc5e070a72347972df2f1d2981c3, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 8079180613437316764, guid: bba3dc5e070a72347972df2f1d2981c3, type: 3}
       propertyPath: m_LocalPosition.x

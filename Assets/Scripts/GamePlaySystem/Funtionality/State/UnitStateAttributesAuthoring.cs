@@ -19,6 +19,7 @@ namespace SparFlame.GamePlaySystem.State
                 });
                 AddComponent<IdleStateTag>(entity);
                 SetComponentEnabled<IdleStateTag>(entity,true);
+                
             }
         }
     }
@@ -35,6 +36,8 @@ namespace SparFlame.GamePlaySystem.State
     {
         
     }
+
+    
     
     
 }

@@ -27,6 +27,11 @@ namespace SparFlame.GamePlaySystem.Movement
 
         private void Update()
         {
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                StartCoroutine(UpdateNavMesh(FactionTag.Ally));
+                Debug.Log("Fuck");
+            }
             // If game pause, do nothing
             if (!_em.CreateEntityQuery(typeof(NotPauseTag)).TryGetSingletonEntity< NotPauseTag>(out var _))
             {
@@ -34,8 +39,7 @@ namespace SparFlame.GamePlaySystem.Movement
             }
             var ifUpdateAlly = false;
             var ifUpdateEnemy = false;
-            if(Input.GetKeyDown(KeyCode.U))
-                ifUpdateAlly = true;
+            
             var currentTime = Time.time;
             if(currentTime < _nextUpdateTime)return;
             var query = _em.CreateEntityQuery(typeof(UpdateNavMeshRequest));
@@ -55,14 +59,12 @@ namespace SparFlame.GamePlaySystem.Movement
                     {
                         if(_isUpdatingAlly)continue;
                         ifUpdateAlly = true;
-                        Debug.Log($"Update NavMesh Ally according to Request");
                         break;
                     }
                     case FactionTag.Enemy:
                     {
                         if(_isUpdatingEnemy)continue;
                         ifUpdateEnemy = true;
-                        Debug.Log($"Update NavMesh Enemy according to Request");
                         break;
                     }
                     case FactionTag.Neutral:
@@ -76,6 +78,7 @@ namespace SparFlame.GamePlaySystem.Movement
             ecb.Dispose();
             if (ifUpdateAlly) StartCoroutine(UpdateNavMesh(FactionTag.Ally));
             if (ifUpdateEnemy) StartCoroutine(UpdateNavMesh(FactionTag.Enemy));
+            
         }
 
         private IEnumerator UpdateNavMesh(FactionTag factionTag)
@@ -84,9 +87,11 @@ namespace SparFlame.GamePlaySystem.Movement
             {
                 case FactionTag.Ally:
                     _isUpdatingAlly = true;
+                    Debug.Log($"Update NavMesh Ally according to Request");
                     break;
                 case FactionTag.Enemy:
                     _isUpdatingEnemy = true;
+                    Debug.Log($"Update NavMesh Enemy according to Request");
                     break;
                 case FactionTag.Neutral:
                 default:
