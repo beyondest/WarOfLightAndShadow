@@ -15,7 +15,6 @@ namespace SparFlame.GamePlaySystem.Resource
                 AddComponent(entity, new ResourceAttr
                 {
                     State = ResourceState.Available,
-                    BoxColliderSize = boxColliderSize,
                 });
             }
         }
@@ -31,6 +30,5 @@ namespace SparFlame.GamePlaySystem.Resource
     public struct ResourceAttr : IComponentData
     {
         public ResourceState State;
-        public float3 BoxColliderSize;
     }
 }

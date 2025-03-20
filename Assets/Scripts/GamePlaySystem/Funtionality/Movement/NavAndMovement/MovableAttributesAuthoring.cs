@@ -5,6 +5,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.AI;
 using UnityEngine.Experimental.AI;
+using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
@@ -13,6 +14,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
         [Tooltip("This interval determines how long the path calculation is executed once")]
         public float calculateInterval = 1.0f;
+         public float moveSpeed = 5f;
 
         
         private class Baker : Baker<MovableAttributesAuthoring>
@@ -48,7 +50,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 
                 AddComponent(entity, new MovableData
                 {
-                    MoveSpeed = 0f,
+                    MoveSpeed = authoring.moveSpeed,
                     TargetCenterPos = float3.zero,
                     TargetColliderShapeXZ = float2.zero,
                     MovementCommandType = MovementCommandType.None,
@@ -69,7 +71,6 @@ namespace SparFlame.GamePlaySystem.Movement
                 AddBuffer<WaypointBuffer>(entity);
                 AddComponent<MovingStateTag>(entity);
                 SetComponentEnabled<MovingStateTag>(entity, false);
-               
             }
         }
     }

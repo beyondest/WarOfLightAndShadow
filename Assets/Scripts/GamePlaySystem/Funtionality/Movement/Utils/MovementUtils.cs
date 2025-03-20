@@ -9,6 +9,60 @@ namespace SparFlame.GamePlaySystem.Movement
 {
     public struct MovementUtils
     {
+
+        #region MovableData, Surroundings, NavAgent Interface
+
+        public static void ResetMovableData(ref MovableData movableData)
+        {
+            movableData.MovementState = MovementState.NotMoving;
+            movableData.MovementCommandType = MovementCommandType.None;
+            movableData.DetailInfo = DetailInfo.None;
+        }
+
+        /// <summary>
+        /// Warning : interactRangeSq must be set in job if attack/heal/harvest move
+        /// </summary>
+        /// <param name="movableData"></param>
+        /// <param name="targetPos"></param>
+        /// <param name="targetColliderSize"></param>
+        /// <param name="commandType"></param>
+        /// <param name="interactRangeSq"></param>
+        public static void SetMoveTarget(ref MovableData movableData, float3 targetPos, float3 targetColliderSize,
+            MovementCommandType commandType, float interactRangeSq)
+        {
+            movableData.ForceCalculate = true;
+            movableData.TargetCenterPos = targetPos;
+            movableData.TargetColliderShapeXZ = new float2(targetColliderSize.x, targetColliderSize.z);
+            movableData.MovementCommandType = commandType;
+            movableData.InteractiveRangeSq = interactRangeSq;
+        }
+        
+        public static void ResetNavAgent(ref NavAgentComponent navAgentComponent)
+        {
+            navAgentComponent.ForceCalculate = false;
+            navAgentComponent.EnableCalculation = false;
+            navAgentComponent.CalculationComplete = false;
+        }
+
+        public static void ResetSurroundings(ref Surroundings surroundings)
+        {
+            surroundings.MoveSuccess = true;
+            surroundings.IdealDirection = float3.zero;
+            surroundings.FrontEntity = Entity.Null;
+            surroundings.LeftEntity = Entity.Null;
+            surroundings.RightEntity = Entity.Null;
+            surroundings.CompromiseTimes = 0;
+        }
+
+        #endregion
+
+        
+        
+
+        #region Physics detection or math methods
+
+        
+
         /// <summary>
         /// Will cast 2 rays in one direction, one is left corner ray, the other is right corner ray.
         /// </summary>
@@ -54,30 +108,6 @@ namespace SparFlame.GamePlaySystem.Movement
         }
 
         
-        public static void ResetMovableData(ref MovableData movableData)
-        {
-            movableData.MovementState = MovementState.NotMoving;
-            movableData.MovementCommandType = MovementCommandType.None;
-            movableData.DetailInfo = DetailInfo.None;
-        }
-
-        public static void ResetNavAgent(ref NavAgentComponent navAgentComponent)
-        {
-            navAgentComponent.ForceCalculate = false;
-            navAgentComponent.EnableCalculation = false;
-            navAgentComponent.CalculationComplete = false;
-        }
-
-        public static void ResetSurroundings(ref Surroundings surroundings)
-        {
-            surroundings.MoveSuccess = true;
-            surroundings.IdealDirection = float3.zero;
-            surroundings.FrontEntity = Entity.Null;
-            surroundings.LeftEntity = Entity.Null;
-            surroundings.RightEntity = Entity.Null;
-            surroundings.CompromiseTimes = 0;
-        }
-        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 GetLeftOrRight(float3 direction, bool isLeft)
         {
@@ -111,5 +141,9 @@ namespace SparFlame.GamePlaySystem.Movement
             var rightRotation = quaternion.AxisAngle(math.up(), math.radians(-30f));
             return math.mul(rightRotation, forward);
         }
+        
+        
+        #endregion
+
     }
 }

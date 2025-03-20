@@ -31,6 +31,7 @@ namespace SparFlame.GamePlaySystem.Command
             state.RequireForUpdate<BuildingConfig>();
         }
 
+        // TODO : Rewrite this with generic type ijobchunk
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -38,87 +39,62 @@ namespace SparFlame.GamePlaySystem.Command
             var cursorData = SystemAPI.GetSingleton<CursorData>();
             var mouseData = SystemAPI.GetSingleton<MouseSystemData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
-            if(unitSelectionData.CurrentSelectCount == 0) return;
+            if (unitSelectionData.CurrentSelectCount == 0) return;
             if (mouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right }) return;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-            
-            
+
+            var targetCollider = SystemAPI.GetComponent<InteractBasicData>(mouseData.HitEntity).BoxColliderSize;
+            var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
             switch (cursorData.RightCursorType)
             {
                 case CursorType.Attack:
                 {
-                    float2 targetColliderXz;
-                    var interactableAttr = SystemAPI.GetComponent<InteractableAttr>(mouseData.HitEntity);
-                    var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
-                    if (interactableAttr.BaseTag == BaseTag.Buildings)
-                    {
-                        var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(mouseData.HitEntity);
-                        targetColliderXz = new float2(buildingAttr.BoxColliderSize.x, buildingAttr.BoxColliderSize.z);
-                 
-                    }
-                    else if (interactableAttr.BaseTag == BaseTag.Units)
-                    {
-                        var unitAttr = SystemAPI.GetComponent<UnitBasicAttr>(mouseData.HitEntity);
-                        targetColliderXz = new float2(unitAttr.BoxColliderSize.x, unitAttr.BoxColliderSize.z);
-                    }
-                    else
-                    {
-                        // This line should never reach
-                        return;
-                    }
                     new MovementAttackJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = targetColliderXz,
+                        TargetPos = transform.Position,
+                        TargetColliderShape = targetCollider,
                         TargetEntity = mouseData.HitEntity,
                         Focus = mouseData.Focus
                     }.ScheduleParallel();
 
                     break;
                 }
-                
+
                 case CursorType.Garrison:
                 {
-                    var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(mouseData.HitEntity);
-                    var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
-                    new MovementGarrisonJob
+                    new MovementGarrisonJob()
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        BuildingInteractiveRangeSq = buildingConfig.BuildingGarrisonRadiusSq,
-                        TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = new float2(buildingAttr.BoxColliderSize.x,
-                            buildingAttr.BoxColliderSize.z),
+                        TargetPos = transform.Position,
+                        TargetColliderShape = targetCollider,
                         TargetEntity = mouseData.HitEntity,
-                        Focus = mouseData.Focus
+                        Focus = mouseData.Focus,
+                        InteractiveRangeSq = buildingConfig.BuildingGarrisonRadiusSq
                     }.ScheduleParallel();
                     break;
                 }
-                
+
                 case CursorType.Harvest:
                 {
-                    var resourceAttr = SystemAPI.GetComponent<ResourceAttr>(mouseData.HitEntity);
-                    var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
                     new MovementHarvestJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = new float2(resourceAttr.BoxColliderSize.x, resourceAttr.BoxColliderSize.z),
+                        TargetPos = transform.Position,
+                        TargetColliderShape = targetCollider,
                         TargetEntity = mouseData.HitEntity,
                         Focus = mouseData.Focus
                     }.ScheduleParallel();
                     break;
                 }
-                
+
                 case CursorType.Heal:
                 {
-                    var unitAttr = SystemAPI.GetComponent<UnitBasicAttr>(mouseData.HitEntity);
-                    var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
                     new MovementHealJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetCenterPos = transform.Position,
-                        TargetColliderShapeXz = new float2(unitAttr.BoxColliderSize.x, unitAttr.BoxColliderSize.z),
+                        TargetPos = transform.Position,
+                        TargetColliderShape = targetCollider,
                         TargetEntity = mouseData.HitEntity,
                         Focus = mouseData.Focus
                     }.ScheduleParallel();
@@ -130,41 +106,39 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementMarchJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetCenterPos = mouseData.HitPosition,
+                        TargetPos = mouseData.HitPosition,
                         Focus = mouseData.Focus
                     }.ScheduleParallel();
                     break;
                 }
-                
+
                 default:
                     return;
             }
         }
     }
 
-    
+
     #region MovementJob
-    
+
     [BurstCompile]
     [WithAll(typeof(Selected))]
     public partial struct MovementAttackJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public float2 TargetColliderShapeXz;
-        [ReadOnly] public float3 TargetCenterPos;
+        [ReadOnly] public float3 TargetColliderShape;
+        [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
 
-        private void Execute([ChunkIndexInQuery]int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr, 
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr,
             in UnitBasicAttr unitBasicAttr, in AttackAbility attackAbility,
             Entity entity)
         {
-            movableData.MovementCommandType = MovementCommandType.Interactive;
-            movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
-            movableData.InteractiveRangeSq = attackAbility.AttackRangeSq;
-            movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
-            movableData.ForceCalculate = true;
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
+                MovementCommandType.Interactive, attackAbility.RangeSq);
+
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
             unitBasicStateData.Focus = Focus;
@@ -172,22 +146,23 @@ namespace SparFlame.GamePlaySystem.Command
             unitBasicStateData.TargetEntity = TargetEntity;
         }
     }
-    
+
     [BurstCompile]
     [WithAll(typeof(Selected))]
     public partial struct MovementMarchJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public float3 TargetCenterPos;
+        [ReadOnly] public float3 TargetPos;
         [ReadOnly] public bool Focus;
 
-        private void Execute([ChunkIndexInQuery] int index,ref MovableData movableData,ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr,
+            in UnitBasicAttr unitBasicAttr,
             Entity entity)
         {
-            movableData.MovementCommandType = MovementCommandType.March;
-            movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
-            movableData.ForceCalculate = true;
+
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
+                MovementCommandType.March, 0f);
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
             unitBasicStateData.TargetEntity = Entity.Null;
@@ -201,23 +176,18 @@ namespace SparFlame.GamePlaySystem.Command
     public partial struct MovementHealJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public float2 TargetColliderShapeXz;
-        [ReadOnly] public float3 TargetCenterPos;
+        [ReadOnly] public float3 TargetColliderShape;
+        [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData,
-            in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref UnitBasicStateData unitBasicStateData,
             in HealingAbility healingAbility,
             Entity entity)
         {
-            movableData.MovementCommandType = MovementCommandType.Interactive;
-            movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
-            movableData.InteractiveRangeSq = healingAbility.HealingRangeSq;
-            movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
-            movableData.ForceCalculate = false;
-            
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
+                MovementCommandType.Interactive, healingAbility.RangeSq);
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
             unitBasicStateData.TargetEntity = TargetEntity;
@@ -225,29 +195,25 @@ namespace SparFlame.GamePlaySystem.Command
             unitBasicStateData.TargetState = UnitState.Healing;
         }
     }
-    
+
     [BurstCompile]
     [WithAll(typeof(Selected))]
     public partial struct MovementHarvestJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public float2 TargetColliderShapeXz;
-        [ReadOnly] public float3 TargetCenterPos;
+        [ReadOnly] public float3 TargetColliderShape;
+        [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref UnitBasicStateData unitBasicStateData,
             in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
-            movableData.MovementCommandType = MovementCommandType.Interactive;
-            movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
-            movableData.InteractiveRangeSq = harvestAbility.HarvestRangeSq;
-            movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
-            movableData.ForceCalculate = false;
-            
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
+                MovementCommandType.Interactive, harvestAbility.RangeSq);
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
             unitBasicStateData.TargetEntity = TargetEntity;
@@ -255,29 +221,25 @@ namespace SparFlame.GamePlaySystem.Command
             unitBasicStateData.TargetState = UnitState.Harvesting;
         }
     }
-    
+
     [BurstCompile]
     [WithAll(typeof(Selected))]
     public partial struct MovementGarrisonJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public float2 TargetColliderShapeXz;
-        [ReadOnly] public float3 TargetCenterPos;
-        [ReadOnly] public float BuildingInteractiveRangeSq;
+        [ReadOnly] public float3 TargetColliderShape;
+        [ReadOnly] public float3 TargetPos;
+        [ReadOnly] public float InteractiveRangeSq;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
 
-        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,ref UnitBasicStateData unitBasicStateData,
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref UnitBasicStateData unitBasicStateData,
             in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             Entity entity)
         {
-            movableData.MovementCommandType = MovementCommandType.Interactive;
-            movableData.TargetColliderShapeXZ = TargetColliderShapeXz;
-            movableData.InteractiveRangeSq = BuildingInteractiveRangeSq;
-            movableData.TargetCenterPos = TargetCenterPos;
-            movableData.MoveSpeed = unitBasicAttr.MoveSpeed;
-            movableData.ForceCalculate = false;
-            
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
+                MovementCommandType.Interactive, InteractiveRangeSq);
             unitBasicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
             unitBasicStateData.TargetEntity = TargetEntity;
@@ -285,7 +247,6 @@ namespace SparFlame.GamePlaySystem.Command
             unitBasicStateData.TargetState = UnitState.Garrison;
         }
     }
-    
+
     #endregion
-    
 }

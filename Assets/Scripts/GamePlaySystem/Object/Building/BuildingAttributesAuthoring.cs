@@ -16,8 +16,6 @@ namespace SparFlame.GamePlaySystem.Building
                 AddComponent(entity, new BuildingAttr
                 {
                     State = BuildingState.Constructing,
-                    BoxColliderSize = boxCollider.size,
-                    InteractRange = authoring.interactRange,
                     Tier = authoring.tier,
                 });
             }
@@ -36,8 +34,6 @@ namespace SparFlame.GamePlaySystem.Building
     public struct BuildingAttr : IComponentData
     {
         public BuildingState State;
-        public float3 BoxColliderSize;
-        public float InteractRange;
         public Tier Tier;
     }
 }

@@ -19,7 +19,7 @@ namespace SparFlame.GamePlaySystem.State
                 });
                 AddComponent<IdleStateTag>(entity);
                 SetComponentEnabled<IdleStateTag>(entity,true);
-                AddBuffer<TargetList>(entity);
+             
             }
         }
     }
@@ -28,8 +28,12 @@ namespace SparFlame.GamePlaySystem.State
     {
         public UnitState CurState;
         public bool Focus;
+        
         public Entity TargetEntity;
         public UnitState TargetState;
+        
+        public Entity MemoryEntity;
+        public UnitState MemoryState;
     }
     
     public struct IdleStateTag : IComponentData, IEnableableComponent
@@ -37,10 +41,7 @@ namespace SparFlame.GamePlaySystem.State
         
     }
 
-    public struct TargetList : IBufferElementData
-    {
-        public Entity Target;
-    }
+
     
     
 }

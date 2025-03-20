@@ -84,5 +84,12 @@ namespace SparFlame.GamePlaySystem.State
             }
             stateData.CurState = stateData.TargetState;
         }
+        public static void ContinueLastCommand(ref UnitBasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb,
+            Entity entity, int index)
+        {
+            stateData.TargetEntity = stateData.MemoryEntity;
+            stateData.TargetState = stateData.MemoryState;
+            SwitchState(ref stateData, ecb, entity, index);
+        }
     }
 }
