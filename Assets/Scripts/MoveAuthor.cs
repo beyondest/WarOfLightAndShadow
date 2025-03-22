@@ -10,13 +10,9 @@ namespace DefaultNamespace
             public override void Bake(MoveAuthor authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent<TestAttr>(entity);
             }
         }
     }
 
-    public struct TestAttr : IComponentData
-    {
-        
-    }
+    
 }

@@ -8,7 +8,7 @@ namespace SparFlame.GamePlaySystem.State
 {
     public struct StateUtils
     {
-        public static void SwitchState(ref UnitBasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb, Entity entity,int index)
+        public static void SwitchState(ref BasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb, Entity entity,int index)
         {
             if(stateData.TargetState == stateData.CurState)return;
             switch (stateData.TargetState)
@@ -84,7 +84,7 @@ namespace SparFlame.GamePlaySystem.State
             }
             stateData.CurState = stateData.TargetState;
         }
-        public static void ContinueLastCommand(ref UnitBasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb,
+        public static void ContinueLastCommand(ref BasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb,
             Entity entity, int index)
         {
             stateData.TargetEntity = stateData.MemoryEntity;

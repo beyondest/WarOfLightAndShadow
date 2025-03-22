@@ -18,7 +18,7 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<AutoGiveWayData> _autoGiveWayLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<MovableData> _movableLookup;
-        private ComponentLookup<UnitBasicStateData> _unitBasicStateLookup;
+        private ComponentLookup<BasicStateData> _unitBasicStateLookup;
         private ComponentLookup<SqueezeData> _squeezeLookup;
 
         [BurstCompile]
@@ -33,7 +33,7 @@ namespace SparFlame.GamePlaySystem.State
             _squeezeLookup = state.GetComponentLookup<SqueezeData>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _movableLookup = state.GetComponentLookup<MovableData>();
-            _unitBasicStateLookup = state.GetComponentLookup<UnitBasicStateData>();
+            _unitBasicStateLookup = state.GetComponentLookup<BasicStateData>();
         }
 
         [BurstCompile]
@@ -78,7 +78,7 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public ComponentLookup<SqueezeData> SqueezeLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<UnitBasicStateData> StateLookup;
+            [NativeDisableParallelForRestriction] public ComponentLookup<BasicStateData> StateLookup;
             [ReadOnly] public int MaxAllowedCompromiseTimesForStuck;
             [ReadOnly] public int MaxAllowedCompromiseTimesForSqueeze;
             [ReadOnly] public int ChooseSideTimes;
@@ -120,7 +120,7 @@ namespace SparFlame.GamePlaySystem.State
 
 
             private bool TryResolveStuck(ref Surroundings surroundings, ref MovableData movableData,
-                ref UnitBasicStateData stateData, ref LocalTransform transform, Entity entity, int index)
+                ref BasicStateData stateData, ref LocalTransform transform, Entity entity, int index)
             {
                 // Stuck times too much
                 if (surroundings.MoveSuccess
@@ -224,7 +224,7 @@ namespace SparFlame.GamePlaySystem.State
 
 
             private bool CheckIfCompleteMoving(ref Surroundings surroundings, ref MovableData movableData,
-                ref UnitBasicStateData stateData, Entity entity, int index)
+                ref BasicStateData stateData, Entity entity, int index)
             {
                 // If itself moving job is completed
                 if (movableData.MovementState is MovementState.MovementComplete
@@ -299,7 +299,7 @@ namespace SparFlame.GamePlaySystem.State
 
 
             private bool CheckTaunted(ref Surroundings surroundings, ref MovableData movableData,
-                ref UnitBasicStateData stateData, Entity entity, int index)
+                ref BasicStateData stateData, Entity entity, int index)
             {
                 if (surroundings.MoveSuccess) return false;
                 if (!InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)) return false;

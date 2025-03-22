@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 6283545588556373548}
   - component: {fileID: 2138233674746558445}
   - component: {fileID: 6357481652744834564}
+  - component: {fileID: 2709985006962805938}
   - component: {fileID: -6489048707916159848}
   - component: {fileID: 8492824873105567468}
   m_Layer: 7
@@ -112,6 +113,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   calculateInterval: 1
+  moveSpeed: 5
 --- !u!114 &9020122675200190953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,20 +138,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5904672b66a89ad4ea5303f8b808bbda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 1
-  moveSpeed: 5
-  attackSpeed: 1
-  attackCount: 1
-  healingAbility: 0
-  healingRange: 3
-  healingAmount: 1
-  healingSpeed: 1
-  healingCount: 1
-  harvestAbility: 0
-  harvestingRange: 1
-  harvestingAmount: 1
-  harvestingSpeed: 1
-  harvestingCount: 1
 --- !u!114 &2138233674746558445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,6 +162,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2cee1d276a65452baa0f6cded9f5b0e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2709985006962805938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5672437903288014313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05646740230c4c4790141ad3952e4578, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &-6489048707916159848
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -186,6 +186,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 609ed965a3e5435e908815b1bc2756f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  interactType: 0
+  interactSpeed: 1
+  interactCount: 1
+  interactRange: 1
+  interactBasicAmount: 10
 --- !u!114 &8492824873105567468
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -10,7 +10,7 @@ namespace SparFlame.GamePlaySystem.State
             public override void Bake(UnitStateAttributesAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new UnitBasicStateData
+                AddComponent(entity, new BasicStateData
                 {
                     CurState = UnitState.Idle,
                     Focus = false,
@@ -24,7 +24,7 @@ namespace SparFlame.GamePlaySystem.State
         }
     }
     
-    public struct UnitBasicStateData : IComponentData
+    public struct BasicStateData : IComponentData
     {
         public UnitState CurState;
         public bool Focus;

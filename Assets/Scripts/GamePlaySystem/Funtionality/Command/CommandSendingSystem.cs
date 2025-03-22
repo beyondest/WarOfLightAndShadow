@@ -43,7 +43,7 @@ namespace SparFlame.GamePlaySystem.Command
             if (mouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right }) return;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
-            var targetCollider = SystemAPI.GetComponent<InteractBasicData>(mouseData.HitEntity).BoxColliderSize;
+            var targetCollider = SystemAPI.GetComponent<InteractableAttr>(mouseData.HitEntity).BoxColliderSize;
             var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
             switch (cursorData.RightCursorType)
             {
@@ -132,18 +132,18 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr,
+            ref BasicStateData basicStateData, in InteractableAttr interactableAttr,
             in UnitBasicAttr unitBasicAttr, in AttackAbility attackAbility,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, attackAbility.RangeSq);
 
-            unitBasicStateData.TargetState = UnitState.Moving;
-            StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
-            unitBasicStateData.Focus = Focus;
-            unitBasicStateData.TargetState = UnitState.Attacking;
-            unitBasicStateData.TargetEntity = TargetEntity;
+            basicStateData.TargetState = UnitState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            basicStateData.Focus = Focus;
+            basicStateData.TargetState = UnitState.Attacking;
+            basicStateData.TargetEntity = TargetEntity;
         }
     }
 
@@ -156,18 +156,18 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref UnitBasicStateData unitBasicStateData, in InteractableAttr interactableAttr,
+            ref BasicStateData basicStateData, in InteractableAttr interactableAttr,
             in UnitBasicAttr unitBasicAttr,
             Entity entity)
         {
 
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
                 MovementCommandType.March, 0f);
-            unitBasicStateData.TargetState = UnitState.Moving;
-            StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
-            unitBasicStateData.TargetEntity = Entity.Null;
-            unitBasicStateData.TargetState = UnitState.Idle;
-            unitBasicStateData.Focus = Focus;
+            basicStateData.TargetState = UnitState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            basicStateData.TargetEntity = Entity.Null;
+            basicStateData.TargetState = UnitState.Idle;
+            basicStateData.Focus = Focus;
         }
     }
 
@@ -182,17 +182,17 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref UnitBasicStateData unitBasicStateData,
-            in HealingAbility healingAbility,
+            ref BasicStateData basicStateData,
+            in HealAbility healingAbility,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, healingAbility.RangeSq);
-            unitBasicStateData.TargetState = UnitState.Moving;
-            StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
-            unitBasicStateData.TargetEntity = TargetEntity;
-            unitBasicStateData.Focus = Focus;
-            unitBasicStateData.TargetState = UnitState.Healing;
+            basicStateData.TargetState = UnitState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            basicStateData.TargetEntity = TargetEntity;
+            basicStateData.Focus = Focus;
+            basicStateData.TargetState = UnitState.Healing;
         }
     }
 
@@ -207,18 +207,18 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref UnitBasicStateData unitBasicStateData,
+            ref BasicStateData basicStateData,
             in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, harvestAbility.RangeSq);
-            unitBasicStateData.TargetState = UnitState.Moving;
-            StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
-            unitBasicStateData.TargetEntity = TargetEntity;
-            unitBasicStateData.Focus = Focus;
-            unitBasicStateData.TargetState = UnitState.Harvesting;
+            basicStateData.TargetState = UnitState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            basicStateData.TargetEntity = TargetEntity;
+            basicStateData.Focus = Focus;
+            basicStateData.TargetState = UnitState.Harvesting;
         }
     }
 
@@ -234,17 +234,17 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref UnitBasicStateData unitBasicStateData,
+            ref BasicStateData basicStateData,
             in InteractableAttr interactableAttr, in UnitBasicAttr unitBasicAttr,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, InteractiveRangeSq);
-            unitBasicStateData.TargetState = UnitState.Moving;
-            StateUtils.SwitchState(ref unitBasicStateData, ECB, entity, index);
-            unitBasicStateData.TargetEntity = TargetEntity;
-            unitBasicStateData.Focus = Focus;
-            unitBasicStateData.TargetState = UnitState.Garrison;
+            basicStateData.TargetState = UnitState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            basicStateData.TargetEntity = TargetEntity;
+            basicStateData.Focus = Focus;
+            basicStateData.TargetState = UnitState.Garrison;
         }
     }
 
