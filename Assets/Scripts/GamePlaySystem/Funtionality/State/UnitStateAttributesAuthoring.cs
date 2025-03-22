@@ -28,12 +28,8 @@ namespace SparFlame.GamePlaySystem.State
     {
         public UnitState CurState;
         public bool Focus;
-        
         public Entity TargetEntity;
         public UnitState TargetState;
-        
-        public Entity MemoryEntity;
-        public UnitState MemoryState;
     }
     
     public struct IdleStateTag : IComponentData, IEnableableComponent

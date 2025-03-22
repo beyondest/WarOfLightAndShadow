@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Movement;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -10,7 +11,7 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    [UpdateAfter(typeof(StatSystem))]
+    [UpdateAfter(typeof(VolumeObstacleSystem))]
     public partial struct AutoChooseTargetSystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactableLookup;
@@ -74,7 +75,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     targetStat = StatDataLookup[target];
                     targetFaction = InteractableAttrLookup[target].FactionTag;
                     // Remove invalid target
-                    if (!IsValid(ref targetStat, selfFaction, targetFaction))
+                    if (!InteractUtils.IsTargetValid(targetFaction, selfFaction,in targetStat))
                     {
                         targets.RemoveAt(i);
                         continue;
@@ -95,8 +96,7 @@ namespace SparFlame.GamePlaySystem.Interact
                             targetFaction = InteractableAttrLookup[target].FactionTag;
                             targetStat = StatDataLookup[target];
                             // Check if target is valid
-                            if(!IsValid(ref targetStat,selfFaction,targetFaction))continue;
-                            
+                            if(!InteractUtils.IsTargetValid(targetFaction, selfFaction,in targetStat))continue;
                             var priority = PriorityLookup.GetRefRO(target).ValueRO.Value;
                             
                             // Apply the priority lifting of different interact types
@@ -150,13 +150,7 @@ namespace SparFlame.GamePlaySystem.Interact
             }
 
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static bool IsValid(ref StatData stat,FactionTag selfFaction,FactionTag targetFaction)
-            {
-                if(stat.CurValue <= 0)return false;
-                if(selfFaction == targetFaction && stat.CurValue >= stat.MaxValue)return false;
-                return true;
-            }
+  
         }
         
         

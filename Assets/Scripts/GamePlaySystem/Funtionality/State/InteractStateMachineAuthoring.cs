@@ -6,9 +6,9 @@ namespace SparFlame.GamePlaySystem.State
     public class InteractStateMachineAuthoring : MonoBehaviour
     {
 
-        public int attackJobBatchCount;
-        public int healJobBatchCount;
-        public int harvestJobBatchCount;
+        public int attackJobBatchCount = 16;
+        public int healJobBatchCount = 16;
+        public int harvestJobBatchCount = 16;
         private class InteractStateMachineAuthoringBaker : Baker<InteractStateMachineAuthoring>
         {
             public override void Bake(InteractStateMachineAuthoring authoring)

@@ -10,7 +10,6 @@ using SparFlame.GamePlaySystem.UnitSelection;
 namespace SparFlame.GamePlaySystem.Movement
 {
     [BurstCompile]
-    [UpdateAfter(typeof(MovementSystem))]
     public partial struct AutoGiveWaySystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactAttrLookup;

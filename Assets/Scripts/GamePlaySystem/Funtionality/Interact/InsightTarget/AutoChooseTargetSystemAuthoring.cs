@@ -11,7 +11,7 @@ namespace SparFlame.GamePlaySystem.Interact
             "So usually if you want heal always before attack, this should be set extremely large")]
         public float healAboveAttack = 1e5f;
 
-        public float harvestAboveAttack = 1e5f;
+        public float harvestAboveAttack = -1e5f;
 
         [Tooltip("If target is 5 dis from self, baseLine is 400, then disValue = 400 - 5*5 = 375")]
         public float baseLineDistanceSq = 400f;

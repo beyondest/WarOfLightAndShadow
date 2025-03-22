@@ -1,5 +1,4 @@
-﻿using System;
-using Unity.Entities;
+﻿using Unity.Entities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -13,19 +12,20 @@ using SparFlame.GamePlaySystem.General;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
+    // Update After player command system, PC command system
     [BurstCompile]
     public partial struct MovementSystem : ISystem
     {
-        private BufferLookup<WaypointBuffer> _waypointLookup;
+        // private BufferLookup<WaypointBuffer> _waypointLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PhysicsWorldSingleton>();
-            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            // state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<MovementConfig>();
-            _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
+            // _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
         }
 
         [BurstCompile]
@@ -33,12 +33,12 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
-            _waypointLookup.Update(ref state);
+            // _waypointLookup.Update(ref state);
             // PathCalculated is set to true only if calculation is done successfully
             new MoveJob
             {
                 PhysicsWorld = physicsWorld,
-                WayPointsLookup = _waypointLookup,
+                // WayPointsLookup = _waypointLookup,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 WayPointDistanceSq = config.WayPointDistanceSq,
                 MarchExtent = config.MarchExtent,
@@ -47,6 +47,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 MovementRayBelongsToLayerMask = config.MovementRayBelongsToLayerMask,
             }.ScheduleParallel();
         }
+        
     }
 
 
@@ -58,7 +59,8 @@ namespace SparFlame.GamePlaySystem.Movement
     public partial struct MoveJob : IJobEntity
     {
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
-        [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
+        // [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
+
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public float WayPointDistanceSq;
         [ReadOnly] public float MarchExtent;
@@ -68,8 +70,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
         private void Execute(
             ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
-            ref Surroundings surroundings,
-            Entity entity)
+            ref Surroundings surroundings,in DynamicBuffer<WaypointBuffer> waypointBuffer)
         {
             navAgent.TargetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
             var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
@@ -78,7 +79,7 @@ namespace SparFlame.GamePlaySystem.Movement
             var interactiveRangeSq = movableData.InteractiveRangeSq;
             var shouldMove = false;
 
-            if (!WayPointsLookup.TryGetBuffer(entity, out var waypointBuffer)) return;
+            // if (!WayPointsLookup.TryGetBuffer(entity, out var waypointBuffer)) return;
 
             switch (movableData.MovementCommandType)
             {
@@ -230,8 +231,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     MovementUtils.ResetNavAgent(ref navAgent);
                     return;
                 }
-                default:
-                    throw new ArgumentOutOfRangeException();
+                
             }
 
             if (!shouldMove) return;
@@ -261,7 +261,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 MovementUtils.ResetSurroundings(ref surroundings);
             }
         }
-        [BurstCompile]
+        
         private bool TryMove(ref LocalTransform transform, ref MovableData movableData,
             ref Surroundings surroundings,
             in NavAgentComponent navAgent,

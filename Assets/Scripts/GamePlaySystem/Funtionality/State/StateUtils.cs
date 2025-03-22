@@ -84,12 +84,22 @@ namespace SparFlame.GamePlaySystem.State
             }
             stateData.CurState = stateData.TargetState;
         }
-        public static void ContinueLastCommand(ref BasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb,
-            Entity entity, int index)
+    
+        
+        public static Entity ChooseTarget(in DynamicBuffer<InsightTarget> targets)
         {
-            stateData.TargetEntity = stateData.MemoryEntity;
-            stateData.TargetState = stateData.MemoryState;
-            SwitchState(ref stateData, ecb, entity, index);
+            float maxValue = 0;
+            var bestTarget = Entity.Null;
+            foreach (var target in targets)
+            {
+                var value = target.BaseValue + target.DisValue + target.StatChangValue;
+                if (value >= maxValue)
+                {
+                    maxValue = value;
+                    bestTarget = target.Entity;
+                }
+            }
+            return bestTarget;
         }
     }
 }

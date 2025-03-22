@@ -3,9 +3,11 @@ using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
+using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Mouse
 {
+    [UpdateAfter(typeof(TransformSystemGroup ))]
     public partial class MouseSystem : SystemBase
     {
         private float _raycastDistance;

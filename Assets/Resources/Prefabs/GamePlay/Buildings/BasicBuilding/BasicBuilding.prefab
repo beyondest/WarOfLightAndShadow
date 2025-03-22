@@ -13,6 +13,10 @@ GameObject:
   - component: {fileID: 3997589660593887838}
   - component: {fileID: 5786025005029521595}
   - component: {fileID: 1017011527665410983}
+  - component: {fileID: -3790111429551213558}
+  - component: {fileID: 5471829397928584801}
+  - component: {fileID: 8157422311343239138}
+  - component: {fileID: -1385301742322765444}
   m_Layer: 7
   m_Name: BasicBuilding
   m_TagString: Untagged
@@ -100,8 +104,62 @@ MonoBehaviour:
   isObstacleDynamic: 0
   notGenerateObstacle: 0
   notGenerateVolume: 0
-  volumeObstacleShapeType: 0
   syncPositionInterval: 0.5
+--- !u!114 &-3790111429551213558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238138822134138317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c76580e2cda448339ec7c639aa08c8b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statMaxValue: 100
+--- !u!114 &5471829397928584801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238138822134138317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e3fdfab320348b0b2b47c87995aa321, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  priority: 0
+--- !u!114 &8157422311343239138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238138822134138317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 169a26e7faeb4deab013f3cbcb5abbb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &-1385301742322765444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238138822134138317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 609ed965a3e5435e908815b1bc2756f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactType: 0
+  interactSpeed: 1
+  interactCount: 1
+  interactRange: 9
+  interactBasicAmount: 10
 --- !u!1001 &6858142495991745111
 PrefabInstance:
   m_ObjectHideFlags: 0

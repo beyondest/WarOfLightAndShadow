@@ -7,7 +7,7 @@ using SparFlame.GamePlaySystem.General;
 
 namespace SparFlame.GamePlaySystem.CameraControl
 {
-    [UpdateBefore(typeof(TransformSystemGroup))]
+    [UpdateBefore(typeof(MouseSystem))]
     public partial class CameraControlSystem : SystemBase
     {
         protected override void OnCreate()

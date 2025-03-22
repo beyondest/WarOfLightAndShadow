@@ -8,7 +8,9 @@ using Unity.Burst;
 
 namespace SparFlame.GamePlaySystem.UnitSelection
 {
+    
     [BurstCompile]
+    [UpdateAfter(typeof(CalWorldToScreenSystem))]
     public partial struct UnitSelectionSystem : ISystem
     {
         [BurstCompile]
@@ -197,14 +199,14 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
         #region SelectionBox
 
-        private void StartSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
+        private static void StartSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
             in MouseSystemData mouseSystemData)
         {
             unitSelectionData.ValueRW.SelectionBoxStartPos = new float2
                 { x = mouseSystemData.MousePosition.x, y = mouseSystemData.MousePosition.y };
         }
 
-        private void RecordSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
+        private static void RecordSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
             in MouseSystemData mouseSystemData)
         {
             unitSelectionData.ValueRW.SelectionBoxEndPos = new float2
@@ -212,7 +214,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             unitSelectionData.ValueRW.IsDragSelecting = true;
         }
 
-        private void ResetSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
+        private static void ResetSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
             in MouseSystemData mouseSystemData)
         {
             unitSelectionData.ValueRW.SelectionBoxStartPos = float2.zero;

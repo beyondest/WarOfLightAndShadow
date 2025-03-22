@@ -15,7 +15,6 @@ namespace SparFlame.GamePlaySystem.Movement
     public partial class VolumeObstacleSystem : SystemBase
     {
         private readonly Dictionary<Entity, (GameObject, GameObject)> _entityMap = new();
-
         private readonly Dictionary<Entity, GameObject> _neutralEntityMap = new();
         private Dictionary<FactionTag, GameObject> _obstacleTypePrefabMap;
         private Dictionary<FactionTag, GameObject> _volumeTypePrefabMap;

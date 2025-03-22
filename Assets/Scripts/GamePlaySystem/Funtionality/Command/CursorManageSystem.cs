@@ -10,6 +10,7 @@ using SparFlame.GamePlaySystem.Mouse;
 
 namespace SparFlame.GamePlaySystem.Command
 {
+    [UpdateAfter(typeof(UnitSelectionSystem))]
     public partial struct CursorManageSystem : ISystem
     {
         [BurstCompile]

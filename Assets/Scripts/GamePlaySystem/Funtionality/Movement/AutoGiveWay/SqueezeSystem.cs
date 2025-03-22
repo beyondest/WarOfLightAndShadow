@@ -9,7 +9,6 @@ using SparFlame.GamePlaySystem.General;
 namespace SparFlame.GamePlaySystem.Movement
 {
     [BurstCompile]
-    [UpdateAfter(typeof(MovementSystem))]
     [UpdateAfter(typeof(AutoGiveWaySystem))]
     public partial struct SqueezeSystem : ISystem
     {
@@ -23,6 +22,7 @@ namespace SparFlame.GamePlaySystem.Movement
             state.RequireForUpdate<PhysicsWorldSingleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<AutoGiveWaySystemConfig>();
+            state.RequireForUpdate<SqueezeSystemConfig>();
             _interactAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
         }
 
@@ -56,8 +56,8 @@ namespace SparFlame.GamePlaySystem.Movement
             [ReadOnly] public uint DetectRayBelongsTo;
             [ReadOnly] public float SqueezeColliderDetectionRatio;
 
-            private void Execute([ChunkIndexInQuery] int index, ref LocalTransform transform, ref SqueezeData data,
-                ref MovableData movableData,
+            private void Execute([ChunkIndexInQuery] int index, ref LocalTransform transform, in SqueezeData data,
+                in MovableData movableData,
                 Entity entity
             )
             {
@@ -74,6 +74,7 @@ namespace SparFlame.GamePlaySystem.Movement
                         direction,
                         moveDelta, out var hitEntity))
                 {
+                    // Can only pass squeeze data to ally unit 
                     if (InteractAttrLookup.TryGetComponent(hitEntity, out var interactableAttr)
                         && interactableAttr is { FactionTag: FactionTag.Ally, BaseTag: BaseTag.Units }
                        )

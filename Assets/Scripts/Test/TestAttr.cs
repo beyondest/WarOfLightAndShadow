@@ -22,6 +22,7 @@ namespace SparFlame.Test
             }
         }
     }
+    
     public struct TestSpawner : IComponentData
     {
         public float3 SpawnPosition;

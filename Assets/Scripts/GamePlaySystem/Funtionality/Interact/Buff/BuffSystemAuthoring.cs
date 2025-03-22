@@ -9,6 +9,11 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             public override void Bake(BuffSystemAuthoring authoring)
             {
+                var entity = GetEntity(TransformUsageFlags.None);
+                AddComponent(entity, new BuffSystemConfig
+                {
+                    
+                });
             }
         }
     }
@@ -20,5 +25,10 @@ namespace SparFlame.GamePlaySystem.Interact
         public float InteractRangeMultiplier;
         public float InteractAmountMultiplier;
         public float HealthMultiplier;
+    }
+
+    public struct BuffSystemConfig : IComponentData
+    {
+        
     }
 }

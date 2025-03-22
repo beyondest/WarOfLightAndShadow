@@ -1,11 +1,7 @@
-﻿using System;
-using Unity.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.AI;
-using UnityEngine.Experimental.AI;
-using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
