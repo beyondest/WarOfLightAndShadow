@@ -4,7 +4,6 @@ using System.Linq;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.AI;
 
 namespace SparFlame.GamePlaySystem.Movement
@@ -44,16 +43,29 @@ namespace SparFlame.GamePlaySystem.Movement
         }
     }
 
-    [Serializable]
-    public class VolumeObstaclePrefabPair
+    
+    
+    public struct VolumeObstacleDestroyRequest : IComponentData
     {
-        public FactionTag affectAgentType;
-        public GameObject prefab;
+        /// <summary>
+        /// If destroy resource, then request from faction is neutral, otherwise is ally or enemy
+        /// </summary>
+        public FactionTag RequestFromFaction;
+        public Entity FromEntity;
     }
 
+    // TODO : Each time you close door, use this request, and don't forget to set door entity box collider deactivate
+    public struct DoorControlRequest : IComponentData
+    {
+        /// <summary>
+        /// Open = true, close = false
+        /// </summary>
+        public bool OpenOrClose;
+        public FactionTag RequestFromFaction;
+        public Entity FromEntity;
+    }
 
-
-    public class VolumeObstacleSystemConfig : IComponentData
+    internal class VolumeObstacleSystemConfig : IComponentData
     {
         public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;
         public Dictionary<FactionTag, GameObject> VolumeTypePrefabMap;
@@ -62,11 +74,20 @@ namespace SparFlame.GamePlaySystem.Movement
         public int EnemyAgentTypeId;
     }
 
-    public struct UpdateNavMeshRequest : IComponentData
+    internal struct UpdateNavMeshRequest : IComponentData
     {
         /// <summary>
         /// This is the id for which navmesh should be updated
         /// </summary>
         public FactionTag FactionTag;
     }
+    
+    
+    [Serializable]
+    public class VolumeObstaclePrefabPair
+    {
+        public FactionTag affectAgentType;
+        public GameObject prefab;
+    }
+
 }

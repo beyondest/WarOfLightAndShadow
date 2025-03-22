@@ -14,10 +14,9 @@ namespace SparFlame.GamePlaySystem.Movement
 {
     public partial class VolumeObstacleSystem : SystemBase
     {
-        private readonly Dictionary<Entity, (GameObject, GameObject)> _entityMap =
-            new Dictionary<Entity, (GameObject, GameObject)>();
+        private readonly Dictionary<Entity, (GameObject, GameObject)> _entityMap = new();
 
-        private readonly Dictionary<Entity, GameObject> _neutralEntityMap = new Dictionary<Entity, GameObject>();
+        private readonly Dictionary<Entity, GameObject> _neutralEntityMap = new();
         private Dictionary<FactionTag, GameObject> _obstacleTypePrefabMap;
         private Dictionary<FactionTag, GameObject> _volumeTypePrefabMap;
         private float _lastSyncTime;
@@ -41,7 +40,8 @@ namespace SparFlame.GamePlaySystem.Movement
                 _syncTimeInterval = config.SyncTimeInterval;
             }
         }
-
+        
+        // TODO : Add job parallel support
         protected override void OnUpdate()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);

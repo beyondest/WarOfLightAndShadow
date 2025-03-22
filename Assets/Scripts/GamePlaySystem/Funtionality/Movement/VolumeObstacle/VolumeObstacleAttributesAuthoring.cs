@@ -90,20 +90,18 @@ namespace SparFlame.GamePlaySystem.Movement
         }
     }
 
-    public struct SyncObstacleData : IComponentData
+    internal struct SyncObstacleData : IComponentData
     {
         public float SyncPositionInterval;
         public float SyncTime;
     }
     
     
-    /// <summary>
-    /// TODO : Each time when you try to destroy an entity with ObstacleTag, create entity with ObstacleDestroyRequest.
-    /// </summary>
     public struct VolumeObstacleTag : IComponentData
     {
     }
 
+    // TODO : Change request to entity request not component request
     public struct VolumeObstacleSpawnRequest : IComponentData
     {
         public float3 Center;
@@ -123,23 +121,7 @@ namespace SparFlame.GamePlaySystem.Movement
         public bool NotGenerateVolume;
     }
 
-    public struct VolumeObstacleDestroyRequest : IComponentData
-    {
-        /// <summary>
-        /// If destroy resource, then request from faction is neutral, otherwise is ally or enemy
-        /// </summary>
-        public FactionTag RequestFromFaction;
-        public Entity FromEntity;
-    }
 
-    // TODO : Each time you close door, use this request, and don't forget to set door entity box collider deactivate
-    public struct DoorControlRequest : IComponentData
-    {
-        /// <summary>
-        /// Open = true, close = false
-        /// </summary>
-        public bool OpenOrClose;
-        public FactionTag RequestFromFaction;
-        public Entity FromEntity;
-    }
+
+
 }
