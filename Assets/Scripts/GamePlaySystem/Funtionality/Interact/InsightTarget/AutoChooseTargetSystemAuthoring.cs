@@ -18,8 +18,8 @@ namespace SparFlame.GamePlaySystem.Interact
 
         [Tooltip("If damage dealt is 100 and multiplier is 1.0f, than attacker's statValue += 100 * 1.0f")]
         public float statValueChangeMultiplier = 1.0f;
-
-
+        
+        public float disSqMultiplier = 1f;
         private class AutoChooseTargetSystemAuthoringBaker : Baker<AutoChooseTargetSystemAuthoring>
         {
             public override void Bake(AutoChooseTargetSystemAuthoring authoring)
@@ -31,6 +31,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     HarvestAboveAttack = authoring.harvestAboveAttack,
                     BaseLineDistanceSq = authoring.baseLineDistanceSq,
                     StatValueChangeMultiplier = authoring.statValueChangeMultiplier,
+                    DisSqValueMultiplier = authoring.disSqMultiplier,
                 });
             }
         }
@@ -41,6 +42,7 @@ namespace SparFlame.GamePlaySystem.Interact
         public float HealAboveAttack;
         public float HarvestAboveAttack;
         public float BaseLineDistanceSq;
+        public float DisSqValueMultiplier;
         public float StatValueChangeMultiplier;
     }
 }

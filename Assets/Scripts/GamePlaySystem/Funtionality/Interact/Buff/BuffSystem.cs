@@ -1,10 +1,11 @@
 ﻿using SparFlame.GamePlaySystem.Movement;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Physics.Systems;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    [UpdateAfter(typeof(AutoChooseTargetSystem))]
+    [UpdateAfter(typeof(StatSystem))]
     public partial struct BuffSystem : ISystem
     {
         [BurstCompile]

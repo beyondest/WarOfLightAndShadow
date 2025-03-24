@@ -1,5 +1,6 @@
 ﻿using System;
 using Unity.Entities;
+using Unity.Physics.Stateful;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
@@ -12,7 +13,7 @@ namespace SparFlame.GamePlaySystem.Interact
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddBuffer<InsightTarget>(entity);
-
+                AddBuffer<StatefulTriggerEvent>(entity);
             }
         }
     }
@@ -30,6 +31,8 @@ namespace SparFlame.GamePlaySystem.Interact
         public float BaseValue;
         public float DisValue;
         public float StatChangValue;
+        public float InteractOverride;
+        public float TotalValue;
         
         public int CompareTo(InsightTarget other)
         {

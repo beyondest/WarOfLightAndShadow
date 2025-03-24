@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics.Authoring;
 using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.Movement
@@ -13,8 +14,6 @@ namespace SparFlame.GamePlaySystem.Movement
         [Tooltip("This ratio * being squeezed max collider shapeXz is the detect collider radius")]
         public float squeezeColliderDetectionRatio = 1.5f;
 
-        public LayerMask obstacleLayerMask;
-        public LayerMask detectRayBelongsTo;
         private class Baker : Baker<AutoGiveWaySystemAuthoring>
         {
             public override void Bake(AutoGiveWaySystemAuthoring authoring)
@@ -23,8 +22,6 @@ namespace SparFlame.GamePlaySystem.Movement
                 AddComponent(entity, new AutoGiveWaySystemConfig
                 {
                     Duration = authoring.duration,
-                    ObstacleLayerMask = (uint)authoring.obstacleLayerMask.value,
-                    DetectRayBelongsTo = (uint)authoring.detectRayBelongsTo.value,
                     SqueezeColliderDetectionRatio = authoring.squeezeColliderDetectionRatio
                 });
             }
@@ -34,8 +31,6 @@ namespace SparFlame.GamePlaySystem.Movement
     public struct AutoGiveWaySystemConfig : IComponentData
     {
         public float Duration;
-        public uint ObstacleLayerMask;
-        public uint DetectRayBelongsTo;
         public float SqueezeColliderDetectionRatio;
     }
 

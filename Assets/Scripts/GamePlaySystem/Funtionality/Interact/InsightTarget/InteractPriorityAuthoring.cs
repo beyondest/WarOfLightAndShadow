@@ -11,6 +11,11 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             public override void Bake(InteractPriorityAuthoring authoring)
             {
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
+                AddComponent(entity, new InteractPriority
+                {
+                    Value = authoring.priority
+                });
             }
         }
     }
@@ -21,5 +26,6 @@ namespace SparFlame.GamePlaySystem.Interact
         /// This value is the basic value of target, not consider its damage dealt or distance
         /// </summary>
         public float Value;
+
     }
 }

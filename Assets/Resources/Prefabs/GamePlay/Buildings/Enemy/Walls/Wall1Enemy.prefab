@@ -68,7 +68,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall1Enemy
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1870553777278947467, guid: 3d15a8a98faf5f14bb554327be897504, type: 3}
+    - {fileID: 8254238932302659573, guid: 3d15a8a98faf5f14bb554327be897504, type: 3}
+    - {fileID: 6749242580270125367, guid: 3d15a8a98faf5f14bb554327be897504, type: 3}
+    - {fileID: 127630255763546821, guid: 3d15a8a98faf5f14bb554327be897504, type: 3}
     m_RemovedGameObjects:
     - {fileID: 2602323407084697065, guid: 3d15a8a98faf5f14bb554327be897504, type: 3}
     m_AddedGameObjects:
@@ -93,6 +97,10 @@ PrefabInstance:
     - target: {fileID: 1561555250156074258, guid: dfda26c1375ebd2459abd760617ca8d9, type: 3}
       propertyPath: m_Name
       value: Wall1EnemyModel
+      objectReference: {fileID: 0}
+    - target: {fileID: 2784610668670064389, guid: dfda26c1375ebd2459abd760617ca8d9, type: 3}
+      propertyPath: m_VersionIndex
+      value: 1813
       objectReference: {fileID: 0}
     - target: {fileID: 6432930785750503743, guid: dfda26c1375ebd2459abd760617ca8d9, type: 3}
       propertyPath: m_LocalPosition.x

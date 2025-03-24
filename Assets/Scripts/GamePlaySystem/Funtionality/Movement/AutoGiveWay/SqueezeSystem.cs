@@ -5,11 +5,11 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
+using Unity.Android.Gradle;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
     [BurstCompile]
-    [UpdateAfter(typeof(AutoGiveWaySystem))]
     public partial struct SqueezeSystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactAttrLookup;
@@ -17,8 +17,8 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<MovementConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<MovementConfig>();
             state.RequireForUpdate<PhysicsWorldSingleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<AutoGiveWaySystemConfig>();
@@ -33,16 +33,18 @@ namespace SparFlame.GamePlaySystem.Movement
             _interactAttrLookup.Update(ref state);
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
             var config = SystemAPI.GetSingleton<AutoGiveWaySystemConfig>();
+            var movementConfig = SystemAPI.GetSingleton<MovementConfig>();
 
-            new SqueezeJob
+            var squeezeJobHandle =new SqueezeJob
             {
                 PhysicsWorld = physicsWorld,
                 InteractAttrLookup = _interactAttrLookup,
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                ObstacleLayerMask = config.ObstacleLayerMask,
-                DetectRayBelongsTo = config.DetectRayBelongsTo,
+                ObstacleLayerMask = movementConfig.ObstacleLayerMask,
+                DetectRayBelongsTo = movementConfig.DetectRaycasstBelongsTo,
                 SqueezeColliderDetectionRatio = config.SqueezeColliderDetectionRatio
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency = squeezeJobHandle;
         }
 
 

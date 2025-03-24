@@ -8,6 +8,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 44086604267810217, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_CustomMaterialTags.m_Value.Tag01
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 44086604267810217, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category05
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 44086604267810217, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 656648366147647619, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -23,6 +35,18 @@ PrefabInstance:
     - target: {fileID: 1445377205286236987, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
       propertyPath: m_AgentTypeID
       value: -334000983
+      objectReference: {fileID: 0}
+    - target: {fileID: 1447336780797076402, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category05
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1447336780797076402, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category03
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1447336780797076402, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category04
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3003841081033092073, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -75,6 +99,14 @@ PrefabInstance:
     - target: {fileID: 4564859130217792570, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
       propertyPath: m_Name
       value: MageEnemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 4564859130217792570, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5095671822985030721, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category01
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5256018081632927899, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
       propertyPath: m_VersionIndex

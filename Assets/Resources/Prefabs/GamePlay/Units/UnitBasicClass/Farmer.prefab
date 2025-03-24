@@ -16,6 +16,14 @@ PrefabInstance:
       propertyPath: interactBasicAmount
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 4111803572573163848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_VersionIndex
+      value: 436
+      objectReference: {fileID: 0}
+    - target: {fileID: 5240935616546284251, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_VersionIndex
+      value: 1375
+      objectReference: {fileID: 0}
     - target: {fileID: 5672437903288014313, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Name
       value: Farmer
@@ -63,6 +71,38 @@ PrefabInstance:
     - target: {fileID: 6840081404731294384, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category01
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category03
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category04
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category06
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category07
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8177850282908679290, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category07
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9065997544713293671, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_VersionIndex
+      value: 436
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

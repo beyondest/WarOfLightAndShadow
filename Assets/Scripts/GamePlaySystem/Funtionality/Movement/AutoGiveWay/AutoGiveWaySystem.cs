@@ -10,6 +10,7 @@ using SparFlame.GamePlaySystem.UnitSelection;
 namespace SparFlame.GamePlaySystem.Movement
 {
     [BurstCompile]
+    [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct AutoGiveWaySystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactAttrLookup;
@@ -18,8 +19,8 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<MovementConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<MovementConfig>();
             state.RequireForUpdate<PhysicsWorldSingleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<AutoGiveWaySystemConfig>();
@@ -35,6 +36,7 @@ namespace SparFlame.GamePlaySystem.Movement
             _selectedLookup.Update(ref state);
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
             var config = SystemAPI.GetSingleton<AutoGiveWaySystemConfig>();
+            var movementConfig = SystemAPI.GetSingleton<MovementConfig>();
             var movementSystemConfig = SystemAPI.GetSingleton<MovementConfig>();
             
             new AutoGiveWayJob
@@ -45,8 +47,8 @@ namespace SparFlame.GamePlaySystem.Movement
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Duration = config.Duration,
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                ObstacleLayerMask = config.ObstacleLayerMask,
-                DetectRayBelongsTo = config.DetectRayBelongsTo,
+                ObstacleLayerMask = movementConfig.ObstacleLayerMask,
+                DetectRayBelongsTo = movementConfig.DetectRaycasstBelongsTo,
                 RotationSpeed = movementSystemConfig.RotationSpeed
             }.ScheduleParallel();
         }

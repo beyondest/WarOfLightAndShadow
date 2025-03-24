@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
+using Unity.Physics.Authoring;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 
@@ -58,23 +59,16 @@ namespace SparFlame.GamePlaySystem.Movement
                     // this is attackable building
                     areaType = volumeRadius == 0? (AreaType)buildingAttr.tier : (AreaType)(buildingAttr.tier + 10);
                 }
-                
-                
-                
-                if (!authoring.TryGetComponent<BoxCollider>(out var boxCollider))
-                {
-                    Debug.LogError("VolumeObstacle Attributes require a BoxCollider component");
-                    return;
-                }
 
-                
+
+
+                var physicsShapeAuthoring = authoring.GetComponent<PhysicsShapeAuthoring>();
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-
                 AddComponent<VolumeObstacleTag>(entity);
                 AddComponent(entity, new VolumeObstacleSpawnRequest
                 {
-                    Center = boxCollider.center,
-                    Size = boxCollider.size,
+                    Center = physicsShapeAuthoring.m_PrimitiveCenter,
+                    Size = physicsShapeAuthoring.m_PrimitiveSize,
                     VolumeRadius = volumeRadius,
                     VolumeAreaType = areaType,
                     RequestFromFaction = interactableAttr.factionTag,

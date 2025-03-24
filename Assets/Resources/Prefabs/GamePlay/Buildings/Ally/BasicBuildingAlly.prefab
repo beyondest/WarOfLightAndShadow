@@ -8,6 +8,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 179407066082587346, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category06
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 179407066082587346, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category01
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 179407066082587346, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 431756058329599946, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: m_ExcludeLayers.m_Bits
+      value: 2048
+      objectReference: {fileID: 0}
+    - target: {fileID: 828705974011197480, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category04
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1067583352201521263, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
       propertyPath: m_LocalPosition.x
       value: -9.644253
@@ -55,6 +75,10 @@ PrefabInstance:
     - target: {fileID: 5238138822134138317, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
       propertyPath: m_Name
       value: BasicBuildingAlly
+      objectReference: {fileID: 0}
+    - target: {fileID: 5238138822134138317, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7646299197824781543, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'

@@ -30,7 +30,6 @@ namespace SparFlame.GamePlaySystem.Movement
             if (Input.GetKeyDown(KeyCode.Return))
             {
                 StartCoroutine(UpdateNavMesh(FactionTag.Ally));
-                Debug.Log("Fuck");
             }
             // If game pause, do nothing
             if (!_em.CreateEntityQuery(typeof(NotPauseTag)).TryGetSingletonEntity< NotPauseTag>(out var _))

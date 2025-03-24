@@ -5,6 +5,7 @@ using Unity.Entities;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine.AI;
 

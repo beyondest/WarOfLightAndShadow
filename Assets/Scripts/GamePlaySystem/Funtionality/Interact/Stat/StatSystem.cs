@@ -9,11 +9,12 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.PopNumber;
 using Unity.Transforms;
+#pragma warning disable CS0618 // Type or member is obsolete
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    [UpdateAfter(typeof(SqueezeSystem))]
     [UpdateBefore(typeof(VolumeObstacleSystem))]
+    [UpdateAfter(typeof(NavAgentSystem))]
     public partial struct StatSystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactableAttrLookup;
@@ -21,7 +22,6 @@ namespace SparFlame.GamePlaySystem.Interact
         private ComponentLookup<StatData> _statDataLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private BufferLookup<InsightTarget> _insightTargetLookup;
-        
         
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -59,7 +59,6 @@ namespace SparFlame.GamePlaySystem.Interact
                 AutoChooseTargetConfig = autoChooseTargetSystemConfig,
                 Config = config
             }.ScheduleParallel();
-            
         }
 
         [BurstCompile]
@@ -82,10 +81,17 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public StatSystemConfig Config;
             
 
-            private void Execute([ChunkIndexInQuery] int index, in StatChangeRequest request)
+            private void Execute([ChunkIndexInQuery] int index, in StatChangeRequest request, Entity entity)
             {
+                // TODO : Check where wrong
+                // This should not happen when the stat system updates before interact state machine, but it happens.
+                if(!StatLookup.HasComponent(request.Interactee))return;
                 // Handle Stat Change Request. This request is destroyed other place, like pop number system
                 ref var stat = ref StatLookup.GetRefRW(request.Interactee).ValueRW;
+                
+                // This entity is already dead and handled by other request handling process
+                if(stat.CurValue <=0)return;
+                
                 stat.CurValue = request.InteractType == InteractType.Heal
                     ? math.min(stat.MaxValue, stat.CurValue + request.Amount)
                     : math.max(0, stat.CurValue - request.Amount);
@@ -135,6 +141,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 {
                     RemoveAndSendRequest(request.Interactee, index);
                 }
+                ECB.DestroyEntity(index, entity);
             }
 
             /// <summary>

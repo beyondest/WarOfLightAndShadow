@@ -143,6 +143,25 @@ namespace SparFlame.GamePlaySystem.Movement
         }
         
         
+        /// <summary>
+        /// This method calculates the min distance between pos and a rect with centerPos and size
+        /// </summary>
+        /// <param name="centerPos"></param>
+        /// <param name="size"></param>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceSqPointToRect(float2 centerPos, float2 size, float2 pos)
+        {
+            var halfSize = size * 0.5f;
+            var min = centerPos - halfSize;
+            var max = centerPos + halfSize;
+
+            // this clamp method is what you know in scalar, and also works in vector
+            var clampedPos = math.clamp(pos, min, max);
+            return math.distancesq(pos, clampedPos);
+        }
+        
         #endregion
 
     }

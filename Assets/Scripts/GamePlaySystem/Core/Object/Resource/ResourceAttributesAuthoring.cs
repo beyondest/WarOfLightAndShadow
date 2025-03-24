@@ -11,7 +11,6 @@ namespace SparFlame.GamePlaySystem.Resource
             public override void Bake(ResourceAttributesAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.WorldSpace);
-                var boxColliderSize = authoring.GetComponent<BoxCollider>().size;
                 AddComponent(entity, new ResourceAttr
                 {
                     State = ResourceState.Available,

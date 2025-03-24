@@ -1,4 +1,5 @@
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Physics.Stateful
 {
@@ -45,8 +46,15 @@ namespace Unity.Physics.Stateful
         /// <param name="sortCurrent">Specifies whether the currentEvents list needs to be sorted first.</param>
         public static void GetStatefulEvents(NativeList<T> previousEvents, NativeList<T> currentEvents, NativeList<T> statefulEvents, bool sortCurrent = true)
         {
+            // foreach (var ce in currentEvents)
+            // {
+            //     Debug.Log($"Before sorting : ce : {ce.EntityA},{ce.EntityB},{ce.ColliderKeyA},{ce.ColliderKeyB}");
+            // }
             if (sortCurrent) currentEvents.Sort();
-
+            // foreach (var ce in currentEvents)
+            // {
+            //     Debug.Log($"ce : {ce.EntityA},{ce.EntityB},{ce.ColliderKeyA},{ce.ColliderKeyB}");
+            // }
             statefulEvents.Clear();
 
             int c = 0;

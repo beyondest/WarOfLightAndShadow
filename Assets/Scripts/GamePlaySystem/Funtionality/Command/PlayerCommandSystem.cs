@@ -25,25 +25,24 @@ namespace SparFlame.GamePlaySystem.Command
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<CommandConfig>();
             state.RequireForUpdate<CursorData>();
-            state.RequireForUpdate<MouseSystemData>();
+            state.RequireForUpdate<CustomInputSystemData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<BuildingConfig>();
         }
 
-        // TODO : Rewrite this with generic type ijobchunk
+        // TODO : Rewrite this with generic type ijobchunk or generic type ijobparallelfor
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var buildingConfig = SystemAPI.GetSingleton<BuildingConfig>();
             var cursorData = SystemAPI.GetSingleton<CursorData>();
-            var mouseData = SystemAPI.GetSingleton<MouseSystemData>();
+            var customInputSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (unitSelectionData.CurrentSelectCount == 0) return;
-            if (mouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right }) return;
+            if (customInputSystemData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right }) return;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
-            var targetCollider = SystemAPI.GetComponent<InteractableAttr>(mouseData.HitEntity).BoxColliderSize;
-            var transform = SystemAPI.GetComponent<LocalTransform>(mouseData.HitEntity);
+            
             switch (cursorData.RightCursorType)
             {
                 case CursorType.Attack:
@@ -51,10 +50,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementAttackJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = transform.Position,
-                        TargetColliderShape = targetCollider,
-                        TargetEntity = mouseData.HitEntity,
-                        Focus = mouseData.Focus
+                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
+                        TargetEntity = customInputSystemData.HitEntity,
+                        Focus = customInputSystemData.Focus
                     }.ScheduleParallel();
 
                     break;
@@ -65,10 +64,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementGarrisonJob()
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = transform.Position,
-                        TargetColliderShape = targetCollider,
-                        TargetEntity = mouseData.HitEntity,
-                        Focus = mouseData.Focus,
+                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
+                        TargetEntity = customInputSystemData.HitEntity,
+                        Focus = customInputSystemData.Focus,
                         InteractiveRangeSq = buildingConfig.BuildingGarrisonRadiusSq
                     }.ScheduleParallel();
                     break;
@@ -79,10 +78,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementHarvestJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = transform.Position,
-                        TargetColliderShape = targetCollider,
-                        TargetEntity = mouseData.HitEntity,
-                        Focus = mouseData.Focus
+                        TargetPos = SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
+                        TargetEntity = customInputSystemData.HitEntity,
+                        Focus = customInputSystemData.Focus
                     }.ScheduleParallel();
                     break;
                 }
@@ -92,10 +91,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementHealJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = transform.Position,
-                        TargetColliderShape = targetCollider,
-                        TargetEntity = mouseData.HitEntity,
-                        Focus = mouseData.Focus
+                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
+                        TargetEntity = customInputSystemData.HitEntity,
+                        Focus = customInputSystemData.Focus
                     }.ScheduleParallel();
                     break;
                 }
@@ -105,8 +104,8 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementMarchJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = mouseData.HitPosition,
-                        Focus = mouseData.Focus
+                        TargetPos = customInputSystemData.HitPosition,
+                        Focus = customInputSystemData.Focus
                     }.ScheduleParallel();
                     break;
                 }

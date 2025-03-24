@@ -7,6 +7,7 @@ using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.Mouse;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Command
 {
@@ -18,7 +19,7 @@ namespace SparFlame.GamePlaySystem.Command
         {
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<CursorData>();
-            state.RequireForUpdate<MouseSystemData>();
+            state.RequireForUpdate<CustomInputSystemData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<CameraControlData>();
         }
@@ -26,7 +27,7 @@ namespace SparFlame.GamePlaySystem.Command
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var mouseSystemData = SystemAPI.GetSingleton<MouseSystemData>();
+            var mouseSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
             var cursorManageData = SystemAPI.GetSingletonRW<CursorData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             var cameraControlData = SystemAPI.GetSingleton<CameraControlData>();
@@ -97,11 +98,15 @@ namespace SparFlame.GamePlaySystem.Command
             in UnitSelectionData unitSelectionData,
             in InteractableAttr interactableAttr, in BuildingAttr buildingAttr, in ResourceAttr resourceAttr)
         {
+            var attr = interactableAttr;
+            if(unitSelectionData.CurrentSelectFaction != FactionTag.Ally)
+                attr.FactionTag = ~attr.FactionTag;
+            
             // None unit selected
             if (unitSelectionData.CurrentSelectCount == 0)
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (TeamTag: interactableAttr.FactionTag, interactableAttr.BaseTag) switch
+                    (TeamTag: attr.FactionTag, attr.BaseTag) switch
                     {
                         (FactionTag.Neutral, BaseTag.Resources) => (CursorType.CheckInfo, CursorType.None),
                         (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.None),
@@ -117,7 +122,7 @@ namespace SparFlame.GamePlaySystem.Command
             else
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (TeamTag: interactableAttr.FactionTag, interactableAttr.BaseTag) switch
+                    (TeamTag: attr.FactionTag, attr.BaseTag) switch
                     {
                         (FactionTag.Neutral, BaseTag.Resources) when resourceAttr.State == ResourceState.Available => (
                             CursorType.CheckInfo, CursorType.Harvest),

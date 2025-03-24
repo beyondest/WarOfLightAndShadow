@@ -8,6 +8,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 6572867722332780, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_CustomMaterialTags.m_Value.Tag01
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6572867722332780, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category05
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6572867722332780, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category01
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6572867722332780, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 691051032898215750, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -23,6 +39,18 @@ PrefabInstance:
     - target: {fileID: 1478583227005981950, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
       propertyPath: m_AgentTypeID
       value: -334000983
+      objectReference: {fileID: 0}
+    - target: {fileID: 1485625301659993207, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category05
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1485625301659993207, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category03
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1485625301659993207, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category04
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2964548301320440876, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -76,6 +104,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: MeleeEnemy
       objectReference: {fileID: 0}
+    - target: {fileID: 4598837417826722815, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5061078355432950660, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category01
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5222726327534118750, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
       propertyPath: m_VersionIndex
       value: 442
@@ -83,6 +119,10 @@ PrefabInstance:
     - target: {fileID: 6439265076648053243, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
       propertyPath: factionTag
       value: -2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7133256167748776813, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
+      propertyPath: m_ExcludeLayers.m_Bits
+      value: 4096
       objectReference: {fileID: 0}
     - target: {fileID: 7992438324963753962, guid: 615938a4a4e89ca49b6955e8dce43f4d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'

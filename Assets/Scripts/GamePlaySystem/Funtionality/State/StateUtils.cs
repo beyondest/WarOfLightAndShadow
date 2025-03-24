@@ -3,6 +3,7 @@ using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.State
 {
@@ -10,6 +11,7 @@ namespace SparFlame.GamePlaySystem.State
     {
         public static void SwitchState(ref BasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb, Entity entity,int index)
         {
+            // Debug.Log($"Cur state : {stateData.CurState}, Target state : {stateData.TargetState}");
             if(stateData.TargetState == stateData.CurState)return;
             switch (stateData.TargetState)
             {

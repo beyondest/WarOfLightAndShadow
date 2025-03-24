@@ -9,13 +9,11 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 {
     public class UnitSelectionSystemAuthoring : MonoBehaviour
     {
-        public KeyCode addUnitKey = KeyCode.LeftShift;
         public float dragMinDistance = 0.01f;
 
-        /// <summary>
-        /// If Indicator is first child object, then index is 1
-        /// </summary>
-        public int selectedIndicatorIndex = 1;
+        [Tooltip("When a game object use 2 physics shape, the second one will be placed in child list first, " +
+                 "so if indicator is the first child in hierarchy, actually it is the second child in entity linked group")]
+        public int selectedIndicatorIndex = 2;
         [FormerlySerializedAs("initSelectableTeam")] public FactionTag initSelectableFaction = FactionTag.Ally;
 
         class Baker : Baker<UnitSelectionSystemAuthoring>
@@ -31,7 +29,6 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 });
                 AddComponent(entity, new UnitSelectionConfig
                 {
-                    AddUnitKey = authoring.addUnitKey,
                     DragMinDistanceSq = authoring.dragMinDistance * authoring.dragMinDistance,
                     SelectedIndicatorIndex = authoring.selectedIndicatorIndex
                 });
@@ -41,7 +38,6 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
     public struct UnitSelectionConfig : IComponentData
     {
-        public KeyCode AddUnitKey;
         public float DragMinDistanceSq;
         public int SelectedIndicatorIndex;
     }

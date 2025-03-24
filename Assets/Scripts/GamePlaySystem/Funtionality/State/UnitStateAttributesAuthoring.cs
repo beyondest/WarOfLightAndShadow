@@ -15,7 +15,8 @@ namespace SparFlame.GamePlaySystem.State
                     CurState = UnitState.Idle,
                     Focus = false,
                     TargetEntity = Entity.Null,
-                    TargetState = UnitState.Idle
+                    TargetState = UnitState.Idle,
+                    InteractCounter = 0
                 });
                 AddComponent<IdleStateTag>(entity);
                 SetComponentEnabled<IdleStateTag>(entity,true);
@@ -30,6 +31,7 @@ namespace SparFlame.GamePlaySystem.State
         public bool Focus;
         public Entity TargetEntity;
         public UnitState TargetState;
+        public int InteractCounter;
     }
     
     public struct IdleStateTag : IComponentData, IEnableableComponent

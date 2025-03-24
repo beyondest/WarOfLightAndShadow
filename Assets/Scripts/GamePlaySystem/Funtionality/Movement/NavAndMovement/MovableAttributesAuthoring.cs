@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics.Authoring;
 using UnityEngine.AI;
 
 namespace SparFlame.GamePlaySystem.Movement
@@ -17,11 +18,8 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             public override void Bake(MovableAttributesAuthoring authoring)
             {
-                if (!authoring.TryGetComponent<BoxCollider>(out var collider))
-                {
-                    Debug.LogError("Movable unit must have a Box Collider");
-                    return;
-                }
+                // var physicsShape = authoring.GetComponent<PhysicsShapeAuthoring>();
+                // var collider = physicsShape.GetBoxProperties();
                 if (!authoring.TryGetComponent(out NavMeshAgent agent))
                 {
                     Debug.Log("Movable unit requires NavMeshAgent component");
@@ -54,7 +52,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
-                    SelfColliderShapeXz = new float2(collider.size.x, collider.size.z),
+                    // SelfColliderShapeXz = new float2(collider.Size.x, collider.Size.z),
                 });
                 AddComponent(entity, new Surroundings
                 {

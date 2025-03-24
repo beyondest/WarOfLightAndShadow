@@ -9,10 +9,13 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
+// ReSharper disable ReplaceWithSingleAssignment.False
+
 namespace SparFlame.GamePlaySystem.State
 {
     [BurstCompile]
-    [UpdateAfter(typeof(NavAgent2System))]
+    [UpdateAfter(typeof(UpdateTargetListSystem))]
+    [UpdateAfter(typeof(BuffSystem))]
     [UpdateBefore(typeof(AutoGiveWaySystem))]
     [Obsolete("Obsolete")]
     public partial struct MovingStateMachine : ISystem
@@ -139,7 +142,6 @@ namespace SparFlame.GamePlaySystem.State
                 var ifStuckResolved = TryResolveStuck(ref surroundings, in movableData, ref stateData, ref transform,
                     entity, index);
 
-                
 
                 // Not complete the moving. May change target if stuck is not resolved or some other things happen
                 CheckShouldChangeTarget(ref stateData, ref movableData,
@@ -158,25 +160,7 @@ namespace SparFlame.GamePlaySystem.State
             )
             {
                 var shouldChangeTarget = false;
-                
-                var targetFaction = InteractLookUp[stateData.TargetEntity].FactionTag;
-                var targetStat = StatLookup[stateData.TargetEntity];
-                // Current target invalid, should choose target
-                if (movableData.MovementCommandType == MovementCommandType.Interactive
-                    && !InteractUtils.IsTargetValid(targetFaction, selfFactionTag, in targetStat))
-                {
-                    // Turn to idle
-                    if (targets.IsEmpty)
-                    {
-                        MovementUtils.ResetMovableData(ref movableData);
-                        stateData.TargetEntity = Entity.Null;
-                        stateData.TargetState = UnitState.Idle;
-                        StateUtils.SwitchState(ref stateData,ECB,entity, index);
-                        return;
-                    }
-                    shouldChangeTarget = true;
-                }
-
+                InteractableAttr targetInteractAttr;
                 // Not focus march, see target, should choose target
                 if (
                     !stateData.Focus
@@ -185,12 +169,41 @@ namespace SparFlame.GamePlaySystem.State
                 {
                     shouldChangeTarget = true;
                 }
+
+                // Interactive move, check current target valid
+                if (movableData.MovementCommandType == MovementCommandType.Interactive)
+                {
+                    // If current target valid, do nothing
+                    if (InteractLookUp.TryGetComponent(stateData.TargetEntity, out targetInteractAttr))
+                    {
+                        var targetFaction = targetInteractAttr.FactionTag;
+                        var targetStat = StatLookup[stateData.TargetEntity];
+                        if (InteractUtils.IsTargetValid(targetFaction, selfFactionTag, in targetStat))
+                        {
+                            return;
+                        }
+                    }
+                    // Current target invalid, check if turn to idle
+                    if (targets.IsEmpty)
+                    {
+                        MovementUtils.ResetMovableData(ref movableData);
+                        stateData.TargetEntity = Entity.Null;
+                        stateData.TargetState = UnitState.Idle;
+                        StateUtils.SwitchState(ref stateData, ECB, entity, index);
+                        return;
+                    }
+                    shouldChangeTarget = true;
+                }
+
                 
-                if(!shouldChangeTarget)return;
                 
-                // Interact move to target. Because it is in moving state already, so don't need to switch state
+                
+                if (!shouldChangeTarget) return;
+
+                // Interact move to target. Because it is in moving state already, so don't need to switch state;
+                // Because moving state machine Update after update target list system, choose target should always be valid
                 stateData.TargetEntity = StateUtils.ChooseTarget(in targets);
-                var targetInteractAttr = InteractLookUp[stateData.TargetEntity];
+                targetInteractAttr = InteractLookUp[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
                 var targetColliderSize = targetInteractAttr.BoxColliderSize;
                 float rangSq;
@@ -226,42 +239,42 @@ namespace SparFlame.GamePlaySystem.State
                 if (surroundings.MoveSuccess
                     || surroundings.CompromiseTimes < MaxAllowedCompromiseTimesForStuck) return false;
                 // Try to let the unselected ally unit auto give way
-                if (TryTellAutoGiveWay(ref surroundings, in transform, entity, index))
-                    return true;
+                // if (TryTellAutoGiveWay(ref surroundings, in transform, entity, index))
+                //     return true;
 
-                if (TrySqueeze(ref surroundings, in transform, index))
-                    return true;
+                // if (TrySqueeze(ref surroundings, in transform, index))
+                //     return true;
 
                 if (surroundings.CompromiseTimes < MaxAllowedCompromiseTimesForSqueeze) return true;
 
-                // If Squeeze failed, try to find another way 
-                if (surroundings.CompromiseTimes < 2 * MaxAllowedCompromiseTimesForStuck &&
-                    (surroundings.LeftEntity == Entity.Null
-                     ||
-                     surroundings.RightEntity == Entity.Null))
-                {
-                    var isLeft = surroundings.LeftEntity == Entity.Null;
-                    var isRight = surroundings.RightEntity == Entity.Null;
-                    var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
-                    var dir = MovementUtils.GetLeftOrRight(realFront, !surroundings.ChooseRight ? isLeft : !isRight);
-                    transform.Position +=
-                        dir * math.max(movableData.SelfColliderShapeXz.x, movableData.SelfColliderShapeXz.y) * 0.2f;
-                    switch (surroundings.ChooseRight)
-                    {
-                        case true when !isRight:
-                        case false when !isLeft:
-                            surroundings.SlideTimes += 1;
-                            break;
-                    }
-
-                    if (surroundings.SlideTimes > ChooseSideTimes)
-                    {
-                        surroundings.ChooseRight = !surroundings.ChooseRight;
-                        surroundings.SlideTimes = 0;
-                    }
-
-                    return true;
-                }
+                // // If Squeeze failed, try to find another way 
+                // if (surroundings.CompromiseTimes < 2 * MaxAllowedCompromiseTimesForStuck &&
+                //     (surroundings.LeftEntity == Entity.Null
+                //      ||
+                //      surroundings.RightEntity == Entity.Null))
+                // {
+                //     var isLeft = surroundings.LeftEntity == Entity.Null;
+                //     var isRight = surroundings.RightEntity == Entity.Null;
+                //     var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
+                //     var dir = MovementUtils.GetLeftOrRight(realFront, !surroundings.ChooseRight ? isLeft : !isRight);
+                //     transform.Position +=
+                //         dir * math.max(movableData.SelfColliderShapeXz.x, movableData.SelfColliderShapeXz.y) * 0.2f;
+                //     switch (surroundings.ChooseRight)
+                //     {
+                //         case true when !isRight:
+                //         case false when !isLeft:
+                //             surroundings.SlideTimes += 1;
+                //             break;
+                //     }
+                //
+                //     if (surroundings.SlideTimes > ChooseSideTimes)
+                //     {
+                //         surroundings.ChooseRight = !surroundings.ChooseRight;
+                //         surroundings.SlideTimes = 0;
+                //     }
+                //
+                //     return true;
+                // }
 
                 // If unit find another way failed
                 // If front is enemy building and get stuck, remove it
@@ -333,7 +346,7 @@ namespace SparFlame.GamePlaySystem.State
                 {
                     MovementUtils.ResetMovableData(ref movableData);
                     MovementUtils.ResetSurroundings(ref surroundings);
-                    if(stateData.TargetState == UnitState.Idle)stateData.TargetEntity = Entity.Null;
+                    if (stateData.TargetState == UnitState.Idle) stateData.TargetEntity = Entity.Null;
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     return true;
                 }

@@ -70,13 +70,29 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 15618424728207959, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_ExcludeLayers.m_Bits
+      value: 2048
+      objectReference: {fileID: 0}
     - target: {fileID: 874769391953727184, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: f9bd3bf3e84f67f42a006d6bce37d80c, type: 2}
+    - target: {fileID: 2663203650231876286, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category03
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2663203650231876286, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category01
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2663203650231876286, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3077031133928986212, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: m_VersionIndex
-      value: 451
+      value: 469
       objectReference: {fileID: 0}
     - target: {fileID: 4293561121413560513, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: factionTag
@@ -128,11 +144,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6564079194726163959, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: m_VersionIndex
-      value: 1390
+      value: 1408
       objectReference: {fileID: 0}
     - target: {fileID: 6709039817703936709, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: m_Name
       value: FarmerAlly
+      objectReference: {fileID: 0}
+    - target: {fileID: 6709039817703936709, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7124219149145422678, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CustomMaterialTags.m_Value.Tag00
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7124219149145422678, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category06
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7124219149145422678, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category03
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7124219149145422678, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category04
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7736635708788928124, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -144,11 +180,23 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 96880151f3472184287b71f1c220a4a4, type: 2}
     - target: {fileID: 7958745273267865675, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: m_VersionIndex
-      value: 451
+      value: 469
       objectReference: {fileID: 0}
     - target: {fileID: 8524731299559974340, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
       propertyPath: m_AgentTypeID
       value: -1372625422
+      objectReference: {fileID: 0}
+    - target: {fileID: 8527308850123060557, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category06
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8527308850123060557, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category01
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8527308850123060557, guid: 342d83f013e5ec2408d449dc2d8e7a38, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

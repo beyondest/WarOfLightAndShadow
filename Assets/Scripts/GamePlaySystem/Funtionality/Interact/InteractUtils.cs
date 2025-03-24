@@ -17,5 +17,11 @@ namespace SparFlame.GamePlaySystem.Interact
             // Healing state but target stat is already full. If it is in healing state, target should be ally unit, this logic is determined by Auto Choose System
             return targetFaction != selfFactionTag || statData.CurValue < statData.MaxValue;
         }
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // public static float3 GetRandomOffset(ref Random random, float scale)
+        // {
+        //     var randomDir = math.normalize(random.NextFloat3(-1f, 1f)); 
+        //     return randomDir * scale; 
+        // }
     }
 }
