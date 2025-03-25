@@ -5,20 +5,22 @@ using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    public class InsightTarListAttrAuthoring : MonoBehaviour
+    public class SightAttributesAuthoring : MonoBehaviour
     {
-        private class Baker: Baker<InsightTarListAttrAuthoring>
+        public GameObject sightPrefab;
+        private class Baker: Baker<SightAttributesAuthoring>
         {
-            public override void Bake(InsightTarListAttrAuthoring authoring)
+            public override void Bake(SightAttributesAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddBuffer<InsightTarget>(entity);
-                AddBuffer<StatefulTriggerEvent>(entity);
+                AddComponent(entity, new GenerateSightRequest
+                {
+                    SightPrefab = GetEntity(authoring.sightPrefab, TransformUsageFlags.Dynamic)
+                });
             }
         }
     }
-    
-    
 
 
     public interface IEntityContained
@@ -43,4 +45,10 @@ namespace SparFlame.GamePlaySystem.Interact
             return Entity == other.Entity;
         }
     }
+
+    public struct GenerateSightRequest : IComponentData
+    {
+        public Entity SightPrefab;
+    }
+    
 }

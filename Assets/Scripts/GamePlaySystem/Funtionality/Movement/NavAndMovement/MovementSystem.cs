@@ -15,13 +15,11 @@ namespace SparFlame.GamePlaySystem.Movement
     [BurstCompile]
     public partial struct MovementSystem : ISystem
     {
-        // private BufferLookup<WaypointBuffer> _waypointLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PhysicsWorldSingleton>();
-            // state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<MovementConfig>();
             // _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
@@ -58,17 +56,8 @@ namespace SparFlame.GamePlaySystem.Movement
     public partial struct MoveJob : IJobEntity
     {
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
-        // [ReadOnly] public BufferLookup<WaypointBuffer> WayPointsLookup;
-
-
         [ReadOnly] public float DeltaTime;
-
         [ReadOnly] public MovementConfig Config;
-        // [ReadOnly] public float WayPointDistanceSq;
-        // [ReadOnly] public float MarchExtent;
-        // [ReadOnly] public float RotationSpeed;
-        // [ReadOnly] public uint ClickableLayerMask;
-        // [ReadOnly] public uint MovementRayBelongsToLayerMask;
 
         private void Execute(
             ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
@@ -82,7 +71,6 @@ namespace SparFlame.GamePlaySystem.Movement
             var curPosY0 = new float3(transform.Position.x, 0f, transform.Position.z);
             var interactiveRangeSq = movableData.InteractiveRangeSq;
             var shouldMove = false;
-            // if (!WayPointsLookup.TryGetBuffer(entity, out var waypointBuffer)) return;
 
             switch (movableData.MovementCommandType)
             {

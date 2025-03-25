@@ -2,8 +2,6 @@
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
-using Unity.Transforms;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.State
 {
@@ -94,10 +92,9 @@ namespace SparFlame.GamePlaySystem.State
             var bestTarget = Entity.Null;
             foreach (var target in targets)
             {
-                var value = target.BaseValue + target.DisValue + target.StatChangValue;
-                if (value >= maxValue)
+                if (target.TotalValue >= maxValue)
                 {
-                    maxValue = value;
+                    maxValue = target.TotalValue;
                     bestTarget = target.Entity;
                 }
             }

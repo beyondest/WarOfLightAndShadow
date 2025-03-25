@@ -11,9 +11,11 @@ namespace SparFlame.GamePlaySystem.Interact
 {
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
     [UpdateAfter(typeof(StatefulTriggerEventBufferSystem))]
-    public partial struct CheckSightTriggerSystem : ISystem
+    public partial struct SightTriggerSystem : ISystem
     {
         private ComponentLookup<InteractPriority> _priorityLookup;
+        private BufferLookup<InsightTarget> _targetLookup;
+        
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -22,40 +24,45 @@ namespace SparFlame.GamePlaySystem.Interact
             state.RequireForUpdate<AutoChooseTargetSystemConfig>();
             // _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
             _priorityLookup = state.GetComponentLookup<InteractPriority>(true);
+            _targetLookup = state.GetBufferLookup<InsightTarget>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _priorityLookup.Update(ref state);
+            _targetLookup.Update(ref state);
             // _interactableLookup.Update(ref state);
             // Calculate disValue and check trigger events
-            new CheckSightTriggerJob
+            new SightTriggerJob
             {
                 // InteractableAttrLookup = _interactableLookup,
                 PriorityLookup = _priorityLookup,
+                TargetLookup = _targetLookup
             }.ScheduleParallel();
         }
 
         // Warning : This job cannot delay for even a little time;MUST be in front of all other jobs
         [BurstCompile]
-        public partial struct CheckSightTriggerJob : IJobEntity
+        public partial struct SightTriggerJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<InteractPriority> PriorityLookup;
+            [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetLookup;
             
-            private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, ref DynamicBuffer<InsightTarget> targets,
+            private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in SightData data,
                 Entity entity)
             {
+                // This may happen when belongs to entity is dead but the sight not been removed by sight system yet
+                if(!TargetLookup.TryGetBuffer(data.BelongsTo, out var targets))return;
                 
                 // var selfFaction = InteractableAttrLookup[entity].FactionTag;
-                
                 // Add insight target, remove out sight target
                 foreach (var triggerEvent in events)
                 {
                     var target = triggerEvent.GetOtherEntity(entity);
                     
                     // Check if target is valid for target
-                    if( !PriorityLookup.TryGetComponent(target, out InteractPriority priority))continue;
+                    if( !PriorityLookup.TryGetComponent(target, out var priority))continue;
 
                     var insightTarget = new InsightTarget
                     {

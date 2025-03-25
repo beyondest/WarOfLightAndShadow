@@ -8,13 +8,13 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    [UpdateAfter(typeof(StatSystem))]
     [BurstCompile]
-    public partial struct UpdateTargetListSystem : ISystem
+    public partial struct SightUpdateListSystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactableLookup;
         private ComponentLookup<StatData> _statDataLookup;
-        // private ComponentLookup<InteractPriority> _priorityLookup;
+        private ComponentLookup<HealStateTag> _healLookup;
+        private ComponentLookup<HarvestStateTag> _harvestLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -23,24 +23,27 @@ namespace SparFlame.GamePlaySystem.Interact
             state.RequireForUpdate<AutoChooseTargetSystemConfig>();
             _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
             _statDataLookup = state.GetComponentLookup<StatData>(true);
-            // _priorityLookup = state.GetComponentLookup<InteractPriority>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
+            _healLookup = state.GetComponentLookup<HealStateTag>(true);
+            _harvestLookup = state.GetComponentLookup<HarvestStateTag>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var config = SystemAPI.GetSingleton<AutoChooseTargetSystemConfig>();
-            // _priorityLookup.Update(ref state);
             _statDataLookup.Update(ref state);
             _interactableLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
+            _healLookup.Update(ref state);
+            _harvestLookup.Update(ref state);
             new UpdateTargetListJob
             {
                 Config = config,
                 InteractableAttrLookup = _interactableLookup,
                 StatDataLookup = _statDataLookup,
-                // PriorityLookup = _priorityLookup,
+                HealLookup = _healLookup,
+                HarvestLookup = _harvestLookup,
                 TransformLookup = _localTransformLookup
             }.ScheduleParallel();
         }
@@ -51,8 +54,9 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             [ReadOnly] public ComponentLookup<InteractableAttr> InteractableAttrLookup;
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
-            // [ReadOnly] public ComponentLookup<InteractPriority> PriorityLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
+            [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
             [ReadOnly] public AutoChooseTargetSystemConfig Config;
 
             private void Execute(ref DynamicBuffer<InsightTarget> targets, Entity entity)
@@ -64,10 +68,12 @@ namespace SparFlame.GamePlaySystem.Interact
                 {
                     var insightTarget = targets[i];
                     var target = insightTarget.Entity;
-                    var targetStat = StatDataLookup[target];
-                    var targetFaction = InteractableAttrLookup[target].FactionTag;
+                    
                     // Remove invalid target
-                    if (!InteractUtils.IsTargetValid(targetFaction, selfFaction,in targetStat))
+                    if (!InteractableAttrLookup.TryGetComponent(insightTarget.Entity, out var targetInteractAttr)
+                        ||!StatDataLookup.TryGetComponent(insightTarget.Entity, out var targetStatData)
+                        ||!InteractUtils.IsTargetValid(in targetInteractAttr,in selfFaction,in targetStatData, HealLookup.HasComponent(entity),
+                            HarvestLookup.HasComponent(entity)))
                     {
                         targets.RemoveAt(i);
                         continue;
@@ -75,13 +81,13 @@ namespace SparFlame.GamePlaySystem.Interact
 
                     if (insightTarget.InteractOverride == 0f)
                     {
-                        if (targetFaction == FactionTag.Neutral)
+                        if (targetInteractAttr.BaseTag == BaseTag.Resources)
                         {   // Harvest
                             insightTarget.InteractOverride += Config.HarvestAboveAttack;
                         }
                         else
                         {   // Heal
-                            if (targetFaction == selfFaction)
+                            if (targetInteractAttr.FactionTag == selfFaction)
                             {
                                 insightTarget.InteractOverride += Config.HealAboveAttack;
                             }

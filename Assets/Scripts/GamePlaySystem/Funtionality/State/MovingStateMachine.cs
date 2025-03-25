@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -14,10 +13,10 @@ using Unity.Transforms;
 namespace SparFlame.GamePlaySystem.State
 {
     [BurstCompile]
-    [UpdateAfter(typeof(UpdateTargetListSystem))]
+    [UpdateAfter(typeof(SightUpdateListSystem))]
     [UpdateAfter(typeof(BuffSystem))]
     [UpdateBefore(typeof(AutoGiveWaySystem))]
-    [Obsolete("Obsolete")]
+    [UpdateBefore(typeof(StatSystem))]
     public partial struct MovingStateMachine : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactableLookup;
@@ -176,9 +175,9 @@ namespace SparFlame.GamePlaySystem.State
                     // If current target valid, do nothing
                     if (InteractLookUp.TryGetComponent(stateData.TargetEntity, out targetInteractAttr))
                     {
-                        var targetFaction = targetInteractAttr.FactionTag;
                         var targetStat = StatLookup[stateData.TargetEntity];
-                        if (InteractUtils.IsTargetValid(targetFaction, selfFactionTag, in targetStat))
+                        if (InteractUtils.IsTargetValid(in targetInteractAttr,in selfFactionTag, in targetStat,
+                                HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity)))
                         {
                             return;
                         }
@@ -212,7 +211,7 @@ namespace SparFlame.GamePlaySystem.State
                     stateData.TargetState = UnitState.Healing;
                     rangSq = HealLookup[entity].RangeSq;
                 }
-                else if (targetInteractAttr.FactionTag == FactionTag.Neutral)
+                else if (targetInteractAttr.BaseTag == BaseTag.Resources)
                 {
                     stateData.TargetState = UnitState.Harvesting;
                     rangSq = HarvestLookup[entity].RangeSq;

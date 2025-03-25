@@ -8,6 +8,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 217992183786768771, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: sightPrefab
+      value: 
+      objectReference: {fileID: 1443848651641533078, guid: d7ac65be315650a478a0d743f3449614, type: 3}
     - target: {fileID: 607516118960526303, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: factionTag
       value: 1

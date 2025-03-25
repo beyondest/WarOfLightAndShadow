@@ -3,13 +3,13 @@ using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    public class InteractPriorityAuthoring : MonoBehaviour
+    public class SightPriorityAuthoring : MonoBehaviour
     {
         public float priority;
         
-        private class InteractPriorityAuthoringBaker : Baker<InteractPriorityAuthoring>
+        private class Baker : Baker<SightPriorityAuthoring>
         {
-            public override void Bake(InteractPriorityAuthoring authoring)
+            public override void Bake(SightPriorityAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new InteractPriority

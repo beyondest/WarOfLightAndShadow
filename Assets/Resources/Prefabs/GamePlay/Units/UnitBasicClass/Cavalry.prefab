@@ -172,6 +172,10 @@ PrefabInstance:
       propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category07
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7457917497969479734, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: priority
+      value: 70
+      objectReference: {fileID: 0}
     - target: {fileID: 9065997544713293671, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_VersionIndex
       value: 430

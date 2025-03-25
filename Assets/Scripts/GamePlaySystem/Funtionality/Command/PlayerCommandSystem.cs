@@ -13,9 +13,8 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Command
 {
-    [UpdateBefore(typeof(MovementSystem))]
+    // [UpdateBefore(typeof(MovementSystem))]
     [UpdateAfter(typeof(CursorManageSystem))]
-    [UpdateBefore(typeof(VolumeObstacleSystem))]
     public partial struct PlayerCommandSystem : ISystem
     {
         [BurstCompile]

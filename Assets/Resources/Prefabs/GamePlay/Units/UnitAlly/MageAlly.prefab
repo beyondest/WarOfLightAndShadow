@@ -178,6 +178,10 @@ PrefabInstance:
       propertyPath: m_VersionIndex
       value: 448
       objectReference: {fileID: 0}
+    - target: {fileID: 5962491030689707106, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
+      propertyPath: sightPrefab
+      value: 
+      objectReference: {fileID: 2444425849533730231, guid: 3d81e07bc9834954fb00d7bafe83ada7, type: 3}
     - target: {fileID: 6473682627674844734, guid: 1e0c10b26c0e43040ae80fb586ef8326, type: 3}
       propertyPath: factionTag
       value: 1

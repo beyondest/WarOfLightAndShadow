@@ -84,6 +84,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: d39cb5982148a004bbb319070c3dbc12, type: 2}
+    - target: {fileID: 8157422311343239138, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: sightPrefab
+      value: 
+      objectReference: {fileID: 7887432632256155746, guid: a35c6c8c061b475489458fa2958effcc, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

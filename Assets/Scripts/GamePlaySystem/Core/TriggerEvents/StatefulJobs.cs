@@ -74,30 +74,26 @@ namespace Unity.Physics.Stateful
 
                 StatefulSimulationEventBuffers<T>.GetStatefulEvents(PreviousEvents, CurrentEvents, statefulEvents);
 
-                for (int i = 0; i < statefulEvents.Length; i++)
+                for (var i = 0; i < statefulEvents.Length; i++)
                 {
                     var statefulEvent = statefulEvents[i];
                     
-                     
-                    
-                    var addToEntityA = false;
-                    var addToEntityB = false;
-                    
-                    
-                    addToEntityB = EventLookup.HasBuffer(statefulEvent.EntityB) &&
-                                   (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityA));
-                    if (statefulEvent.ColliderKeyA.Value > statefulEvent.ColliderKeyB.Value
-                        && EventLookup.HasBuffer(statefulEvent.EntityA)
-                        && (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityA)))
-                    {
-                        addToEntityA = true;
-                    }
-                    else if(statefulEvent.ColliderKeyB.Value > statefulEvent.ColliderKeyA.Value
-                            &&EventLookup.HasBuffer(statefulEvent.EntityB)
-                            && (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityB)))
-                    {
-                        addToEntityB = true;
-                    }
+                    var addToEntityA = EventLookup.HasBuffer(statefulEvent.EntityA) &&
+                                       (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityA));
+                    var addToEntityB = EventLookup.HasBuffer(statefulEvent.EntityB) &&
+                                       (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityB));
+                    // if (statefulEvent.ColliderKeyA.Value > statefulEvent.ColliderKeyB.Value
+                    //     && EventLookup.HasBuffer(statefulEvent.EntityA)
+                    //     && (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityA)))
+                    // {
+                    //     addToEntityA = true;
+                    // }
+                    // else if(statefulEvent.ColliderKeyB.Value > statefulEvent.ColliderKeyA.Value
+                    //         &&EventLookup.HasBuffer(statefulEvent.EntityB)
+                    //         && (!UseExcludeComponent || !EventExcludeLookup.HasComponent(statefulEvent.EntityB)))
+                    // {
+                    //     addToEntityB = true;
+                    // }
                     
                     if (addToEntityA)
                     {

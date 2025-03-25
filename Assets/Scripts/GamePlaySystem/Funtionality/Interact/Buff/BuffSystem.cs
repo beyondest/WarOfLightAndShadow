@@ -5,7 +5,6 @@ using Unity.Physics.Systems;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    [UpdateAfter(typeof(StatSystem))]
     public partial struct BuffSystem : ISystem
     {
         [BurstCompile]

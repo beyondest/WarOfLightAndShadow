@@ -13,13 +13,12 @@ using UnityEngine.Experimental.AI;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
+    // [UpdateAfter(typeof(MovementSystem))]
     [BurstCompile]
-    [UpdateAfter(typeof(MovementSystem))]
     [Obsolete("Obsolete")]
     public partial struct NavAgentSystem : ISystem
     {
         private NavMeshWorld _navMeshWorld;
-        private NativeArray<Entity> _entities;
         private NativeList<NavMeshQuery> _navMeshQueries;
         private EntityQuery _entityQuery;
         
@@ -55,75 +54,50 @@ namespace SparFlame.GamePlaySystem.Movement
             }
             
             if (_entityQuery.IsEmpty) return;
-            // _waypointLookup.Update(ref state);
-            // _navAgentLookup.Update(ref state);
-
-            _entities = _entityQuery.ToEntityArray(Allocator.TempJob);
-            if (_entities.Length > _navMeshQueries.Length)
+            var entities = _entityQuery.ToEntityArray(Allocator.TempJob);
+            if (entities.Length > _navMeshQueries.Length)
             {
-                ExtendNavMeshQueries(_entities.Length - _navMeshQueries.Length, in config);
+                ExtendNavMeshQueries(entities.Length - _navMeshQueries.Length, in config);
             }
-            var ecbs = new NativeArray<EntityCommandBuffer>(_entities.Length, Allocator.TempJob);
-            
-            for (var i = 0; i < _entities.Length; i++)
+            var ecbs = new NativeArray<EntityCommandBuffer>(entities.Length, Allocator.TempJob);
+            for (var i = 0; i < entities.Length; i++)
             {
                 ecbs[i] = new EntityCommandBuffer(Allocator.TempJob);
             }
-            var jobHandles = new NativeArray<JobHandle>(_entities.Length, Allocator.TempJob);
+            var jobHandles = new NativeArray<JobHandle>(entities.Length, Allocator.TempJob);
             var localTransforms =
                 _entityQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
-            
             var navAgents =
             _entityQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
             
-
-            for (var i = 0; i < _entities.Length; i++)
+            for (var i = 0; i < entities.Length; i++)
             {
-                // Only recalculate navMeshQueries when entity's navMeshQuery is not set yet
-                // This code must be executed before the enableCalculation check, or will throw index wrong
-                // if (!navAgents[i].IsNavQuerySet)
-                // {
-                //     var navAgent = navAgents[i];
-                //     _navMeshQueries.Add(new NavMeshQuery(_navMeshWorld, Allocator.Persistent, config.PathNodePoolSize));
-                //     navAgent.IsNavQuerySet = true;
-                //     navAgents[i] = navAgent;
-                // }
-
-                // // Only calculate for the enable calculation agents
-                // if (!navAgents[i].EnableCalculation) continue;
-                // // Only recalculate the path once in an interval OR the target is updated
-                // var curTime = SystemAPI.Time.ElapsedTime;
-                // if (!(navAgents[i].ForceCalculate || navAgents[i].NextPathCalculateTime < curTime)) continue;
-                // Start calculate                
                 var calculatePathJob = new CalculatePathJob
                 {
-                    // NavAgentLookup = _navAgentLookup,
-                    // WaypointLookup = _waypointLookup,
-                    Entity = _entities[i],
+                    Entity = entities[i],
                     NavAgent = navAgents[i],
                     FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
                     ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
-                    // Extents = navAgents[i].Extents,
                     Iterations = config.MaxIterations,
                     MaxPathSize = config.MaxPathSize
                 };
                 jobHandles[i] = calculatePathJob.Schedule();
             }
 
-            if (_entities.Length < _navMeshQueries.Length)
+            if (entities.Length < _navMeshQueries.Length)
             {
                 DisposeRedundantNavMeshQueries(_navMeshQueries.Length - _navMeshQueries.Length, in config);
             }
 
             JobHandle.CompleteAll(jobHandles);
-            for (var i = 0; i < _entities.Length; i++)
+            for (var i = 0; i < entities.Length; i++)
             {
                 ecbs[i].Playback(state.EntityManager);
                 ecbs[i].Dispose();
             }
-            _entities.Dispose();
+            entities.Dispose();
             navAgents.Dispose();
             localTransforms.Dispose();
             jobHandles.Dispose();
@@ -133,12 +107,6 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            // foreach (var query in _navMeshQueries)
-            // {
-            //     
-            //     query.Dispose();
-            // }
-            // _navMeshQueries.Dispose();
             DisposeNavMeshQueries();
         }
 
@@ -151,10 +119,7 @@ namespace SparFlame.GamePlaySystem.Movement
             public EntityCommandBuffer ECB;
             public NavMeshQuery Query;
             
-            // [NativeDisableParallelForRestriction] public ComponentLookup<NavAgentComponent> NavAgentLookup;
-            // [NativeDisableParallelForRestriction] public BufferLookup<WaypointBuffer> WaypointLookup;
             [ReadOnly] public float3 FromPosition;
-            // [ReadOnly] public float3 Extents;
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public int MaxPathSize;
             [ReadOnly] public int Iterations;

@@ -4,7 +4,7 @@ using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    public class AutoChooseTargetSystemAuthoring : MonoBehaviour
+    public class SightSystemAuthoring : MonoBehaviour
     {
         [Tooltip(
             "If heal above attack 20, then for a healer, wounded ally unit's priority is above 20 than enemy's in default" +
@@ -20,9 +20,9 @@ namespace SparFlame.GamePlaySystem.Interact
         public float statValueChangeMultiplier = 1.0f;
         
         public float disSqMultiplier = 1f;
-        private class AutoChooseTargetSystemAuthoringBaker : Baker<AutoChooseTargetSystemAuthoring>
+        private class AutoChooseTargetSystemAuthoringBaker : Baker<SightSystemAuthoring>
         {
-            public override void Bake(AutoChooseTargetSystemAuthoring authoring)
+            public override void Bake(SightSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new AutoChooseTargetSystemConfig
@@ -44,5 +44,10 @@ namespace SparFlame.GamePlaySystem.Interact
         public float BaseLineDistanceSq;
         public float DisSqValueMultiplier;
         public float StatValueChangeMultiplier;
+    }
+
+    public struct SightData : IComponentData
+    {
+        public Entity BelongsTo;
     }
 }

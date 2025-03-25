@@ -9,12 +9,10 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.PopNumber;
 using Unity.Transforms;
-#pragma warning disable CS0618 // Type or member is obsolete
 
 namespace SparFlame.GamePlaySystem.Interact
 {
-    [UpdateBefore(typeof(VolumeObstacleSystem))]
-    [UpdateAfter(typeof(NavAgentSystem))]
+    [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct StatSystem : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactableAttrLookup;

@@ -9,7 +9,6 @@ namespace SparFlame.GamePlaySystem.General
     /// This system deals with all pause/resume request, and make that request truly work
     /// SimulationSystems all run after monobehavior update
     /// </summary>
-    [UpdateAfter(typeof(PhysicsSystemGroup))]
     public partial class GameBasicControlSystem : SystemBase
     {
         private bool _isPaused;
