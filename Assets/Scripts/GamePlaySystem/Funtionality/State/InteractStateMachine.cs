@@ -9,7 +9,6 @@ using SparFlame.GamePlaySystem.Interact;
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
 
 namespace SparFlame.GamePlaySystem.State
@@ -125,7 +124,6 @@ namespace SparFlame.GamePlaySystem.State
                 DeltaTime = deltaTime,
                 InteractTurnSpeed = config.InteractTurnSpeed,
                 Config = sightSystemConfig
-
             }.Schedule(healEntities.Length, config.HealJobBatchCount, state.Dependency);
             state.Dependency = healJob;
 
@@ -148,7 +146,6 @@ namespace SparFlame.GamePlaySystem.State
                 DeltaTime = deltaTime,
                 InteractTurnSpeed = config.InteractTurnSpeed,
                 Config = sightSystemConfig
-
             }.Schedule(harvestEntities.Length, config.HarvestJobBatchCount, state.Dependency);
             state.Dependency = harvestJob;
 
@@ -201,12 +198,12 @@ namespace SparFlame.GamePlaySystem.State
                 ref var selfStateData = ref BasicStateData.GetRefRW(entity).ValueRW;
                 var selfFactionTag = InteractableLookup[entity].FactionTag;
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
-                if(selfStateData.CurState != UnitState.Attacking
-                   && selfStateData.TargetState != UnitState.Healing
-                   && selfStateData.TargetState != UnitState.Harvesting)return;
-                
+                if (selfStateData.CurState != UnitState.Attacking
+                    && selfStateData.TargetState != UnitState.Healing
+                    && selfStateData.TargetState != UnitState.Harvesting) return;
+
                 if (!InsightTarget.TryGetBuffer(entity, out var targetList)) return; // This should never return
-                
+
                 // Check if target is valid
                 /*Target is dead and removed. This may happen when it kills target after exactly this attack, but the entity is removed next frame end
                 This may happen due to truly switch state always happen in te end of frame(ECB Playback) .
@@ -223,7 +220,8 @@ namespace SparFlame.GamePlaySystem.State
                     isTargetValid = InteractUtils.IsTargetValid(in targetInteractAttr, in selfFactionTag,
                         in targetStat, HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity));
                 }
-                if (!isTargetValid)// Current target is invalid
+
+                if (!isTargetValid) // Current target is invalid
                 {
                     // Focus interact state but target is invalid, exit focus state
                     selfStateData.Focus = false;
@@ -241,18 +239,21 @@ namespace SparFlame.GamePlaySystem.State
                             InteractableLookup[selfStateData.TargetEntity],
                             ref selfStateData);
                     }
+
                     StateUtils.SwitchState(ref selfStateData, ECB, entity, index);
                     return;
                 }
+
                 // Player can decide whether unit can switch target during interact state
                 if (ShouldChangeTarget(ref selfStateData, HealLookup.HasComponent(entity),
-                         in targetList, entity))
+                        in targetList, entity))
                 {
-                    StateUtils.SetTargetStateViaTargetType(in selfFactionTag, InteractableLookup[selfStateData.TargetEntity], ref selfStateData);
+                    StateUtils.SetTargetStateViaTargetType(in selfFactionTag,
+                        InteractableLookup[selfStateData.TargetEntity], ref selfStateData);
                     StateUtils.SwitchState(ref selfStateData, ECB, entity, index);
                     return;
                 }
-                
+
                 // Try to apply buff
                 var rangeSq = ability.RangeSq;
                 var amount = ability.BasicAmount;
@@ -268,7 +269,7 @@ namespace SparFlame.GamePlaySystem.State
                 ref var transform = ref TransformLookup.GetRefRW(entity).ValueRW;
                 var curPos = transform.Position;
                 var targetPos = TransformLookup[selfStateData.TargetEntity].Position;
-                
+
                 // Check if target in range
                 /*As long as target is valid, movable unit will never change target in interact state.
                  The target can only be changed while moving*/
@@ -298,11 +299,12 @@ namespace SparFlame.GamePlaySystem.State
 
                     return;
                 }
+
                 // Look at target
                 var targetRotation = quaternion.LookRotationSafe(-(targetPos - curPos), math.up());
                 transform.Rotation =
                     math.slerp(transform.Rotation.value, targetRotation, DeltaTime * InteractTurnSpeed);
-                
+
                 // Try attack current target                
                 PlayAnimationAudio(speed);
                 var counter = 1 / DeltaTime / speed;
@@ -317,23 +319,25 @@ namespace SparFlame.GamePlaySystem.State
             private bool ShouldChangeTarget(ref BasicStateData selfStateData, bool heal,
                 in DynamicBuffer<InsightTarget> targets, Entity selfEntity)
             {
-                // Focus mode cannot switch target , even setting is true
-                if (selfStateData.Focus) return false;
+                // Focus mode cannot switch target unless this is a healer and healer heal first
+                if (selfStateData.Focus && (!heal || !Config.HealerAlwaysHealFirst)) return false;
                 
                 var selfStatData = StatDataLookup[selfEntity];
                 var originalTarget = selfStateData.TargetEntity;
-                // If heal self first
-                if (heal && selfStatData.CurValue < selfStatData.MaxValue && Config.HealerAlwaysHealSelfFirst)
+                // Heal self first
+                if (heal && selfStatData.CurValue < selfStatData.MaxValue )
                 {
                     selfStateData.TargetEntity = selfEntity;
                     return originalTarget != selfStateData.TargetEntity;
                 }
+
                 // If dynamic choose target
                 if (Config.DynamicChooseTargetInInteract && !targets.IsEmpty)
                 {
                     selfStateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
                     return originalTarget != selfStateData.TargetEntity;
                 }
+
                 return false;
             }
 

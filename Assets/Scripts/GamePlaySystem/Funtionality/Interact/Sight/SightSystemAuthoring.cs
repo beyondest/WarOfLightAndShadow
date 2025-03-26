@@ -48,7 +48,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     MemoryTargetAfterStuckByBuilding = authoring.memoryTargetAfterStuckByBuilding,
                     MemoryTargetWhenFocus = authoring.memoryTargetWhenFocus,
                     DynamicChooseTargetInInteract = authoring.dynamicChooseTargetInInteract,
-                    HealerAlwaysHealSelfFirst = authoring.healerHealSelfFirst,
+                    HealerAlwaysHealFirst = authoring.healerHealSelfFirst,
                 });
             }
         }
@@ -64,7 +64,7 @@ namespace SparFlame.GamePlaySystem.Interact
         public float MemoryTargetWhenFocus;
         public float MemoryTargetAfterStuckByBuilding;
         public bool DynamicChooseTargetInInteract;
-        public bool HealerAlwaysHealSelfFirst;
+        public bool HealerAlwaysHealFirst;
     }
 
     public struct SightData : IComponentData

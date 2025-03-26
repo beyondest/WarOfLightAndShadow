@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 
@@ -43,6 +44,19 @@ namespace SparFlame.GamePlaySystem.Interact
             return true;
         }
 
+        public static bool Remove(ref DynamicBuffer<InsightTarget> targets, Entity targetEntity)
+        {
+            for (var i = targets.Length - 1; i >= 0; i--)
+            {
+                if (targets[i].Entity == targetEntity)
+                {
+                    targets.RemoveAt(i);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         public static bool MemoryTarget(ref DynamicBuffer<InsightTarget> targets, Entity targetEntity,
             float memoryValue)
         {

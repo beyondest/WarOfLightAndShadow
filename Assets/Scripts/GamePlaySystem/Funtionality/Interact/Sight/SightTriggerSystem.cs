@@ -87,11 +87,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 
                             // Debug.Log($"Exit :  A : {triggerEvent.EntityA},   : {triggerEvent.ColliderKeyA}\n " +
                             //           $" B : {triggerEvent.EntityB}, : {triggerEvent.ColliderKeyB} Self  : {entity}");
-                            for (var i = targets.Length - 1; i >= 0; i--)
-                            {
-                                if(targets[i].Entity == target)
-                                    targets.RemoveAt(i);
-                            }
+                            InteractUtils.Remove(ref targets,target);
                             break;
                         // TODO : Split healer job from other units, cause this spends too much
                         // Healer must check the target even when stay because ally unit may get hurt after it gets insight to healer

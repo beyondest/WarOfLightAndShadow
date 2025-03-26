@@ -53,6 +53,11 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         public bool IsDragSelecting;
     }
 
+    public struct UnitSelectReduceRequest : IComponentData
+    {
+        
+    }
+
 }
 
 

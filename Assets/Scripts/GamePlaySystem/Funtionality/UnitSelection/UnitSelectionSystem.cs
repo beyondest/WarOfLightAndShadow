@@ -108,11 +108,20 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 LockSelected(ref state, ref ecb, false);
             }
 
+            // Reduce selection count when they are dead
+            foreach (var (_,entity) in SystemAPI.Query<RefRO<UnitSelectReduceRequest>>().WithEntityAccess())
+            {
+                unitSelectionData.ValueRW.CurrentSelectCount -= 1;
+                ecb.DestroyEntity(entity);
+            }
+            
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
-
+        
+        
+        
         #region SelectMethods
         private void SelectOne(ref SystemState state, ref EntityCommandBuffer ecb,ref BufferLookup<LinkedEntityGroup> bufferLookup,
             ref RefRW<UnitSelectionData> unitSelectionData, in Entity entity,
@@ -262,7 +271,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
         #region SelectedIndicator
 
-        private void EnableSelectedIndicator(ref SystemState state, ref EntityCommandBuffer ecb,ref BufferLookup<LinkedEntityGroup> bufferLookup, in Entity entity,
+        private static void EnableSelectedIndicator(ref SystemState state, ref EntityCommandBuffer ecb,ref BufferLookup<LinkedEntityGroup> bufferLookup, in Entity entity,
             in bool isEnable, in UnitSelectionConfig unitSelectionConfig)
         {
             if (!bufferLookup.TryGetBuffer(entity, out var linkedEntities))

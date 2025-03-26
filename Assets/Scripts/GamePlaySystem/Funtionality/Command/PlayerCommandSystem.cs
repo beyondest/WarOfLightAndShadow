@@ -135,7 +135,6 @@ namespace SparFlame.GamePlaySystem.Command
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, attackAbility.RangeSq);
-            
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.Focus = Focus;
@@ -215,13 +214,18 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData,
+            ref BasicStateData basicStateData,ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
                 MovementCommandType.March, 0f);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            // Remove target so that player command it to move than it will move
+            if (basicStateData.TargetEntity != Entity.Null)
+            {
+                InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
+            }
             basicStateData.TargetEntity = Entity.Null;
             basicStateData.TargetState = UnitState.Idle;
             basicStateData.Focus = Focus;
