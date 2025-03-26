@@ -8,7 +8,6 @@
 //
 // 	using Unity.Collections;
 // 	using Unity.Collections.LowLevel.Unsafe;
-// 	// TODO What is unsafe code and can i use it
 // 	/// <summary>
 // 	/// Priority Queue implementation with item data stored in native containers. 
 // 	/// </summary>

@@ -5,7 +5,6 @@ using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 // ReSharper disable ReplaceWithSingleAssignment.False
@@ -15,32 +14,33 @@ namespace SparFlame.GamePlaySystem.State
     [BurstCompile]
     [UpdateAfter(typeof(SightUpdateListSystem))]
     [UpdateAfter(typeof(BuffSystem))]
-    [UpdateBefore(typeof(AutoGiveWaySystem))]
+    // [UpdateBefore(typeof(AutoGiveWaySystem))]
     [UpdateBefore(typeof(StatSystem))]
     public partial struct MovingStateMachine : ISystem
     {
         private ComponentLookup<InteractableAttr> _interactableLookup;
         private ComponentLookup<Selected> _selectedLookup;
-        private ComponentLookup<AutoGiveWayData> _autoGiveWayLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<MovableData> _movableLookup;
         private ComponentLookup<BasicStateData> _unitBasicStateLookup;
-        private ComponentLookup<SqueezeData> _squeezeLookup;
         private ComponentLookup<AttackAbility> _attackabilityLookup;
         private ComponentLookup<HealAbility> _healabilityLookup;
         private ComponentLookup<HarvestAbility> _harvestabilityLookup;
+
         private ComponentLookup<StatData> _statLookup;
+        // private ComponentLookup<AutoGiveWayData> _autoGiveWayLookup;
+        // private ComponentLookup<SqueezeData> _squeezeLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MovingStateMachineConfig>();
             state.RequireForUpdate<NotPauseTag>();
             _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
             _selectedLookup = state.GetComponentLookup<Selected>(true);
-            _autoGiveWayLookup = state.GetComponentLookup<AutoGiveWayData>(true);
-            _squeezeLookup = state.GetComponentLookup<SqueezeData>(true);
+
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _movableLookup = state.GetComponentLookup<MovableData>();
             _unitBasicStateLookup = state.GetComponentLookup<BasicStateData>();
@@ -48,46 +48,50 @@ namespace SparFlame.GamePlaySystem.State
             _healabilityLookup = state.GetComponentLookup<HealAbility>();
             _harvestabilityLookup = state.GetComponentLookup<HarvestAbility>();
             _statLookup = state.GetComponentLookup<StatData>();
+            // _autoGiveWayLookup = state.GetComponentLookup<AutoGiveWayData>(true);
+            // _squeezeLookup = state.GetComponentLookup<SqueezeData>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var config = SystemAPI.GetSingleton<MovingStateMachineConfig>();
+            var sightConfig = SystemAPI.GetSingleton<SightSystemConfig>();
+            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             _harvestabilityLookup.Update(ref state);
             _healabilityLookup.Update(ref state);
             _attackabilityLookup.Update(ref state);
-            var config = SystemAPI.GetSingleton<MovingStateMachineConfig>();
-            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-
             _interactableLookup.Update(ref state);
             _selectedLookup.Update(ref state);
-            _autoGiveWayLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
             _movableLookup.Update(ref state);
             _unitBasicStateLookup.Update(ref state);
-            _squeezeLookup.Update(ref state);
             _attackabilityLookup.Update(ref state);
             _healabilityLookup.Update(ref state);
             _harvestabilityLookup.Update(ref state);
             _statLookup.Update(ref state);
+            // _squeezeLookup.Update(ref state);
+            // _autoGiveWayLookup.Update(ref state);
             new CheckMovingState
             {
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 InteractLookUp = _interactableLookup,
                 Selected = _selectedLookup,
-                AutoGiveWayLookup = _autoGiveWayLookup,
-                SqueezeLookup = _squeezeLookup,
                 TransLookup = _localTransformLookup,
                 MovableLookup = _movableLookup,
                 StateLookup = _unitBasicStateLookup,
-                MaxAllowedCompromiseTimesForStuck = config.MaxAllowedCompromiseTimes,
-                ChooseSideTimes = config.ChooseSideTimes,
-                MaxAllowedCompromiseTimesForSqueeze = config.MaxAllowedCompromiseTimesForSqueeze,
-                SqueezeRatio = config.SqueezeRatio,
                 AttackLookup = _attackabilityLookup,
                 HealLookup = _healabilityLookup,
                 HarvestLookup = _harvestabilityLookup,
-                StatLookup = _statLookup
+                StatLookup = _statLookup,
+                // DeltaTime = SystemAPI.Time.DeltaTime,
+                Config = config,
+                SightSystemConfig = sightConfig
+                // AutoGiveWayLookup = _autoGiveWayLookup,
+                // SqueezeLookup = _squeezeLookup,
+                // ChooseSideTimes = config.ChooseSideTimes,
+                // MaxAllowedCompromiseTimesForSqueeze = config.MaxAllowedCompromiseTimesForSqueeze,
+                // SqueezeRatio = config.SqueezeRatio,
             }.ScheduleParallel();
         }
 
@@ -98,9 +102,11 @@ namespace SparFlame.GamePlaySystem.State
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<InteractableAttr> InteractLookUp;
+
             [ReadOnly] public ComponentLookup<Selected> Selected;
-            [ReadOnly] public ComponentLookup<AutoGiveWayData> AutoGiveWayLookup;
-            [ReadOnly] public ComponentLookup<SqueezeData> SqueezeLookup;
+
+            // [ReadOnly] public ComponentLookup<AutoGiveWayData> AutoGiveWayLookup;
+            // [ReadOnly] public ComponentLookup<SqueezeData> SqueezeLookup;
             [ReadOnly] public ComponentLookup<AttackAbility> AttackLookup;
             [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup;
@@ -114,10 +120,14 @@ namespace SparFlame.GamePlaySystem.State
 
             // Change self basic state and lookup random basic state for judging
             [NativeDisableParallelForRestriction] public ComponentLookup<BasicStateData> StateLookup;
-            [ReadOnly] public int MaxAllowedCompromiseTimesForStuck;
-            [ReadOnly] public int MaxAllowedCompromiseTimesForSqueeze;
-            [ReadOnly] public int ChooseSideTimes;
-            [ReadOnly] public float SqueezeRatio;
+
+            // [ReadOnly] public float DeltaTime;
+
+            [ReadOnly] public MovingStateMachineConfig Config;
+            [ReadOnly] public SightSystemConfig SightSystemConfig;
+            // [ReadOnly] public int MaxAllowedCompromiseTimesForSqueeze;
+            // [ReadOnly] public int ChooseSideTimes;
+            // [ReadOnly] public float SqueezeRatio;
 
             private void Execute([ChunkIndexInQuery] int index, ref Surroundings surroundings,
                 ref DynamicBuffer<InsightTarget> targets,
@@ -127,18 +137,20 @@ namespace SparFlame.GamePlaySystem.State
                 ref var movableData = ref MovableLookup.GetRefRW(entity).ValueRW;
                 ref var transform = ref TransLookup.GetRefRW(entity).ValueRW;
                 var selfFaction = InteractLookUp[entity].FactionTag;
+                // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (stateData.CurState != UnitState.Moving) return;
 
-                // Front enemy will taunt moving unit. This is the highest priority
-                if (CheckTaunted(ref surroundings, ref movableData, ref stateData, entity, index))
+                // Debug.Log($"stateData : {stateData.TargetEntity}");
+                if (CheckTaunted(ref surroundings, ref movableData, ref stateData,
+                        ref targets, entity, index))
                     return;
-
                 // Check if reached the last waypoint
                 if (CheckIfCompleteMoving(ref surroundings, ref movableData, ref stateData, entity, index))
                     return;
 
                 // Not complete the moving. If stuck, should try resolve stuck first. If not stuck or stuck resolved , return true
-                var ifStuckResolved = TryResolveStuck(ref surroundings, in movableData, ref stateData, ref transform,
+                var ifStuckResolved = TryResolveStuck(ref surroundings, ref targets, in movableData, ref stateData,
+                    ref transform,
                     entity, index);
 
 
@@ -176,12 +188,13 @@ namespace SparFlame.GamePlaySystem.State
                     if (InteractLookUp.TryGetComponent(stateData.TargetEntity, out targetInteractAttr))
                     {
                         var targetStat = StatLookup[stateData.TargetEntity];
-                        if (InteractUtils.IsTargetValid(in targetInteractAttr,in selfFactionTag, in targetStat,
+                        if (InteractUtils.IsTargetValid(in targetInteractAttr, in selfFactionTag, in targetStat,
                                 HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity)))
                         {
                             return;
                         }
                     }
+
                     // Current target invalid, check if turn to idle
                     if (targets.IsEmpty)
                     {
@@ -191,17 +204,15 @@ namespace SparFlame.GamePlaySystem.State
                         StateUtils.SwitchState(ref stateData, ECB, entity, index);
                         return;
                     }
+
                     shouldChangeTarget = true;
                 }
 
-                
-                
-                
                 if (!shouldChangeTarget) return;
 
                 // Interact move to target. Because it is in moving state already, so don't need to switch state;
                 // Because moving state machine Update after update target list system, choose target should always be valid
-                stateData.TargetEntity = StateUtils.ChooseTarget(in targets);
+                stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
                 targetInteractAttr = InteractLookUp[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
                 var targetColliderSize = targetInteractAttr.BoxColliderSize;
@@ -227,7 +238,8 @@ namespace SparFlame.GamePlaySystem.State
             }
 
 
-            private bool TryResolveStuck(ref Surroundings surroundings, in MovableData movableData,
+            private bool TryResolveStuck(ref Surroundings surroundings, ref DynamicBuffer<InsightTarget> targets,
+                in MovableData movableData,
                 ref BasicStateData stateData, ref LocalTransform transform, Entity entity, int index)
             {
                 // Calculation not complete, can do nothing now
@@ -236,51 +248,15 @@ namespace SparFlame.GamePlaySystem.State
 
                 // Stuck times too much
                 if (surroundings.MoveSuccess
-                    || surroundings.CompromiseTimes < MaxAllowedCompromiseTimesForStuck) return false;
-                // Try to let the unselected ally unit auto give way
-                // if (TryTellAutoGiveWay(ref surroundings, in transform, entity, index))
-                //     return true;
+                    || surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck) return false;
 
-                // if (TrySqueeze(ref surroundings, in transform, index))
-                //     return true;
 
-                if (surroundings.CompromiseTimes < MaxAllowedCompromiseTimesForSqueeze) return true;
-
-                // // If Squeeze failed, try to find another way 
-                // if (surroundings.CompromiseTimes < 2 * MaxAllowedCompromiseTimesForStuck &&
-                //     (surroundings.LeftEntity == Entity.Null
-                //      ||
-                //      surroundings.RightEntity == Entity.Null))
-                // {
-                //     var isLeft = surroundings.LeftEntity == Entity.Null;
-                //     var isRight = surroundings.RightEntity == Entity.Null;
-                //     var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
-                //     var dir = MovementUtils.GetLeftOrRight(realFront, !surroundings.ChooseRight ? isLeft : !isRight);
-                //     transform.Position +=
-                //         dir * math.max(movableData.SelfColliderShapeXz.x, movableData.SelfColliderShapeXz.y) * 0.2f;
-                //     switch (surroundings.ChooseRight)
-                //     {
-                //         case true when !isRight:
-                //         case false when !isLeft:
-                //             surroundings.SlideTimes += 1;
-                //             break;
-                //     }
-                //
-                //     if (surroundings.SlideTimes > ChooseSideTimes)
-                //     {
-                //         surroundings.ChooseRight = !surroundings.ChooseRight;
-                //         surroundings.SlideTimes = 0;
-                //     }
-                //
-                //     return true;
-                // }
-
-                // If unit find another way failed
-                // If front is enemy building and get stuck, remove it
-                if (
-                    InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iDataFront)
+                // If stuck by enemy building, remove it
+                if (InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iDataFront)
                     && iDataFront is { BaseTag: BaseTag.Buildings, FactionTag: FactionTag.Enemy })
                 {
+                    InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
+                        SightSystemConfig.MemoryTargetAfterStuckByBuilding);
                     stateData.TargetEntity = surroundings.FrontEntity;
                     stateData.TargetState = UnitState.Attacking;
                     stateData.Focus = true;
@@ -288,7 +264,7 @@ namespace SparFlame.GamePlaySystem.State
                     return true;
                 }
 
-                // Focus unit cannot auto switch target even get stuck
+                // Focus unit cannot auto switch target even get stuck, unless it stuck by building
                 if (stateData.Focus) return false;
 
                 // If front is not enemy building and get stuck and left or right is enemy unit, attack it. Front cannot be enemy unit or it will get taunted
@@ -307,30 +283,6 @@ namespace SparFlame.GamePlaySystem.State
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     return true;
                 }
-
-                // if (surroundings.LeftTailEntity == Entity.Null || surroundings.RightTailEntity == Entity.Null)
-                // {
-                //     var isLeft = surroundings.LeftTailEntity == Entity.Null;
-                //     var isRight = surroundings.RightTailEntity == Entity.Null;
-                //     var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
-                //     var dir = MovementUtils.GetLeftOrRight(realFront, !surroundings.ChooseRight ? isLeft : !isRight);
-                //
-                //     transform.Position += dir * movableData.MoveSpeed * DeltaTime * 0.5f;
-                //     transform.Position -= realFront * movableData.MoveSpeed * DeltaTime * 0.5f;
-                //     switch (surroundings.ChooseRight)
-                //     {
-                //         case true when !isRight:
-                //         case false when !isLeft:
-                //             surroundings.SlideTimes += 1;
-                //             break;
-                //     }
-                //
-                //     if (surroundings.SlideTimes > ChooseSideTimes)
-                //     {
-                //         surroundings.ChooseRight = !surroundings.ChooseRight;
-                //         surroundings.SlideTimes = 0;
-                //     }
-                // }
 
                 return false;
             }
@@ -385,46 +337,17 @@ namespace SparFlame.GamePlaySystem.State
                     && stateData.CurState == UnitState.Idle;
             }
 
-            private bool TryTellAutoGiveWay(ref Surroundings surroundings, in LocalTransform transform,
-                Entity entity, int index)
-            {
-                // Only selected units can let others give way
-                if (!Selected.IsComponentEnabled(entity)) return false;
-
-                // Only not selected ally unit can auto give way
-                if (!InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)
-                    || iData is not { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
-                    || Selected.IsComponentEnabled(surroundings.FrontEntity)
-                    || !StateLookup.TryGetComponent(surroundings.FrontEntity, out var stateData)
-                    || stateData.CurState != UnitState.Idle)
-                    return false;
-
-                // Only let one unit give way once, until it finishes auto give way.
-                if (AutoGiveWayLookup.HasComponent(surroundings.FrontEntity))
-                    return true;
-
-                var frontPos = TransLookup.GetRefRO(surroundings.FrontEntity);
-                var moveVector = MovementUtils.GetLeftOrRight(surroundings.IdealDirection,
-                    MovementUtils.GetSide(transform.Position, frontPos.ValueRO.Position, surroundings.IdealDirection));
-                var frontColliderShapeXz = MovableLookup.GetRefRO(surroundings.FrontEntity).ValueRO.SelfColliderShapeXz;
-
-                ECB.AddComponent(index, surroundings.FrontEntity, new AutoGiveWayData
-                {
-                    ElapsedTime = 0f,
-                    MoveVector = moveVector * math.max(frontColliderShapeXz.x, frontColliderShapeXz.y) * 2,
-                    IfGoBack = false
-                });
-                return true;
-            }
-
-
             private bool CheckTaunted(ref Surroundings surroundings, ref MovableData movableData,
-                ref BasicStateData stateData, Entity entity, int index)
+                ref BasicStateData stateData, ref DynamicBuffer<InsightTarget> targets,Entity entity, int index)
             {
                 if (surroundings.MoveSuccess) return false;
                 if (!InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)) return false;
                 if (iData is not { FactionTag: FactionTag.Enemy, BaseTag: BaseTag.Units }) return false;
-
+                if (stateData.Focus)
+                {
+                    InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
+                        SightSystemConfig.MemoryTargetWhenFocus);
+                }
                 // Turn to Attacking State
                 stateData.TargetState = UnitState.Attacking;
                 stateData.TargetEntity = surroundings.FrontEntity;
@@ -436,7 +359,39 @@ namespace SparFlame.GamePlaySystem.State
             }
 
 
-            private bool TrySqueeze(ref Surroundings surroundings, in LocalTransform transform, int index)
+            // // Use surrounding information to try to find another way
+            // if (surroundings.CompromiseTimes > Config.MaxAllowedCompromiseTimesForStuck &&
+            //     surroundings.CompromiseTimes < Config.MaxAllowedCompromiseTimesForAnotherWay)
+            // {
+            //     if (surroundings.LeftEntity == Entity.Null || surroundings.RightEntity == Entity.Null)
+            //     {
+            //         // var isLeft = surroundings.LeftEntity == Entity.Null;
+            //         // var isRight = surroundings.RightEntity == Entity.Null;
+            //         var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
+            //         // var dir = MovementUtils.GetLeftOrRight(realFront, !surroundings.ChooseRight ? isLeft : !isRight);
+            //         var dir = MovementUtils.GetLeftOrRight(realFront, surroundings.LeftEntity == Entity.Null);
+            //         transform.Position += dir * movableData.MoveSpeed * DeltaTime * Config.AdjustRatio;
+            //         // transform.Position -= realFront * movableData.MoveSpeed * DeltaTime * 0.5f;
+            //         // switch (surroundings.ChooseRight)
+            //         // {
+            //         //     case true when !isRight:
+            //         //     case false when !isLeft:
+            //         //         surroundings.SlideTimes += 1;
+            //         //         break;
+            //         // }
+            //         //
+            //         // if (surroundings.SlideTimes > ChooseSideTimes)
+            //         // {
+            //         //     surroundings.ChooseRight = !surroundings.ChooseRight;
+            //         //     surroundings.SlideTimes = 0;
+            //         // }
+            //     }
+            //     return true;
+            // }
+
+
+            /*Deprecated : TrySqueeze
+             private bool TrySqueeze(ref Surroundings surroundings, in LocalTransform transform, int index)
             {
                 if (InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)
                     && iData is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
@@ -459,6 +414,76 @@ namespace SparFlame.GamePlaySystem.State
 
                 return false;
             }
+            */
+
+            /*Deprecated : TryTellAutoGiveWay
+ private bool TryTellAutoGiveWay(ref Surroundings surroundings, in LocalTransform transform,
+    Entity entity, int index)
+{
+    // Only selected units can let others give way
+    if (!Selected.IsComponentEnabled(entity)) return false;
+
+    // Only not selected ally unit can auto give way
+    if (!InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)
+        || iData is not { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
+        || Selected.IsComponentEnabled(surroundings.FrontEntity)
+        || !StateLookup.TryGetComponent(surroundings.FrontEntity, out var stateData)
+        || stateData.CurState != UnitState.Idle)
+        return false;
+
+    // Only let one unit give way once, until it finishes auto give way.
+    if (AutoGiveWayLookup.HasComponent(surroundings.FrontEntity))
+        return true;
+
+    var frontPos = TransLookup.GetRefRO(surroundings.FrontEntity);
+    var moveVector = MovementUtils.GetLeftOrRight(surroundings.IdealDirection,
+        MovementUtils.GetSide(transform.Position, frontPos.ValueRO.Position, surroundings.IdealDirection));
+    var frontColliderShapeXz = MovableLookup.GetRefRO(surroundings.FrontEntity).ValueRO.SelfColliderShapeXz;
+
+    ECB.AddComponent(index, surroundings.FrontEntity, new AutoGiveWayData
+    {
+        ElapsedTime = 0f,
+        MoveVector = moveVector * math.max(frontColliderShapeXz.x, frontColliderShapeXz.y) * 2,
+        IfGoBack = false
+    });
+    return true;
+}*/
         }
     }
 }
+
+
+/*Deprecated : Try to tell auto give way or squeeze
+              if (TryTellAutoGiveWay(ref surroundings, in transform, entity, index))
+                  return true;
+              if (TrySqueeze(ref surroundings, in transform, index))
+                  return true;
+              if (surroundings.CompromiseTimes < MaxAllowedCompromiseTimesForSqueeze) return true;
+              // If Squeeze failed, try to find another way
+              if (surroundings.CompromiseTimes < 2 * MaxAllowedCompromiseTimesForStuck &&
+                  (surroundings.LeftEntity == Entity.Null
+                   ||
+                   surroundings.RightEntity == Entity.Null))
+              {
+                  var isLeft = surroundings.LeftEntity == Entity.Null;
+                  var isRight = surroundings.RightEntity == Entity.Null;
+                  var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
+                  var dir = MovementUtils.GetLeftOrRight(realFront, !surroundings.ChooseRight ? isLeft : !isRight);
+                  transform.Position +=
+                      dir * math.max(movableData.SelfColliderShapeXz.x, movableData.SelfColliderShapeXz.y) * 0.2f;
+                  switch (surroundings.ChooseRight)
+                  {
+                      case true when !isRight:
+                      case false when !isLeft:
+                          surroundings.SlideTimes += 1;
+                          break;
+                  }
+
+                  if (surroundings.SlideTimes > ChooseSideTimes)
+                  {
+                      surroundings.ChooseRight = !surroundings.ChooseRight;
+                      surroundings.SlideTimes = 0;
+                  }
+
+                  return true;
+              }*/

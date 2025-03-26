@@ -35,14 +35,10 @@ namespace SparFlame.GamePlaySystem.Movement
             new MoveJob
             {
                 PhysicsWorld = physicsWorld,
-                // WayPointsLookup = _waypointLookup,
                 DeltaTime = SystemAPI.Time.DeltaTime,
+                ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                 Config = config
-                // WayPointDistanceSq = config.WayPointDistanceSq,
-                // MarchExtent = config.MarchExtent,
-                // RotationSpeed = config.RotationSpeed,
-                // ClickableLayerMask = config.ClickableLayerMask,
-                // MovementRayBelongsToLayerMask = config.MovementRayBelongsToLayerMask,
+                
             }.ScheduleParallel();
         }
     }
@@ -57,6 +53,7 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
         [ReadOnly] public float DeltaTime;
+        [ReadOnly] public float ElapsedTime;
         [ReadOnly] public MovementConfig Config;
 
         private void Execute(
@@ -71,7 +68,9 @@ namespace SparFlame.GamePlaySystem.Movement
             var curPosY0 = new float3(transform.Position.x, 0f, transform.Position.z);
             var interactiveRangeSq = movableData.InteractiveRangeSq;
             var shouldMove = false;
-
+            DetectSurrounding(ref surroundings,in transform, in movableData);
+   
+            
             switch (movableData.MovementCommandType)
             {
                 // If Interactive movement
@@ -226,6 +225,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 }
             }
 
+    
 
             if (!shouldMove) return;
             var movePosY0 = waypointBuffer[navAgent.CurrentWaypoint].WayPoint;
@@ -236,10 +236,10 @@ namespace SparFlame.GamePlaySystem.Movement
             {
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
-                surroundings.MoveSuccess = TryMove(ref transform, ref movableData, ref surroundings, in navAgent,
+                TryMove(ref transform, ref movableData, ref surroundings, in navAgent,
                     in idealDirection, curPosY0
                 );
-                surroundings.IdealDirection = idealDirection;
+                // surroundings.IdealDirection = idealDirection;
             }
 
             // Count the times it chooses another way
@@ -255,45 +255,55 @@ namespace SparFlame.GamePlaySystem.Movement
             }
         }
 
-        private bool TryMove(ref LocalTransform transform,
+        private void TryMove(ref LocalTransform transform,
             ref MovableData movableData,
             ref Surroundings surroundings,
             in NavAgentComponent navAgent,
             in float3 idealFront, in float3 curPosY0
         )
         {
-            var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
-            var left = MovementUtils.GetLeftOrRight(realFront, true);
-            var right = MovementUtils.GetLeftOrRight(realFront, false);
+            
+            
             var moveLength = DeltaTime * movableData.MoveSpeed;
-            // If speed too slow, front overlap may adjust too much and unit will go in circle
-            if (moveLength < 0.03) moveLength = 0.03f;
-
-            var head = curPosY0 + realFront * movableData.SelfColliderShapeXz.y * 0.51f;
-            var frontObstacle = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.y,
-                curPosY0,
-                Config.ObstacleLayerMask, Config.DetectRaycasstBelongsTo,
-                realFront,
-                moveLength,
-                out surroundings.FrontEntity);
-
-            var leftOverlap = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
-                head,
-                Config.ObstacleLayerMask,
-                Config.DetectRaycasstBelongsTo,
-                left,
-                movableData.SelfColliderShapeXz.x * 0.1f, out surroundings.LeftEntity);
-            var rightOverlap = MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
-                head,
-                Config.ObstacleLayerMask,
-                Config.DetectRaycasstBelongsTo,
-                right,
-                movableData.SelfColliderShapeXz.x * 0.1f, out surroundings.RightEntity);
-
+            // Record Pos for checking stuck
+            if (ElapsedTime > surroundings.RecordPosTime)
+            {
+                surroundings.PrePos = transform.Position;
+                surroundings.RecordPosTime = ElapsedTime + Config.RecordPosInterval;
+            }
+            surroundings.MoveSuccess = !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
             var targetRotation = quaternion.LookRotationSafe(-idealFront, math.up());
             transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
             transform.Position += moveLength * idealFront;
-            return true;
         }
+
+        private void DetectSurrounding(ref Surroundings surroundings, in LocalTransform transform,
+            in MovableData movableData)
+        {
+            var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
+            var left = MovementUtils.GetLeftOrRight(realFront, true);
+            var right = MovementUtils.GetLeftOrRight(realFront, false);
+            var head = transform.Position + realFront * movableData.SelfColliderShapeXz.y * Config.DetectFrontBiasRatio;
+            MovementUtils.ObstacleInDirection(ref PhysicsWorld, 0f,
+                head,
+                Config.ObstacleLayerMask, Config.DetectRaycastBelongsTo,
+                realFront,
+                movableData.SelfColliderShapeXz.y * Config.DetectLengthRatio,
+                out surroundings.FrontEntity);
+
+            MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                head,
+                Config.ObstacleLayerMask,
+                Config.DetectRaycastBelongsTo,
+                left,
+                movableData.SelfColliderShapeXz.x * Config.DetectLengthRatio, out surroundings.LeftEntity);
+            MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                head,
+                Config.ObstacleLayerMask,
+                Config.DetectRaycastBelongsTo,
+                right,
+                movableData.SelfColliderShapeXz.x * Config.DetectLengthRatio, out surroundings.RightEntity);
+        }
+ 
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Physics.Authoring;
 using UnityEngine.AI;
@@ -55,11 +56,23 @@ namespace SparFlame.GamePlaySystem.Movement
                         Debug.LogError("Building attributes sets in interactableAttr require an BuildingAttr component");
                         return;
                     }
-                    volumeRadius = buildingAttr.interactRange;
-                    // this is attackable building
-                    areaType = volumeRadius == 0? (AreaType)buildingAttr.tier : (AreaType)(buildingAttr.tier + 10);
-                }
 
+                    // this is interactable building, like archer tower
+                    if (authoring.TryGetComponent(out InteractAbilityAttributesAuthoring interactAbility))
+                    {
+                        // Default is 0f , if not 0, this is an attackable building so the high-cost area should cover more
+                        volumeRadius = interactAbility.interactType == InteractType.Attack? interactAbility.interactRange : 0f;
+                        // If this is an attackable building, the area is more dangerous and volume should be high cost
+                        // And the areaType is determined by tier, the higher the tier, the higher cost it should be
+                        areaType = interactAbility.interactType == InteractType.Attack? (AreaType)buildingAttr.tier : (AreaType)(buildingAttr.tier + 10);
+                    }
+                    // this is not interactable building, volume radius set to default, and areaType set via tier
+                    else
+                    {
+                        volumeRadius = 0f;
+                        areaType = (AreaType)buildingAttr.tier;
+                    }
+                }
 
 
                 var physicsShapeAuthoring = authoring.GetComponent<PhysicsShapeAuthoring>();
@@ -100,9 +113,7 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         public float3 Center;
         public float3 Size;
-        /// <summary>
-        /// If this is archer tower
-        /// </summary>
+
         public float VolumeRadius;
         public AreaType VolumeAreaType;
         /// <summary>

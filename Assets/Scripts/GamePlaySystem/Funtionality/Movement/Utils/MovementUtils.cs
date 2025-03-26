@@ -47,11 +47,11 @@ namespace SparFlame.GamePlaySystem.Movement
         public static void ResetSurroundings(ref Surroundings surroundings)
         {
             surroundings.MoveSuccess = true;
-            surroundings.IdealDirection = float3.zero;
             surroundings.FrontEntity = Entity.Null;
             surroundings.LeftEntity = Entity.Null;
             surroundings.RightEntity = Entity.Null;
             surroundings.CompromiseTimes = 0;
+            // surroundings.IdealDirection = float3.zero;
         }
 
         #endregion
@@ -83,7 +83,7 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             var rayOrigin = curPos + direction * colliderDirectionSize * 0.51f + new float3(0, 0.1f, 0);
             var rayEnd = rayOrigin + direction * detectLength;
-            //Debug.DrawLine(rayOrigin,rayEnd,Color.red);
+            Debug.DrawLine(rayOrigin,rayEnd,Color.red);
 
             var raycast = new RaycastInput
             {

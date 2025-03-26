@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
@@ -85,20 +87,19 @@ namespace SparFlame.GamePlaySystem.State
             stateData.CurState = stateData.TargetState;
         }
     
+
         
-        public static Entity ChooseTarget(in DynamicBuffer<InsightTarget> targets)
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SetTargetStateViaTargetType(in FactionTag selfFactionTag,
+            in InteractableAttr targetInteractAttr,ref BasicStateData selfStateData)
         {
-            float maxValue = 0;
-            var bestTarget = Entity.Null;
-            foreach (var target in targets)
-            {
-                if (target.TotalValue >= maxValue)
-                {
-                    maxValue = target.TotalValue;
-                    bestTarget = target.Entity;
-                }
-            }
-            return bestTarget;
+            if (selfFactionTag == targetInteractAttr.FactionTag)
+                selfStateData.TargetState = UnitState.Healing;
+            if (targetInteractAttr.BaseTag == BaseTag.Resources)
+                selfStateData.TargetState = UnitState.Harvesting;
+            if (selfFactionTag == ~targetInteractAttr.FactionTag)
+                selfStateData.TargetState = UnitState.Attacking;
         }
     }
 }

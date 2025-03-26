@@ -36,8 +36,8 @@ namespace SparFlame.GamePlaySystem.Movement
                     ObstacleTypePrefabMap = obstaclePrefabMap,
                     VolumeTypePrefabMap = volumePrefabMap,
                     SyncTimeInterval = authoring.syncTimeInterval,
-                    AllyAgentTypeId = authoring.allyAgent.agentTypeID,
-                    EnemyAgentTypeId = authoring.enemyAgent.agentTypeID,
+                    AllyAgentRadius = authoring.allyAgent.radius,
+                    EnemyAgentRadius = authoring.enemyAgent.radius
                 });
             }
         }
@@ -70,8 +70,9 @@ namespace SparFlame.GamePlaySystem.Movement
         public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;
         public Dictionary<FactionTag, GameObject> VolumeTypePrefabMap;
         public float SyncTimeInterval;
-        public int AllyAgentTypeId;
-        public int EnemyAgentTypeId;
+        public float AllyAgentRadius;
+        public float EnemyAgentRadius;
+
     }
 
     internal struct UpdateNavMeshRequest : IComponentData

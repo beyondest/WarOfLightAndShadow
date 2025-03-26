@@ -14,8 +14,7 @@ GameObject:
   - component: {fileID: 1017011527665410983}
   - component: {fileID: -3790111429551213558}
   - component: {fileID: 5471829397928584801}
-  - component: {fileID: 8157422311343239138}
-  - component: {fileID: 6778531594125558048}
+  - component: {fileID: 852727745058058644}
   - component: {fileID: 828705974011197480}
   m_Layer: 0
   m_Name: BasicBuilding
@@ -66,7 +65,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c365b0450d914795b08d2cf2b5009d04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interactRange: 0
   tier: 3
 --- !u!114 &1017011527665410983
 MonoBehaviour:
@@ -110,7 +108,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   priority: 0
---- !u!114 &8157422311343239138
+--- !u!114 &852727745058058644
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -119,27 +117,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5238138822134138317}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 169a26e7faeb4deab013f3cbcb5abbb6, type: 3}
+  m_Script: {fileID: 11500000, guid: c16549610bfe4458aa9389201d072bb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sightPrefab: {fileID: 1228106952203534309, guid: 7c019ad476d2d59449b279e3f7cb2709, type: 3}
---- !u!114 &6778531594125558048
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5238138822134138317}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 609ed965a3e5435e908815b1bc2756f4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interactType: 0
-  interactSpeed: 1
-  interactCount: 1
-  interactRange: 8
-  interactBasicAmount: 10
 --- !u!114 &828705974011197480
 MonoBehaviour:
   m_ObjectHideFlags: 0

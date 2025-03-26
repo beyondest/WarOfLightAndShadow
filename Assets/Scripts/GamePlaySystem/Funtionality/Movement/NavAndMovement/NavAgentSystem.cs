@@ -107,6 +107,7 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
+            // _entityQuery.Dispose();
             DisposeNavMeshQueries();
         }
 
@@ -204,6 +205,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     ECB.SetComponent(Entity, NavAgent);
                 }
 
+                result.Dispose();
                 straightPathFlag.Dispose();
                 polygonIds.Dispose();
                 vertexSide.Dispose();

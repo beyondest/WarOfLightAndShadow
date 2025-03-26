@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             state.RequireForUpdate<SimulationSingleton>();
             state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<AutoChooseTargetSystemConfig>();
+            state.RequireForUpdate<SightSystemConfig>();
             // _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
             _priorityLookup = state.GetComponentLookup<InteractPriority>(true);
             _targetLookup = state.GetBufferLookup<InsightTarget>();
@@ -37,7 +37,7 @@ namespace SparFlame.GamePlaySystem.Interact
             new SightTriggerJob
             {
                 // InteractableAttrLookup = _interactableLookup,
-                PriorityLookup = _priorityLookup,
+                // PriorityLookup = _priorityLookup,
                 TargetLookup = _targetLookup
             }.ScheduleParallel();
         }
@@ -46,7 +46,7 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         public partial struct SightTriggerJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<InteractPriority> PriorityLookup;
+            // [ReadOnly] public ComponentLookup<InteractPriority> PriorityLookup;
             [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetLookup;
             
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in SightData data,
@@ -62,25 +62,27 @@ namespace SparFlame.GamePlaySystem.Interact
                     var target = triggerEvent.GetOtherEntity(entity);
                     
                     // Check if target is valid for target
-                    if( !PriorityLookup.TryGetComponent(target, out var priority))continue;
+                    // if( !PriorityLookup.TryGetComponent(target, out var priority))continue;
 
                     var insightTarget = new InsightTarget
                     {
                         Entity = target,
-                        BaseValue = priority.Value,
+                        PriorityValue = 0f,
                         DisValue = 0f,
                         StatChangValue = 0f,
-                        InteractOverride = 0f
+                        InteractOverride = 0f,
+                        MemoryValue = 0f,
+                        TotalValue = 0f
                     };
                     switch (triggerEvent.State)
                     {
-                        // Enter must be first time target added to list, so don't need to check
-                        case StatefulEventState.Enter:
-                            // Debug.Log($"Enter :  A : {triggerEvent.EntityA},   : {triggerEvent.ColliderKeyA}\n " +
-                            //           $" B : {triggerEvent.EntityB}, : {triggerEvent.ColliderKeyB} Self  : {entity}");
-                            targets.Add(insightTarget);
-                            break;
-                        
+                        // // Enter must be first time target added to list, so don't need to check
+                        // case StatefulEventState.Enter:
+                        //     // Debug.Log($"Enter :  A : {triggerEvent.EntityA},   : {triggerEvent.ColliderKeyA}\n " +
+                        //     //           $" B : {triggerEvent.EntityB}, : {triggerEvent.ColliderKeyB} Self  : {entity}");
+                        //     targets.Add(insightTarget);
+                        //     break;
+                        //
                         case StatefulEventState.Exit:
                 
                             // Debug.Log($"Exit :  A : {triggerEvent.EntityA},   : {triggerEvent.ColliderKeyA}\n " +
@@ -94,12 +96,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         // TODO : Split healer job from other units, cause this spends too much
                         // Healer must check the target even when stay because ally unit may get hurt after it gets insight to healer
                         case StatefulEventState.Stay :
-                            int j;
-                            for ( j= 0; j < targets.Length; j++)
-                            {
-                                if(targets[j].Entity == target)break;
-                            }
-                            if(j == targets.Length)targets.Add(insightTarget);
+                            InteractUtils.NoDupAdd(ref targets, insightTarget);
                             break;
                         case StatefulEventState.Undefined:
                             break;

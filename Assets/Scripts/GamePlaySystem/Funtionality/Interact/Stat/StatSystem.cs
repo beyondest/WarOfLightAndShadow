@@ -26,7 +26,7 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<StatSystemConfig>();
-            state.RequireForUpdate<AutoChooseTargetSystemConfig>();
+            state.RequireForUpdate<SightSystemConfig>();
             _interactableAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
             _volumeObstacleTagLookup = state.GetComponentLookup<VolumeObstacleTag>(true);
             _statDataLookup = state.GetComponentLookup<StatData>();
@@ -42,7 +42,7 @@ namespace SparFlame.GamePlaySystem.Interact
             _volumeObstacleTagLookup.Update(ref state);
             _insightTargetLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
-            var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<AutoChooseTargetSystemConfig>();
+            var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             var config = SystemAPI.GetSingleton<StatSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
@@ -54,7 +54,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 StatLookup = _statDataLookup,
                 TransformLookup = _localTransformLookup,
                 TargetListLookup = _insightTargetLookup,
-                AutoChooseTargetConfig = autoChooseTargetSystemConfig,
+                SightConfig = autoChooseTargetSystemConfig,
                 Config = config
             }.ScheduleParallel();
         }
@@ -75,27 +75,29 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public ComponentLookup<InteractableAttr> InteractableAttrLookup;
             [ReadOnly] public ComponentLookup<VolumeObstacleTag> ObstacleTagLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public AutoChooseTargetSystemConfig AutoChooseTargetConfig;
+            [ReadOnly] public SightSystemConfig SightConfig;
             [ReadOnly] public StatSystemConfig Config;
             
 
             private void Execute([ChunkIndexInQuery] int index, in StatChangeRequest request, Entity entity)
             {
                 // TODO : Check where wrong
-                // This should not happen when the stat system updates before interact state machine, but it happens.
+                // These 2 should not happen when the stat system updates after interact state machine, but it happens sometimes.
                 if(!StatLookup.HasComponent(request.Interactee))return;
+                if(!InteractableAttrLookup.TryGetComponent(request.Interactor,out var interactableAttr))return;
+                
                 // Handle Stat Change Request. This request is destroyed other place, like pop number system
-                ref var stat = ref StatLookup.GetRefRW(request.Interactee).ValueRW;
+                ref var statInteractee = ref StatLookup.GetRefRW(request.Interactee).ValueRW;
                 
                 // This entity is already dead and handled by other request handling process
-                if(stat.CurValue <=0)return;
+                if(statInteractee.CurValue <=0)return;
                 
-                stat.CurValue = request.InteractType == InteractType.Heal
-                    ? math.min(stat.MaxValue, stat.CurValue + request.Amount)
-                    : math.max(0, stat.CurValue - request.Amount);
+                statInteractee.CurValue = request.InteractType == InteractType.Heal
+                    ? math.min(statInteractee.MaxValue, statInteractee.CurValue + request.Amount)
+                    : math.max(0, statInteractee.CurValue - request.Amount);
                 
                 var popNumberType = PopNumberType.DamageDealt;
-                var interactorFaction = InteractableAttrLookup[request.Interactor].FactionTag;
+                var interactorFaction = interactableAttr.FactionTag;
                 popNumberType = (request.InteractType, interactorFaction) switch
                 {
                     (InteractType.Heal, FactionTag.Ally) => PopNumberType.AllyHealed,
@@ -119,23 +121,26 @@ namespace SparFlame.GamePlaySystem.Interact
                 });
                 
                 // Raise attacker statChangeValue in interactee target list 
-                if (request.InteractType == InteractType.Attack && stat.CurValue > 0)
+                if (request.InteractType == InteractType.Attack && statInteractee.CurValue > 0)
                 {
-                    TargetListLookup.TryGetBuffer(request.Interactee, out var targetsBuffer);
-                    for (var i = 0; i < targetsBuffer.Length; i++)
+                    // Target may be no interact ability target, like walls, they don't have targetsBuffer
+                    if (TargetListLookup.TryGetBuffer(request.Interactee, out var targetsBuffer))
                     {
-                        var target = targetsBuffer[i];
-                        if (target.Entity == request.Interactor)
+                        for (var i = 0; i < targetsBuffer.Length; i++)
                         {
-                            var statChangeValue = CalStatChangeValue(request.Amount, ref AutoChooseTargetConfig);
-                            target.StatChangValue += statChangeValue;
-                            targetsBuffer[i] = target;
+                            var target = targetsBuffer[i];
+                            if (target.Entity == request.Interactor)
+                            {
+                                var statChangeValue = CalStatChangeValue(request.Amount, ref SightConfig);
+                                target.StatChangValue += statChangeValue;
+                                targetsBuffer[i] = target;
+                            }
                         }
                     }
                 }
 
                 // Remove Dead Entities, like units, resources, buildings
-                if (stat.CurValue <= 0)
+                if (statInteractee.CurValue <= 0)
                 {
                     RemoveAndSendRequest(request.Interactee, index);
                 }
@@ -178,12 +183,12 @@ namespace SparFlame.GamePlaySystem.Interact
 
             private void SendUpdateResourcesRequest(InteractableAttr interactableAttr, Entity entity, int index)
             {
-                Debug.Log($"Dead : BaseTag {interactableAttr.BaseTag}, factionTag {interactableAttr.FactionTag}");
+                // Debug.Log($"Dead : BaseTag {interactableAttr.BaseTag}, factionTag {interactableAttr.FactionTag}");
             }
 
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static float CalStatChangeValue(float requestAmount, ref AutoChooseTargetSystemConfig config)
+            private static float CalStatChangeValue(float requestAmount, ref SightSystemConfig config)
             {
                 return requestAmount * config.StatValueChangeMultiplier;
             }

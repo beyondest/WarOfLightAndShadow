@@ -49,6 +49,9 @@ namespace SparFlame.GamePlaySystem.State
             
             private void Execute([ChunkIndexInQuery] int index,ref BasicStateData stateData,in DynamicBuffer<InsightTarget> targets, Entity entity)
             {
+                // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
+                if(stateData.CurState != UnitState.Idle)return;
+                
                 stateData.TargetEntity = Entity.Null;
                 stateData.TargetState = UnitState.Idle;
                 stateData.Focus = false;
@@ -56,7 +59,8 @@ namespace SparFlame.GamePlaySystem.State
                 CheckIfHomeUnderAttack();
                 if(targets.IsEmpty)return;
                 
-                stateData.TargetEntity = StateUtils.ChooseTarget(targets);
+                // TODO : This target is not exist ???
+                stateData.TargetEntity = InteractUtils.ChooseTarget(targets);
                 var targetInteractAttr = InteractableAttrLookup[stateData.TargetEntity];
                 var selfInteractAttr = InteractableAttrLookup[entity];
                 

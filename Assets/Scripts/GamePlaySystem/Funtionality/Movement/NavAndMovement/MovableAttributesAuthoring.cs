@@ -18,14 +18,12 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             public override void Bake(MovableAttributesAuthoring authoring)
             {
-                // var physicsShape = authoring.GetComponent<PhysicsShapeAuthoring>();
-                // var collider = physicsShape.GetBoxProperties();
+                var physicsShape = authoring.GetComponent<PhysicsShapeAuthoring>();
                 if (!authoring.TryGetComponent(out NavMeshAgent agent))
                 {
                     Debug.Log("Movable unit requires NavMeshAgent component");
                     return;
                 }
-                
                 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 
@@ -37,11 +35,9 @@ namespace SparFlame.GamePlaySystem.Movement
                     EnableCalculation = false,
                     CalculationComplete = false,
                     CurrentWaypoint = 0,
-                    IsNavQuerySet = false,
                     ForceCalculate = false,
                     AgentId = agent.agentTypeID
                 });
-                
                 AddComponent(entity, new MovableData
                 {
                     MoveSpeed = authoring.moveSpeed,
@@ -52,7 +48,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
-                    // SelfColliderShapeXz = new float2(collider.Size.x, collider.Size.z),
+                    SelfColliderShapeXz = new float2(physicsShape.m_PrimitiveSize.x,physicsShape.m_PrimitiveSize.z),
                 });
                 AddComponent(entity, new Surroundings
                 {
@@ -99,12 +95,16 @@ namespace SparFlame.GamePlaySystem.Movement
         public Entity FrontEntity;
         public Entity LeftEntity;
         public Entity RightEntity;
-        public Entity LeftTailEntity;
-        public Entity RightTailEntity;
         public int CompromiseTimes;
-        public float3 IdealDirection;
+        // public float3 IdealDirection;
+        public float3 PrePos;
+        public float RecordPosTime;
+
+        /*Deprecated
+         public Entity LeftTailEntity;
+        public Entity RightTailEntity;
         public bool ChooseRight;
-        public int SlideTimes;
+        public int SlideTimes;*/
     }
     
     public struct NavAgentComponent : IComponentData
@@ -114,12 +114,10 @@ namespace SparFlame.GamePlaySystem.Movement
         public bool CalculationComplete;
         public int CurrentWaypoint;
         public float NextPathCalculateTime;
-        public bool IsNavQuerySet;
         public float CalculateInterval;
         public float3 Extents;
         public bool ForceCalculate;
         public int AgentId;
-        public int QueryIndex;
     }
 
     public struct WaypointBuffer : IBufferElementData

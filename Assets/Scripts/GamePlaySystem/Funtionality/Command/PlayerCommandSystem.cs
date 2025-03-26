@@ -129,18 +129,22 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData, 
+            ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
              in AttackAbility attackAbility,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, attackAbility.RangeSq);
-
+            
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.Focus = Focus;
             basicStateData.TargetState = UnitState.Attacking;
             basicStateData.TargetEntity = TargetEntity;
+            InteractUtils.NoDupAdd(ref targets, new InsightTarget
+            {
+                Entity = basicStateData.TargetEntity
+            });
         }
     }
 
@@ -155,7 +159,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData,
+            ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in HealAbility healingAbility,
             Entity entity)
         {
@@ -166,6 +170,10 @@ namespace SparFlame.GamePlaySystem.Command
             basicStateData.TargetEntity = TargetEntity;
             basicStateData.Focus = Focus;
             basicStateData.TargetState = UnitState.Healing;
+            InteractUtils.NoDupAdd(ref targets, new InsightTarget
+            {
+                Entity = basicStateData.TargetEntity
+            });
         }
     }
 
@@ -180,7 +188,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData,
+            ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
@@ -191,6 +199,10 @@ namespace SparFlame.GamePlaySystem.Command
             basicStateData.TargetEntity = TargetEntity;
             basicStateData.Focus = Focus;
             basicStateData.TargetState = UnitState.Harvesting;
+            InteractUtils.NoDupAdd(ref targets, new InsightTarget
+            {
+                Entity = basicStateData.TargetEntity
+            });
         }
     }
 

@@ -30,15 +30,16 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct InsightTarget : IBufferElementData, IComparable<InsightTarget>,IEquatable<InsightTarget>, IEntityContained
     {
         public Entity Entity { get; set; }
-        public float BaseValue;
+        public float PriorityValue;
         public float DisValue;
         public float StatChangValue;
         public float InteractOverride;
+        public float MemoryValue;
         public float TotalValue;
         
         public int CompareTo(InsightTarget other)
         {
-            return other.BaseValue.CompareTo(BaseValue);
+            return other.PriorityValue.CompareTo(PriorityValue);
         }
         public bool Equals(InsightTarget other)
         {

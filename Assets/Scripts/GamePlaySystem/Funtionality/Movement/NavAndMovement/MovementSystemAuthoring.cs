@@ -7,7 +7,8 @@ namespace SparFlame.GamePlaySystem.Movement
 {
     public class MovementSystemAuthoring : MonoBehaviour
     {
-        [Tooltip("This is the distance to judge if agent arrives at the waypoint")]
+        [Tooltip("This is the distance to judge if agent arrives at the waypoint;" +
+                 "This is the distance to judge if agent not get stuck")]
         public float waypointDistanceThreshold = 0.5f;
 
         [Tooltip("This bias will affect the interact movement complete judgement, " +
@@ -20,8 +21,15 @@ namespace SparFlame.GamePlaySystem.Movement
         public float marchExtent = 0.5f;
         public float rotationSpeed = 5f;
         
+        
         public PhysicsCategoryTags obstacleLayerMask;
         public PhysicsCategoryTags movementRayBelongsToLayerMask;
+
+        [Tooltip("This is used for judging if get stuck")]
+        public float recordPosInterval = 1.0f;
+
+        public float detectLengthRatio = 0.1f;
+        public float detectFrontBiasRatio = 0.6f;
         private class MovementSystemAuthoringBaker : Baker<MovementSystemAuthoring>
         {
             public override void Bake(MovementSystemAuthoring authoring)
@@ -34,7 +42,10 @@ namespace SparFlame.GamePlaySystem.Movement
                     InteractRangeSqBias = authoring.interactRangeSqBias,
                     RotationSpeed = authoring.rotationSpeed,
                     ObstacleLayerMask = authoring.obstacleLayerMask.Value,
-                    DetectRaycasstBelongsTo =authoring.movementRayBelongsToLayerMask.Value,
+                    DetectRaycastBelongsTo =authoring.movementRayBelongsToLayerMask.Value,
+                    RecordPosInterval = authoring.recordPosInterval,
+                    DetectLengthRatio = authoring.detectLengthRatio,
+                    DetectFrontBiasRatio = authoring.detectFrontBiasRatio
                 });
             }
         }
@@ -47,7 +58,10 @@ namespace SparFlame.GamePlaySystem.Movement
         public float InteractRangeSqBias;
         public float RotationSpeed;
         public uint ObstacleLayerMask;
-        public uint DetectRaycasstBelongsTo;
+        public uint DetectRaycastBelongsTo;
+        public float RecordPosInterval;
+        public float DetectLengthRatio;
+        public float DetectFrontBiasRatio;
     }
 
 
