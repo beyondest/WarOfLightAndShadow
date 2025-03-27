@@ -6,7 +6,7 @@ namespace SparFlame.BootStrapper
 {
     public class SceneController : MonoBehaviour
     {
-        public static SceneController instance;
+        public static SceneController Instance;
         [SerializeField] private SceneGroup[] sceneGroups;
         public event Action<SceneGroup> OnSceneGroupLoaded;
         public event Action<SceneGroup> OnSceneGroupUnloaded;
@@ -15,9 +15,9 @@ namespace SparFlame.BootStrapper
 
         private void Awake()
         {
-            if (instance == null)
+            if (Instance == null)
             {
-                instance = this;
+                Instance = this;
                 DontDestroyOnLoad(gameObject);
             }
             else Destroy(gameObject);

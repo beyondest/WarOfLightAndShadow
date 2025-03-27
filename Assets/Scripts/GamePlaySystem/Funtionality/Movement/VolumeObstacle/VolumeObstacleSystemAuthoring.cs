@@ -65,6 +65,7 @@ namespace SparFlame.GamePlaySystem.Movement
         public Entity FromEntity;
     }
 
+    // TODO : Change dictionary to buffer, and save it as native hash map in system
     internal class VolumeObstacleSystemConfig : IComponentData
     {
         public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;
@@ -72,7 +73,6 @@ namespace SparFlame.GamePlaySystem.Movement
         public float SyncTimeInterval;
         public float AllyAgentRadius;
         public float EnemyAgentRadius;
-
     }
 
     internal struct UpdateNavMeshRequest : IComponentData

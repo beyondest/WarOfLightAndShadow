@@ -6,7 +6,7 @@ namespace SparFlame.BootStrapper
 {
     public class GameController : MonoBehaviour
     {
-        public static GameController instance;
+        public static GameController Instance;
         
         [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
         [SerializeField] private string mainMenuGroupName = "MainMenuGroup";
@@ -25,9 +25,9 @@ namespace SparFlame.BootStrapper
         
         private void Awake()
         {
-            if (instance == null)
+            if (Instance == null)
             {
-                instance = this;
+                Instance = this;
                 DontDestroyOnLoad(gameObject);
             }
             else
@@ -43,9 +43,9 @@ namespace SparFlame.BootStrapper
 
         private void Start()
         {
-            SceneController.instance.OnSceneGroupLoaded += CheckLoadingState;
-            SceneController.instance.OnSceneGroupUnloaded += CheckUnloadingState;
-            SceneController.instance.LoadSceneGroup(mainMenuGroupName);
+            SceneController.Instance.OnSceneGroupLoaded += CheckLoadingState;
+            SceneController.Instance.OnSceneGroupUnloaded += CheckUnloadingState;
+            SceneController.Instance.LoadSceneGroup(mainMenuGroupName);
         }
 
         
@@ -88,7 +88,7 @@ namespace SparFlame.BootStrapper
         {
             ResumeGame();
             _isReadyForPlayer = false;
-            SceneController.instance.UnloadSceneGroup(gamingGroupName);
+            SceneController.Instance.UnloadSceneGroup(gamingGroupName);
             Debug.LogWarning("Go to main menu without saving.");
             _isGaming = false;
         }
@@ -104,7 +104,7 @@ namespace SparFlame.BootStrapper
         {
             if (!_isReadyForPlayer) return;
             Debug.Log("Starting game.");
-            SceneController.instance.LoadSceneGroup(gamingGroupName);
+            SceneController.Instance.LoadSceneGroup(gamingGroupName);
         }
         
         

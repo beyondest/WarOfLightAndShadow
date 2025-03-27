@@ -342,27 +342,6 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!1 &1255283960 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2345579209972636107, guid: d9c3512c810132d4497801235f37be03, type: 3}
-  m_PrefabInstance: {fileID: 3456690346095046007}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1255283965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1255283960}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ca2610082d84747b43dadc92603ab9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lookSpeedH: 2
-  lookSpeedV: 2
-  zoomSpeed: 2
-  dragSpeed: 5
 --- !u!1001 &1519447215
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -529,13 +508,13 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 219781558048614402, guid: d9c3512c810132d4497801235f37be03, type: 3}
-      propertyPath: m_CullingMask.m_Bits
-      value: 1495
-      objectReference: {fileID: 0}
     - target: {fileID: 2345579209972636107, guid: d9c3512c810132d4497801235f37be03, type: 3}
       propertyPath: m_Name
       value: Main Camera
+      objectReference: {fileID: 0}
+    - target: {fileID: 2345579209972636107, guid: d9c3512c810132d4497801235f37be03, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6407490643745495925, guid: d9c3512c810132d4497801235f37be03, type: 3}
       propertyPath: m_LocalPosition.x
@@ -580,10 +559,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2345579209972636107, guid: d9c3512c810132d4497801235f37be03, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1255283965}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d9c3512c810132d4497801235f37be03, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

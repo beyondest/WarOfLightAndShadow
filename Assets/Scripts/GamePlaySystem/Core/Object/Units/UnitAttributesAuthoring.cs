@@ -16,7 +16,6 @@ namespace SparFlame.GamePlaySystem.Units
             public override void Bake(UnitAttributesAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                var boxCollider = authoring.GetComponent<BoxCollider>();
                 AddComponent(entity, new UnitBasicAttr
                 {
                 });
@@ -27,10 +26,17 @@ namespace SparFlame.GamePlaySystem.Units
 
     public struct UnitBasicAttr : IComponentData
     {
-
+        public UnitType UnitType;
     }
 
-
+    public enum UnitType
+    {
+        Melee,
+        Archer,
+        Mage,
+        Cavalry,
+        Farmer
+    }
 
 
 

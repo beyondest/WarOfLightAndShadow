@@ -8,7 +8,7 @@ namespace SparFlame.BootStrapper
         private LoadingProgress _progress;
         private void Start()
         {
-            SceneController.instance.OnSceneGroupLoaded += (sceneGroup => Debug.Log($"SceneGroup {sceneGroup.groupName} start loading "));
+            SceneController.Instance.OnSceneGroupLoaded += (sceneGroup => Debug.Log($"SceneGroup {sceneGroup.groupName} start loading "));
             _progress = new LoadingProgress();
             _progress.ProgressChanged += f => Debug.Log($"SceneGroup progress changed {f}");
         }
