@@ -1,0 +1,27 @@
+{
+    "name": "SparFlame.GamePlaySystem.Movement",
+    "rootNamespace": "SparFlame.GamePlaySystem.Movement",
+    "references": [
+        "GUID:734d92eba21c94caba915361bd5ac177",
+        "GUID:8819f35a0fc84499b990e90a4ca1911f",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:2665a8d13d1b3f18800f46e256720795",
+        "GUID:63afb046c8423dd448ae7aba042ea63d",
+        "GUID:a5baed0c9693541a5bd947d336ec7659",
+        "GUID:8c4dd21966739024fbd72155091d199e",
+        "GUID:ab16d1152636c504194f597e758dc94b",
+        "GUID:764dc1fd85fbafa4888eee3e4cb8c621",
+        "GUID:c96d68d792fd1734e95641cd6dfbc646",
+        "GUID:ae6f7a3bb06b5304098ba32b29efd00c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
