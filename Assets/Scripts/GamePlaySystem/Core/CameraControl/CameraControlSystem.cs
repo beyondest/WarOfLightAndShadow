@@ -7,7 +7,8 @@ using SparFlame.GamePlaySystem.General;
 
 namespace SparFlame.GamePlaySystem.CameraControl
 {
-    [UpdateBefore(typeof(TransformSystemGroup))]
+    [UpdateBefore(typeof(CustomInputSystem))]
+    [UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class CameraControlSystem : SystemBase
     {
         protected override void OnCreate()
@@ -17,7 +18,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             RequireForUpdate<CameraData>();
             RequireForUpdate<CameraControlConfig>();
             RequireForUpdate<CameraControlData>();
-            RequireForUpdate<MouseSystemData>();
+            RequireForUpdate<CustomInputSystemData>();
         }
 
 
@@ -29,7 +30,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             var camData = SystemAPI.GetComponentRW<CameraData>(cameraEntity);
             var cameraControlConfig = SystemAPI.GetSingleton<CameraControlConfig>();
             var cameraControlData = SystemAPI.GetComponentRW<CameraControlData>(cameraEntity);
-            var clickSystemData = SystemAPI.GetSingleton<MouseSystemData>();
+            var clickSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
             //var cameraControlData = SystemAPI.GetSingletonRW<CameraControlData>();
             
             var newPos = (float3)cam.transform.position;
@@ -51,18 +52,18 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
 
         private void MouseDrag(ref CameraControlData data, ref float3 newPos,
-            in MouseSystemData mouseSystemData,  Transform transform)
+            in CustomInputSystemData customInputSystemData,  Transform transform)
         {
-            if (mouseSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Middle })
+            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Middle })
             {
-                data.DragStartPos = mouseSystemData.HitPosition;
+                data.DragStartPos = customInputSystemData.HitPosition;
                 data.IsDragging = true;
             }
 
-            if (mouseSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Middle })
-                newPos = (float3)transform.position + data.DragStartPos - mouseSystemData.HitPosition;
+            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Middle })
+                newPos = (float3)transform.position + data.DragStartPos - customInputSystemData.HitPosition;
 
-            if (mouseSystemData is { ClickFlag: ClickFlag.End })
+            if (customInputSystemData is { ClickFlag: ClickFlag.End })
                 data.IsDragging = false;
         }
 

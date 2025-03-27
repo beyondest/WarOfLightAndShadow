@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
-using UnityEngine.Serialization;
+using Unity.Mathematics;
+using Unity.Physics.Authoring;
 
 
 namespace SparFlame.GamePlaySystem.General
@@ -18,12 +19,15 @@ namespace SparFlame.GamePlaySystem.General
             public override void Bake(InteractableAttributesAuthoring authoring)
             {
                 var entity = GetEntity(authoring.baseTag == BaseTag.Units ? TransformUsageFlags.Dynamic : TransformUsageFlags.None);
-
+                var physicsShapeAuthoring = authoring.GetComponent<PhysicsShapeAuthoring>();
                 AddComponent(entity, new InteractableAttr
                 {
                     BaseTag = authoring.baseTag,
                     FactionTag = authoring.factionTag,
+                    BoxColliderSize = physicsShapeAuthoring.m_PrimitiveSize
                 });
+
+                
             }
         }
     }
@@ -50,5 +54,7 @@ namespace SparFlame.GamePlaySystem.General
     {
         public BaseTag BaseTag;
         public FactionTag FactionTag;
+        public float3 BoxColliderSize;
+
     }
 }

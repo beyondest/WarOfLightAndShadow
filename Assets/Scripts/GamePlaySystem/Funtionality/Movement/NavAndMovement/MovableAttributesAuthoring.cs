@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics.Authoring;
 using UnityEngine.AI;
+
 namespace SparFlame.GamePlaySystem.Movement
 {
     public class MovableAttributesAuthoring : MonoBehaviour
@@ -9,24 +11,19 @@ namespace SparFlame.GamePlaySystem.Movement
 
         [Tooltip("This interval determines how long the path calculation is executed once")]
         public float calculateInterval = 1.0f;
+         public float moveSpeed = 5f;
 
         
         private class Baker : Baker<MovableAttributesAuthoring>
         {
             public override void Bake(MovableAttributesAuthoring authoring)
             {
-                if (!authoring.TryGetComponent<BoxCollider>(out var collider))
-                {
-                    Debug.LogError("Movable unit must have a Box Collider");
-                    return;
-                }
+                var physicsShape = authoring.GetComponent<PhysicsShapeAuthoring>();
                 if (!authoring.TryGetComponent(out NavMeshAgent agent))
                 {
                     Debug.Log("Movable unit requires NavMeshAgent component");
                     return;
                 }
-                
-                var colliderRadius = 0.5f * math.length(new float2(collider.size.x, collider.size.z));
                 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 
@@ -38,14 +35,12 @@ namespace SparFlame.GamePlaySystem.Movement
                     EnableCalculation = false,
                     CalculationComplete = false,
                     CurrentWaypoint = 0,
-                    IsNavQuerySet = false,
                     ForceCalculate = false,
                     AgentId = agent.agentTypeID
                 });
-                
                 AddComponent(entity, new MovableData
                 {
-                    MoveSpeed = 0f,
+                    MoveSpeed = authoring.moveSpeed,
                     TargetCenterPos = float3.zero,
                     TargetColliderShapeXZ = float2.zero,
                     MovementCommandType = MovementCommandType.None,
@@ -53,11 +48,11 @@ namespace SparFlame.GamePlaySystem.Movement
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
-                    SelfColliderRadius = colliderRadius
+                    SelfColliderShapeXz = new float2(physicsShape.m_PrimitiveSize.x,physicsShape.m_PrimitiveSize.z),
                 });
                 AddComponent(entity, new Surroundings
                 {
-                    MoveResult = TryMoveResult.Success,
+                    MoveSuccess = true,
                     FrontEntity = Entity.Null,
                     LeftEntity = Entity.Null,
                     RightEntity = Entity.Null,
@@ -91,17 +86,25 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// This is the collider of object itself, used for raycast for obstacle avoidance 
         /// </summary>
-        public float SelfColliderRadius;
+        public float2 SelfColliderShapeXz;
     }
 
     public struct Surroundings : IComponentData
     {
-        public TryMoveResult MoveResult;
+        public bool MoveSuccess;
         public Entity FrontEntity;
         public Entity LeftEntity;
         public Entity RightEntity;
         public int CompromiseTimes;
-        public float3 FrontDirection;
+        // public float3 IdealDirection;
+        public float3 PrePos;
+        public float RecordPosTime;
+
+        /*Deprecated
+         public Entity LeftTailEntity;
+        public Entity RightTailEntity;
+        public bool ChooseRight;
+        public int SlideTimes;*/
     }
     
     public struct NavAgentComponent : IComponentData
@@ -111,7 +114,6 @@ namespace SparFlame.GamePlaySystem.Movement
         public bool CalculationComplete;
         public int CurrentWaypoint;
         public float NextPathCalculateTime;
-        public bool IsNavQuerySet;
         public float CalculateInterval;
         public float3 Extents;
         public bool ForceCalculate;
@@ -129,6 +131,8 @@ namespace SparFlame.GamePlaySystem.Movement
     {
         
     }
+    
+
     
     public enum MovementCommandType
     {
@@ -169,4 +173,6 @@ namespace SparFlame.GamePlaySystem.Movement
         AutoGiveWay,
         Stuck
     }
+
+
 }

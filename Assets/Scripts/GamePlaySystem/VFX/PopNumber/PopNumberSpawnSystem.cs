@@ -46,7 +46,6 @@ namespace SparFlame.GamePlaySystem.PopNumber
             }
 
             var config = SystemAPI.GetSingleton<PopNumberConfig>();
-
             var elapsedTime = (float)SystemAPI.Time.ElapsedTime;
             var ecbSingleton = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>();
 
@@ -79,8 +78,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
                 var glyphPosition = popNumberRequest.Position;
                 var offset = math.log10(number) / 2f * GlyphWidth;
                 glyphPosition.x += offset;
-
-
+                
                 // split to numbers
                 // we iterate from  rightmost digit to leftmost
                 while (number > 0)
@@ -102,7 +100,6 @@ namespace SparFlame.GamePlaySystem.PopNumber
                         {
                             SpawnTime = ElapsedTime,
                             OriginalY = glyphPosition.y,
-                            Type = popNumberRequest.Type,
                         });
 
                     Ecb.SetComponent(chunkIndex, glyph, new PopNumberIDFloatOverride { Value = digit });

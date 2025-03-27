@@ -15,7 +15,6 @@ namespace SparFlame.Test
         {
             _rnd = new Random(8);
             RequireForUpdate<NotPauseTag>();
-            RequireForUpdate<PopNumberColorConfig>();
             RequireForUpdate<TestSpawner>();
             count = 60;
         }
@@ -25,13 +24,11 @@ namespace SparFlame.Test
             count--;
             if (count > 0) return;
             count = 60;
-            var colorConfig = SystemAPI.GetSingletonBuffer<PopNumberColorConfig>();
             var spawner = SystemAPI.GetSingleton<TestSpawner>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var entities = spawner.EntitiesPerFrame;
             while (entities-- > 0)
             {
-
                 var entity = ecb.CreateEntity();
                 ecb.AddComponent(entity, new PopNumberRequest
                 {
@@ -39,7 +36,6 @@ namespace SparFlame.Test
                     ColorId = 0,
                     Position = spawner.SpawnPosition,
                     Scale = spawner.InitialScale,
-                    Type = PopNumberType.DamageTaken
                 });
             }
             ecb.Playback(EntityManager);

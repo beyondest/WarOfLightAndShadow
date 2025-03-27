@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.Serialization;
@@ -27,10 +28,12 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public float glyphZOffset = 0.001f;
         [Tooltip("Will affect the pop number wide space within each number")]
         public float glyphWidth = 0.07f;
-        public Color[] popNumberColors;
+        
+        // public Color[] popNumberColors;
+        public PopNumberTypeToColor[] popNumberTypeToColors;
+        
         private class Baker : Baker<PopNumberSystemAuthoring>
         {
-
             public override void Bake(PopNumberSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
@@ -46,22 +49,37 @@ namespace SparFlame.GamePlaySystem.PopNumber
                 });
 
                 var buffer = AddBuffer<PopNumberColorConfig>(entity);
-                foreach (var managedColor in authoring.popNumberColors)
+                for(var i = 0; i < 10; i++    )
                 {
-                    var color = new float4(managedColor.r, managedColor.g, managedColor.b, managedColor.a);
-                    buffer.Add(new PopNumberColorConfig { Color = color });
+                    buffer.Add(new PopNumberColorConfig {  });
+                }
+                foreach (var pair in authoring.popNumberTypeToColors)
+                {
+                    var color = pair.popNumberColor;
+                    buffer.ElementAt((int)pair.popNumberType) = new PopNumberColorConfig
+                    {
+                        Color = new float4(color.r, color.g, color.b, color.a),
+                    };
                 }
             }
         }
     }
 
+    [Serializable]
+    public struct PopNumberTypeToColor
+    {
+        public PopNumberType popNumberType;
+        public Color popNumberColor;
+    }
+    
     public enum PopNumberType
     {
-        DamageTaken,
-        DamageDealt,
-        AllyHealed,
-        EnemyHealed,
-        Resource
+        DamageTaken = 0,
+        DamageDealt = 1,
+        AllyHealed = 2,
+        EnemyHealed = 3,
+        AllyHarvest= 4,
+        EnemyHarvest = 5
     }
     
     public struct PopNumberConfig : IComponentData
@@ -86,13 +104,11 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public int ColorId;
         public float3 Position;
         public float Scale;
-        public PopNumberType Type;
     }
 
     public struct PopNumberData : IComponentData
     {
         public float SpawnTime;
         public float OriginalY;
-        public PopNumberType Type;
     }
 }

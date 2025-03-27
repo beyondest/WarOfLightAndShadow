@@ -12,6 +12,10 @@ namespace SparFlame.GamePlaySystem.Movement
 
   
         public int pathNodePoolSize = 1000;
+        public int initialNavMeshQueriesCapacity = 100;
+        
+        // public int parallelJobBatchSize = 2;
+        
         private class NavAgentSystemAuthoringBaker : Baker<NavAgentSystemAuthoring>
         {
             public override void Bake(NavAgentSystemAuthoring authoring)
@@ -23,6 +27,8 @@ namespace SparFlame.GamePlaySystem.Movement
                     MaxPathSize = authoring.maxPathSize,
                     MaxIterations = authoring.maxIterations,
                     PathNodePoolSize = authoring.pathNodePoolSize,
+                    InitialNavMeshQueriesCapacity = authoring.initialNavMeshQueriesCapacity,
+                    // ParallelJobBatchSize = authoring.parallelJobBatchSize,
                 });
             }
         }
@@ -32,5 +38,8 @@ namespace SparFlame.GamePlaySystem.Movement
         public int MaxPathSize;
         public int MaxIterations;
         public int PathNodePoolSize;
+        public int InitialNavMeshQueriesCapacity;
+        public bool IsPoolInitialized;
+        // public int ParallelJobBatchSize;
     }
 }

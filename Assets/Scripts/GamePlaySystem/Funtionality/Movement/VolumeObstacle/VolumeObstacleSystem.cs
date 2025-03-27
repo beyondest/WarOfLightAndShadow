@@ -4,7 +4,6 @@ using Unity.AI.Navigation;
 using Unity.Entities;
 using UnityEngine;
 using Unity.Collections;
-using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine.AI;
 
@@ -14,17 +13,15 @@ namespace SparFlame.GamePlaySystem.Movement
 {
     public partial class VolumeObstacleSystem : SystemBase
     {
-        private readonly Dictionary<Entity, (GameObject, GameObject)> _entityMap =
-            new Dictionary<Entity, (GameObject, GameObject)>();
-
-        private readonly Dictionary<Entity, GameObject> _neutralEntityMap = new Dictionary<Entity, GameObject>();
+        private readonly Dictionary<Entity, (GameObject, GameObject)> _entityMap = new();
+        private readonly Dictionary<Entity, GameObject> _neutralEntityMap = new();
         private Dictionary<FactionTag, GameObject> _obstacleTypePrefabMap;
         private Dictionary<FactionTag, GameObject> _volumeTypePrefabMap;
         private float _lastSyncTime;
         private float _syncTimeInterval;
-        private int _allyAgentTypeId;
-        private int _enemyAgentTypeId;
-
+        private float _allyAgentRadius;
+        private float _enemyAgentRadius;
+        
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -39,9 +36,12 @@ namespace SparFlame.GamePlaySystem.Movement
                 _obstacleTypePrefabMap = config.ObstacleTypePrefabMap;
                 _volumeTypePrefabMap = config.VolumeTypePrefabMap;
                 _syncTimeInterval = config.SyncTimeInterval;
+                _allyAgentRadius = config.AllyAgentRadius;
+                _enemyAgentRadius = config.EnemyAgentRadius;
             }
         }
-
+        
+        // TODO : Add job parallel support
         protected override void OnUpdate()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
@@ -59,19 +59,20 @@ namespace SparFlame.GamePlaySystem.Movement
             UpdateNavMeshSurface(shouldUpdateAllyMesh,  shouldUpdateEnemyMesh,ref ecb);
 
             //Test delete destroy entity to remove obstacle
-            if (Input.GetKeyDown(KeyCode.D))
-            {
-                foreach (var (_, entity) in SystemAPI.Query<VolumeObstacleTag>().WithEntityAccess())
-                {
-                    var e = ecb.CreateEntity();
-                    ecb.AddComponent(e, new VolumeObstacleDestroyRequest
-                    {
-                        FromEntity = entity,
-                        RequestFromFaction = FactionTag.Ally
-                    });
-                    ecb.DestroyEntity(entity);
-                }
-            }
+            // if (Input.GetKeyDown(KeyCode.D))
+            // {
+            //     foreach (var (_, entity) in SystemAPI.Query<VolumeObstacleTag>().WithEntityAccess())
+            //     {
+            //         var e = ecb.CreateEntity();
+            //         ecb.AddComponent(e, new VolumeObstacleDestroyRequest
+            //         {
+            //             FromEntity = entity,
+            //             RequestFromFaction = FactionTag.Ally
+            //         });
+            //         ecb.DestroyEntity(entity);
+            //     }
+            // }
+            
             ecb.Playback(EntityManager);
             ecb.Dispose();
         }
@@ -105,32 +106,34 @@ namespace SparFlame.GamePlaySystem.Movement
             foreach (var (localTransform, syncObstacleData, entity) in SystemAPI
                          .Query<RefRO<LocalTransform>, RefRW<SyncObstacleData>>().WithEntityAccess())
             {
+                var transform = localTransform.ValueRO;
                 if (curTime < syncObstacleData.ValueRW.SyncTime ) continue;
                 syncObstacleData.ValueRW.SyncTime =
                     curTime + syncObstacleData.ValueRW.SyncPositionInterval;
                 var (obstacle, _) = _entityMap[entity];
-                obstacle.transform.position = localTransform.ValueRO.Position;
-                obstacle.transform.rotation = localTransform.ValueRO.Rotation;
+                obstacle.transform.position = transform.Position;
+                obstacle.transform.rotation = transform.Rotation;
             }
         }
 
         private void DestroyVolumeObstacleInMainScene(ref bool shouldUpdateAllyMesh,ref bool shouldUpdateEnemyMesh,ref EntityCommandBuffer ecb)
         {
             // Destroy game object correspond with destroyed entity
-            foreach (var (volumeObstacleDestroyRequest, entity) in SystemAPI
+            foreach (var (request, entity) in SystemAPI
                          .Query<RefRO<VolumeObstacleDestroyRequest>>()
                          .WithEntityAccess())
             {
-                if (volumeObstacleDestroyRequest.ValueRO.RequestFromFaction == FactionTag.Neutral)
+                var destroyReq = request.ValueRO;
+                if (destroyReq.RequestFromFaction == FactionTag.Neutral)
                 {
-                    var obstacle = _neutralEntityMap[volumeObstacleDestroyRequest.ValueRO.FromEntity];
-                    _neutralEntityMap.Remove(volumeObstacleDestroyRequest.ValueRO.FromEntity);
+                    var obstacle = _neutralEntityMap[destroyReq.FromEntity];
+                    _neutralEntityMap.Remove(destroyReq.FromEntity);
                     Object.Destroy(obstacle);
                 }
                 else
                 {
-                    var (obstacle, volume) = _entityMap[volumeObstacleDestroyRequest.ValueRO.FromEntity];
-                    _entityMap.Remove(volumeObstacleDestroyRequest.ValueRO.FromEntity);
+                    var (obstacle, volume) = _entityMap[destroyReq.FromEntity];
+                    _entityMap.Remove(destroyReq.FromEntity);
                     if (volume != null)
                     {
                         // request from ally or enemy, then both need to update, because one is not walkable, one is high cost volume
@@ -157,72 +160,88 @@ namespace SparFlame.GamePlaySystem.Movement
                          .Query<RefRO<LocalTransform>, RefRO<VolumeObstacleSpawnRequest>>()
                          .WithEntityAccess())
             {
-                // If this is neutral , such as resources
-                if (request.ValueRO.RequestFromFaction == FactionTag.Neutral)
+                var req = request.ValueRO;
+                var transform = localTransform.ValueRO;
+                // If neutral, generate obstacle for all agent 
+                if (req.RequestFromFaction == FactionTag.Neutral)
                 {
-                    var obstacle = Object.Instantiate(_obstacleTypePrefabMap[request.ValueRO.RequestFromFaction],
-                        localTransform.ValueRO.Position,
-                        localTransform.ValueRO.Rotation
+                    var obstacle = Object.Instantiate(_obstacleTypePrefabMap[req.RequestFromFaction],
+                        transform.Position,
+                        transform.Rotation
                     );
                     // Since default prefab is for all factions, then don't need to change the modifier
                     var navMeshObstacle = obstacle.GetComponent<NavMeshObstacle>();
-                    navMeshObstacle.size = request.ValueRO.Size;
-                    navMeshObstacle.center = request.ValueRO.Center;
+                    navMeshObstacle.size = req.Size;
+                    navMeshObstacle.center = req.Center;
                     _neutralEntityMap.Add(entity, obstacle);
                 }
                 // Ally or Enemy
                 else
                 {
-                    GameObject obstacle = null;
+                    GameObject navMeshVolumeNotWalkable = null;
                     GameObject volume = null;
                     // Actually here generates volume not walkable, because obstacle is not walkable for everyone everytime
-                    if (!request.ValueRO.NotGenerateObstacle)
+                    if (!req.NotGenerateObstacle)
                     {
                         // request from ally, then this building is ally, then this building is obstacle for ally
-                        obstacle = Object.Instantiate(_obstacleTypePrefabMap[request.ValueRO.RequestFromFaction],
-                            localTransform.ValueRO.Position,
-                            localTransform.ValueRO.Rotation
+                        navMeshVolumeNotWalkable = Object.Instantiate(_obstacleTypePrefabMap[req.RequestFromFaction],
+                            transform.Position,
+                            transform.Rotation
                         );
-                        var navMeshVolume0 = obstacle.GetComponent<NavMeshModifierVolume>();
-                        navMeshVolume0.size = request.ValueRO.Size;
-                        navMeshVolume0.center = request.ValueRO.Center;
-                        if (request.ValueRO.RequestFromFaction == FactionTag.Ally)
+                        var navMeshVolume0 = navMeshVolumeNotWalkable.GetComponent<NavMeshModifierVolume>();
+                        var size0 = req.Size;
+                        if (req.RequestFromFaction == FactionTag.Ally)
                         {
+                            size0.x += _allyAgentRadius; // Ally building is not walkable for ally unit and should plus radius to prevent stuck
+                            size0.z += _allyAgentRadius;
                             shouldUpdateAllyMesh = true;
                         }
                         else
                         {
+                            size0.x += _enemyAgentRadius;
+                            size0.z += _enemyAgentRadius;
                             shouldUpdateEnemyMesh = true;
                         }
+                        navMeshVolume0.size = size0;
+                        navMeshVolume0.center = req.Center;
                     }
 
-                    if (!request.ValueRO.NotGenerateVolume)
+                    if (!req.NotGenerateVolume)
                     {
                         // If request from ally, then this volume should affect enemy so we use ~
-                        volume = Object.Instantiate(_volumeTypePrefabMap[~request.ValueRO.RequestFromFaction],
-                            localTransform.ValueRO.Position,
-                            localTransform.ValueRO.Rotation
+                        volume = Object.Instantiate(_volumeTypePrefabMap[~req.RequestFromFaction],
+                            transform.Position,
+                            transform.Rotation
                         );
                         var navMeshVolume = volume.GetComponent<NavMeshModifierVolume>();
-                        navMeshVolume.size = request.ValueRO.Size;
-                        navMeshVolume.center = request.ValueRO.Center;
-                        navMeshVolume.area = (int)request.ValueRO.VolumeAreaType;
-                        // If this is interactable building such as archer tower
-                        if (request.ValueRO.VolumeRadius != 0) 
-                        {
-                            navMeshVolume.size = new float3(request.ValueRO.VolumeRadius, request.ValueRO.Size.y, request.ValueRO.VolumeRadius);
-                        }
+                        var size = req.Size;
                         // If request from ally, then this is the area high cost for enemy
-                        if (request.ValueRO.RequestFromFaction == FactionTag.Ally)
+                        if (~req.RequestFromFaction == FactionTag.Ally)
                         {
+                            size.x += _allyAgentRadius;
+                            size.z += _allyAgentRadius;
+                            
                             shouldUpdateAllyMesh = true;
                         }
                         else
                         {
+                            size.x += _enemyAgentRadius;
+                            size.z += _enemyAgentRadius;
                             shouldUpdateEnemyMesh = true;
                         }
+                        // If this is an attackable building, should mark attack range at higher cost
+                        if (req.VolumeRadius != 0) 
+                        {
+                            size.x += req.VolumeRadius - req.Size.x;
+                            size.z += req.VolumeRadius - req.Size.z;
+                        }
+                        navMeshVolume.size = size;
+                        navMeshVolume.center = req.Center;
+                        navMeshVolume.area = (int)req.VolumeAreaType;
+                        // If this is interactable building such as archer tower
+                        
                     }
-                    _entityMap.Add(entity, (obstacle, volume));
+                    _entityMap.Add(entity, (navMeshVolumeNotWalkable, volume));
                 }
                 
                 ecb.RemoveComponent<VolumeObstacleSpawnRequest>(entity);

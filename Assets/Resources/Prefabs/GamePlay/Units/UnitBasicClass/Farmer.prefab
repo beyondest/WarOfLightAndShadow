@@ -8,6 +8,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -6489048707916159848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: interactSpeed
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -6489048707916159848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: interactBasicAmount
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4111803572573163848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_VersionIndex
+      value: 436
+      objectReference: {fileID: 0}
+    - target: {fileID: 5240935616546284251, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_VersionIndex
+      value: 1375
+      objectReference: {fileID: 0}
     - target: {fileID: 5672437903288014313, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Name
       value: Farmer
@@ -56,20 +72,56 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category01
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category03
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category04
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category06
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7346732372863316577, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category07
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7457917497969479734, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: priority
+      value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 8177850282908679290, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category07
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9065997544713293671, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_VersionIndex
+      value: 436
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5672437903288014313, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       insertIndex: -1
-      addedObject: {fileID: -8459425289366563505}
+      addedObject: {fileID: 6832281480888180178}
   m_SourcePrefab: {fileID: 100100000, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
 --- !u!1 &6709039817703936709 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5672437903288014313, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
   m_PrefabInstance: {fileID: 1415185896126301996}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &-8459425289366563505
+--- !u!114 &6832281480888180178
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -78,6 +130,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 6709039817703936709}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15461d523de146e9bae92926cb353115, type: 3}
+  m_Script: {fileID: 11500000, guid: 609ed965a3e5435e908815b1bc2756f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  interactType: 2
+  interactSpeed: 1
+  interactCount: 1
+  interactRange: 1
+  interactBasicAmount: 6

@@ -4,7 +4,6 @@ using System.Linq;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.AI;
 
 namespace SparFlame.GamePlaySystem.Movement
@@ -37,13 +36,54 @@ namespace SparFlame.GamePlaySystem.Movement
                     ObstacleTypePrefabMap = obstaclePrefabMap,
                     VolumeTypePrefabMap = volumePrefabMap,
                     SyncTimeInterval = authoring.syncTimeInterval,
-                    AllyAgentTypeId = authoring.allyAgent.agentTypeID,
-                    EnemyAgentTypeId = authoring.enemyAgent.agentTypeID,
+                    AllyAgentRadius = authoring.allyAgent.radius,
+                    EnemyAgentRadius = authoring.enemyAgent.radius
                 });
             }
         }
     }
 
+    
+    
+    public struct VolumeObstacleDestroyRequest : IComponentData
+    {
+        /// <summary>
+        /// If destroy resource, then request from faction is neutral, otherwise is ally or enemy
+        /// </summary>
+        public FactionTag RequestFromFaction;
+        public Entity FromEntity;
+    }
+
+    // TODO : Each time you close door, use this request, and don't forget to set door entity box collider deactivate
+    public struct DoorControlRequest : IComponentData
+    {
+        /// <summary>
+        /// Open = true, close = false
+        /// </summary>
+        public bool OpenOrClose;
+        public FactionTag RequestFromFaction;
+        public Entity FromEntity;
+    }
+
+    internal class VolumeObstacleSystemConfig : IComponentData
+    {
+        public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;
+        public Dictionary<FactionTag, GameObject> VolumeTypePrefabMap;
+        public float SyncTimeInterval;
+        public float AllyAgentRadius;
+        public float EnemyAgentRadius;
+
+    }
+
+    internal struct UpdateNavMeshRequest : IComponentData
+    {
+        /// <summary>
+        /// This is the id for which navmesh should be updated
+        /// </summary>
+        public FactionTag FactionTag;
+    }
+    
+    
     [Serializable]
     public class VolumeObstaclePrefabPair
     {
@@ -51,22 +91,4 @@ namespace SparFlame.GamePlaySystem.Movement
         public GameObject prefab;
     }
 
-
-
-    public class VolumeObstacleSystemConfig : IComponentData
-    {
-        public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;
-        public Dictionary<FactionTag, GameObject> VolumeTypePrefabMap;
-        public float SyncTimeInterval;
-        public int AllyAgentTypeId;
-        public int EnemyAgentTypeId;
-    }
-
-    public struct UpdateNavMeshRequest : IComponentData
-    {
-        /// <summary>
-        /// This is the id for which navmesh should be updated
-        /// </summary>
-        public FactionTag FactionTag;
-    }
 }

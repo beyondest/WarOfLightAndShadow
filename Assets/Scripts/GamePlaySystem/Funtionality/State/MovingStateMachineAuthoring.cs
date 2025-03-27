@@ -7,8 +7,11 @@ namespace SparFlame.GamePlaySystem.State
 {
     public class MovingStateMachineAuthoring : MonoBehaviour
     {
-        [Tooltip("This times is increased when a unit always fails to go front. This is used for circle detection")]
-        public int maxAllowedCompromiseTimes = 3;
+        [Tooltip("When compromise times > this, will try solve stuck; If compromise times > 2*this, will detect surrounding enemy")]
+        public int maxAllowedCompromiseTimesForStuck = 20;
+
+
+
         private class MovingStateMachineAuthoringBaker : Baker<MovingStateMachineAuthoring>
         {
             public override void Bake(MovingStateMachineAuthoring authoring)
@@ -16,7 +19,7 @@ namespace SparFlame.GamePlaySystem.State
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new MovingStateMachineConfig
                 {
-                    MaxAllowedCompromiseTimes = authoring.maxAllowedCompromiseTimes
+                    MaxAllowedCompromiseTimesForStuck = authoring.maxAllowedCompromiseTimesForStuck,
                 });
             }
         }
@@ -24,7 +27,8 @@ namespace SparFlame.GamePlaySystem.State
 
     public struct MovingStateMachineConfig : IComponentData
     {
-        public int MaxAllowedCompromiseTimes;
+        public int MaxAllowedCompromiseTimesForStuck;
+
     }
     
 }

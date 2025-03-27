@@ -1,17 +1,17 @@
 ﻿using Unity.Collections;
 using Unity.Entities;
+using Unity.Physics.Systems;
 
 namespace SparFlame.GamePlaySystem.General
 {
     /// <summary>
     /// The only system that should not rely on anything, and keep running all the time
     /// This system deals with all pause/resume request, and make that request truly work
+    /// SimulationSystems all run after monobehavior update
     /// </summary>
     public partial class GameBasicControlSystem : SystemBase
     {
         private bool _isPaused;
-
-
 
         protected override void OnUpdate()
         {

@@ -159,7 +159,7 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cube",
-                "value": "{\"m_Value\":{\"x\":-1.733642578125,\"y\":2.774460792541504,\"z\":-5.259439468383789}}"
+                "value": "{\"m_Value\":{\"x\":-2.157960891723633,\"y\":3.6420466899871828,\"z\":18.05992889404297}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -179,12 +179,12 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cone",
-                "value": "{\"m_Value\":{\"x\":5.0,\"y\":5.0,\"z\":5.0}}"
+                "value": "{\"m_Value\":{\"x\":2.622861862182617,\"y\":7.308840274810791,\"z\":-3.6941728591918947}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cylinder",
-                "value": "{\"m_Value\":{\"x\":0.13193893432617188,\"y\":1.2155195474624634,\"z\":-0.13037967681884767}}"
+                "value": "{\"m_Value\":{\"x\":2.678997039794922,\"y\":6.852138042449951,\"z\":-2.5124192237854006}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -204,12 +204,12 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Arch",
-                "value": "{\"m_Value\":{\"x\":1.2898139953613282,\"y\":0.6920234560966492,\"z\":-0.30605316162109377}}"
+                "value": "{\"m_Value\":{\"x\":2.0,\"y\":2.0,\"z\":2.0}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Prism",
-                "value": "{\"m_Value\":{\"x\":1.0,\"y\":0.5164574384689331,\"z\":3.1424291133880617}}"
+                "value": "{\"m_Value\":{\"x\":1.2030844688415528,\"y\":2.156177520751953,\"z\":1.4450302124023438}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
