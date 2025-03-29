@@ -8,36 +8,35 @@ namespace SparFlame.GamePlaySystem.Units
     public class UnitAttributesAuthoring : MonoBehaviour
     {
         
-     
+        public UnitType unitType;
 
-     
         class UnitAttributesAuthoringBaker : Baker<UnitAttributesAuthoring>
         {
             public override void Bake(UnitAttributesAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new UnitBasicAttr
+                AddComponent(entity, new UnitAttr
                 {
+                    Type = authoring.unitType,
                 });
                 
             }
         }
     }
-
-    public struct UnitBasicAttr : IComponentData
+    public struct UnitAttr : IComponentData
     {
-        public UnitType UnitType;
+        public UnitType Type;
     }
-
     public enum UnitType
     {
-        Melee,
-        Archer,
-        Mage,
-        Cavalry,
-        Farmer
+        Melee, // Attack
+        Archer,// Attack
+        Mage, // Attack, heal
+        Cavalry, // Attack
+        Farmer // Attack, harvest
     }
 
+    
 
 
     

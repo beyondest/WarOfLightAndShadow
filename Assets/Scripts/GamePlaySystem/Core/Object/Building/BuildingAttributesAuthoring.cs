@@ -5,6 +5,7 @@ namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingAttributesAuthoring : MonoBehaviour
     {
+        public BuildingType buildingType;
         public Tier tier = Tier.Tier1;
         private class BuildingAttributesAuthoringBaker : Baker<BuildingAttributesAuthoring>
         {
@@ -13,6 +14,7 @@ namespace SparFlame.GamePlaySystem.Building
                 var entity = GetEntity(TransformUsageFlags.WorldSpace);
                 AddComponent(entity, new BuildingAttr
                 {
+                    Type = authoring.buildingType,
                     State = BuildingState.Constructing,
                     Tier = authoring.tier,
                 });
@@ -31,6 +33,7 @@ namespace SparFlame.GamePlaySystem.Building
     
     public struct BuildingAttr : IComponentData
     {
+        public BuildingType Type;
         public BuildingState State;
         public Tier Tier;
     }

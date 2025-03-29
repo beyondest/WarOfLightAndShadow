@@ -90,6 +90,7 @@ namespace SparFlame.GamePlaySystem.Mouse
         public Entity HitEntity;
         public float3 HitPosition;
         public float3 MousePosition;
+        public bool IsOverUI;
         public bool Focus;
         public bool ChangeFaction;
         public bool AddUnit;

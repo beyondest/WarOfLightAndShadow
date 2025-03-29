@@ -220,17 +220,17 @@ namespace SparFlame.GamePlaySystem.State
                 if (targetInteractAttr.FactionTag == selfFactionTag)
                 {
                     stateData.TargetState = UnitState.Healing;
-                    rangSq = HealLookup[entity].RangeSq;
+                    rangSq = HealLookup[entity].Range;
                 }
                 else if (targetInteractAttr.BaseTag == BaseTag.Resources)
                 {
                     stateData.TargetState = UnitState.Harvesting;
-                    rangSq = HarvestLookup[entity].RangeSq;
+                    rangSq = HarvestLookup[entity].Range;
                 }
                 else
                 {
                     stateData.TargetState = UnitState.Attacking;
-                    rangSq = AttackLookup[entity].RangeSq;
+                    rangSq = AttackLookup[entity].Range;
                 }
 
                 MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderSize,

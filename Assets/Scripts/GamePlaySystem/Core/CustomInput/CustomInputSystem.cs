@@ -4,6 +4,7 @@ using Unity.Entities;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
 using Unity.Transforms;
+using UnityEngine.EventSystems;
 
 namespace SparFlame.GamePlaySystem.Mouse
 {
@@ -53,14 +54,16 @@ namespace SparFlame.GamePlaySystem.Mouse
                 ChangeFaction = false,
                 ClickFlag = ClickFlag.None,
                 ClickType = ClickType.None,
+                IsOverUI = false,
                 Focus = false,
                 HitEntity = Entity.Null,
                 HitPosition = float3.zero,
                 MousePosition = float3.zero,
             };
             _isDoubleClick = false;
-
-            CheckMouse(ref data);
+            if (EventSystem.current.IsPointerOverGameObject())
+                data.IsOverUI = true;
+            CheckMouseEventAndRaycastHit(ref data);
             CheckKey(ref data, in config);
             EntityManager.SetComponentData(inputSystemDataEntity, data);
         }
@@ -72,12 +75,11 @@ namespace SparFlame.GamePlaySystem.Mouse
             data.Focus = Input.GetKey(config.FocusKey);
         }
 
-
         /// <summary>
         /// Only Detect Clickable Layer
         /// </summary>
         /// <returns></returns>
-        private void CheckMouse(ref CustomInputSystemData data)
+        private void CheckMouseEventAndRaycastHit(ref CustomInputSystemData data)
         {
             data.MousePosition = Input.mousePosition;
             if (MouseCastOnEntity(out var entity, out var hitPosition))

@@ -27,7 +27,7 @@ namespace SparFlame.GamePlaySystem.Command
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var mouseSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var customInputSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
             var cursorManageData = SystemAPI.GetSingletonRW<CursorData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             var cameraControlData = SystemAPI.GetSingleton<CameraControlData>();
@@ -44,18 +44,20 @@ namespace SparFlame.GamePlaySystem.Command
             // Check is zooming
             if (IsZoomingCamera(ref cursorManageData, in cameraControlData)) return;
 
-            // Not Clickable
-            if (mouseSystemData.HitEntity == Entity.Null)
+            
+            
+            // Not Clickable. Like Nav layer object; default layer objects; or over UI
+            if (customInputSystemData.HitEntity == Entity.Null || customInputSystemData.IsOverUI)
                 return;
 
             // Clickable = Interactable Layer + Terrain Layer
 
-            // Hover on terrain
-            if (!SystemAPI.HasComponent<InteractableAttr>(mouseSystemData.HitEntity))
+            // Hover on terrain 
+            if (!SystemAPI.HasComponent<InteractableAttr>(customInputSystemData.HitEntity))
             {
                 if (unitSelectionData.CurrentSelectCount == 0)
                 {
-                    cursorManageData.ValueRW.LeftCursorType = CursorType.UI;
+                    cursorManageData.ValueRW.LeftCursorType = CursorType.None;
                     cursorManageData.ValueRW.RightCursorType = CursorType.None;
                 }
                 else
@@ -67,7 +69,7 @@ namespace SparFlame.GamePlaySystem.Command
             }
             
             // Hover on interactable
-            var basicAttr = SystemAPI.GetComponent<InteractableAttr>(mouseSystemData.HitEntity);
+            var basicAttr = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity);
             BuildingAttr buildingAttr = new BuildingAttr
             {
                 State = BuildingState.Idle
@@ -79,10 +81,10 @@ namespace SparFlame.GamePlaySystem.Command
             switch (basicAttr.BaseTag)
             {
                 case BaseTag.Buildings:
-                    buildingAttr = SystemAPI.GetComponent<BuildingAttr>(mouseSystemData.HitEntity);
+                    buildingAttr = SystemAPI.GetComponent<BuildingAttr>(customInputSystemData.HitEntity);
                     break;
                 case BaseTag.Resources:
-                    resourceAttr = SystemAPI.GetComponent<ResourceAttr>(mouseSystemData.HitEntity);
+                    resourceAttr = SystemAPI.GetComponent<ResourceAttr>(customInputSystemData.HitEntity);
                     break;
             }
 

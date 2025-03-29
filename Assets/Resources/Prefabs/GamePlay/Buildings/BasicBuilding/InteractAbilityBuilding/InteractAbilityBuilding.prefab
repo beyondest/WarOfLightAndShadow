@@ -52,6 +52,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3107138050394431953, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: costResourceTypeAmount.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3107138050394431953, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].amount
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3107138050394431953, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 5238138822134138317, guid: 6ad348f344aa6bf499d56183146d76bd, type: 3}
       propertyPath: m_Name
       value: InteractAbilityBuilding

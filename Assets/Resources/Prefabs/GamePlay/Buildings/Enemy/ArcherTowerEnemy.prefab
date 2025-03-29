@@ -68,6 +68,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 03802ff1de5e9e04594c25e9bdf813e9, type: 2}
+    - target: {fileID: 7862607890543514931, guid: 1a7ac3e302032ab44a29971f7b4f1848, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 8176592104007577276, guid: 1a7ac3e302032ab44a29971f7b4f1848, type: 3}
       propertyPath: factionTag
       value: -2

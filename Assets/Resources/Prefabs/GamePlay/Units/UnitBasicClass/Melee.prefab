@@ -132,6 +132,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[0].amount
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].amount
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4111803572573163848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_VersionIndex
       value: 430

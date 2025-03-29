@@ -4,6 +4,8 @@ using UnityEngine.UI;
 using Unity.Entities;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Command;
+using SparFlame.UI.General;
+
 namespace SparFlame.UI.GamePlay
 {
 
@@ -22,14 +24,16 @@ namespace SparFlame.UI.GamePlay
         
         private Dictionary<CursorType, Sprite> _cursorDictionary;
         private EntityManager _em;
+        private EntityQuery _notPauseTag;
+        private EntityQuery _cursorData;
         private Quaternion _cursorLeftRotation;
         private Quaternion _cursorRightRotation;
         
         private void Awake()
         {
-            
             _cursorDictionary = new Dictionary<CursorType, Sprite>();
-            LoadCursorSprites();
+            // LoadCursorSprites();
+            _cursorDictionary = UIUtils.LoadTypeSprites<CursorType>(cursorSpritePath, prefix: "Cursor");
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Confined;
         }
@@ -38,13 +42,14 @@ namespace SparFlame.UI.GamePlay
         {
             _cursorLeftRectTransform = cursorLeftImage.rectTransform;
             _cursorRightRectTransform = cursorRightImage.rectTransform;
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
 
         private void Start()
         {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _cursorData = _em.CreateEntityQuery(typeof(CursorData));
             SetDefaultCursor();
-            
             _cursorLeftRotation = cursorLeftImage.rectTransform.rotation;
             _cursorRightRotation = cursorRightImage.rectTransform.rotation;
         }
@@ -57,14 +62,12 @@ namespace SparFlame.UI.GamePlay
             _cursorLeftRectTransform.rotation = _cursorLeftRotation;
             _cursorRightRectTransform.rotation = _cursorRightRotation;
             // When game paused, set default cursor
-            if (!_em.CreateEntityQuery(typeof(NotPauseTag)).TryGetSingletonEntity< NotPauseTag>(out var _))
+            if (_notPauseTag.IsEmpty)
             {
                 SetDefaultCursor();
                 return;
             }
-
-            if (!_em.CreateEntityQuery(typeof(CursorData)).TryGetSingletonEntity< CursorData>(out var dataEntity)) return;
-            var cursorManageData = _em.GetComponentData<CursorData>(dataEntity);
+            var cursorManageData = _cursorData.GetSingleton<CursorData>();
             cursorLeftImage.sprite = _cursorDictionary[cursorManageData.LeftCursorType];
             cursorRightImage.sprite = _cursorDictionary[cursorManageData.RightCursorType];
 
@@ -77,26 +80,9 @@ namespace SparFlame.UI.GamePlay
         }
         private static void HandleFocus()
         {
-            UnityEngine.Cursor.lockState = Application.isFocused ? CursorLockMode.Confined : CursorLockMode.None;
+            Cursor.lockState = Application.isFocused ? CursorLockMode.Confined : CursorLockMode.None;
         }
-        private void LoadCursorSprites()
-        {
-            _cursorDictionary = new Dictionary<CursorType, Sprite>();
 
-            foreach (CursorType type in System.Enum.GetValues(typeof(CursorType)))
-            {
-                string path = $"{cursorSpritePath}/Cursor{type}";  // "Asset/Resources/UI/Cursor/CursorType.png"
-                Sprite sprite = Resources.Load<Sprite>(path);
-                if (sprite != null)
-                {
-                    _cursorDictionary[type] = sprite;
-                }
-                else
-                {
-                    Debug.LogError($"Cursor sprite not found: {path}");
-                }
-            }
-        }
 
     }
 }

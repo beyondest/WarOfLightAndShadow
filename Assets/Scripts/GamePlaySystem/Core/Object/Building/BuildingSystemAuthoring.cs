@@ -26,6 +26,15 @@ namespace SparFlame.GamePlaySystem.Building
         public float BuildingGarrisonRadiusSq;
     }
 
+    public enum BuildingType
+    {
+        Walls,
+        Decoration,
+        DefenseTower,
+        ResourceGenerator,
+        UnitSummoning,
+    }
+    
     public enum AreaType
     {
         Walkable = 0,

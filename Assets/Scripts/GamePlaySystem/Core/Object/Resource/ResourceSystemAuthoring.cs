@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.Entities;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Resource
 {
@@ -10,5 +11,25 @@ namespace SparFlame.GamePlaySystem.Resource
             {
             }
         }
+    }
+
+    public enum ResourceType
+    {
+        // Total
+        Essence, 
+        
+        // Summon
+        LightEnergy, 
+        DarkEnergy,
+        
+        // Building
+        Luminite,
+        Obsidian
+    }
+
+    public struct CostList : IBufferElementData
+    {
+        public ResourceType Type;
+        public int Amount;
     }
 }

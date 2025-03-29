@@ -82,9 +82,17 @@ PrefabInstance:
       propertyPath: m_Material.m_BelongsToCategories.m_Value.Category01
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1661272160437997984, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category03
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1821794169150553466, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: m_VersionIndex
       value: 445
+      objectReference: {fileID: 0}
+    - target: {fileID: 3032325571997546487, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3089996563329953118, guid: df9bfd2f672337e4691b2768d0b3d223, type: 3}
       propertyPath: m_LocalPosition.y

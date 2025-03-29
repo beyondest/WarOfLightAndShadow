@@ -16,7 +16,13 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-
+            // if (BuffDataLookup.TryGetComponent(entity, out BuffData buffData))
+            // {
+            //     rangeSq *= buffData.InteractRangeMultiplier * buffData.InteractRangeMultiplier;
+            //     amount *= (int)buffData.InteractAmountMultiplier;
+            //     speed *= buffData.InteractSpeedMultiplier;
+            //     ECB.RemoveComponent<BuffData>(index, entity);
+            // }
         }
 
         [BurstCompile]

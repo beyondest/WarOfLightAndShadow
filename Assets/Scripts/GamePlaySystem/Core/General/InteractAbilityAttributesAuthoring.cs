@@ -34,9 +34,9 @@ namespace SparFlame.GamePlaySystem.Interact
                         AddComponent(entity, new AttackAbility
                         {
                             Speed = authoring.interactSpeed,
-                            Count = authoring.interactCount,
-                            RangeSq = authoring.interactRange * authoring.interactRange,
-                            BasicAmount = authoring.interactBasicAmount,
+                            Targets = authoring.interactCount,
+                            Range = authoring.interactRange * authoring.interactRange,
+                            Amount = authoring.interactBasicAmount,
                             InteractType = InteractType.Attack
                         });
                         break;
@@ -46,9 +46,9 @@ namespace SparFlame.GamePlaySystem.Interact
                         AddComponent(entity, new HealAbility
                         {
                             Speed = authoring.interactSpeed,
-                            Count = authoring.interactCount,
-                            RangeSq = authoring.interactRange * authoring.interactRange,
-                            BasicAmount = authoring.interactBasicAmount,
+                            Targets = authoring.interactCount,
+                            Range = authoring.interactRange * authoring.interactRange,
+                            Amount = authoring.interactBasicAmount,
                             InteractType = InteractType.Heal
                         });
                         break;
@@ -58,9 +58,9 @@ namespace SparFlame.GamePlaySystem.Interact
                         AddComponent(entity, new HarvestAbility
                         {
                             Speed = authoring.interactSpeed,
-                            Count = authoring.interactCount,
-                            RangeSq = authoring.interactRange * authoring.interactRange,
-                            BasicAmount = authoring.interactBasicAmount,
+                            Targets = authoring.interactCount,
+                            Range = authoring.interactRange * authoring.interactRange,
+                            Amount = authoring.interactBasicAmount,
                             InteractType = InteractType.Harvest
                         });
                         break;
@@ -81,10 +81,11 @@ namespace SparFlame.GamePlaySystem.Interact
     
     public interface IInteractAbility
     {
+        int Amount { get; set; }
+        float Range { get; set; }
         float Speed { get; set; }
-        float Count { get; set; }
-        float RangeSq { get; set; }
-        int BasicAmount { get; set; }
+        float Targets { get; set; }
+        // This is rangeSq for real, remaining range for better show
         int CurCounter { get; set; }
         InteractType InteractType { get; set; }
     }
@@ -92,9 +93,9 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct AttackAbility : IComponentData,IInteractAbility
     {
         public float Speed { get; set; }
-        public float Count { get; set; }
-        public float RangeSq { get; set; }
-        public int BasicAmount { get; set; }
+        public float Targets { get; set; }
+        public float Range { get; set; }
+        public int Amount { get; set; }
         public int CurCounter { get; set; }
         public InteractType InteractType { get; set; }
     }
@@ -103,18 +104,18 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct HealAbility : IComponentData,IInteractAbility
     {
         public float Speed { get; set; }
-        public float Count { get; set; }
-        public float RangeSq { get; set; }
-        public int BasicAmount { get; set; }
+        public float Targets { get; set; }
+        public float Range { get; set; }
+        public int Amount { get; set; }
         public int CurCounter { get; set; }
         public InteractType InteractType { get; set; }
     }
     public struct HarvestAbility : IComponentData,IInteractAbility
     {
         public float Speed { get; set; }
-        public float Count { get; set; }
-        public float RangeSq { get; set; }
-        public int BasicAmount { get; set; }
+        public float Targets { get; set; }
+        public float Range { get; set; }
+        public int Amount { get; set; }
         public int CurCounter { get; set; }
         public InteractType InteractType { get; set; }
     }

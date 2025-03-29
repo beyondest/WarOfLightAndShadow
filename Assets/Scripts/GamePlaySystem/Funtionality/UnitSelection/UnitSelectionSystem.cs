@@ -4,6 +4,7 @@ using Unity.Collections;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Mouse;
 using Unity.Burst;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.UnitSelection
 {
@@ -37,7 +38,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 unitSelectionData.ValueRW.CurrentSelectFaction = ~unitSelectionData.ValueRW.CurrentSelectFaction;
             
             // Left Click Start
-            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left })
+            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left, IsOverUI: false })
             {
                 StartSelectionBox(ref unitSelectionData, customInputSystemData);
                 // Press AddUnitKey
@@ -90,11 +91,11 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                         in unitSelectionConfig);
             }
             // Double Left Click
-            if(customInputSystemData is { ClickFlag: ClickFlag.DoubleClick, ClickType: ClickType.Left })
+            if(customInputSystemData is { ClickFlag: ClickFlag.DoubleClick, ClickType: ClickType.Left, IsOverUI: false })
                 StartSelectionBox(ref unitSelectionData, customInputSystemData);
 
             // Left-Clicking
-            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Left })
+            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Left, IsOverUI: false })
             {
                 RecordSelectionBox(ref unitSelectionData, customInputSystemData);
                 DragSelect(ref state, ref ecb,ref bufferLookup, ref unitSelectionData, customInputSystemData.AddUnit,

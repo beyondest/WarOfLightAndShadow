@@ -60,7 +60,6 @@ namespace SparFlame.GamePlaySystem.Command
         
         // Drag Cursor
         Drag,
-        
         // UI 
         UI
         

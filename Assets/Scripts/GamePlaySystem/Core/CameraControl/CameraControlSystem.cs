@@ -54,16 +54,16 @@ namespace SparFlame.GamePlaySystem.CameraControl
         private void MouseDrag(ref CameraControlData data, ref float3 newPos,
             in CustomInputSystemData customInputSystemData,  Transform transform)
         {
-            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Middle })
+            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Middle, IsOverUI: false })
             {
                 data.DragStartPos = customInputSystemData.HitPosition;
                 data.IsDragging = true;
             }
 
-            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Middle })
+            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Middle, IsOverUI: false })
                 newPos = (float3)transform.position + data.DragStartPos - customInputSystemData.HitPosition;
 
-            if (customInputSystemData is { ClickFlag: ClickFlag.End })
+            if (customInputSystemData is { ClickFlag: ClickFlag.End, IsOverUI: false })
                 data.IsDragging = false;
         }
 

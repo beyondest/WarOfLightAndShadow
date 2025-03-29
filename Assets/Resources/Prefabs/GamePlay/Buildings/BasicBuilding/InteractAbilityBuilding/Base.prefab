@@ -56,6 +56,14 @@ PrefabInstance:
       propertyPath: interactRange
       value: 13
       objectReference: {fileID: 0}
+    - target: {fileID: 3567390263496465759, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[0].amount
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3567390263496465759, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].amount
+      value: 500
+      objectReference: {fileID: 0}
     - target: {fileID: 5921869101449738563, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
       propertyPath: m_Name
       value: Base
