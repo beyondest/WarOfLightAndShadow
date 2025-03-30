@@ -25,7 +25,6 @@ namespace SparFlame.UI.GamePlay
         [Tooltip("If Melee unit 2D sprite located in Assets/Resources/UI/Unit2DSprites/Unit2DMelee, " +
                  "then path should be UI/Unit2DSprites, prefix should be Unit2D")]
         public string unitType2DSpritePath = "UI/Unit2DSprites/";
-
         [CanBeNull] public string prefix = "Unit2D";
 
         [Header("Multi unit slot config")] public GameObject slotPrefab;
@@ -65,7 +64,7 @@ namespace SparFlame.UI.GamePlay
             if (_unitInfos.Count <= index) return;
             if (_currentSelectIndex == index) return;
             // Set close up target 
-            InfoWindowController.Instance.UpdateCloseUpTarget(_unitInfos[index].Entity);
+            InfoWindowController.Instance.UpdateCloseUpTarget(_unitInfos[index + _currentPage * _slotsMaxCountPerPage].Entity);
         }
 
         #endregion

@@ -7,7 +7,6 @@ namespace SparFlame.GamePlaySystem.Building
     public class BuildingSystemAuthoring : MonoBehaviour
     {
         public float buildingGarrisonRadius = 1f;
-        
         private class BuildingSystemAuthoringBaker : Unity.Entities.Baker<BuildingSystemAuthoring>
         {
             public override void Bake(BuildingSystemAuthoring authoring)
@@ -28,11 +27,11 @@ namespace SparFlame.GamePlaySystem.Building
 
     public enum BuildingType
     {
-        Walls,
-        Decoration,
-        DefenseTower,
-        ResourceGenerator,
-        UnitSummoning,
+        Fortifications = 0,
+        Workshops = 1,
+        ConjuringShrines = 2,
+        Dwellings = 3,
+        Ornaments = 4,
     }
     
     public enum AreaType

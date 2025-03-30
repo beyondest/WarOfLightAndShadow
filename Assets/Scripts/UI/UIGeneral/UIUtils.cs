@@ -11,6 +11,17 @@ namespace SparFlame.UI.General
 {
     public static class UIUtils  
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="slots">Must have component variant from MultiSlot
+        /// and must have RectTransform</param>
+        /// <param name="panel"></param>
+        /// <param name="slotPrefab"></param>
+        /// <param name="config"></param>
+        /// <param name="onClickSlot">This function will call when click on slot button 
+        /// but notice that if you use page techniques to show info counts bigger than max slot count per page,
+        /// you have to add bias via current page by yourself</param>
         public static void InitMultiShowSlots(ref List<GameObject> slots,
             GameObject panel,GameObject slotPrefab,in MultiShowSlotConfig config,
             [CanBeNull] Action<int> onClickSlot = null)

@@ -4,6 +4,7 @@ using SparFlame.GamePlaySystem.Mouse;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -15,13 +16,22 @@ namespace SparFlame.UI.GamePlay
     {
         public static InfoWindowController Instance;
 
+        
         [Header("Custom config")] public GameObject infoPanel;
-
+        public GameObject maxmizeButton;
         public void OnMinimizeClick()
         {
             _minimizeWindow = !_minimizeWindow;
+            Hide();
         }
 
+        public void OnMaximizeClick()
+        {
+            _minimizeWindow = !_minimizeWindow;
+            maxmizeButton.SetActive(false);
+            Show();
+        }
+        
         public void UpdateCloseUpTarget(Entity target)
         {
             _closeUpTarget = target;
@@ -84,14 +94,26 @@ namespace SparFlame.UI.GamePlay
 
             // Check should show or hide info window
             // show info window when select some units or left click on valid
-            var shouldShowInfoWindow = !_minimizeWindow && (selectedData.CurrentSelectCount > 0 || leftClickOnValid);
+            var shouldShowInfoWindow =  selectedData.CurrentSelectCount > 0 || leftClickOnValid;
+            
+            var shouldHideInfoWindow =   leftClickOnInvalid;
 
-            var shouldHideInfoWindow = _minimizeWindow || leftClickOnInvalid;
+            if (shouldShowInfoWindow )
+            {
+                if(!_minimizeWindow && !infoPanel.activeSelf)
+                    Show();
+                else if (_minimizeWindow)
+                    maxmizeButton.SetActive(true);
+            }
 
-            if (shouldShowInfoWindow && !infoPanel.activeSelf)
-                Show();
-            if (shouldHideInfoWindow && infoPanel.activeSelf)
-                Hide();
+            if (shouldHideInfoWindow )
+            {
+                if(_minimizeWindow)
+                    maxmizeButton.SetActive(false);
+                else if(!_minimizeWindow && infoPanel.activeSelf)
+                    Hide();
+            }
+                
 
             // Check should show or hide Unit multi 2D , interact , detail window
             // Show multi unit window when select count > 1
