@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Units;
-using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.General;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 // ReSharper disable PossibleNullReferenceException
 
@@ -21,13 +19,11 @@ namespace SparFlame.UI.GamePlay
         [Header("Custom Config")] public GameObject multiUnitPanel;
         public GameObject pageUpButton;
         public GameObject pageDownButton;
-
-        [Tooltip("If Melee unit 2D sprite located in Assets/Resources/UI/Unit2DSprites/Unit2DMelee, " +
-                 "then path should be UI/Unit2DSprites, prefix should be Unit2D")]
-        public string unitType2DSpritePath = "UI/Unit2DSprites/";
-        [CanBeNull] public string prefix = "Unit2D";
-
-        [Header("Multi unit slot config")] public GameObject slotPrefab;
+        [CanBeNull] public string unitMulti2DSpriteSuffix;
+        
+        
+        [Header("Multi unit slot config")] 
+        public AssetReference slotAsset;
         public MultiShowSlotConfig multiShowSlotConfig;
 
         public override void Show(Vector2? pos = null)
@@ -39,6 +35,9 @@ namespace SparFlame.UI.GamePlay
         {
             multiUnitPanel.SetActive(false);
             _currentSelectIndex = -1;
+            
+           
+            
         }
 
         public override bool IsOpened()
@@ -46,7 +45,51 @@ namespace SparFlame.UI.GamePlay
             return multiUnitPanel.activeSelf;
         }
 
+        public void UpdateSelectedUnitView()
+        {
+            if(!_unitSpritesHandle.IsDone || !_slotPrefabHandle.IsDone)return;
+            var startIdx = _currentPage * _slotsMaxCountPerPage;
+            var count = Mathf.Min(_slotsMaxCountPerPage, _unitInfos.Count - startIdx);
+            // Update corresponding images and hp sliders
+            for (var i = 0; i < _slotsMaxCountPerPage; i++)
+            {
+                if (i < count)
+                {
+                    _slots[i].SetActive(true);
+                    var unitShowSlot = _slots[i].GetComponent<UnitMulti2DSlot>();
+                    var unitInfo = _unitInfos[startIdx + i];
+                    unitShowSlot.button.image.sprite = _unitSpriteDict[unitInfo.UnitType];
+                    unitShowSlot.hp.value = unitInfo.HpRatio;
+                }
+                else
+                {
+                    _slots[i].SetActive(false);
+                }
+            }
+    
+            // Update right and left button
+            pageDownButton.SetActive((_currentPage + 1) * _slotsMaxCountPerPage < _unitInfos.Count);
+            pageUpButton.SetActive(_currentPage != 0);
+        }
 
+        public void ClearUnitInfo()
+        {
+            _unitInfos.Clear();
+        }
+        public void AddUnitInfo(in UnitInfo unitInfo)
+        {
+            _unitInfos.Add(unitInfo);
+        }
+        
+        public struct UnitInfo
+        {
+            public UnitType UnitType;
+            public float HpRatio;
+            public Entity Entity;
+        }
+        
+        
+        
         #region ButtonMethods
 
         public void OnPageRightClicked()
@@ -76,10 +119,15 @@ namespace SparFlame.UI.GamePlay
         private List<GameObject> _slots = new();
         private Dictionary<UnitType, Sprite> _unitSpriteDict = new();
         private readonly List<UnitInfo> _unitInfos = new();
+        private GameObject _slotPrefab;
+        private AsyncOperationHandle<GameObject> _slotPrefabHandle;
+        private AsyncOperationHandle<IList<Sprite>> _unitSpritesHandle;
 
-        private EntityManager _em;
-        private EntityQuery _selectedQuery;
-        private EntityQuery _notPauseTag;
+
+
+        #region EventFunction
+
+        
 
         private void Awake()
         {
@@ -89,72 +137,55 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
+
+        private void OnEnable()
+        {
+            _slotPrefabHandle = CR.LoadPrefabAddressableRefAsync<GameObject>(slotAsset, o =>
+            {
+                _slotPrefab = o;
+            });
+            _unitSpritesHandle = CR.LoadTypeSuffixAddressableAsync<UnitType, Sprite>(unitMulti2DSpriteSuffix, result =>
+                CR.OnTypeSuffixAddressableLoadComplete(result, _unitSpriteDict));
+        }
+
         private void Start()
         {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
             _slotsMaxCountPerPage = multiShowSlotConfig.rows * multiShowSlotConfig.cols;
-            UIUtils.InitMultiShowSlots(ref _slots, multiUnitPanel, slotPrefab, in multiShowSlotConfig, OnClickUnit2D);
-            _unitSpriteDict = UIUtils.LoadTypeSprites<UnitType>(unitType2DSpritePath, prefix);
-            Hide();
+            _currentSelectIndex = -1;
+            multiUnitPanel.SetActive(false);
         }
 
-        private void Update()
+        private void OnDisable()
         {
-            if (_notPauseTag.IsEmpty) return;
-            if (!IsOpened()) return;
-            _selectedQuery = _em.CreateEntityQuery(new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<Selected>().WithAll<StatData>().WithAll<UnitAttr>());
+            foreach (var go in _slots)
+            {
+                Destroy(go);
+            }
+            _slots.Clear();
+            _unitSpriteDict.Clear();
             _unitInfos.Clear();
-            var entities = _selectedQuery.ToEntityArray(Allocator.Temp);
-            var unitBasicAttrs = _selectedQuery.ToComponentDataArray<UnitAttr>(Allocator.Temp);
-            var stats = _selectedQuery.ToComponentDataArray<StatData>(Allocator.Temp);
-            for (var i = 0; i < stats.Length; i++)
-            {
-                _unitInfos.Add(new UnitInfo
-                {
-                    UnitType = unitBasicAttrs[i].Type,
-                    HpRatio = 1 - (float)stats[i].CurValue / stats[i].MaxValue,
-                    Entity = entities[i],
-                });
-            }
-
-            UpdateSelectedUnitView(in _unitInfos);
+            Addressables.Release(_slotPrefabHandle);
+            Addressables.Release(_unitSpritesHandle);
         }
+        #endregion
 
-
-        private void UpdateSelectedUnitView(in List<UnitInfo> selectedUnitInfo)
+        private void OnPrefabLoadComplete(AsyncOperationHandle<GameObject> handle)
         {
-            var startIdx = _currentPage * _slotsMaxCountPerPage;
-            var count = Mathf.Min(_slotsMaxCountPerPage, selectedUnitInfo.Count - startIdx);
-            // Update corresponding images and hp sliders
-            for (var i = 0; i < _slotsMaxCountPerPage; i++)
-            {
-                if (i < count)
-                {
-                    _slots[i].SetActive(true);
-                    var unitShowSlot = _slots[i].GetComponent<UnitMulti2DSlot>();
-                    var unitInfo = selectedUnitInfo[startIdx + i];
-                    unitShowSlot.button.image.sprite = _unitSpriteDict[unitInfo.UnitType];
-                    unitShowSlot.hp.value = unitInfo.HpRatio;
-                }
-                else
-                {
-                    _slots[i].SetActive(false);
-                }
-            }
-
-            // Update right and left button
-            pageDownButton.SetActive((_currentPage + 1) * _slotsMaxCountPerPage < selectedUnitInfo.Count);
-            pageUpButton.SetActive(_currentPage != 0);
+            _slotPrefab = handle.Result;
+            UIUtils.InitMultiShowSlots(ref _slots, multiUnitPanel, _slotPrefab, in multiShowSlotConfig, OnClickUnit2D);
         }
 
-
-        private struct UnitInfo
+        private void OnUnitSpritesLoadComplete(AsyncOperationHandle<IList<Sprite>> handle)
         {
-            public UnitType UnitType;
-            public float HpRatio;
-            public Entity Entity;
+            var keys = Enum.GetValues(typeof(UnitType));
+            var sprites = handle.Result;
+            var i = 0;
+            foreach (UnitType key in keys)
+            {
+                _unitSpriteDict.Add(key, sprites[i]);
+                i++;
+            }
         }
+        
     }
 }

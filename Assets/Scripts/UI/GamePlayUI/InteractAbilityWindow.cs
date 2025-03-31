@@ -26,8 +26,7 @@ namespace SparFlame.UI.GamePlay
                  "Notice that range refers to rangeSq, not the range itself when calculating, " +
                  "but for player, we show rangeSq as if it is range")]
         public List<AbilityNameSpritePair> abilitySprites;
-
-        [Header("Multi slot show config")] public GameObject attrPrefab;
+        
         public MultiShowSlotConfig config;
 
         public override void Show(Vector2? pos = null)
@@ -61,6 +60,11 @@ namespace SparFlame.UI.GamePlay
 
         }
 
+        public override bool HasTarget()
+        {
+            return _targetEntity != Entity.Null;
+        }
+
 
         public override bool IsOpened()
         {
@@ -92,9 +96,10 @@ namespace SparFlame.UI.GamePlay
 
         #endregion
 
-
+        private GameObject _attrPrefab;
         private List<GameObject> _slots = new();
         private readonly Dictionary<string, Sprite> _sprites = new();
+        private Dictionary<InteractType, List<Sprite>> _spritesByInteractType = new();
         private InteractType _currentBar;
 
         private Entity _targetEntity;
@@ -113,14 +118,15 @@ namespace SparFlame.UI.GamePlay
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-            UIUtils.InitMultiShowSlots(ref _slots, interactAbilityPanel, attrPrefab, in config);
+            UIUtils.InitMultiShowSlots(ref _slots, interactAbilityPanel, _attrPrefab, in config);
             foreach (var pair in abilitySprites)
             {
                 _sprites.Add(pair.name, pair.sprite);
             }
             Hide();
+             
         }
-
+        
         private void Update()
         {
             if (_notPauseTag.IsEmpty) return;

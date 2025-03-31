@@ -3328,7 +3328,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 940013909838695208, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -0.105
+      value: -0.10498047
       objectReference: {fileID: 0}
     - target: {fileID: 3525498118318327181, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
       propertyPath: m_Pivot.x
@@ -3408,6 +3408,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3525498118318327181, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5066417915293169060, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5957578694739849936, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: costSprite.m_AssetGUID
+      value: bec2aa157916b4b4aa069613f111990e
+      objectReference: {fileID: 0}
+    - target: {fileID: 5957578694739849936, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: factionTypeHpSpriteSuffix
+      value: Hp
+      objectReference: {fileID: 0}
+    - target: {fileID: 5957578694739849936, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: costSlotPrefab.m_AssetGUID
+      value: 329d3d7af334aaa488a20b07c779a1b4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5957578694739849936, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: costSprite.m_SubObjectName
+      value: Mage 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5957578694739849936, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: costSprite.m_SubObjectType
+      value: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      objectReference: {fileID: 0}
+    - target: {fileID: 5957578694739849936, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
+      propertyPath: costSprite.m_EditorAssetChanged
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8991155499684347704, guid: 22dc4b815b5115a46b1010b373484cac, type: 3}
@@ -3757,6 +3786,10 @@ PrefabInstance:
     - target: {fileID: 4449622212768828714, guid: 275740054e756cf49ba34610d5e8fcec, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5881640123498508483, guid: 275740054e756cf49ba34610d5e8fcec, type: 3}
+      propertyPath: slotAsset.m_AssetGUID
+      value: 9420b6658ad1e4d4fb2f5b6b4aa372f9
       objectReference: {fileID: 0}
     - target: {fileID: 6984647378909096016, guid: 275740054e756cf49ba34610d5e8fcec, type: 3}
       propertyPath: m_Pivot.x

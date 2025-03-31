@@ -33,7 +33,7 @@ namespace SparFlame.UI.GamePlay
         {
             _cursorDictionary = new Dictionary<CursorType, Sprite>();
             // LoadCursorSprites();
-            _cursorDictionary = UIUtils.LoadTypeSprites<CursorType>(cursorSpritePath, prefix: "Cursor");
+            _cursorDictionary = CR.ResourceLoadTypeSprites<CursorType>(cursorSpritePath, prefix: "Cursor");
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Confined;
         }

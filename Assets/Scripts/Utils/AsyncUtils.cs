@@ -2,10 +2,11 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+
 namespace SparFlame.Utils
 {
-    
-        
         public class LoadingProgress : IProgress<float>
         {
             public event Action<float> ProgressChanged;
@@ -40,6 +41,35 @@ namespace SparFlame.Utils
                 Operations.Add(operation);
             }
         }
+        
+        public readonly struct AddressableResourceGroup
+        {
+            public readonly List<AsyncOperationHandle> Handles;
+
+            public float AverageProgress => Handles.Count == 0 ? 0 : Handles.Average(o => o.PercentComplete);
+    
+            public bool IsDone => Handles.All(o => o.IsDone);
+
+            public AddressableResourceGroup(int initialHandlesCount)
+            {
+                Handles = new List<AsyncOperationHandle>(initialHandlesCount);
+            }
+            public void AddHandle(AsyncOperationHandle handle)
+            {
+                Handles.Add(handle);
+            }
+
+            public void ReleaseAllHandles()
+            {
+                foreach (var operation in Handles)
+                {
+                    Addressables.Release(operation);
+                }
+                Handles.Clear();
+            }
+        }
+
+        
         
         
 }

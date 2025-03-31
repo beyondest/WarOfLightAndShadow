@@ -16,7 +16,7 @@ namespace SparFlame.UI.GamePlay
     public class CloseUpWindow : SingleTargetWindow
     {
         public static CloseUpWindow Instance;
-        public Entity CloseUpTarget = Entity.Null;
+        private Entity CloseUpTarget = Entity.Null;
 
 
         [Header("Custom Config")] public GameObject closeUpPanel;
@@ -59,6 +59,11 @@ namespace SparFlame.UI.GamePlay
             // s.Layer = closeUpLayerMask;
             // _em.SetSharedComponent(buffer[1].Value, s);
             return true;
+        }
+
+        public override bool HasTarget()
+        {
+            return CloseUpTarget != Entity.Null;
         }
 
         private int _closeUpLayerIndex;

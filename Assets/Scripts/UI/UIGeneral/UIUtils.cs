@@ -58,33 +58,12 @@ namespace SparFlame.UI.General
                     slots.Add(slot);
                 }
             }
-            panel.SetActive(false);
         }
         
-        public static Dictionary<T, Sprite> LoadTypeSprites<T>(string path, string prefix = null) where T : Enum
-        {
-            var dict = new Dictionary<T, Sprite>();
-
-            foreach (T type in Enum.GetValues(typeof(T)))
-            {
-                string fullName = type.ToString();
-                if (!string.IsNullOrEmpty(prefix))
-                    fullName = prefix + fullName;
-
-                string fullPath = $"{path}/{fullName}";  
-                Sprite sprite = Resources.Load<Sprite>(fullPath);
-
-                if (sprite != null)
-                {
-                    dict[type] = sprite;
-                }
-                else
-                {
-                    Debug.LogError($"Sprite not found: {fullPath}");
-                }
-            }
-            return dict;
-        }
+        
+   
+        
+        
     }
   
 
@@ -99,6 +78,7 @@ namespace SparFlame.UI.General
     public abstract class SingleTargetWindow : UIWindow
     {
         public abstract bool TrySwitchTarget(Entity target);
+        public abstract bool HasTarget();
     }
     
     public class MultiShowSlot : MonoBehaviour

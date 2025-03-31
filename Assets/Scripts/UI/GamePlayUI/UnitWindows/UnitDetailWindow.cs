@@ -11,6 +11,8 @@ using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
@@ -25,37 +27,38 @@ namespace SparFlame.UI.GamePlay
         public TMP_Text unitMoveSpeed;
         public Image unitIcon;
         public Image hpIcon;
-        public string unit2DSpritesPath;
-        [CanBeNull] public string unit2DSpritePrefix;
-        public string resourceTypeSpritesPath;
-        [CanBeNull] public string resourceTypeSpritePrefix;
-        public List<FactionTypeSpritePair> factionTypeHpSprite;
-        
-        [Header("Multi show config")] public GameObject costSlotPrefab;
-        public MultiShowSlotConfig config;
+        [CanBeNull] public string unitType2DSpriteSuffix;
+        [CanBeNull] public string resourceTypeSpriteSuffix;
+        [CanBeNull] public string factionTypeHpSpriteSuffix;
 
+        [Header("Multi show config")] public AssetReferenceGameObject costSlotPrefab;
+        public MultiShowSlotConfig config;
 
         public override void Show(Vector2? pos = null)
         {
             unitDetailPanel.SetActive(true);
-            UpdateUnitDetailInfo(true);
         }
-        
+
         public override void Hide()
         {
             unitDetailPanel.SetActive(false);
+
             _targetEntity = Entity.Null;
         }
-        
+
         public override bool TrySwitchTarget(Entity target)
         {
-            if(!_em.HasComponent<UnitAttr>(target)
-               || !_em.HasComponent<MovableData>(target)
-               || !_em.HasBuffer<CostList>(target))
+            if (!_em.HasComponent<UnitAttr>(target)
+                || !_em.HasComponent<MovableData>(target)
+                || !_em.HasBuffer<CostList>(target))
                 return false;
             _targetEntity = target;
-            UpdateUnitDetailInfo(true);
             return true;
+        }
+
+        public override bool HasTarget()
+        {
+            return _targetEntity != Entity.Null;
         }
 
         public override bool IsOpened()
@@ -63,13 +66,20 @@ namespace SparFlame.UI.GamePlay
             return unitDetailPanel.activeSelf;
         }
 
+        private GameObject _costSlotPrefab;
         private Entity _targetEntity = Entity.Null;
         private List<GameObject> _costSlots = new();
-        private Dictionary<ResourceType, Sprite> _resourceSprites;
-        private Dictionary<UnitType, Sprite> _unitSprites;
+        private readonly Dictionary<ResourceType, Sprite> _resourceSprites = new();
+        private readonly Dictionary<UnitType, Sprite> _unitSprites = new();
         private readonly Dictionary<FactionTag, Sprite> _factionHpSprites = new();
+        private AsyncOperationHandle<IList<Sprite>> _unitSpritesHandle;
+        private AsyncOperationHandle<IList<Sprite>> _resourceSpritesHandle;
+        private AsyncOperationHandle<IList<Sprite>> _factionHpSpritesHandle;
+        private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
         private EntityManager _em;
         private EntityQuery _notPauseTag;
+
+        #region EventFunction
 
         private void Awake()
         {
@@ -81,70 +91,84 @@ namespace SparFlame.UI.GamePlay
             }
         }
 
+        private void OnEnable()
+        {
+            _unitSpritesHandle = CR.LoadTypeSuffixAddressableAsync<UnitType, Sprite>(unitType2DSpriteSuffix,
+                result => CR.OnTypeSuffixAddressableLoadComplete(result, _unitSprites));
+            _resourceSpritesHandle = CR.LoadTypeSuffixAddressableAsync<ResourceType, Sprite>(resourceTypeSpriteSuffix,
+                result => CR.OnTypeSuffixAddressableLoadComplete(result, _resourceSprites));
+            _factionHpSpritesHandle = CR.LoadTypeSuffixAddressableAsync<FactionTag, Sprite>(factionTypeHpSpriteSuffix,
+                result => CR.OnTypeSuffixAddressableLoadComplete(result, _factionHpSprites));
+            _costSlotPrefabHandle =
+                CR.LoadPrefabAddressableRefAsync<GameObject>(costSlotPrefab, result =>
+                {
+                    _costSlotPrefab = result;
+                    UIUtils.InitMultiShowSlots(ref _costSlots, unitDetailPanel, _costSlotPrefab, in config);
+                });
+        }
+
+        private void OnDisable()
+        {
+            Addressables.Release(_resourceSpritesHandle);
+            Addressables.Release(_unitSpritesHandle);
+            Addressables.Release(_factionHpSpritesHandle);
+            Addressables.Release(_costSlotPrefabHandle);
+            _unitSprites.Clear();
+            _resourceSprites.Clear();
+            _factionHpSprites.Clear();
+            _costSlots.Clear();
+        }
+
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-            UIUtils.InitMultiShowSlots(ref _costSlots, unitDetailPanel, costSlotPrefab, in config);
-            _resourceSprites = UIUtils.LoadTypeSprites<ResourceType>(resourceTypeSpritesPath, resourceTypeSpritePrefix);
-            _unitSprites = UIUtils.LoadTypeSprites<UnitType>(unit2DSpritesPath, unit2DSpritePrefix);
-            foreach (var pair in factionTypeHpSprite)
-            {
-                _factionHpSprites.Add(pair.faction, pair.sprite);
-            }
-            Hide();
+
+            unitDetailPanel.SetActive(false);
         }
 
         private void Update()
         {
             if (_notPauseTag.IsEmpty) return;
-            if(!IsOpened())return;
+            if (!IsOpened()) return;
+            if (!_unitSpritesHandle.IsDone || !_resourceSpritesHandle.IsDone || !_factionHpSpritesHandle.IsDone) return;
             if (_targetEntity != Entity.Null)
-                UpdateUnitDetailInfo(false);
+                UpdateUnitDetailInfo();
         }
 
-        private void UpdateUnitDetailInfo(bool firstTime)
+        #endregion
+
+
+        private void UpdateUnitDetailInfo()
         {
             // First time need to update those static attributes
-            if (firstTime)
+            var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
+            var attr = _em.GetComponentData<UnitAttr>(_targetEntity);
+            var movableData = _em.GetComponentData<MovableData>(_targetEntity);
+            var statData = _em.GetComponentData<StatData>(_targetEntity);
+            var costList = _em.GetBuffer<CostList>(_targetEntity);
+            // Visualize these attributes
+            unitType.text = attr.Type.ToString();
+            unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
+            unitHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
+                          statData.MaxValue.ToString(CultureInfo.InvariantCulture);
+            unitIcon.sprite = _unitSprites[attr.Type];
+            hpIcon.sprite = _factionHpSprites[interactableAttr.FactionTag];
+            for (int i = 0; i < _costSlots.Count; i++)
             {
-                var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
-                var attr = _em.GetComponentData<UnitAttr>(_targetEntity);
-                var movableData = _em.GetComponentData<MovableData>(_targetEntity);
-                var statData = _em.GetComponentData<StatData>(_targetEntity);
-                var costList = _em.GetBuffer<CostList>(_targetEntity);
-                // Visualize these attributes
-                unitType.text = attr.Type.ToString();
-                unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
-                unitHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
-                              statData.MaxValue.ToString(CultureInfo.InvariantCulture);
-                unitIcon.sprite = _unitSprites[attr.Type];
-                hpIcon.sprite = _factionHpSprites[interactableAttr.FactionTag];
-                for (int i = 0; i < _costSlots.Count; i++)
+                if (i < costList.Length)
                 {
-                    if (i < costList.Length)
-                    {
-                        _costSlots[i].SetActive(true);
-                        var cost = costList[i];
-                        var costSlot = _costSlots[i].GetComponent<AttributeSlot>();
-                        costSlot.icon.sprite = _resourceSprites[cost.Type];
-                        costSlot.label.text = cost.Type.ToString();
-                        costSlot.value.text = cost.Amount.ToString();
-                    }
-                    else
-                    {
-                        _costSlots[i].SetActive(false);
-                    }
+                    _costSlots[i].SetActive(true);
+                    var cost = costList[i];
+                    var costSlot = _costSlots[i].GetComponent<AttributeSlot>();
+                    costSlot.icon.sprite = _resourceSprites[cost.Type];
+                    costSlot.label.text = cost.Type.ToString();
+                    costSlot.value.text = cost.Amount.ToString();
                 }
-            }
-            // Not first time only need to update dynamic attributes
-            else
-            {
-                var movableData = _em.GetComponentData<MovableData>(_targetEntity);
-                var statData = _em.GetComponentData<StatData>(_targetEntity);
-                unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
-                unitHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
-                              statData.MaxValue.ToString(CultureInfo.InvariantCulture);
+                else
+                {
+                    _costSlots[i].SetActive(false);
+                }
             }
         }
     }
@@ -155,6 +179,7 @@ namespace SparFlame.UI.GamePlay
         public ResourceType type;
         public Sprite sprite;
     }
+
     [Serializable]
     public struct FactionTypeSpritePair
     {

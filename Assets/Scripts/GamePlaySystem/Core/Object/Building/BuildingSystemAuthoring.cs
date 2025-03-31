@@ -1,12 +1,14 @@
-﻿using UnityEngine;
+﻿using Unity.Collections;
+using UnityEngine;
 using Unity.Entities;
-using UnityEngine.AI;
+using UnityEngine.AddressableAssets;
 
 namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingSystemAuthoring : MonoBehaviour
     {
         public float buildingGarrisonRadius = 1f;
+        public int maxUniqueBuildingNums = 100;
         private class BuildingSystemAuthoringBaker : Unity.Entities.Baker<BuildingSystemAuthoring>
         {
             public override void Bake(BuildingSystemAuthoring authoring)
@@ -15,14 +17,24 @@ namespace SparFlame.GamePlaySystem.Building
                 AddComponent(entity, new BuildingConfig
                 {
                     BuildingGarrisonRadiusSq = authoring.buildingGarrisonRadius * authoring.buildingGarrisonRadius,
+                    MaxUniqueBuildingNums = authoring.maxUniqueBuildingNums,
                 });
+                var buffer = AddBuffer<BuildingSlot>(CreateAdditionalEntity( TransformUsageFlags.None));
+               
             }
         }
     }
 
+    public struct BuildingSlot : IBufferElementData
+    {
+        public FixedString64Bytes Name;
+        public Entity Building;
+    }
+    
     public struct BuildingConfig : IComponentData
     {
         public float BuildingGarrisonRadiusSq;
+        public int MaxUniqueBuildingNums;
     }
 
     public enum BuildingType

@@ -1704,16 +1704,15 @@ MonoBehaviour:
   unitMoveSpeed: {fileID: 6757659933578096021}
   unitIcon: {fileID: 9070400524123398679}
   hpIcon: {fileID: 2914629112379004988}
-  unit2DSpritesPath: Textures/UI/Unit2DSprite
-  unit2DSpritePrefix: 
-  resourceTypeSpritesPath: Textures/UI/Resource2DSprite
-  resourceTypeSpritePrefix: 
-  factionTypeHpSprite:
-  - faction: 1
-    sprite: {fileID: 21300000, guid: 45e9320790bfe4e488cd680cc7a65b8a, type: 3}
-  - faction: -2
-    sprite: {fileID: 21300000, guid: 821e7e208b461d547b51a8d364b4856c, type: 3}
-  costSlotPrefab: {fileID: 5066417915293169060}
+  unitType2DSpriteSuffix: 
+  resourceTypeSpriteSuffix: 
+  factionTypeHpSpriteSuffix: 
+  costSlotPrefab:
+    m_AssetGUID: 
+    m_SubObjectName: 
+    m_SubObjectGUID: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
   config:
     autoCellSize: 0
     rows: 1

@@ -126,7 +126,7 @@ namespace SparFlame.UI.GamePlay
                 if (!UnitMulti2DWindow.Instance.IsOpened())
                     UnitMulti2DWindow.Instance.Show();
                 // Unit multi 2D will default show slot 0 as close up target if there is none
-                if (UnitMulti2DWindow.Instance.IsOpened() && CloseUpWindow.Instance.CloseUpTarget == Entity.Null)
+                if (UnitMulti2DWindow.Instance.IsOpened() && !CloseUpWindow.Instance.HasTarget())
                     UnitMulti2DWindow.Instance.OnClickUnit2D(0);
             }
             else
@@ -151,12 +151,7 @@ namespace SparFlame.UI.GamePlay
                 if (UnitDetailWindow.Instance.IsOpened())
                     UnitDetailWindow.Instance.Hide();
             }
-            //
-            // if (!shouldShowUnitMulti2D && !shouldShowInteractAndDetail)
-            // {
-            //     
-            //     
-            // }
+
         }
 
         private void Show()
