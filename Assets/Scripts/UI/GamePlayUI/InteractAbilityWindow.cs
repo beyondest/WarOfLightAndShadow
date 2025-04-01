@@ -7,11 +7,14 @@ using Unity.Entities;
 using UnityEngine;
 using SparFlame.UI.General;
 using Unity.Mathematics;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class InteractAbilityWindow : SingleTargetWindow
+    public class InteractAbilityWindow : UIUtils.SingleTargetWindow
     {
         public static InteractAbilityWindow Instance;
 
@@ -19,15 +22,16 @@ namespace SparFlame.UI.GamePlay
         public Button attackBar;
         public Button healBar;
         public Button harvestBar;
-
+        
         [Tooltip("Name must be : AttackAmount = Attack + Amount," +
                  "prefix can be Attack, Heal, Harvest" +
                  "suffix can be Speed, Amount, Range, Targets." +
                  "Notice that range refers to rangeSq, not the range itself when calculating, " +
                  "but for player, we show rangeSq as if it is range")]
         public List<AbilityNameSpritePair> abilitySprites;
-        
-        public MultiShowSlotConfig config;
+
+        public AssetReferenceGameObject attrSlotRef;
+        public UIUtils.MultiShowSlotConfig config;
 
         public override void Show(Vector2? pos = null)
         {
@@ -96,11 +100,12 @@ namespace SparFlame.UI.GamePlay
 
         #endregion
 
-        private GameObject _attrPrefab;
-        private List<GameObject> _slots = new();
+        private GameObject _attrSlotPrefab;
+        private readonly List<GameObject> _slots = new();
         private readonly Dictionary<string, Sprite> _sprites = new();
         private Dictionary<InteractType, List<Sprite>> _spritesByInteractType = new();
         private InteractType _currentBar;
+        private AsyncOperationHandle<GameObject> _slotHandle;
 
         private Entity _targetEntity;
         private EntityManager _em;
@@ -114,11 +119,19 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
+        private void OnEnable()
+        {
+            _slotHandle = CR.LoadAssetRefAsync<GameObject>(attrSlotRef, go =>
+            {
+                _attrSlotPrefab = go;
+                UIUtils.InitMultiShowSlotsByIndex(_slots, interactAbilityPanel, _attrSlotPrefab, in config);
+            });
+        }
+
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-            UIUtils.InitMultiShowSlots(ref _slots, interactAbilityPanel, _attrPrefab, in config);
             foreach (var pair in abilitySprites)
             {
                 _sprites.Add(pair.name, pair.sprite);
@@ -152,32 +165,31 @@ namespace SparFlame.UI.GamePlay
         private void UpdateInteractAbilityInfo(IInteractAbility interactAbility)
         {
             var properties = typeof(IInteractAbility).GetProperties();
+            var spriteList =
+                UnitWindowResourceManager.Instance.InteractAbilitySprites[interactAbility.InteractType];
+            var prefix = interactAbility.InteractType switch
+            {
+                InteractType.Attack => "Attack",
+                InteractType.Heal => "Heal",
+                InteractType.Harvest => "Harvest",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            
             for (var i = 0; i < _slots.Count; i++)
             {
-                if (i < properties.Length)
+                if (i <spriteList.Count) // Length - 1 is because last property is InteractType
                 {
                     var oriName = properties[i].Name;
-                    // Because CurCount must be at 5 position due to the data structure
-                    if (oriName == "CurCount" )
-                    {
-                        break;
-                    }
+                 
                     _slots[i].SetActive(true);
                     var attrSlot = _slots[i].GetComponent<AttributeSlot>();
-                    var prefix = interactAbility.InteractType switch
-                    {
-                        InteractType.Attack => "Attack",
-                        InteractType.Heal => "Heal",
-                        InteractType.Harvest => "Harvest",
-                        _ => throw new ArgumentOutOfRangeException()
-                    };
                     var value = properties[i].GetValue(interactAbility);
                     if (oriName == "Range" && value is float floatValue)
                     {
                         value = math.sqrt(floatValue);
                     }
                     var newName = prefix + oriName;
-                    attrSlot.icon.sprite = _sprites[newName];
+                    attrSlot.icon.sprite = spriteList[i];
                     attrSlot.label.text = newName + ":";
                     attrSlot.value.text = value.ToString();
                 }

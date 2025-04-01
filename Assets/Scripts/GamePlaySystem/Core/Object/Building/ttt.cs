@@ -1,6 +1,8 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace DefaultNamespace
 {
@@ -8,18 +10,23 @@ namespace DefaultNamespace
     {
         public float3 newSize;
         public GameObject ghost;
-        private class GhostAttributeAuthoringBaker : Baker<ttt>
-        {
-            public override void Bake(ttt authoring)
-            {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new GhostRequest
-                {
-                    Ghost = GetEntity(authoring.ghost, TransformUsageFlags.Dynamic),
-                    NewSize = authoring.newSize
-                });
-            }
-        }
+        
+        
+        public AssetReference asset;
+
+      
+        // private class GhostAttributeAuthoringBaker : Baker<ttt>
+        // {
+        //     public override void Bake(ttt authoring)
+        //     {
+        //         var entity = GetEntity(TransformUsageFlags.Dynamic);
+        //         AddComponent(entity, new GhostRequest
+        //         {
+        //             Ghost = GetEntity(authoring.ghost, TransformUsageFlags.Dynamic),
+        //             NewSize = authoring.newSize
+        //         });
+        //     }
+        // }
     }
     public struct GhostRequest : IComponentData
     {

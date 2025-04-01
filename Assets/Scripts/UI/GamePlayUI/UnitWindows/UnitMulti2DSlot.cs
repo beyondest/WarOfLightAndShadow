@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitMulti2DSlot : MultiShowSlot
+    public class UnitMulti2DSlot : UIUtils.MultiShowSlot
     {
         public Slider hp;
     }

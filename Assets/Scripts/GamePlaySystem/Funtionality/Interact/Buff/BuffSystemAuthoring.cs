@@ -17,6 +17,50 @@ namespace SparFlame.GamePlaySystem.Interact
             }
         }
     }
+
+    public enum BuffType
+    {
+        None = 0,
+        // Attack Up
+        DamageBoost = 1,
+        AttackSpeedUp = 2,
+        SplashDamage = 9,
+
+        // Health Up
+        HealthRegeneration = 3,
+        HealthBoost = 4,
+        ShieldOvercharge = 5,
+        
+        // Others
+        SpeedBoost = 6,
+        
+        // Buildings Up
+        EnergyOverdrive = 7,
+        EnergyBoost = 8,
+        ProjectileDeflection =9
+    }
+
+    public enum DebuffType
+    {
+        None = 0,
+        
+        // Vulnerable
+        ArmorReduction = 1,
+        
+        
+        // Control
+        DamageWeakness = 2,
+        AttackSpeedLow = 3,
+        MovementSlow = 4,
+        EmpStun = 5,
+        
+        // Building
+        EnergyDrain = 6
+        
+        
+        
+    }
+    
     
     public struct BuffData : IComponentData
     {

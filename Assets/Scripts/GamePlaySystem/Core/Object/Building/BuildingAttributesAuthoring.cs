@@ -1,12 +1,11 @@
-﻿using Unity.Entities;
+﻿using SparFlame.GamePlaySystem.General;
+using Unity.Entities;
 using UnityEngine;
-using Unity.Mathematics;
 namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingAttributesAuthoring : MonoBehaviour
     {
         public BuildingType buildingType;
-        public Tier tier = Tier.Tier1;
         private class BuildingAttributesAuthoringBaker : Baker<BuildingAttributesAuthoring>
         {
             public override void Bake(BuildingAttributesAuthoring authoring)
@@ -16,7 +15,6 @@ namespace SparFlame.GamePlaySystem.Building
                 {
                     Type = authoring.buildingType,
                     State = BuildingState.Constructing,
-                    Tier = authoring.tier,
                 });
             }
         }
@@ -35,6 +33,5 @@ namespace SparFlame.GamePlaySystem.Building
     {
         public BuildingType Type;
         public BuildingState State;
-        public Tier Tier;
     }
 }

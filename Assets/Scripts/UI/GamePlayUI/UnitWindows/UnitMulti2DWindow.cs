@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
-using SparFlame.GamePlaySystem.Units;
 using SparFlame.UI.General;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -12,20 +11,25 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitMulti2DWindow : UIWindow
+    public class UnitMulti2DWindow : UIUtils.UIWindow
     {
-        public static UnitMulti2DWindow Instance;
-
-        [Header("Custom Config")] public GameObject multiUnitPanel;
+        // Config
+        [Header("Custom Config")] 
+        public GameObject multiUnitPanel;
         public GameObject pageUpButton;
         public GameObject pageDownButton;
-        [CanBeNull] public string unitMulti2DSpriteSuffix;
         
         
         [Header("Multi unit slot config")] 
         public AssetReference slotAsset;
-        public MultiShowSlotConfig multiShowSlotConfig;
+        public UIUtils.MultiShowSlotConfig multiShowSlotConfig;
+        
+        
+        // Interface
+        public static UnitMulti2DWindow Instance;
+        public Action<int> GetTargetEntityByIndex;
 
+        
         public override void Show(Vector2? pos = null)
         {
             multiUnitPanel.SetActive(true);
@@ -35,9 +39,6 @@ namespace SparFlame.UI.GamePlay
         {
             multiUnitPanel.SetActive(false);
             _currentSelectIndex = -1;
-            
-           
-            
         }
 
         public override bool IsOpened()
@@ -45,11 +46,16 @@ namespace SparFlame.UI.GamePlay
             return multiUnitPanel.activeSelf;
         }
 
-        public void UpdateSelectedUnitView()
+        public void GetUnitData(int curSelectCount, Entity target)
         {
-            if(!_unitSpritesHandle.IsDone || !_slotPrefabHandle.IsDone)return;
+            _currentSelectCounts = curSelectCount;
+            _targetEntity = target;
+        }
+        public void UpdateSelectedUnitView(NativeList<UnitRealTimeInfo> unitInfos)
+        {
+            if(!UnitWindowResourceManager.Instance.IsResourceLoaded() || !_slotPrefabHandle.IsDone)return;
             var startIdx = _currentPage * _slotsMaxCountPerPage;
-            var count = Mathf.Min(_slotsMaxCountPerPage, _unitInfos.Count - startIdx);
+            var count = Mathf.Min(_slotsMaxCountPerPage, unitInfos.Length - startIdx);
             // Update corresponding images and hp sliders
             for (var i = 0; i < _slotsMaxCountPerPage; i++)
             {
@@ -57,8 +63,8 @@ namespace SparFlame.UI.GamePlay
                 {
                     _slots[i].SetActive(true);
                     var unitShowSlot = _slots[i].GetComponent<UnitMulti2DSlot>();
-                    var unitInfo = _unitInfos[startIdx + i];
-                    unitShowSlot.button.image.sprite = _unitSpriteDict[unitInfo.UnitType];
+                    var unitInfo = unitInfos[startIdx + i];
+                    unitShowSlot.button.image.sprite = UnitWindowResourceManager.Instance.UnitSprites[unitInfo.UnitType];
                     unitShowSlot.hp.value = unitInfo.HpRatio;
                 }
                 else
@@ -68,26 +74,10 @@ namespace SparFlame.UI.GamePlay
             }
     
             // Update right and left button
-            pageDownButton.SetActive((_currentPage + 1) * _slotsMaxCountPerPage < _unitInfos.Count);
+            pageDownButton.SetActive((_currentPage + 1) * _slotsMaxCountPerPage < unitInfos.Length);
             pageUpButton.SetActive(_currentPage != 0);
+            _currentSelectCounts = unitInfos.Length;
         }
-
-        public void ClearUnitInfo()
-        {
-            _unitInfos.Clear();
-        }
-        public void AddUnitInfo(in UnitInfo unitInfo)
-        {
-            _unitInfos.Add(unitInfo);
-        }
-        
-        public struct UnitInfo
-        {
-            public UnitType UnitType;
-            public float HpRatio;
-            public Entity Entity;
-        }
-        
         
         
         #region ButtonMethods
@@ -104,31 +94,27 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickUnit2D(int index)
         {
-            if (_unitInfos.Count <= index) return;
-            if (_currentSelectIndex == index) return;
+            var trueIndex = _currentPage * _slotsMaxCountPerPage + index;
+            if(_currentSelectIndex == trueIndex) return;
             // Set close up target 
-            InfoWindowController.Instance.UpdateCloseUpTarget(_unitInfos[index + _currentPage * _slotsMaxCountPerPage].Entity);
+            GetTargetEntityByIndex?.Invoke(trueIndex);
+            if (_currentSelectCounts <= trueIndex) return;
+            InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
         }
-
         #endregion
 
 
         private int _slotsMaxCountPerPage;
         private int _currentPage;
         private int _currentSelectIndex = -1;
-        private List<GameObject> _slots = new();
-        private Dictionary<UnitType, Sprite> _unitSpriteDict = new();
-        private readonly List<UnitInfo> _unitInfos = new();
+        private int _currentSelectCounts;
+        private readonly List<GameObject> _slots = new();
         private GameObject _slotPrefab;
         private AsyncOperationHandle<GameObject> _slotPrefabHandle;
-        private AsyncOperationHandle<IList<Sprite>> _unitSpritesHandle;
-
+        private Entity _targetEntity;
 
 
         #region EventFunction
-
-        
-
         private void Awake()
         {
             if (Instance == null)
@@ -140,20 +126,16 @@ namespace SparFlame.UI.GamePlay
 
         private void OnEnable()
         {
-            _slotPrefabHandle = CR.LoadPrefabAddressableRefAsync<GameObject>(slotAsset, o =>
+            _slotPrefabHandle = CR.LoadAssetRefAsync<GameObject>(slotAsset, slotPrefab =>
             {
-                _slotPrefab = o;
+                _slotPrefab = slotPrefab;
+                UIUtils.InitMultiShowSlotsByIndex(_slots,multiUnitPanel,_slotPrefab,multiShowSlotConfig,OnClickUnit2D);
             });
-            _unitSpritesHandle = CR.LoadTypeSuffixAddressableAsync<UnitType, Sprite>(unitMulti2DSpriteSuffix, result =>
-                CR.OnTypeSuffixAddressableLoadComplete(result, _unitSpriteDict));
-        }
-
-        private void Start()
-        {
             _slotsMaxCountPerPage = multiShowSlotConfig.rows * multiShowSlotConfig.cols;
             _currentSelectIndex = -1;
             multiUnitPanel.SetActive(false);
         }
+        
 
         private void OnDisable()
         {
@@ -162,30 +144,10 @@ namespace SparFlame.UI.GamePlay
                 Destroy(go);
             }
             _slots.Clear();
-            _unitSpriteDict.Clear();
-            _unitInfos.Clear();
             Addressables.Release(_slotPrefabHandle);
-            Addressables.Release(_unitSpritesHandle);
         }
         #endregion
-
-        private void OnPrefabLoadComplete(AsyncOperationHandle<GameObject> handle)
-        {
-            _slotPrefab = handle.Result;
-            UIUtils.InitMultiShowSlots(ref _slots, multiUnitPanel, _slotPrefab, in multiShowSlotConfig, OnClickUnit2D);
-        }
-
-        private void OnUnitSpritesLoadComplete(AsyncOperationHandle<IList<Sprite>> handle)
-        {
-            var keys = Enum.GetValues(typeof(UnitType));
-            var sprites = handle.Result;
-            var i = 0;
-            foreach (UnitType key in keys)
-            {
-                _unitSpriteDict.Add(key, sprites[i]);
-                i++;
-            }
-        }
+ 
         
     }
 }

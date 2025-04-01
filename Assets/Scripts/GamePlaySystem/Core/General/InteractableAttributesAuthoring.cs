@@ -1,3 +1,4 @@
+using Unity.Collections;
 using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -11,8 +12,8 @@ namespace SparFlame.GamePlaySystem.General
     {
         public BaseTag baseTag;
         public FactionTag factionTag;
-
-
+        public string gameplayName;
+        public Tier tier;
 
         class Baker : Baker<InteractableAttributesAuthoring>
         {
@@ -24,7 +25,9 @@ namespace SparFlame.GamePlaySystem.General
                 {
                     BaseTag = authoring.baseTag,
                     FactionTag = authoring.factionTag,
-                    BoxColliderSize = physicsShapeAuthoring.m_PrimitiveSize
+                    BoxColliderSize = physicsShapeAuthoring.m_PrimitiveSize,
+                    GameplayName = authoring.gameplayName,
+                    Tier = authoring.tier,
                 });
 
                 
@@ -49,12 +52,23 @@ namespace SparFlame.GamePlaySystem.General
         Enemy = ~1,
     }
 
+    public enum Tier
+    {
+        None = 0,
+        Tier1 = 3,
+        Tier2 = 4,
+        Tier3 = 5,
+        Tier4 = 6,
+        Tier5 = 7,
+    }
 
+    
     public struct InteractableAttr : IComponentData
     {
         public BaseTag BaseTag;
         public FactionTag FactionTag;
         public float3 BoxColliderSize;
-
+        public FixedString32Bytes GameplayName;
+        public Tier Tier;
     }
 }

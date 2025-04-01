@@ -17,23 +17,21 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitDetailWindow : SingleTargetWindow
+    public class UnitDetailWindow : UIUtils.SingleTargetWindow
     {
-        public static UnitDetailWindow Instance;
-
+        // Config
         [Header("Custom Config")] public GameObject unitDetailPanel;
         public TMP_Text unitType;
         public TMP_Text unitHp;
         public TMP_Text unitMoveSpeed;
         public Image unitIcon;
         public Image hpIcon;
-        [CanBeNull] public string unitType2DSpriteSuffix;
-        [CanBeNull] public string resourceTypeSpriteSuffix;
-        [CanBeNull] public string factionTypeHpSpriteSuffix;
 
         [Header("Multi show config")] public AssetReferenceGameObject costSlotPrefab;
-        public MultiShowSlotConfig config;
+        public UIUtils.MultiShowSlotConfig config;
 
+        // Interface
+        public static UnitDetailWindow Instance;
         public override void Show(Vector2? pos = null)
         {
             unitDetailPanel.SetActive(true);
@@ -68,13 +66,8 @@ namespace SparFlame.UI.GamePlay
 
         private GameObject _costSlotPrefab;
         private Entity _targetEntity = Entity.Null;
-        private List<GameObject> _costSlots = new();
-        private readonly Dictionary<ResourceType, Sprite> _resourceSprites = new();
-        private readonly Dictionary<UnitType, Sprite> _unitSprites = new();
-        private readonly Dictionary<FactionTag, Sprite> _factionHpSprites = new();
-        private AsyncOperationHandle<IList<Sprite>> _unitSpritesHandle;
-        private AsyncOperationHandle<IList<Sprite>> _resourceSpritesHandle;
-        private AsyncOperationHandle<IList<Sprite>> _factionHpSpritesHandle;
+        private readonly List<GameObject> _costSlots = new();
+
         private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
         private EntityManager _em;
         private EntityQuery _notPauseTag;
@@ -93,45 +86,35 @@ namespace SparFlame.UI.GamePlay
 
         private void OnEnable()
         {
-            _unitSpritesHandle = CR.LoadTypeSuffixAddressableAsync<UnitType, Sprite>(unitType2DSpriteSuffix,
-                result => CR.OnTypeSuffixAddressableLoadComplete(result, _unitSprites));
-            _resourceSpritesHandle = CR.LoadTypeSuffixAddressableAsync<ResourceType, Sprite>(resourceTypeSpriteSuffix,
-                result => CR.OnTypeSuffixAddressableLoadComplete(result, _resourceSprites));
-            _factionHpSpritesHandle = CR.LoadTypeSuffixAddressableAsync<FactionTag, Sprite>(factionTypeHpSpriteSuffix,
-                result => CR.OnTypeSuffixAddressableLoadComplete(result, _factionHpSprites));
+            
             _costSlotPrefabHandle =
-                CR.LoadPrefabAddressableRefAsync<GameObject>(costSlotPrefab, result =>
+                CR.LoadAssetRefAsync<GameObject>(costSlotPrefab, result =>
                 {
                     _costSlotPrefab = result;
-                    UIUtils.InitMultiShowSlots(ref _costSlots, unitDetailPanel, _costSlotPrefab, in config);
+                    UIUtils.InitMultiShowSlotsByIndex(_costSlots, unitDetailPanel, _costSlotPrefab, in config);
                 });
         }
 
         private void OnDisable()
         {
-            Addressables.Release(_resourceSpritesHandle);
-            Addressables.Release(_unitSpritesHandle);
-            Addressables.Release(_factionHpSpritesHandle);
+
             Addressables.Release(_costSlotPrefabHandle);
-            _unitSprites.Clear();
-            _resourceSprites.Clear();
-            _factionHpSprites.Clear();
             _costSlots.Clear();
+            unitDetailPanel.SetActive(false);
         }
 
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-
-            unitDetailPanel.SetActive(false);
         }
 
         private void Update()
         {
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
-            if (!_unitSpritesHandle.IsDone || !_resourceSpritesHandle.IsDone || !_factionHpSpritesHandle.IsDone) return;
+            
+            if (!UnitWindowResourceManager.Instance.IsResourceLoaded()) return;
             if (_targetEntity != Entity.Null)
                 UpdateUnitDetailInfo();
         }
@@ -152,8 +135,8 @@ namespace SparFlame.UI.GamePlay
             unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
             unitHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
                           statData.MaxValue.ToString(CultureInfo.InvariantCulture);
-            unitIcon.sprite = _unitSprites[attr.Type];
-            hpIcon.sprite = _factionHpSprites[interactableAttr.FactionTag];
+            unitIcon.sprite = UnitWindowResourceManager.Instance.UnitSprites[attr.Type];
+            hpIcon.sprite = UnitWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
             for (int i = 0; i < _costSlots.Count; i++)
             {
                 if (i < costList.Length)
@@ -161,7 +144,7 @@ namespace SparFlame.UI.GamePlay
                     _costSlots[i].SetActive(true);
                     var cost = costList[i];
                     var costSlot = _costSlots[i].GetComponent<AttributeSlot>();
-                    costSlot.icon.sprite = _resourceSprites[cost.Type];
+                    costSlot.icon.sprite = UnitWindowResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = cost.Amount.ToString();
                 }

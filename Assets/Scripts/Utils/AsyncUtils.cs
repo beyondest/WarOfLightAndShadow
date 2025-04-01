@@ -31,7 +31,7 @@ namespace SparFlame.Utils
             /// </summary>
             public float AverageProgress => Operations.Count == 0 ? 0 : Operations.Average(o => o.progress);
             public bool IsDone => Operations.All(o => o.isDone);
-            public AsyncOperationGroup(int initialOperationCount)
+            public AsyncOperationGroup(int initialOperationCount = 1)
             {
                 Operations = new List<AsyncOperation>(initialOperationCount);
             }
@@ -42,30 +42,36 @@ namespace SparFlame.Utils
             }
         }
         
-        public readonly struct AddressableResourceGroup
+        public class AddressableResourceGroup
         {
-            public readonly List<AsyncOperationHandle> Handles;
-
-            public float AverageProgress => Handles.Count == 0 ? 0 : Handles.Average(o => o.PercentComplete);
+            private readonly List<AsyncOperationHandle> _handles;
+            
+            public float AverageProgress => _handles.Count == 0 ? 0 : _handles.Average(o => o.PercentComplete);
     
-            public bool IsDone => Handles.All(o => o.IsDone);
+            public bool IsDone => _handles.All(o => o.IsDone);
 
-            public AddressableResourceGroup(int initialHandlesCount)
+            public bool IsHandleCreated(int targetCount)
             {
-                Handles = new List<AsyncOperationHandle>(initialHandlesCount);
-            }
-            public void AddHandle(AsyncOperationHandle handle)
-            {
-                Handles.Add(handle);
+                return targetCount >= _handles.Count;
             }
 
-            public void ReleaseAllHandles()
+
+            public AddressableResourceGroup(int initialHandlesCount = 1)
             {
-                foreach (var operation in Handles)
+                _handles = new List<AsyncOperationHandle>(initialHandlesCount);
+            }
+            public void Add(AsyncOperationHandle handle)
+            {
+                _handles.Add(handle);
+            }
+
+            public void Release()
+            {
+                foreach (var operation in _handles)
                 {
                     Addressables.Release(operation);
                 }
-                Handles.Clear();
+                _handles.Clear();
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.UI.General;
@@ -6,14 +7,15 @@ using TMPro;
 using Unity.Entities;
 using Unity.Entities.Graphics;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class CloseUpWindow : SingleTargetWindow
+    public class CloseUpWindow : UIUtils.SingleTargetWindow
     {
         public static CloseUpWindow Instance;
         private Entity CloseUpTarget = Entity.Null;
@@ -23,9 +25,18 @@ namespace SparFlame.UI.GamePlay
         public Camera closeUpCamera;
         public RawImage closeUpImage;
         public Slider closeUpStatSlider;
+        public Slider closeUpExpSlider;
+        public TMP_Text closeUpTargetName;
+        public Image closeUpTargetTier;
+        public TMP_Text closeUpTargetExp;
+        
         public Vector3 camBias;
         public LayerMask closeUpLayerMask;
 
+
+        [Header("MultiShow Config")] public AssetReferenceGameObject buffSlotRef;
+        public UIUtils.MultiShowSlotConfig config;
+        
         public override void Show(Vector2? pos = null)
         {
             closeUpCamera.enabled = true;
@@ -50,14 +61,14 @@ namespace SparFlame.UI.GamePlay
             // reset the last target layer
             SetLayerRecursively(CloseUpTarget, _oriLayer);
             if (!_em.HasComponent<InteractableAttr>(target)) return false;
-            _closeUpTargetColliderSize = _em.GetComponentData<InteractableAttr>(target).BoxColliderSize;
+            var attr = _em.GetComponentData<InteractableAttr>(target);
+            _closeUpTargetColliderSize = attr.BoxColliderSize;
             CloseUpTarget = target;
             _oriLayer = SetLayerRecursively(CloseUpTarget, _closeUpLayerIndex);
-
-            // var buffer = _em.GetBuffer<LinkedEntityGroup>(_closeUpTarget);
-            // var s = _em.GetSharedComponent<RenderFilterSettings>(buffer[1].Value);
-            // s.Layer = closeUpLayerMask;
-            // _em.SetSharedComponent(buffer[1].Value, s);
+            
+            closeUpTargetName.text = attr.GameplayName.ToString();
+            
+       
             return true;
         }
 
@@ -66,10 +77,25 @@ namespace SparFlame.UI.GamePlay
             return CloseUpTarget != Entity.Null;
         }
 
+
+        public void OnClickBuffSlot(int slotIndex)
+        {
+            Debug.Log($"Click on {slotIndex}");
+        }
+
+        // Internal Data
         private int _closeUpLayerIndex;
         private int _oriLayer;
         private Vector3 _cameraBias;
         private Vector3 _closeUpTargetColliderSize = Vector3.zero;
+
+        private AsyncOperationHandle<GameObject> _buffSlotHandle;
+        // Cache
+        private GameObject _buffSlotPrefab;
+        private readonly List<GameObject> _buffSlots = new ();
+        
+        
+        // ECS
         private EntityManager _em;
         private EntityQuery _notPauseTag;
 
@@ -80,6 +106,23 @@ namespace SparFlame.UI.GamePlay
                 Instance = this;
             else
                 Destroy(gameObject);
+        }
+
+        private void OnEnable()
+        {
+            _buffSlotHandle = CR.LoadAssetRefAsync<GameObject>(buffSlotRef, go
+                =>
+            {
+                _buffSlotPrefab = go;
+                UIUtils.InitMultiShowSlotsByIndex(_buffSlots, closeUpPanel, _buffSlotPrefab, in config,
+                    OnClickBuffSlot);
+            });
+        }
+
+        private void OnDisable()
+        {
+            Addressables.Release(_buffSlotHandle);
+            _buffSlots.Clear();
         }
 
         private void Start()
@@ -96,6 +139,7 @@ namespace SparFlame.UI.GamePlay
             _closeUpLayerIndex = (int)math.log2(closeUpLayerMask.value);
             Hide();
         }
+        
 
         private void Update()
         {

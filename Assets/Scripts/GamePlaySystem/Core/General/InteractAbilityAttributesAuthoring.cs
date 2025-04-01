@@ -86,7 +86,6 @@ namespace SparFlame.GamePlaySystem.Interact
         float Speed { get; set; }
         float Targets { get; set; }
         // This is rangeSq for real, remaining range for better show
-        int CurCounter { get; set; }
         InteractType InteractType { get; set; }
     }
 
@@ -96,7 +95,6 @@ namespace SparFlame.GamePlaySystem.Interact
         public float Targets { get; set; }
         public float Range { get; set; }
         public int Amount { get; set; }
-        public int CurCounter { get; set; }
         public InteractType InteractType { get; set; }
     }
     
@@ -107,7 +105,6 @@ namespace SparFlame.GamePlaySystem.Interact
         public float Targets { get; set; }
         public float Range { get; set; }
         public int Amount { get; set; }
-        public int CurCounter { get; set; }
         public InteractType InteractType { get; set; }
     }
     public struct HarvestAbility : IComponentData,IInteractAbility
@@ -116,10 +113,8 @@ namespace SparFlame.GamePlaySystem.Interact
         public float Targets { get; set; }
         public float Range { get; set; }
         public int Amount { get; set; }
-        public int CurCounter { get; set; }
         public InteractType InteractType { get; set; }
     }
-
 
 
     
