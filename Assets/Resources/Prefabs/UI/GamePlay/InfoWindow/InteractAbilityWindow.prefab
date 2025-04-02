@@ -479,32 +479,12 @@ MonoBehaviour:
   attackBar: {fileID: 2341765494730636090}
   healBar: {fileID: 5667180930147036540}
   harvestBar: {fileID: 7617722851800208808}
-  abilitySprites:
-  - name: AttackRange
-    sprite: {fileID: 21300000, guid: a33510921d5dd8442a3673854594c1a1, type: 3}
-  - name: AttackSpeed
-    sprite: {fileID: 21300000, guid: 03b3ae7b010cee74aa2ad6672014b33d, type: 3}
-  - name: AttackTargets
-    sprite: {fileID: 21300000, guid: 0d8b5cc3cf5f4bd4592d91dece22144d, type: 3}
-  - name: AttackAmount
-    sprite: {fileID: 21300000, guid: d055f83cf9bb99449b9f535932cf0f4d, type: 3}
-  - name: HealRange
-    sprite: {fileID: 21300000, guid: 3d06f99df430b704f878de312aa948f7, type: 3}
-  - name: HealSpeed
-    sprite: {fileID: 21300000, guid: 17162dbf88749d9439a1cbcbf56dcc96, type: 3}
-  - name: HealTargets
-    sprite: {fileID: 21300000, guid: 3711af976ebd2a741b2885a489556169, type: 3}
-  - name: HealAmount
-    sprite: {fileID: 21300000, guid: 71b6fd021e5bc9f42bb53aa72c8afd71, type: 3}
-  - name: HarvestRange
-    sprite: {fileID: 21300000, guid: 5186fe9f7e6eaad478e9c272fbdc7f50, type: 3}
-  - name: HarvestAmount
-    sprite: {fileID: 21300000, guid: 4cab51c4619416342be65e22e4201d3c, type: 3}
-  - name: HarvestTargets
-    sprite: {fileID: 21300000, guid: 899746fbc6bc7be459430a135fda5b3d, type: 3}
-  - name: HarvestSpeed
-    sprite: {fileID: 21300000, guid: d24418349cbe1b84ca610edfc468bd9e, type: 3}
-  attrPrefab: {fileID: 8600352512141129154}
+  attrSlotRef:
+    m_AssetGUID: bb2159e5469fe314590077da32494442
+    m_SubObjectName: 
+    m_SubObjectGUID: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
   config:
     autoCellSize: 0
     rows: 1

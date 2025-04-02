@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using JetBrains.Annotations;
+﻿using System.Globalization;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
@@ -11,102 +8,76 @@ using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitDetailWindow : UIUtils.SingleTargetWindow
+    public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot,UnitDetailWindow>,UIUtils.ISingleTargetWindow
     {
         // Config
-        [Header("Custom Config")] public GameObject unitDetailPanel;
-        public TMP_Text unitType;
-        public TMP_Text unitHp;
-        public TMP_Text unitMoveSpeed;
-        public Image unitIcon;
-        public Image hpIcon;
+        [Header("Custom Config")] 
+        [SerializeField]
+        private TMP_Text unitType;
+        [SerializeField]
+        private TMP_Text unitHp;
+        [SerializeField]
+        private TMP_Text unitMoveSpeed;
+        [SerializeField]
+        private Image unitIcon;
+        [SerializeField]
+        private Image hpIcon;
 
-        [Header("Multi show config")] public AssetReferenceGameObject costSlotPrefab;
-        public UIUtils.MultiShowSlotConfig config;
 
         // Interface
-        public static UnitDetailWindow Instance;
-        public override void Show(Vector2? pos = null)
-        {
-            unitDetailPanel.SetActive(true);
-        }
+      
 
         public override void Hide()
         {
-            unitDetailPanel.SetActive(false);
-
+            base.Hide();
             _targetEntity = Entity.Null;
         }
 
-        public override bool TrySwitchTarget(Entity target)
+        public bool TrySwitchTarget(Entity target)
         {
             if (!_em.HasComponent<UnitAttr>(target)
                 || !_em.HasComponent<MovableData>(target)
-                || !_em.HasBuffer<CostList>(target))
+                || !_em.HasBuffer<CostList>(target)
+                || !_em.HasComponent<StatData>(target))
                 return false;
             _targetEntity = target;
             return true;
         }
 
-        public override bool HasTarget()
+        public bool HasTarget()
         {
             return _targetEntity != Entity.Null;
         }
 
-        public override bool IsOpened()
-        {
-            return unitDetailPanel.activeSelf;
-        }
-
-        private GameObject _costSlotPrefab;
-        private Entity _targetEntity = Entity.Null;
-        private readonly List<GameObject> _costSlots = new();
-
+    
+        
+        // Internal Data
         private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
+        private Entity _targetEntity = Entity.Null;
+        
+        
+        
+
+        // ECS
         private EntityManager _em;
         private EntityQuery _notPauseTag;
 
         #region EventFunction
 
-        private void Awake()
-        {
-            if (Instance == null)
-                Instance = this;
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
 
-        private void OnEnable()
-        {
-            
-            _costSlotPrefabHandle =
-                CR.LoadAssetRefAsync<GameObject>(costSlotPrefab, result =>
-                {
-                    _costSlotPrefab = result;
-                    UIUtils.InitMultiShowSlotsByIndex(_costSlots, unitDetailPanel, _costSlotPrefab, in config);
-                });
-        }
 
-        private void OnDisable()
-        {
-
-            Addressables.Release(_costSlotPrefabHandle);
-            _costSlots.Clear();
-            unitDetailPanel.SetActive(false);
-        }
+ 
 
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            panel.SetActive(false);
         }
 
         private void Update()
@@ -114,7 +85,8 @@ namespace SparFlame.UI.GamePlay
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
             
-            if (!UnitWindowResourceManager.Instance.IsResourceLoaded()) return;
+            if (!UnitWindowResourceManager.Instance.IsResourceLoaded() 
+                ||!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
             if (_targetEntity != Entity.Null)
                 UpdateUnitDetailInfo();
         }
@@ -124,7 +96,6 @@ namespace SparFlame.UI.GamePlay
 
         private void UpdateUnitDetailInfo()
         {
-            // First time need to update those static attributes
             var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
             var attr = _em.GetComponentData<UnitAttr>(_targetEntity);
             var movableData = _em.GetComponentData<MovableData>(_targetEntity);
@@ -136,37 +107,25 @@ namespace SparFlame.UI.GamePlay
             unitHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
                           statData.MaxValue.ToString(CultureInfo.InvariantCulture);
             unitIcon.sprite = UnitWindowResourceManager.Instance.UnitSprites[attr.Type];
-            hpIcon.sprite = UnitWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
-            for (int i = 0; i < _costSlots.Count; i++)
+            hpIcon.sprite = BasicWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
+            for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < costList.Length)
                 {
-                    _costSlots[i].SetActive(true);
+                    Slots[i].SetActive(true);
                     var cost = costList[i];
-                    var costSlot = _costSlots[i].GetComponent<AttributeSlot>();
-                    costSlot.icon.sprite = UnitWindowResourceManager.Instance.ResourceSprites[cost.Type];
+                    var costSlot = SlotComponents[i];
+                    costSlot.icon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = cost.Amount.ToString();
                 }
                 else
                 {
-                    _costSlots[i].SetActive(false);
+                    Slots[i].SetActive(false);
                 }
             }
         }
     }
 
-    [Serializable]
-    public struct ResourceTypeSpritePair
-    {
-        public ResourceType type;
-        public Sprite sprite;
-    }
 
-    [Serializable]
-    public struct FactionTypeSpritePair
-    {
-        public FactionTag faction;
-        public Sprite sprite;
-    }
 }

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using SparFlame.Utils;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -25,16 +22,17 @@ namespace SparFlame.UI.General
         /// <typeparam name="TEnum">Prefix</typeparam>
         /// <typeparam name="TProperty"></typeparam>
         /// <typeparam name="TResource"></typeparam>
-        public static void LoadNameByEnumAndProperty<TEnum,TProperty,TResource> (AddressableResourceGroup group,
-             Dictionary<TEnum, List<TResource>> lookUpDict,int propertyCutCount) 
-            where TEnum : Enum 
+        public static void LoadEnumProperties<TEnum, TProperty, TResource>(AddressableResourceGroup group,
+            Dictionary<TEnum, List<TResource>> lookUpDict, int propertyCutCount)
+            where TEnum : Enum
         {
             var properties = typeof(TProperty).GetProperties();
             var propertyNames = new List<string>();
-            for(var i = 0; i < properties.Length - propertyCutCount; i++)
+            for (var i = 0; i < properties.Length - propertyCutCount; i++)
             {
                 propertyNames.Add(properties[i].Name);
             }
+
             foreach (TEnum type in Enum.GetValues(typeof(TEnum)))
             {
                 var resourceList = new List<TResource>();
@@ -44,7 +42,8 @@ namespace SparFlame.UI.General
                 {
                     keys.Add(prefix + propertyName);
                 }
-                var handle = LoadAssetsNameAsync<TResource> (keys, null, result =>
+
+                var handle = LoadAssetsNameAsync<TResource>(keys, null, result =>
                 {
                     resourceList.AddRange(result);
                     lookUpDict.Add(type, resourceList);
@@ -52,8 +51,8 @@ namespace SparFlame.UI.General
                 group.Add(handle);
             }
         }
-        
-        
+
+
         public static AsyncOperationHandle<IList<TResource>> LoadAssetsNameAsync<TResource>(IList<string> names,
             string suffix = null,
             Action<IList<TResource>> onComplete = null)
@@ -70,6 +69,7 @@ namespace SparFlame.UI.General
             {
                 keys.AddRange(names);
             }
+
             var handle = Addressables.LoadAssetsAsync<TResource>(keys, null, Addressables.MergeMode.Union, true);
             handle.Completed += _ => onComplete?.Invoke(handle.Result);
             return handle;
@@ -82,10 +82,10 @@ namespace SparFlame.UI.General
             handle.Completed += _ => onComplete?.Invoke(handle.Result);
             return handle;
         }
-        
+
         public static AsyncOperationHandle<IList<TResource>> LoadTypeSuffix<TEnum, TResource>(
             string suffix = null, Action<IList<TResource>> onComplete = null
-             ) where TEnum : Enum
+        ) where TEnum : Enum
         {
             var keys = Enum.GetNames(typeof(TEnum));
             var fullNames = new List<string>();
@@ -100,12 +100,14 @@ namespace SparFlame.UI.General
             {
                 fullNames.AddRange(keys);
             }
-            var handle = Addressables.LoadAssetsAsync<TResource>(fullNames,_=>{},Addressables.MergeMode.Union,true);
-            handle.Completed += _ => { onComplete?.Invoke(handle.Result); }; 
+
+            var handle =
+                Addressables.LoadAssetsAsync<TResource>(fullNames, _ => { }, Addressables.MergeMode.Union, true);
+            handle.Completed += _ => { onComplete?.Invoke(handle.Result); };
             return handle;
         }
-        
-        public static void OnTypeSuffixLoadComplete<TEnum,TResource>(
+
+        public static void OnTypeSuffixLoadComplete<TEnum, TResource>(
             IList<TResource> result, Dictionary<TEnum, TResource> dict) where TEnum : Enum
         {
             var keys = Enum.GetValues(typeof(TEnum));
@@ -116,11 +118,7 @@ namespace SparFlame.UI.General
                 i++;
             }
         }
-        
-        
-        
-        
-        
+
 
         #region Resource Load Methods (Deprecated)
 
@@ -149,11 +147,10 @@ namespace SparFlame.UI.General
 
             return dict;
         }
-        #endregion
 
+        #endregion
     }
 
-    
 
     public abstract class CustomResourceManager : MonoBehaviour
     {

@@ -54,7 +54,7 @@ namespace SparFlame.GamePlaySystem.General
 
     public enum Tier
     {
-        None = 0,
+        TierNone = 0,
         Tier1 = 3,
         Tier2 = 4,
         Tier3 = 5,

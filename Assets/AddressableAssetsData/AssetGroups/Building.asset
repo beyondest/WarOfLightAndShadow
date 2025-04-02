@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Building
+  m_EditorClassIdentifier: 
+  m_GroupName: Building
+  m_GUID: d8d82ea7a0e5e7f468c4625a77d97879
+  m_SerializeEntries:
+  - m_GUID: 2973f686921123148a166756305bd479
+    m_Address: Ornaments
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2b6a4a23c4b222347969683727c44a00
+    m_Address: Dwelling
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 364bd07a55157f843a1177ce3830383d
+    m_Address: Fortification
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9399fd3b0778d8b428ad3414af8cbdbe
+    m_Address: ConjuringShrine
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1f05f18f0dc33a419cb3cf23fc6325c
+    m_Address: Workshop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 8b2c22615d401dc4bb2843676b448ffd, type: 2}
+    - {fileID: 11400000, guid: 2f1fe0ebc7eec3e4490f036c9df2a896, type: 2}

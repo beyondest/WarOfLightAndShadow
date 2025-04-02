@@ -1,34 +1,128 @@
-﻿using SparFlame.GamePlaySystem.Building;
+﻿using System.Globalization;
+using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.Resource;
 using SparFlame.UI.General;
 using TMPro;
+using Unity.Entities;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
-namespace SparFlame.UI.GamePlay.UI.GamePlayUI.BuildingWindows
+namespace SparFlame.UI.GamePlay
 {
-    public class BuildingDetailWindow : UIUtils.UIWindow
+    public class BuildingDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot,BuildingDetailWindow>,UIUtils.ISingleTargetWindow
     {
-        public GameObject buildingDetailPanel;
-        public TMP_Text buildingType;
-        public TMP_Text buildingHp;
-        public Image buildingIcon;
-        public Image buildingHpIcon;
         
+        // Config
+        [Header("Custom Config")]
+        [SerializeField]
+        private TMP_Text buildingType;
+        [SerializeField]
+        private TMP_Text buildingHp;
+        [SerializeField]
+        private Image buildingIcon;
+        [SerializeField]
+        private Image buildingHpIcon;
         
-        public override void Show(Vector2? pos = null)
-        {
-            throw new System.NotImplementedException();
-        }
+        // Interface
+        
+        // public static BuildingDetailWindow Instance;
+        
+     
 
         public override void Hide()
         {
-            throw new System.NotImplementedException();
+            base.Hide();
+            _targetEntity = Entity.Null;
         }
 
-        public override bool IsOpened()
+ 
+        public bool TrySwitchTarget(Entity target)
         {
-            throw new System.NotImplementedException();
+            if (!_em.HasComponent<BuildingAttr>(target)
+                || !_em.HasBuffer<CostList>(target)
+                || !_em.HasComponent<StatData>(target))
+                return false;
+            _targetEntity = target;
+            return true;
+        }
+
+        public bool HasTarget()
+        {
+            return _targetEntity != Entity.Null;
+        }
+
+        // Internal Data
+        private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
+        private Entity _targetEntity = Entity.Null;
+        
+        
+        // Cache
+        private GameObject _costSlotPrefab;
+        // ECS
+        private EntityManager _em;
+        private EntityQuery _notPauseTag;
+
+        #region EventFunction
+
+
+ 
+        
+        private void Start()
+        {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            panel.SetActive(false);
         }
         
+        private void Update()
+        {
+            if (_notPauseTag.IsEmpty) return;
+            if (!IsOpened()) return;
+            
+            if (!BuildingWindowResourceManager.Instance.IsResourceLoaded()
+                ||!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
+            if (_targetEntity != Entity.Null)
+                UpdateBuildingDetailInfo();
+        }
+
+        #endregion
+
+        
+        private void UpdateBuildingDetailInfo()
+        {
+            var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
+            var attr = _em.GetComponentData<BuildingAttr>(_targetEntity);
+            var statData = _em.GetComponentData<StatData>(_targetEntity);
+            var costList = _em.GetBuffer<CostList>(_targetEntity);
+            
+            // Visualize these attributes
+            buildingType.text = attr.Type.ToString();
+            buildingHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
+                          statData.MaxValue.ToString(CultureInfo.InvariantCulture);
+            buildingIcon.sprite = BuildingWindowResourceManager.Instance.BuildingTypeSprites[attr.Type];
+            buildingHpIcon.sprite = BasicWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
+            
+            for (var i = 0; i < Slots.Count; i++)
+            {
+                if (i < costList.Length)
+                {
+                    Slots[i].SetActive(true);
+                    var cost = costList[i];
+                    var costSlot = SlotComponents[i];
+                    costSlot.icon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[cost.Type];
+                    costSlot.label.text = cost.Type.ToString();
+                    costSlot.value.text = cost.Amount.ToString();
+                }
+                else
+                {
+                    Slots[i].SetActive(false);
+                }
+            }
+        }
+
+    
     }
 }

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Health
+  m_EditorClassIdentifier: 
+  m_GroupName: Health
+  m_GUID: d369d20acd80d48459c490b3f50b2963
+  m_SerializeEntries:
+  - m_GUID: 45e9320790bfe4e488cd680cc7a65b8a
+    m_Address: AllyHp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 821e7e208b461d547b51a8d364b4856c
+    m_Address: EnemyHp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c6564eed342e7404884b483146137364
+    m_Address: NeutralHp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: c1ce0c05379c90646a8607627318e658, type: 2}
+    - {fileID: 11400000, guid: 42e3144b039c05f4d9c842cf505e5005, type: 2}

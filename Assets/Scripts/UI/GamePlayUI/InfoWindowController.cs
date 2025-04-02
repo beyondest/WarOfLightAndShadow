@@ -4,7 +4,7 @@ using SparFlame.GamePlaySystem.Mouse;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Serialization;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -12,13 +12,14 @@ namespace SparFlame.UI.GamePlay
     /// This controller control all sub controllers about unit info, including :
     /// Unit2DShow, UnitInteractAbilityShow, UnitDetailShow, 
     /// </summary>
-    public class InfoWindowController : MonoBehaviour
+    public class InfoWindowController : MonoBehaviourSingleton<InfoWindowController>
     {
-        public static InfoWindowController Instance;
+        // public static InfoWindowController Instance;
 
         
         [Header("Custom config")] public GameObject infoPanel;
-        public GameObject maxmizeButton;
+        [FormerlySerializedAs("maxmizeButton")] [SerializeField]
+        private GameObject maximizeButton;
         public void OnMinimizeClick()
         {
             _minimizeWindow = !_minimizeWindow;
@@ -28,7 +29,7 @@ namespace SparFlame.UI.GamePlay
         public void OnMaximizeClick()
         {
             _minimizeWindow = !_minimizeWindow;
-            maxmizeButton.SetActive(false);
+            maximizeButton.SetActive(false);
             Show();
         }
         
@@ -50,13 +51,13 @@ namespace SparFlame.UI.GamePlay
         private EntityQuery _selectedData;
 
 
-        private void Awake()
-        {
-            if (Instance == null)
-                Instance = this;
-            else
-                Destroy(gameObject);
-        }
+        // private void Awake()
+        // {
+        //     if (Instance == null)
+        //         Instance = this;
+        //     else
+        //         Destroy(gameObject);
+        // }
 
         private void Start()
         {
@@ -103,13 +104,13 @@ namespace SparFlame.UI.GamePlay
                 if(!_minimizeWindow && !infoPanel.activeSelf)
                     Show();
                 else if (_minimizeWindow)
-                    maxmizeButton.SetActive(true);
+                    maximizeButton.SetActive(true);
             }
 
             if (shouldHideInfoWindow )
             {
                 if(_minimizeWindow)
-                    maxmizeButton.SetActive(false);
+                    maximizeButton.SetActive(false);
                 else if(!_minimizeWindow && infoPanel.activeSelf)
                     Hide();
             }
@@ -127,7 +128,7 @@ namespace SparFlame.UI.GamePlay
                     UnitMulti2DWindow.Instance.Show();
                 // Unit multi 2D will default show slot 0 as close up target if there is none
                 if (UnitMulti2DWindow.Instance.IsOpened() && !CloseUpWindow.Instance.HasTarget())
-                    UnitMulti2DWindow.Instance.OnClickUnit2D(0);
+                    UnitMulti2DWindow.Instance.OnClickSlot(0);
             }
             else
             {

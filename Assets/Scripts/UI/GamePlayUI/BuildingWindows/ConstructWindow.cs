@@ -2,29 +2,20 @@
 using System.Collections.Generic;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Mouse;
-using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.General;
-using Unity.Collections;
-using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 // ReSharper disable PossibleNullReferenceException
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConstructWindow : UIUtils.UIWindow
+    public class ConstructWindow : UIUtils.MultiSlotsWindow<MultiShowSlot, ConstructWindow>
     {
-        public static ConstructWindow Instance;
+        // public static ConstructWindow Instance;
         [NonSerialized] public bool InitWindowEvents = false;
-        [Header("Custom config")] public GameObject constructPanel;
+        [Header("Custom config")]
         public KeyCode exitGhostModeKey = KeyCode.Escape;
-
-        [Header("Multi building slot config")] public AssetReferenceGameObject buildingSlotPrefab;
-        public UIUtils.MultiShowSlotConfig multiShowSlotConfig;
 
         public Action<BuildingType, int> EcsGhostShowTarget;
         public Action EcsExitGhostShow;
@@ -32,12 +23,12 @@ namespace SparFlame.UI.GamePlay
 
 
         #region ButtonMethods
-        public void OnClickBuildingSprite(int slotIndex)
+
+        public override void OnClickSlot(int slotIndex)
         {
             EcsGhostShowTarget?.Invoke(_currentBuildingType,_saveIndices[slotIndex]);
         }
-        
-        
+
         public void OnClickBuildingTypeButton(BuildingType buildingType)
         {
             _currentBuildingType = buildingType;
@@ -52,33 +43,26 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickTierButton(Tier tier)
         {
-            _currentTier = _currentTier == tier ? Tier.None : tier;
+            _currentTier = _currentTier == tier ? Tier.TierNone : tier;
             UpdateBuildingCandidates();
         }
         #endregion
         
         public override void Show(Vector2? pos = null)
         {
-            constructPanel.SetActive(true);
+            base.Show(pos);
             UpdateBuildingCandidates();
         }
 
-        public override void Hide()
-        {
-            constructPanel.SetActive(false);
-        }
+   
 
-        public override bool IsOpened()
-        {
-            return constructPanel.activeSelf;
-        }
-
+   
 
         // Internal Data
 
 
         private int _currentSubType = -1;
-        private Tier _currentTier = Tier.None;
+        private Tier _currentTier = Tier.TierNone;
         private BuildingType _currentBuildingType;
         private AsyncOperationHandle<GameObject> _slotPrefabHandle;
 
@@ -87,33 +71,11 @@ namespace SparFlame.UI.GamePlay
         private GameObject _buildingSlotPrefab;
         private readonly List<Sprite> _buildingSprites = new();
         private readonly List<int> _saveIndices = new();
-        private readonly List<GameObject> _buildingSlots = new();
 
-        private void Awake()
-        {
-            if (Instance == null)
-                Instance = this;
-            else
-                Destroy(gameObject);
-        }
 
-        private void OnEnable()
-        {
-            _slotPrefabHandle = CR.LoadAssetRefAsync<GameObject>(buildingSlotPrefab, prefab =>
-            {
-                _buildingSlotPrefab = prefab;
-                UIUtils.InitMultiShowSlotsByIndex(_buildingSlots, constructPanel, _buildingSlotPrefab,
-                    in multiShowSlotConfig,
-                    OnClickBuildingSprite);
-            });
-        }
 
-        private void OnDisable()
-        {
-            Addressables.Release(_slotPrefabHandle);
-            _buildingSlots.Clear();
-        }
-
+    
+     
 
         private void UpdateBuildingCandidates()
         {
@@ -123,18 +85,18 @@ namespace SparFlame.UI.GamePlay
             BuildingWindowResourceManager.Instance.GetFilteredSprites(_currentBuildingType, _buildingSprites,
                 _saveIndices, _currentSubType, _currentTier);
 
-            var count = Mathf.Min(_buildingSlots.Count, _buildingSprites.Count);
-            for (var i = 0; i < _buildingSlots.Count; i++)
+            var count = Mathf.Min(Slots.Count, _buildingSprites.Count);
+            for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < count)
                 {
-                    _buildingSlots[i].SetActive(true);
-                    var buildingSlot = _buildingSlots[i].GetComponent<BuildingSlot>();
+                    Slots[i].SetActive(true);
+                    var buildingSlot = SlotComponents[i];
                     buildingSlot.button.image.sprite = _buildingSprites[i];
                 }
                 else
                 {
-                    _buildingSlots[i].SetActive(false);
+                    Slots[i].SetActive(false);
                 }
             }
         }

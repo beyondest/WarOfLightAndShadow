@@ -13,12 +13,17 @@ namespace SparFlame.UI.GamePlay
 {
     public class BuildingWindowResourceManager : CustomResourceManager
     {
+        [Header("Config")]
         public BuildingDatabaseSo buildingDatabaseSo;
 
+        [SerializeField]
+        [CanBeNull] private string buildingTypeSuffix;
+        
+        
         public static BuildingWindowResourceManager Instance;
 
-        public readonly Dictionary<BuildingType, List<BuildingInfoSpritePair>> BuildingType2Sprites = new();
-
+        public readonly Dictionary<BuildingType, List<BuildingInfoSpritePair>> BuildingTypeInfoList = new();
+        public readonly Dictionary<BuildingType, Sprite> BuildingTypeSprites = new();
         private AddressableResourceGroup _buildingSpritesHandleGroup;
 
         private void Awake()
@@ -33,12 +38,12 @@ namespace SparFlame.UI.GamePlay
         {
             foreach (BuildingType type in Enum.GetValues(typeof(BuildingType)))
             {
-                BuildingType2Sprites.Add(type, new List<BuildingInfoSpritePair>());
+                BuildingTypeInfoList.Add(type, new List<BuildingInfoSpritePair>());
             }
 
             foreach (var buildingData in buildingDatabaseSo.buildingsData)
             {
-                var list = BuildingType2Sprites[buildingData.buildingType];
+                var list = BuildingTypeInfoList[buildingData.buildingType];
                 var index = list.Count;
                 list.Add(default);
                 var handle = CR.LoadAssetRefAsync<Sprite>(buildingData.sprite2D, sprite =>
@@ -52,11 +57,18 @@ namespace SparFlame.UI.GamePlay
                 });
                 _buildingSpritesHandleGroup.Add(handle);
             }
+
+            var handle1 = CR.LoadTypeSuffix<BuildingType, Sprite>(buildingTypeSuffix,
+                result =>
+                {
+                    CR.OnTypeSuffixLoadComplete(result, BuildingTypeSprites);
+                });
+            _buildingSpritesHandleGroup.Add(handle1);
         }
 
         public override bool IsResourceLoaded()
         {
-            return _buildingSpritesHandleGroup.IsHandleCreated(buildingDatabaseSo.buildingsData.Count) &&
+            return _buildingSpritesHandleGroup.IsHandleCreated(buildingDatabaseSo.buildingsData.Count + 1) &&
                    _buildingSpritesHandleGroup.IsDone;
         }
 
@@ -68,13 +80,13 @@ namespace SparFlame.UI.GamePlay
         }
 
         public void GetFilteredSprites(BuildingType buildingType, List<Sprite> sprites, List<int> saveIndices,
-            int subType = -1, Tier tier = Tier.None)
+            int subType = -1, Tier tier = Tier.TierNone)
         {
-            var list = BuildingType2Sprites[buildingType];
+            var list = BuildingTypeInfoList[buildingType];
             for (var i = 0; i < list.Count; i++)
             {
                 if (subType != -1 && list[i].Subtype != subType) continue;
-                if (tier != Tier.None && list[i].Tier != tier) continue;
+                if (tier == Tier.TierNone && list[i].Tier != tier) continue;
                 sprites.Add(list[i].Sprite);
                 saveIndices.Add(i);
             }

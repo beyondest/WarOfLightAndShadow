@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Unit
+  m_EditorClassIdentifier: 
+  m_GroupName: Unit
+  m_GUID: ee9194b0945b920489255e9312b5f0de
+  m_SerializeEntries:
+  - m_GUID: 67c6944f579368148af33724204abda1
+    m_Address: Archer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8268a52e5babd2441ba69d9a5097095d
+    m_Address: Cavalry
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba5c3b1c2d1e2684e80a4ef0889c6bf5
+    m_Address: Melee
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bda70d8b26493f14b9523b053a3dec36
+    m_Address: Mage
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e163357be41bf3344a2539b8539decbc
+    m_Address: Farmer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 31209bd0aa1d6884bba7ad32996385bc, type: 2}
+    - {fileID: 11400000, guid: 685045f045affab46afb6107d0475cb7, type: 2}

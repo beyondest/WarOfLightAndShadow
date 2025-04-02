@@ -17,15 +17,12 @@ namespace SparFlame.UI.GamePlay
         
         // Config
         [Header("Resource config")]
-        [CanBeNull] public string unitType2DSpriteSuffix;
-        [CanBeNull] public string resourceTypeSpriteSuffix;
-        [CanBeNull] public string factionTypeHpSpriteSuffix = "Hp";
-
+        [SerializeField]
+        [CanBeNull] private string unitType2DSpriteSuffix;
+ 
         // Interface
         public static UnitWindowResourceManager Instance;
-        public readonly Dictionary<ResourceType, Sprite> ResourceSprites = new();
         public readonly Dictionary<UnitType, Sprite> UnitSprites = new();
-        public readonly Dictionary<FactionTag, Sprite> FactionHpSprites = new();
         public readonly Dictionary<InteractType, List<Sprite>> InteractAbilitySprites = new();
         
         
@@ -33,27 +30,19 @@ namespace SparFlame.UI.GamePlay
 
         private void OnEnable()
         {
-            CR.LoadNameByEnumAndProperty<InteractType,IInteractAbility,Sprite>(_infoWindowResourceGroup, InteractAbilitySprites,1);
+            CR.LoadEnumProperties<InteractType,IInteractAbility,Sprite>(_infoWindowResourceGroup, InteractAbilitySprites,1);
             var handle1 = CR.LoadTypeSuffix<UnitType, Sprite>(unitType2DSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, UnitSprites));
-            var handle2 = CR.LoadTypeSuffix<ResourceType, Sprite>(resourceTypeSpriteSuffix,
-                result => CR.OnTypeSuffixLoadComplete(result, ResourceSprites));
-            var handle3 = CR.LoadTypeSuffix<FactionTag, Sprite>(factionTypeHpSpriteSuffix,
-                result => CR.OnTypeSuffixLoadComplete(result, FactionHpSprites));
+            
             _infoWindowResourceGroup.Add(handle1);
-            _infoWindowResourceGroup.Add(handle2);
-            _infoWindowResourceGroup.Add(handle3);
         }
 
         
-
 
         private void OnDisable()
         {
             _infoWindowResourceGroup.Release();
             UnitSprites.Clear();
-            ResourceSprites.Clear();
-            FactionHpSprites.Clear();
             InteractAbilitySprites.Clear();
         }
 
@@ -67,7 +56,7 @@ namespace SparFlame.UI.GamePlay
 
         public override bool IsResourceLoaded()
         {
-            return _infoWindowResourceGroup.IsHandleCreated(6)
+            return _infoWindowResourceGroup.IsHandleCreated(4)
                    && _infoWindowResourceGroup.IsDone;
         }
         

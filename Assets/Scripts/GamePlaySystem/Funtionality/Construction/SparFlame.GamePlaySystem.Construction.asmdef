@@ -1,0 +1,30 @@
+{
+    "name": "SparFlame.GamePlaySystem.Construction",
+    "rootNamespace": "SparFlame.GamePlaySystem.Construction",
+    "references": [
+        "GUID:734d92eba21c94caba915361bd5ac177",
+        "GUID:8819f35a0fc84499b990e90a4ca1911f",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:2665a8d13d1b3f18800f46e256720795",
+        "GUID:63afb046c8423dd448ae7aba042ea63d",
+        "GUID:6bfefdf09ee6431fae75a6f5e06a0e89",
+        "GUID:27ec25767261a874b90f8e47a4dd0165",
+        "GUID:a5baed0c9693541a5bd947d336ec7659",
+        "GUID:7a450cf7ca9694b5a8bfa3fd83ec635a",
+        "GUID:ab16d1152636c504194f597e758dc94b",
+        "GUID:764dc1fd85fbafa4888eee3e4cb8c621",
+        "GUID:c96d68d792fd1734e95641cd6dfbc646",
+        "GUID:c9c6a6288ed61f64a98de2e4473eebc0",
+        "GUID:ae6f7a3bb06b5304098ba32b29efd00c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
