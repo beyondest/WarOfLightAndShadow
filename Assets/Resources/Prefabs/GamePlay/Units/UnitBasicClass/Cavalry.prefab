@@ -44,6 +44,10 @@ PrefabInstance:
       propertyPath: m_Center.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2897515523720364013, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: gameplayName
+      value: Cavalry
+      objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Capsule.Axis
       value: 1

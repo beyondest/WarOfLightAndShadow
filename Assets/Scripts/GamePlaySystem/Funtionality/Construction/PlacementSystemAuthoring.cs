@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -14,37 +15,17 @@ namespace SparFlame.GamePlaySystem.Building
         public GameObject ghostTriggerPrefab;
         public GameObject allyResource;
         public GameObject enemyResource;
-        public List<StateTypeMaterialRefPair> stateTypeMaterialRefs;
+        public GameObject validRef;
+        public GameObject overlappingRef;
+        public GameObject notEnoughResourceRef;
+        public GameObject notConstructableRef;
 
         private class PlaceSystemAuthoringBaker : Baker<PlacementSystemAuthoring>
         {
             public override void Bake(PlacementSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                GameObject valid = new();
-                GameObject overlapping = new();
-                GameObject notEnough = new();
-                GameObject notConstructable = new();
-                foreach (var pair in authoring.stateTypeMaterialRefs)
-                {
-                    switch (pair.state)
-                    {
-                        case PlacementStateType.Valid:
-                            valid = pair.materialRef;
-                            break;
-                        case PlacementStateType.Overlapping:
-                            overlapping = pair.materialRef;
-                            break;
-                        case PlacementStateType.NotEnoughResources:
-                            notEnough = pair.materialRef;
-                            break;
-                        case PlacementStateType.NotConstructable:
-                            notConstructable = pair.materialRef;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
-                }
+
 
                 AddComponent(entity, new PlacementSystemConfig
                 {
@@ -54,10 +35,10 @@ namespace SparFlame.GamePlaySystem.Building
 
                     GhostTriggerPrefab = GetEntity(authoring.ghostTriggerPrefab, TransformUsageFlags.Dynamic),
 
-                    ValidPreset = GetEntity(valid, TransformUsageFlags.None),
-                    OverlappingPreset = GetEntity(overlapping, TransformUsageFlags.None),
-                    NotEnoughResourcesPreset = GetEntity(notEnough, TransformUsageFlags.None),
-                    NotConstructablePreset = GetEntity(notConstructable, TransformUsageFlags.None),
+                    ValidPreset = GetEntity(authoring.validRef, TransformUsageFlags.None),
+                    OverlappingPreset = GetEntity(authoring.overlappingRef, TransformUsageFlags.None),
+                    NotEnoughResourcesPreset = GetEntity(authoring.notEnoughResourceRef, TransformUsageFlags.None),
+                    NotConstructablePreset = GetEntity(authoring.notConstructableRef, TransformUsageFlags.None),
                 });
             }
         }
@@ -108,10 +89,15 @@ namespace SparFlame.GamePlaySystem.Building
         public FactionTag Faction;
         public quaternion Rotation;
         public Entity TargetBuilding;
+        public bool IsMovementShow;
 
         // Feedback
-        public Entity GhostEntity;
+        public Entity GhostModelEntity; // Only the model of target building
         public Entity GhostTriggerEntity;
         public PlacementStateType State;
+        
+        // Internal data
+        public LocalTransform OriTransform;
+        public LocalTransform RelativeTransformToParent;
     }
 }

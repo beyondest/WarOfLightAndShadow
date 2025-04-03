@@ -9,6 +9,7 @@ namespace SparFlame.GamePlaySystem.Building
     /// </summary>
     public class ConstructableAttributeAuthoring : MonoBehaviour
     {
+        public FactionTag factionTag;
         private class ConstructableAttributeAuthoringBaker : Baker<ConstructableAttributeAuthoring>
         {
             public override void Bake(ConstructableAttributeAuthoring authoring)
@@ -16,7 +17,7 @@ namespace SparFlame.GamePlaySystem.Building
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new Constructable
                 {
-                    Faction = FactionTag.Neutral
+                    Faction = authoring.factionTag,
                 });
             }
         }

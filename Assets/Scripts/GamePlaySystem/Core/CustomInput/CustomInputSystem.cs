@@ -11,17 +11,13 @@ namespace SparFlame.GamePlaySystem.Mouse
     [UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class CustomInputSystem : SystemBase
     {
-        private float _raycastDistance;
-        private float _doubleClickThreshold;
-        private uint _clickableLayerMask;
-        private uint _mouseRayLayerMask;
-        private int _leftClickIndex;
-        private int _rightClickIndex;
 
+        
         private Camera _camera;
-        private float _clickThreshold;
         private bool _isDoubleClick;
 
+        private CustomInputSystemConfig _config;
+        private CustomKeyMapping _keyMapping;
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -33,21 +29,17 @@ namespace SparFlame.GamePlaySystem.Mouse
         protected override void OnStartRunning()
         {
             _camera = Camera.main;
-            var config = SystemAPI.GetSingleton<CustomInputSystemConfig>();
-            _raycastDistance = config.RaycastDistance;
-            _doubleClickThreshold = config.DoubleClickThreshold;
-            _clickableLayerMask = config.ClickableLayerMask;
-            _mouseRayLayerMask = config.MouseRayLayerMask;
-            _leftClickIndex = config.LeftClickIndex;
-            _rightClickIndex = _leftClickIndex == 0 ? 1 : 0;
+            _config = SystemAPI.GetSingleton<CustomInputSystemConfig>();
+            _keyMapping = SystemAPI.GetSingleton<CustomKeyMapping>();
+        
         }
 
         protected override void OnUpdate()
         {
             _camera = Camera.main;
             if (_camera == null) return;
+           
             var inputSystemDataEntity = SystemAPI.GetSingletonEntity<CustomInputSystemData>();
-            var config = SystemAPI.GetSingleton<CustomInputSystemConfig>();
             var data = new CustomInputSystemData
             {
                 AddUnit = false,
@@ -87,10 +79,10 @@ namespace SparFlame.GamePlaySystem.Mouse
                 data.HitEntity = entity;
                 data.HitPosition = hitPosition;
             }
-
-            if (Input.GetMouseButtonDown(_leftClickIndex))
+            
+            if (Input.GetMouseButtonDown(_keyMapping.LeftClickIndex))
             {
-                if (_clickThreshold < _doubleClickThreshold)
+                if (_config. < _doubleClickThreshold)
                 {
                     _isDoubleClick = true;
                 }
@@ -99,13 +91,13 @@ namespace SparFlame.GamePlaySystem.Mouse
                 data.ClickFlag = ClickFlag.Start;
             }
 
-            if (Input.GetMouseButton(_leftClickIndex))
+            if (Input.GetMouseButton(_keyMapping.LeftClickIndex))
             {
                 data.ClickType = ClickType.Left;
                 data.ClickFlag = (data.ClickFlag == ClickFlag.Start) ? ClickFlag.Start : ClickFlag.Clicking;
             }
 
-            if (Input.GetMouseButtonUp(_leftClickIndex))
+            if (Input.GetMouseButtonUp(_keyMapping.LeftClickIndex))
             {
                 data.ClickType = ClickType.Left;
                 data.ClickFlag = ClickFlag.End;
@@ -113,7 +105,7 @@ namespace SparFlame.GamePlaySystem.Mouse
 
             if (Input.GetMouseButtonDown(_rightClickIndex))
             {
-                if (_clickThreshold < _doubleClickThreshold)
+                if (_config. < _doubleClickThreshold)
                 {
                     _isDoubleClick = true;
                 }
@@ -163,13 +155,13 @@ namespace SparFlame.GamePlaySystem.Mouse
             // Check if double click
             if (data.ClickFlag != ClickFlag.Start)
             {
-                _clickThreshold += SystemAPI.Time.DeltaTime;
-                _clickThreshold = math.min(10000, _clickThreshold);
+                _config. += SystemAPI.Time.DeltaTime;
+                _config. = math.min(10000, _config.);
             }
             else
             {
                 data.ClickFlag = _isDoubleClick ? ClickFlag.DoubleClick : ClickFlag.Start;
-                _clickThreshold = 0;
+                _config. = 0;
             }
         }
 

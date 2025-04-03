@@ -20,6 +20,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 253b4f4848a8d1f48ac8bd2eda23f493
+    m_Address: DivineRampart
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 277c19f8575df5e4493066a19ac48073
     m_Address: Relocate
     m_ReadOnly: 0

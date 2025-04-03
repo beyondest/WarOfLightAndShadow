@@ -6,8 +6,6 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using SparFlame.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
-using Object = UnityEngine.Object;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -19,12 +17,34 @@ namespace SparFlame.UI.GamePlay
         [SerializeField]
         [CanBeNull] private string buildingTypeSuffix;
         
-        
+        // Interface
         public static BuildingWindowResourceManager Instance;
-
-        public readonly Dictionary<BuildingType, List<BuildingInfoSpritePair>> BuildingTypeInfoList = new();
         public readonly Dictionary<BuildingType, Sprite> BuildingTypeSprites = new();
-        private AddressableResourceGroup _buildingSpritesHandleGroup;
+        
+        public void GetFilteredBuildingSprites(BuildingType buildingType, List<Sprite> sprites, List<int> saveIndices,
+            List<string> names,int subType = -1, Tier tier = Tier.TierNone)
+        {
+            var list = _buildingTypeInfoList[buildingType];
+            for (var i = 0; i < list.Count; i++)
+            {
+                if (subType != -1 && list[i].Subtype != subType) continue;
+                if (tier != Tier.TierNone && list[i].Tier != tier) continue;
+                sprites.Add(list[i].Sprite);
+                saveIndices.Add(i);
+                names.Add(list[i].GameplayName);
+            }
+        }
+        
+        public override bool IsResourceLoaded()
+        {
+            return _buildingSpritesHandleGroup.IsHandleCreated(buildingDatabaseSo.buildingsData.Count + 1) &&
+                   _buildingSpritesHandleGroup.IsDone;
+        }
+        
+        
+        
+        private readonly AddressableResourceGroup _buildingSpritesHandleGroup = new();
+        private readonly Dictionary<BuildingType, List<BuildingInfoSpritePair>> _buildingTypeInfoList = new();
 
         private void Awake()
         {
@@ -38,12 +58,12 @@ namespace SparFlame.UI.GamePlay
         {
             foreach (BuildingType type in Enum.GetValues(typeof(BuildingType)))
             {
-                BuildingTypeInfoList.Add(type, new List<BuildingInfoSpritePair>());
+                _buildingTypeInfoList.Add(type, new List<BuildingInfoSpritePair>());
             }
 
             foreach (var buildingData in buildingDatabaseSo.buildingsData)
             {
-                var list = BuildingTypeInfoList[buildingData.buildingType];
+                var list = _buildingTypeInfoList[buildingData.BuildingType];
                 var index = list.Count;
                 list.Add(default);
                 var handle = CR.LoadAssetRefAsync<Sprite>(buildingData.sprite2D, sprite =>
@@ -52,7 +72,8 @@ namespace SparFlame.UI.GamePlay
                     {
                         Subtype = buildingData.GetSubtype(),
                         Sprite = sprite,
-                        Tier = buildingData.tier
+                        Tier = buildingData.Tier,
+                        GameplayName = buildingData.GameplayName
                     };
                 });
                 _buildingSpritesHandleGroup.Add(handle);
@@ -66,30 +87,16 @@ namespace SparFlame.UI.GamePlay
             _buildingSpritesHandleGroup.Add(handle1);
         }
 
-        public override bool IsResourceLoaded()
-        {
-            return _buildingSpritesHandleGroup.IsHandleCreated(buildingDatabaseSo.buildingsData.Count + 1) &&
-                   _buildingSpritesHandleGroup.IsDone;
-        }
+  
 
-        public struct BuildingInfoSpritePair
+        private struct BuildingInfoSpritePair
         {
             public Sprite Sprite;
             public int Subtype;
             public Tier Tier;
+            public string GameplayName;
         }
 
-        public void GetFilteredSprites(BuildingType buildingType, List<Sprite> sprites, List<int> saveIndices,
-            int subType = -1, Tier tier = Tier.TierNone)
-        {
-            var list = BuildingTypeInfoList[buildingType];
-            for (var i = 0; i < list.Count; i++)
-            {
-                if (subType != -1 && list[i].Subtype != subType) continue;
-                if (tier == Tier.TierNone && list[i].Tier != tier) continue;
-                sprites.Add(list[i].Sprite);
-                saveIndices.Add(i);
-            }
-        }
+
     }
 }

@@ -7,6 +7,7 @@ using SparFlame.UI.GamePlay;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using BuildingSlot = SparFlame.GamePlaySystem.Building.BuildingSlot;
 
@@ -16,11 +17,11 @@ namespace SparFlame.GamePlaySystem.Construction
     {
         private NativeHashMap<int, NativeList<Entity>> _buildingDatabase;
         
-        private FactionTag _playerCurrentFaction;    // Only work for player command
+        private FactionTag _playerCurrentFaction = FactionTag.Ally;    // Only work for player command
         private bool _showGhostBuilding;
+        
         private EntityQuery _notPauseTag;
         private EntityQuery _commandData;
-        
         
         protected override void OnCreate()
         {
@@ -36,53 +37,73 @@ namespace SparFlame.GamePlaySystem.Construction
             {
                 InitBuildingDatabase();
             }
-            if(ConstructWindow.Instance == null)return;
+            if(ConstructWindow.Instance == null || BuildingDetailWindow.Instance == null)return;
             if (!ConstructWindow.Instance.InitWindowEvents)
             {
-                ConstructWindow.Instance.EcsGhostShowTarget += (buildingType, saveIndex) =>
+                ConstructWindow.Instance.EcsGhostShowTargetByTypeIndex += (buildingType, saveIndex) =>
                 {
                     GhostShowTargetBuilding(_buildingDatabase[(int)buildingType][saveIndex]);
                 };
-                ConstructWindow.Instance.EcsBuildTarget += BuildTarget;
                 ConstructWindow.Instance.EcsExitGhostShow += ExitGhostShow;
                 ConstructWindow.Instance.InitWindowEvents = true;
             }
-            
+
+            if (!BuildingDetailWindow.Instance.InitWindowEvents)
+            {
+                BuildingDetailWindow.Instance.EcsGhostShowTarget += entity =>
+                {
+                    MovementGhostShowTargetBuilding(in config,entity);
+                };
+                BuildingDetailWindow.Instance.InitWindowEvents = true;
+            }
+
             if(!ConstructWindow.Instance.IsOpened())return;
             var selectData = SystemAPI.GetSingleton<UnitSelectionData>();
             var customInput = SystemAPI.GetSingleton<CustomInputSystemData>();
             _playerCurrentFaction = selectData.CurrentSelectFaction;
             
             if(_commandData.IsEmpty)return;
-            
+
             if (customInput is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left, IsOverUI: false })
             {
                 var datas = _commandData.ToComponentDataArray<PlacementCommandData>(Allocator.Temp);
-                var data = new PlacementCommandData();
                 for (var i = 0; i < datas.Length; i++)
                 {
                     if (datas[i].Faction != _playerCurrentFaction) // This may happen when enemy is in ghost mode with player
                         continue;
-                    data = datas[i];
+                    var data = datas[i];
+                    switch (data.State)
+                    {
+                        case PlacementStateType.Valid:
+                            BuildTarget();
+                            break;
+                        case PlacementStateType.Overlapping:
+                            break;
+                        case PlacementStateType.NotEnoughResources:
+                            break;
+                        case PlacementStateType.NotConstructable:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
-                switch (data.State)
-                {
-                    case PlacementStateType.Valid:
-                        BuildTarget();
-                        break;
-                    case PlacementStateType.Overlapping:
-                    case PlacementStateType.NotEnoughResources:
-                    case PlacementStateType.NotConstructable:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+               
             }
 
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                ExitGhostShow();
-            }
+            // if (Input.GetKeyDown(KeyCode.Escape))
+            // {
+            //     ExitGhostShow();
+            // }
+        }
+
+        private void MovementGhostShowTargetBuilding(in ConstructSystemConfig config,Entity entity)
+        {
+            // Hide this entity for now, just move it to invisible place
+             var transform = EntityManager.GetComponentData<LocalTransform>(entity);
+             var oriTransform = transform;
+             transform.Position = config.HideBuildingLocation;
+             EntityManager.SetComponentData(entity, transform);
+             GhostShowTargetBuilding(entity,true, oriTransform);
         }
 
         private void InitBuildingDatabase()
@@ -111,34 +132,37 @@ namespace SparFlame.GamePlaySystem.Construction
         {
             if (_buildingDatabase.IsCreated)
             {
+                foreach (var pair in _buildingDatabase)
+                {
+                    pair.Value.Dispose();
+                }
                 _buildingDatabase.Dispose();
             }
         }
 
         #region GhostShow
 
-        private void EnterGhostShow(Entity target)
+        private void GhostShowTargetBuilding(Entity target,bool movementShow = false,LocalTransform oriTransform = default)
         {
-            var entity = EntityManager.CreateEntity();
-            EntityManager.AddComponent<PlacementCommandData>(entity);
-            var data = new PlacementCommandData
-            {
-                TargetBuilding = target,
-                CommandType = PlacementCommandType.Start,
-                Faction = _playerCurrentFaction,
-                GhostEntity = Entity.Null,
-                GhostTriggerEntity = Entity.Null,
-                Rotation = quaternion.identity,
-                State = PlacementStateType.Valid
-            };
-            EntityManager.SetComponentData(entity, data);
-        }
-
-        private void GhostShowTargetBuilding(Entity target)
-        {
+            // First time enter building mode, need to create command data
             if (!_showGhostBuilding)
             {
-                EnterGhostShow(target);
+                var entity = EntityManager.CreateEntity();
+                EntityManager.AddComponent<PlacementCommandData>(entity);
+                var data = new PlacementCommandData
+                {
+                    TargetBuilding = target,
+                    CommandType = PlacementCommandType.Start,
+                    Faction = _playerCurrentFaction,
+                    GhostModelEntity = Entity.Null,
+                    GhostTriggerEntity = Entity.Null,
+                    Rotation = quaternion.identity,
+                    State = PlacementStateType.Valid,
+                    IsMovementShow = movementShow,
+                    OriTransform = oriTransform
+                };
+                EntityManager.SetComponentData(entity, data);
+                _showGhostBuilding = true;
                 return;
             }
 

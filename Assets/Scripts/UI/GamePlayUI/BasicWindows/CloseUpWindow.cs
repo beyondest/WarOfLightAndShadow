@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
@@ -15,7 +16,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class CloseUpWindow : UIUtils.MultiSlotsWindow<BuffSlot,CloseUpWindow>,UIUtils.ISingleTargetWindow
+    public class CloseUpWindow : UIUtils.MultiSlotsWindow<BuffSlot>,UIUtils.ISingleTargetWindow
     {
 
         // Config
@@ -42,7 +43,7 @@ namespace SparFlame.UI.GamePlay
 
 
         // Interface
-        // public static CloseUpWindow Instance;
+        public static CloseUpWindow Instance;
 
         public override void Show(Vector2? pos = null)
         {
@@ -65,7 +66,6 @@ namespace SparFlame.UI.GamePlay
         public bool TrySwitchTarget(Entity target)
         {
             if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return false;
-
             // reset the last target layer
             SetLayerRecursively(_closeUpTarget, _oriLayer);
 
@@ -117,9 +117,14 @@ namespace SparFlame.UI.GamePlay
         private EntityQuery _notPauseTag;
 
 
- 
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
- 
 
         private void Start()
         {

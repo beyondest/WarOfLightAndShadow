@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class InteractAbilityWindow :UIUtils.MultiSlotsWindow<AttributeSlot,InteractAbilityWindow>,UIUtils.ISingleTargetWindow
+    public class InteractAbilityWindow :UIUtils.MultiSlotsWindow<AttributeSlot>,UIUtils.ISingleTargetWindow
     {
         // public static InteractAbilityWindow Instance;
 
@@ -21,9 +21,9 @@ namespace SparFlame.UI.GamePlay
         private Button healBar;
         [SerializeField]
         private Button harvestBar;
-        
 
- 
+
+        public static InteractAbilityWindow Instance;
 
         public override void Hide()
         {
@@ -48,7 +48,6 @@ namespace SparFlame.UI.GamePlay
             if (healable) OnClickHealBar();
             if (attackable) OnClickAttackBar();
             return true;
-
         }
 
         public bool HasTarget()
@@ -92,15 +91,15 @@ namespace SparFlame.UI.GamePlay
         private EntityManager _em;
         private EntityQuery _notPauseTag;
 
-        // private void Awake()
-        // {
-        //     if (Instance == null)
-        //         Instance = this;
-        //     else
-        //         Destroy(gameObject);
-        // }
+ 
 
-
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
   
 
@@ -118,7 +117,7 @@ namespace SparFlame.UI.GamePlay
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
-
+            if(!BasicWindowResourceManager.Instance.IsResourceLoaded())return;
             switch (_currentBar)
             {
                 case InteractType.Attack:

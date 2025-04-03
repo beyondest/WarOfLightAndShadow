@@ -1,28 +1,32 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Mouse;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine;
+using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-
+// TODO : Check why location of ghost cannot be sync with hit position
 namespace SparFlame.GamePlaySystem.Building
 {
+    [UpdateAfter(typeof(CustomInputSystem))]
+    [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct PlacementSystem : ISystem
     {
-        private ComponentLookup<MaterialMeshInfo> _materialLookup;
-        private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<Constructable> _constructableLookup;
-        private BufferLookup<CostList> _costLookup;
-        private BufferLookup<ResourceData> _resourceLookup;
-        private BufferLookup<LinkedEntityGroup> _childLookup;
-        private BufferLookup<StatefulTriggerEvent> _triggerEvents;
 
+        private BufferLookup<CostList> _costLookup;
+
+        private EntityQuery _entityQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -32,184 +36,250 @@ namespace SparFlame.GamePlaySystem.Building
             state.RequireForUpdate<CustomInputSystemData>();
             state.RequireForUpdate<PlacementSystemConfig>();
 
-            _materialLookup = state.GetComponentLookup<MaterialMeshInfo>();
-            _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _constructableLookup = state.GetComponentLookup<Constructable>(true);
-
-            _childLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
-            _triggerEvents = state.GetBufferLookup<StatefulTriggerEvent>(true);
             _costLookup = state.GetBufferLookup<CostList>(true);
-            _resourceLookup = state.GetBufferLookup<ResourceData>();
+
+            _entityQuery = SystemAPI.QueryBuilder().WithAllRW<PlacementCommandData>().Build();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            // TODO : Support for building movement
             // TODO : Add construction time and animation support
-            _materialLookup.Update(ref state);
-            _localTransformLookup.Update(ref state);
             _constructableLookup.Update(ref state);
 
-            _childLookup.Update(ref state);
-            _resourceLookup.Update(ref state);
-            _triggerEvents.Update(ref state);
             _costLookup.Update(ref state);
 
-            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            if (_entityQuery.IsEmpty) return;
             var config = SystemAPI.GetSingleton<PlacementSystemConfig>();
             var customInputData = SystemAPI.GetSingleton<CustomInputSystemData>();
-            new PlacementJob
+
+            var entities = _entityQuery.ToEntityArray(Allocator.Temp);
+            var datas = _entityQuery.ToComponentDataArray<PlacementCommandData>(Allocator.Temp);
+            for (var i = 0; i < entities.Length; ++i)
             {
-                ConstructableLookup = _constructableLookup,
-                LocalTransformLookup = _localTransformLookup,
-                MaterialLookup = _materialLookup,
-                ResourceLookup = _resourceLookup,
-                ChildLookup = _childLookup,
-                TriggerEvents = _triggerEvents,
-                CostLookup = _costLookup,
-                Config = config,
-                CustomInputData = customInputData,
-                ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
-            }.ScheduleParallel();
-
-        }
-
-        
-
-
-        [BurstCompile]
-        public partial struct PlacementJob : IJobEntity
-        {
-            [ReadOnly] public ComponentLookup<Constructable> ConstructableLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<MaterialMeshInfo> MaterialLookup;
-            [NativeDisableParallelForRestriction] public BufferLookup<ResourceData> ResourceLookup;
-
-            [ReadOnly] public BufferLookup<LinkedEntityGroup> ChildLookup;
-            [ReadOnly] public BufferLookup<StatefulTriggerEvent> TriggerEvents;
-            [ReadOnly] public BufferLookup<CostList> CostLookup;
-
-
-            [ReadOnly] public PlacementSystemConfig Config;
-            [ReadOnly] public CustomInputSystemData CustomInputData;
-            public EntityCommandBuffer.ParallelWriter ECB;
-
-            private void Execute([ChunkIndexInQuery] int index, ref PlacementCommandData data, Entity entity)
-            {
-                DynamicBuffer<ResourceData> resourceData;
-                if (data.Faction == FactionTag.Ally)
-                {
-                    ResourceLookup.TryGetBuffer(Config.AllyResourceEntity, out resourceData);
-                }
-                else
-                {
-                    ResourceLookup.TryGetBuffer(Config.EnemyResourceEntity, out resourceData);
-                }
+                var data = datas[i];
+                var entity = entities[i];
+                var resourceData = SystemAPI.GetBuffer<ResourceData>(data.Faction == FactionTag.Ally
+                    ? config.AllyResourceEntity
+                    : config.EnemyResourceEntity);
 
                 switch (data.CommandType)
                 {
                     case PlacementCommandType.Drag:
+                        var valid = true;
                         // Check if resource is available
-                        foreach (var cost in CostLookup[data.TargetBuilding])
+                        if (!data.IsMovementShow)
                         {
-                            if (resourceData[(int)cost.Type].Amount < cost.Amount)
+                            foreach (var cost in _costLookup[data.TargetBuilding])
                             {
-                                SwitchBuildingState(ref data, PlacementStateType.NotEnoughResources, false);
+                                if (resourceData[(int)cost.Type].Amount < cost.Amount)
+                                {
+                                    SwitchBuildingState(ref state, ref data, PlacementStateType.NotEnoughResources,
+                                        in config, false);
+                                    valid = false;
+                                }
                             }
                         }
+
                         // Check if overlap with other colliders
-                        var events = TriggerEvents[data.GhostEntity];
+                        var events = SystemAPI.GetBuffer<StatefulTriggerEvent>(data.GhostTriggerEntity);
                         if (events.Length > 0)
                         {
-                            SwitchBuildingState(ref data, PlacementStateType.Overlapping, false);
+                            SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in config, false);
+                            valid = false;
                         }
+
                         // Check if mouse hit on constructable area
-                        if (!ConstructableLookup.TryGetComponent(CustomInputData.HitEntity, out var constructable) ||
+                        if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
                             constructable.Faction != data.Faction)
                         {
-                            SwitchBuildingState(ref data, PlacementStateType.NotConstructable, false);
+                            SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in config,
+                                false);
+                            valid = false;
                         }
+
+                        if (valid)
+                            SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, false);
                         // Synchronize the position and rotation of ghost building and ghost trigger with the input position
-                        ref var ghostTransform = ref LocalTransformLookup.GetRefRW(data.GhostEntity).ValueRW;
-                        ref var triggerTransform = ref LocalTransformLookup.GetRefRW(data.GhostTriggerEntity).ValueRW;
-                        ghostTransform.Position = CustomInputData.HitPosition;
-                        triggerTransform.Position = CustomInputData.HitPosition;
-                        ghostTransform.Rotation = data.Rotation;
-                        triggerTransform.Rotation = data.Rotation;
-                        return;
-                    
+                        ref var ghostTransform =
+                            ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostModelEntity).ValueRW;
+                        ref var triggerTransform =
+                            ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostTriggerEntity).ValueRW;
+                        var targetTransform = new LocalTransform
+                        {
+                            Position = customInputData.HitPosition,
+                            Rotation = data.Rotation,
+                            Scale = 1
+                        };
+                        ghostTransform = targetTransform;
+                        triggerTransform = targetTransform;
+                        state.EntityManager.SetComponentData(entity, data);
+                        break;
+
                     case PlacementCommandType.Start:
                         // Check if switch building, then should destroy prior ghost preview
-                        if (data.GhostEntity != Entity.Null)
+                        if (data.GhostModelEntity != Entity.Null)
                         {
-                            DestroyPriorGhost(index, ref data);
+                            DestroyPriorGhost(ref state, ref data);
                         }
+
                         // Create ghost preview
-                        var child = ChildLookup[data.GhostEntity][Config.ModelChildIndex].Value;
-                        data.GhostEntity = ECB.Instantiate(index, child);
-                        data.GhostTriggerEntity = ECB.Instantiate(index, Config.GhostTriggerPrefab);
-                        SwitchBuildingState(ref data, PlacementStateType.Valid, true);
+                        data.GhostModelEntity = InstantiateChildrenWithNewParent(ref state, data.TargetBuilding);
+                        data.GhostTriggerEntity = state.EntityManager.Instantiate(config.GhostTriggerPrefab);
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, true);
+                        AlignTriggerBoxCollider(ref state, in data);
                         data.CommandType = PlacementCommandType.Drag;
-                        return;
-                    
-                    case PlacementCommandType.End:
-                        DestroyPriorGhost(index, ref data);
-                        ECB.DestroyEntity(index, entity);
-                        
+                        state.EntityManager.SetComponentData(entity, data);
                         break;
-                        
+
+                    case PlacementCommandType.End:
+                        if (data.IsMovementShow) // Not move to new place, should return to original location
+                        {
+                            state.EntityManager.SetComponentData(data.TargetBuilding, data.OriTransform);
+                        }
+
+                        DestroyPriorGhost(ref state, ref data);
+                        state.EntityManager.DestroyEntity(entity);
+                        break;
 
                     case PlacementCommandType.Build when data.State == PlacementStateType.Valid:
                         // Reduce resources
-                        foreach (var cost in CostLookup[data.TargetBuilding])
+                        var newTransform = new LocalTransform
                         {
-                            var r = resourceData[(int)cost.Type];
-                            r.Amount -= cost.Amount;
-                            resourceData[(int)cost.Type] = r;
+                            Position = customInputData.HitPosition,
+                            Rotation = data.Rotation,
+                            Scale = 1f
+                        };
+                        if (!data.IsMovementShow)
+                        {
+                            foreach (var cost in _costLookup[data.TargetBuilding])
+                            {
+                                var r = resourceData[(int)cost.Type];
+                                r.Amount -= cost.Amount;
+                                resourceData[(int)cost.Type] = r;
+                            }
+
+                            // Create building
+                            var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
+                            state.EntityManager.SetComponentData(targetBuilding, newTransform);
+                            data.CommandType = PlacementCommandType.Drag; // Continue building
+                            state.EntityManager.SetComponentData(entity, data);
+                        }
+                        else
+                        {
+                            state.EntityManager.SetComponentData(data.TargetBuilding, newTransform);
+                            DestroyPriorGhost(ref state, ref data);
+                            state.EntityManager.DestroyEntity(entity); // Exit ghost show
                         }
 
-                        // Create building
-                        var targetBuilding = ECB.Instantiate(index, data.TargetBuilding);
-                        ref var transform = ref LocalTransformLookup.GetRefRW(targetBuilding).ValueRW;
-                        transform.Position = CustomInputData.HitPosition;
-                        transform.Rotation = data.Rotation;
-                        data.CommandType = PlacementCommandType.Drag;
-                        return;
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
+        }
 
-            private void DestroyPriorGhost(int index, ref PlacementCommandData data)
+        private void DestroyPriorGhost(ref SystemState state, ref PlacementCommandData data)
+        {
+            state.EntityManager.DestroyEntity(data.GhostModelEntity);
+            state.EntityManager.DestroyEntity(data.GhostTriggerEntity);
+            data.GhostModelEntity = Entity.Null;
+            data.GhostTriggerEntity = Entity.Null;
+            data.CommandType = PlacementCommandType.Drag;
+        }
+
+        private void SwitchBuildingState(ref SystemState state, ref PlacementCommandData data,
+            in PlacementStateType targetState, in PlacementSystemConfig config, bool force)
+        {
+            if (targetState == data.State && !force) return;
+            data.State = targetState;
+            var targetMaterial = targetState switch
             {
-                ECB.DestroyEntity(index, data.GhostEntity);
-                ECB.DestroyEntity(index, data.GhostTriggerEntity);
-                data.GhostEntity = Entity.Null;
-                data.GhostTriggerEntity = Entity.Null;
-                data.CommandType = PlacementCommandType.Drag;
+                PlacementStateType.Valid => SystemAPI.GetComponent<MaterialMeshInfo>(config.ValidPreset).Material,
+                PlacementStateType.Overlapping => SystemAPI.GetComponent<MaterialMeshInfo>(config.OverlappingPreset)
+                    .Material,
+                PlacementStateType.NotEnoughResources => SystemAPI
+                    .GetComponent<MaterialMeshInfo>(config.NotEnoughResourcesPreset)
+                    .Material,
+                PlacementStateType.NotConstructable => SystemAPI
+                    .GetComponent<MaterialMeshInfo>(config.NotConstructablePreset).Material,
+                _ => throw new ArgumentOutOfRangeException(nameof(targetState), targetState, null)
+            };
+            var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(data.GhostModelEntity);
+            for (int i = 1; i < buffer.Length; i++)
+            {
+                ChangeMaterial(ref state, buffer[i].Value, targetMaterial);
+            }
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ChangeMaterial(ref SystemState state, Entity entity, int newMaterial)
+        {
+            var material = SystemAPI.GetComponentRW<MaterialMeshInfo>(entity);
+            material.ValueRW.Material = newMaterial;
+        }
+
+        private void AlignTriggerBoxCollider(ref SystemState state, in PlacementCommandData data)
+        {
+            var targetCollider = SystemAPI.GetComponent<PhysicsCollider>(data.TargetBuilding);
+            var ghostTriggerCollider = SystemAPI.GetComponentRW<PhysicsCollider>(data.GhostTriggerEntity);
+            unsafe
+            {
+                var bxPtr = (BoxCollider*)targetCollider.ColliderPtr;
+                var targetBox = bxPtr->Geometry;
+                bxPtr = (BoxCollider*)ghostTriggerCollider.ValueRW.ColliderPtr;
+                bxPtr->Geometry = targetBox;
+            }
+        }
+
+
+
+
+        private Entity InstantiateChildrenWithNewParent(ref SystemState state, Entity oriParentEntity)
+        {
+            if (!SystemAPI.HasBuffer<LinkedEntityGroup>(oriParentEntity))
+                return Entity.Null;
+
+            var linkedEntities = SystemAPI.GetBuffer<LinkedEntityGroup>(oriParentEntity);
+            if (linkedEntities.Length <= 1)
+                return Entity.Null;
+            using var originalChildren = new NativeList<Entity>(linkedEntities.Length - 1, Allocator.Temp);
+
+            for (var i = 1; i < linkedEntities.Length; i++)
+            {
+                originalChildren.Add(linkedEntities[i].Value);
             }
 
+            // Create new parent
+            var newParentEntity = state.EntityManager.CreateEntity(typeof(LocalTransform));
+            state.EntityManager.AddComponent<LocalToWorld>(newParentEntity);
+            var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(newParentEntity);
+            buffer.Add(newParentEntity);
 
-            private void SwitchBuildingState(ref PlacementCommandData data,
-                in PlacementStateType targetState, bool force)
+            // Get original parent world transform
+            var bLtw = state.EntityManager.GetComponentData<LocalToWorld>(oriParentEntity);
+            var bLtwInverse = math.inverse(bLtw.Value);
+            
+            foreach (var originalChild in originalChildren)
             {
-                if (targetState == data.State && !force) return;
-                data.State = targetState;
-                var material = MaterialLookup.GetRefRW(data.GhostEntity);
-                var targetMaterial = targetState switch
+                var newChild = state.EntityManager.Instantiate(originalChild);
+                var childLtw = state.EntityManager.GetComponentData<LocalToWorld>(originalChild);
+                var relativeToB = math.mul(bLtwInverse, childLtw.Value);
+                // Calculate new transform
+                var newLocalTransform = new LocalTransform
                 {
-                    PlacementStateType.Valid => MaterialLookup[Config.ValidPreset].Material,
-                    PlacementStateType.Overlapping => MaterialLookup[Config.OverlappingPreset].Material,
-                    PlacementStateType.NotEnoughResources => MaterialLookup[Config.NotEnoughResourcesPreset]
-                        .Material,
-                    PlacementStateType.NotConstructable => MaterialLookup[Config.NotConstructablePreset].Material,
-                    _ => throw new ArgumentOutOfRangeException(nameof(targetState), targetState, null)
+                    Position = relativeToB.c3.xyz,
+                    Rotation = new quaternion(relativeToB),
+                    Scale = 1
                 };
-                material.ValueRW.Material = targetMaterial;
+                state.EntityManager.SetComponentData(newChild, newLocalTransform);
+                state.EntityManager.SetComponentData(newChild, new Parent { Value = newParentEntity });
+                var newLinkedEntities = state.EntityManager.GetBuffer<LinkedEntityGroup>(newParentEntity);
+                newLinkedEntities.Add(new LinkedEntityGroup { Value = newChild });
             }
-            
-            
+            return newParentEntity;
         }
     }
 }

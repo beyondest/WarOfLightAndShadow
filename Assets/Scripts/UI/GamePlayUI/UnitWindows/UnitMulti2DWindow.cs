@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitMulti2DWindow : UIUtils.MultiSlotsWindow<Unit2DSlot,UnitMulti2DWindow>
+    public class UnitMulti2DWindow : UIUtils.MultiSlotsWindow<Unit2DSlot>
     {
         // Config
         [Header("Custom Config")] [SerializeField]
@@ -18,6 +18,7 @@ namespace SparFlame.UI.GamePlay
 
 
         // Interface
+        public static UnitMulti2DWindow Instance;
         public Action<int> GetTargetEntityByIndex;
 
         public override void OnClickSlot(int slotIndex)
@@ -94,6 +95,14 @@ namespace SparFlame.UI.GamePlay
         private Entity _targetEntity;
         
         #region EventFunction
+
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
         protected override void OnEnable()
         {

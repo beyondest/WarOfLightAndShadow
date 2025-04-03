@@ -81,8 +81,8 @@ namespace SparFlame.UI.General
 
 
         public class
-            MultiSlotsWindow<TMultiShowSlot, TCustomMonobehaviour> : MonoBehaviourSingleton<TCustomMonobehaviour>,
-            IUIWindow where TMultiShowSlot : MultiShowSlot where TCustomMonobehaviour : MonoBehaviour
+            MultiSlotsWindow<TMultiShowSlot> : MonoBehaviour,
+            IUIWindow where TMultiShowSlot : MultiShowSlot
         {
             [SerializeField] protected GameObject panel;
             [SerializeField] private AssetReferenceGameObject slotPrefab;

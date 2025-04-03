@@ -15,28 +15,58 @@ MonoBehaviour:
   m_GroupName: Building
   m_GUID: d8d82ea7a0e5e7f468c4625a77d97879
   m_SerializeEntries:
+  - m_GUID: 1079cd8f3853831499db59ade939b165
+    m_Address: SanctifiedTurret
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2973f686921123148a166756305bd479
     m_Address: Ornaments
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2a36caa4c9cdc834b99c6170bfd6e558
+    m_Address: LightWall
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2b6a4a23c4b222347969683727c44a00
-    m_Address: Dwelling
+    m_Address: Dwellings
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 329d65ab58d49494dadfbee923fe9a52
+    m_Address: CoreCrystal
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 364bd07a55157f843a1177ce3830383d
-    m_Address: Fortification
+    m_Address: Fortifications
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8cc8fb70be280ad49b5b3fce04a5c5ee
+    m_Address: AethericForge
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9399fd3b0778d8b428ad3414af8cbdbe
-    m_Address: ConjuringShrine
+    m_Address: ConjuringShrines
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a1f05f18f0dc33a419cb3cf23fc6325c
-    m_Address: Workshop
+    m_Address: Workshops
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e43f7b46bc6c04348b05deb496c61b27
+    m_Address: RadiantSummoningCircle
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f3aa59c798cffef438c72e3b083958fa
+    m_Address: LightHut
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

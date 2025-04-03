@@ -103,7 +103,24 @@ namespace SparFlame.UI.General
 
             var handle =
                 Addressables.LoadAssetsAsync<TResource>(fullNames, _ => { }, Addressables.MergeMode.Union, true);
-            handle.Completed += _ => { onComplete?.Invoke(handle.Result); };
+            handle.Completed += _ =>
+            {
+                if (handle.Result.Count < keys.Length)
+                {
+                    foreach (var result in handle.Result)
+                    {
+                        Debug.LogError($"Found asset {result}");
+                    }
+
+                    foreach (var key in keys)
+                    {
+                        Debug.LogError($"Require asset {key}");
+                    }
+
+                    throw new ArgumentException("Load Addressable assets wrong, missing some assets");
+                }
+                onComplete?.Invoke(handle.Result);
+            };
             return handle;
         }
 
@@ -114,8 +131,17 @@ namespace SparFlame.UI.General
             var i = 0;
             foreach (TEnum key in keys)
             {
-                dict[key] = result[i];
-                i++;
+                try
+                {
+                    dict[key] = result[i];
+                    i++;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+               
             }
         }
 

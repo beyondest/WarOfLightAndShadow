@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 3895895909027963575}
   - component: {fileID: 805125940132748899}
   - component: {fileID: 5333561888126346601}
+  - component: {fileID: 6190978782436688567}
   m_Layer: 0
   m_Name: BasicResource
   m_TagString: Untagged
@@ -53,6 +54,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseTag: 2
   factionTag: 0
+  gameplayName: 
+  tier: 0
 --- !u!114 &691200165073467411
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -225,7 +228,7 @@ MonoBehaviour:
         Category05: 1
         Category06: 1
         Category07: 0
-        Category08: 0
+        Category08: 1
         Category09: 0
         Category10: 0
         Category11: 0
@@ -262,6 +265,57 @@ MonoBehaviour:
         Tag07: 0
     m_SerializedVersion: 1
   m_SerializedVersion: 1
+--- !u!114 &6190978782436688567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51220084970221962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccea9ea98e38942e0b0938c27ed1903e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MotionType: 1
+  m_Smoothing: 0
+  m_Mass: 1
+  m_LinearDamping: 0.01
+  m_AngularDamping: 0.05
+  m_InitialLinearVelocity:
+    x: 0
+    y: 0
+    z: 0
+  m_InitialAngularVelocity:
+    x: 0
+    y: 0
+    z: 0
+  m_GravityFactor: 1
+  m_OverrideDefaultMassDistribution: 0
+  m_CenterOfMass:
+    x: 0
+    y: 0
+    z: 0
+  m_Orientation:
+    Value:
+      x: 0
+      y: 0
+      z: 0
+    RotationOrder: 4
+  m_InertiaTensor:
+    x: 0.4
+    y: 0.4
+    z: 0.4
+  m_WorldIndex: 0
+  m_CustomTags:
+    Tag00: 0
+    Tag01: 0
+    Tag02: 0
+    Tag03: 0
+    Tag04: 0
+    Tag05: 0
+    Tag06: 0
+    Tag07: 0
 --- !u!1001 &7365520277088009487
 PrefabInstance:
   m_ObjectHideFlags: 0

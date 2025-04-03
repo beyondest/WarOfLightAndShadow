@@ -1,37 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.UI;
 
 // ReSharper disable PossibleNullReferenceException
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConstructWindow : UIUtils.MultiSlotsWindow<MultiShowSlot, ConstructWindow>
+    public class ConstructWindow : UIUtils.MultiSlotsWindow<BuildingSlot>
     {
-        // public static ConstructWindow Instance;
-        [NonSerialized] public bool InitWindowEvents = false;
         [Header("Custom config")]
-        public KeyCode exitGhostModeKey = KeyCode.Escape;
+        [SerializeField]
+        private GameObject constructEnterButton ;
 
-        public Action<BuildingType, int> EcsGhostShowTarget;
+        [SerializeField]
+        private GameObject constructExitButton;
+        
+        
+        // Interaface
+        public static ConstructWindow Instance ;
+        [NonSerialized] public bool InitWindowEvents = false;
+        public Action<BuildingType, int> EcsGhostShowTargetByTypeIndex;
         public Action EcsExitGhostShow;
-        public Action EcsBuildTarget;
 
 
         #region ButtonMethods
 
         public override void OnClickSlot(int slotIndex)
         {
-            EcsGhostShowTarget?.Invoke(_currentBuildingType,_saveIndices[slotIndex]);
+            EcsGhostShowTargetByTypeIndex?.Invoke(_currentBuildingType,_saveIndices[slotIndex]);
         }
 
-        public void OnClickBuildingTypeButton(BuildingType buildingType)
+        public void OnClickConstructEnter()
         {
-            _currentBuildingType = buildingType;
+            Show();
+            constructEnterButton.SetActive(false);
+            constructExitButton.SetActive(true);
+        }
+
+        public void OnClickConstructExit()
+        {
+            Hide();
+            EcsExitGhostShow?.Invoke();
+            constructExitButton.SetActive(false);
+            constructEnterButton.SetActive(true);
+        }
+        
+        public void OnClickBuildingTypeButton(int buildingType)
+        {
+            _currentBuildingType = (BuildingType)buildingType;
             UpdateBuildingCandidates();
         }
 
@@ -64,27 +86,35 @@ namespace SparFlame.UI.GamePlay
         private int _currentSubType = -1;
         private Tier _currentTier = Tier.TierNone;
         private BuildingType _currentBuildingType;
-        private AsyncOperationHandle<GameObject> _slotPrefabHandle;
 
 
         // Cache
-        private GameObject _buildingSlotPrefab;
         private readonly List<Sprite> _buildingSprites = new();
         private readonly List<int> _saveIndices = new();
+        private readonly List<string> _buildingNames = new();
 
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
-
-    
-     
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            Hide();
+        }
 
         private void UpdateBuildingCandidates()
         {
-            if (!BuildingWindowResourceManager.Instance.IsResourceLoaded() || !_slotPrefabHandle.IsDone) return;
+            if (!BuildingWindowResourceManager.Instance.IsResourceLoaded() ) return;
             _buildingSprites.Clear();
             _saveIndices.Clear();
-            BuildingWindowResourceManager.Instance.GetFilteredSprites(_currentBuildingType, _buildingSprites,
-                _saveIndices, _currentSubType, _currentTier);
-
+            _buildingNames.Clear();
+            BuildingWindowResourceManager.Instance.GetFilteredBuildingSprites(_currentBuildingType, _buildingSprites,
+                _saveIndices, _buildingNames,_currentSubType, _currentTier);
             var count = Mathf.Min(Slots.Count, _buildingSprites.Count);
             for (var i = 0; i < Slots.Count; i++)
             {
@@ -93,6 +123,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var buildingSlot = SlotComponents[i];
                     buildingSlot.button.image.sprite = _buildingSprites[i];
+                    buildingSlot.gameplayNameText.text = _buildingNames[i];
                 }
                 else
                 {
@@ -100,9 +131,5 @@ namespace SparFlame.UI.GamePlay
                 }
             }
         }
-
-     
     }
-
-
 }

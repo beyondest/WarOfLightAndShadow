@@ -148,6 +148,10 @@ PrefabInstance:
       propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2897515523720364013, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: gameplayName
+      value: Melee
+      objectReference: {fileID: 0}
     - target: {fileID: 4111803572573163848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_VersionIndex
       value: 430

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
@@ -6,13 +7,14 @@ using SparFlame.GamePlaySystem.Resource;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
+using Unity.Plastic.Newtonsoft.Json.Serialization;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class BuildingDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot,BuildingDetailWindow>,UIUtils.ISingleTargetWindow
+    public class BuildingDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>,UIUtils.ISingleTargetWindow
     {
         
         // Config
@@ -27,17 +29,14 @@ namespace SparFlame.UI.GamePlay
         private Image buildingHpIcon;
         
         // Interface
-        
-        // public static BuildingDetailWindow Instance;
-        
-     
-
+        public static BuildingDetailWindow Instance;
+        public Action<Entity> EcsGhostShowTarget;
+        [NonSerialized] public bool InitWindowEvents = false;
         public override void Hide()
         {
             base.Hide();
             _targetEntity = Entity.Null;
         }
-
  
         public bool TrySwitchTarget(Entity target)
         {
@@ -54,21 +53,52 @@ namespace SparFlame.UI.GamePlay
             return _targetEntity != Entity.Null;
         }
 
+        #region ButtonMethods
+        public void OnClickRelocate()
+        {
+            if (_buildingAttr.State != BuildingState.Idle)
+            {
+                Debug.Log("Not in idle state, cannot enter building movement state");
+                return;
+            }
+            if(!ConstructWindow.Instance.IsOpened())
+                ConstructWindow.Instance.Show();
+            EcsGhostShowTarget?.Invoke(_targetEntity);
+        }
+
+        public void OnClickStore()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnClickRecycle()
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
         // Internal Data
         private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
         private Entity _targetEntity = Entity.Null;
         
-        
         // Cache
         private GameObject _costSlotPrefab;
+        private BuildingAttr _buildingAttr;
+        
+        
         // ECS
         private EntityManager _em;
         private EntityQuery _notPauseTag;
 
         #region EventFunction
 
-
- 
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
         
         private void Start()
         {
@@ -87,9 +117,7 @@ namespace SparFlame.UI.GamePlay
             if (_targetEntity != Entity.Null)
                 UpdateBuildingDetailInfo();
         }
-
         #endregion
-
         
         private void UpdateBuildingDetailInfo()
         {
@@ -97,7 +125,6 @@ namespace SparFlame.UI.GamePlay
             var attr = _em.GetComponentData<BuildingAttr>(_targetEntity);
             var statData = _em.GetComponentData<StatData>(_targetEntity);
             var costList = _em.GetBuffer<CostList>(_targetEntity);
-            
             // Visualize these attributes
             buildingType.text = attr.Type.ToString();
             buildingHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +

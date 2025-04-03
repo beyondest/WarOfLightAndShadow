@@ -13,6 +13,8 @@ namespace SparFlame.GamePlaySystem.Mouse
         public float raycastDistance = 1000f;
         public float doubleClickThreshold = 0.15f;
 
+        [Header("Player Config")]
+
         public int leftClickIndex = 0;
         [Tooltip("Pressed")]
         public KeyCode focusKey = KeyCode.F;
@@ -21,6 +23,9 @@ namespace SparFlame.GamePlaySystem.Mouse
         [Tooltip("Pressed")]
         public KeyCode addUnitKey = KeyCode.LeftShift;
 
+        public KeyCode exitConstructKey = KeyCode.Escape;
+        public KeyCode clockRotateKey = KeyCode.Mouse0;
+        
         class Baker : Baker<CustomInputSystemAuthoring>
         {
             public override void Bake(CustomInputSystemAuthoring authoring)
@@ -32,10 +37,7 @@ namespace SparFlame.GamePlaySystem.Mouse
                     MouseRayLayerMask = authoring.mouseRayLayer.Value,
                     RaycastDistance = authoring.raycastDistance,
                     DoubleClickThreshold = authoring.doubleClickThreshold,
-                    LeftClickIndex = authoring.leftClickIndex,
-                    FocusKey = authoring.focusKey,
-                    ChangeFactionKey = authoring.changeFactionKey,
-                    AddUnitKey = authoring.addUnitKey,
+            
                 });
                 AddComponent(entity, new CustomInputSystemData
                 {
@@ -44,6 +46,19 @@ namespace SparFlame.GamePlaySystem.Mouse
                     HitEntity = Entity.Null,
                     HitPosition = float3.zero,
                     MousePosition = float3.zero
+                });
+                AddComponent(entity, new CustomKeyMapping
+                {
+                    // General
+                    LeftClickIndex = authoring.leftClickIndex,
+                    
+                    // Unit Control
+                    FocusKey = authoring.focusKey,
+                    ChangeFactionKey = authoring.changeFactionKey,
+                    AddUnitKey = authoring.addUnitKey,
+                    
+                    // Construct
+                    
                 });
             }
         } 
@@ -70,12 +85,17 @@ namespace SparFlame.GamePlaySystem.Mouse
         public uint MouseRayLayerMask;
         public float RaycastDistance;
         public float DoubleClickThreshold;
+
+    }
+
+    public struct CustomKeyMapping : IComponentData
+    {
         public int LeftClickIndex;
         public KeyCode FocusKey;
         public KeyCode ChangeFactionKey;
         public KeyCode AddUnitKey;
     }
-
+    
 
     /// <summary>
     /// The Only Reason to use the mouse system is to reduce the times of using raycast

@@ -13,7 +13,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot,UnitDetailWindow>,UIUtils.ISingleTargetWindow
+    public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>,UIUtils.ISingleTargetWindow
     {
         // Config
         [Header("Custom Config")] 
@@ -30,7 +30,7 @@ namespace SparFlame.UI.GamePlay
 
 
         // Interface
-      
+        public static UnitDetailWindow Instance;
 
         public override void Hide()
         {
@@ -70,6 +70,13 @@ namespace SparFlame.UI.GamePlay
         #region EventFunction
 
 
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
  
 

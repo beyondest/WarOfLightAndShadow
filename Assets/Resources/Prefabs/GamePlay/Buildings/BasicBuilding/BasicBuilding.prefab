@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 5471829397928584801}
   - component: {fileID: 852727745058058644}
   - component: {fileID: 828705974011197480}
+  - component: {fileID: 7071520599474291836}
   m_Layer: 0
   m_Name: BasicBuilding
   m_TagString: Untagged
@@ -54,6 +55,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseTag: 1
   factionTag: 0
+  gameplayName: 
+  tier: 0
 --- !u!114 &5786025005029521595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,7 +70,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buildingType: 0
-  tier: 3
+  buildingInitialState: 4
 --- !u!114 &3107138050394431953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -243,7 +246,7 @@ MonoBehaviour:
         Category05: 1
         Category06: 1
         Category07: 0
-        Category08: 0
+        Category08: 1
         Category09: 0
         Category10: 0
         Category11: 0
@@ -280,6 +283,57 @@ MonoBehaviour:
         Tag07: 0
     m_SerializedVersion: 1
   m_SerializedVersion: 1
+--- !u!114 &7071520599474291836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238138822134138317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccea9ea98e38942e0b0938c27ed1903e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MotionType: 1
+  m_Smoothing: 0
+  m_Mass: 1
+  m_LinearDamping: 0.01
+  m_AngularDamping: 0.05
+  m_InitialLinearVelocity:
+    x: 0
+    y: 0
+    z: 0
+  m_InitialAngularVelocity:
+    x: 0
+    y: 0
+    z: 0
+  m_GravityFactor: 1
+  m_OverrideDefaultMassDistribution: 0
+  m_CenterOfMass:
+    x: 0
+    y: 0
+    z: 0
+  m_Orientation:
+    Value:
+      x: 0
+      y: 0
+      z: 0
+    RotationOrder: 4
+  m_InertiaTensor:
+    x: 0.4
+    y: 0.4
+    z: 0.4
+  m_WorldIndex: 0
+  m_CustomTags:
+    Tag00: 0
+    Tag01: 0
+    Tag02: 0
+    Tag03: 0
+    Tag04: 0
+    Tag05: 0
+    Tag06: 0
+    Tag07: 0
 --- !u!1001 &6858142495991745111
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -20,77 +20,76 @@ namespace SparFlame.GamePlaySystem.Building
     [Serializable]
     public class BuildingData
     {
-        
-        [Header("General")]
-        public string buildingName;
+
+        // Config
+        public GameObject prefab;
         public int id;
+        public int subKey;
         [TextArea(3, 10)]
         public string description;
         
-        [Header("Asset")]
-        public GameObject prefab;
         public AssetReferenceSprite sprite2D;
-
         
-        [Header("Gameplay")]
-        public BuildingType buildingType;
-        public Tier tier;
-        public List<CostResourceTypeAmountPair> costs;
+        // Get 
+        public BuildingType BuildingType => prefab.GetComponent<BuildingAttributesAuthoring>().buildingType;
+        public Tier Tier => prefab.GetComponent<InteractableAttributesAuthoring>().tier;
+        public List<CostResourceTypeAmountPair> Costs=> prefab.GetComponent<CostAttributesAuthoring>().costResourceTypeAmount;
+        public string GameplayName => prefab.GetComponent<InteractableAttributesAuthoring>().gameplayName;
         
         public virtual int GetSubtype()
         {
-            return 0;
+            return subKey;
         }
     }
 
-    [Serializable]
-    public class FortificationData : BuildingData
-    {
-        public FortificationType fortificationType;
-        public override int GetSubtype()
-        {
-            return (int)fortificationType;
-        }
-    }
-
-    [Serializable]
-    public class WorkshopData : BuildingData
-    {
-        public WorkshopType workshopType;
-        public override int GetSubtype()
-        {
-            return (int)workshopType;
-        }
-    }
-
-    [Serializable]
-    public class ConjuringShrineData : BuildingData
-    {
-        public ConjuringShrineType conjuringShrineType;
-        public override int GetSubtype()
-        {
-            return (int)conjuringShrineType;
-        }
-    }
-
-    [Serializable]
-    public class DwellingData : BuildingData
-    {
-        public DwellingType dwellingType;
-        public override int GetSubtype()
-        {
-            return (int)dwellingType;
-        }
-    }
-
-    [Serializable]
-    public class OrnamentData : BuildingData
-    {
-        public OrnamentType ornamentType;
-        public override int GetSubtype()
-        {
-            return (int)ornamentType;
-        }
-    }
+    // [Serializable]
+    // public class FortificationData : BuildingData
+    // {
+    //     public FortificationType fortificationType;
+    //     public override int GetSubtype()
+    //     {
+    //         return (int)fortificationType;
+    //     }
+    // }
+    //
+    // [Serializable]
+    // public class WorkshopData : BuildingData
+    // {
+    //     public WorkshopType workshopType;
+    //     public override int GetSubtype()
+    //     {
+    //         return (int)workshopType;
+    //     }
+    // }
+    //
+    // [Serializable]
+    // public class ConjuringShrineData : BuildingData
+    // {
+    //     public ConjuringShrineType conjuringShrineType;
+    //     public override int GetSubtype()
+    //     {
+    //         return (int)conjuringShrineType;
+    //     }
+    // }
+    //
+    // [Serializable]
+    // public class DwellingData : BuildingData
+    // {
+    //     public DwellingType dwellingType;
+    //     public override int GetSubtype()
+    //     {
+    //         return (int)dwellingType;
+    //     }
+    // }
+    //
+    // [Serializable]
+    // public class OrnamentData : BuildingData
+    // {
+    //     public OrnamentType ornamentType;
+    //     public override int GetSubtype()
+    //     {
+    //         return (int)ornamentType;
+    //     }
+    // }
     
 }

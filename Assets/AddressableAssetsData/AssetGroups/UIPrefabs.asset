@@ -25,11 +25,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 72f0af1a426956144b0185f26f12627e
-    m_Address: Building
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9420b6658ad1e4d4fb2f5b6b4aa372f9
     m_Address: Unit2DSlot
     m_ReadOnly: 0
@@ -37,6 +32,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: bb2159e5469fe314590077da32494442
     m_Address: BasicAttributeSlot
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c3bf29b0461e0d94f9e1cc23928cb089
+    m_Address: BuildingSlot
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
