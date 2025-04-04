@@ -33,7 +33,7 @@ namespace SparFlame.GamePlaySystem.Building
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<CustomInputSystemData>();
+            state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<PlacementSystemConfig>();
 
             _constructableLookup = state.GetComponentLookup<Constructable>(true);
@@ -52,7 +52,7 @@ namespace SparFlame.GamePlaySystem.Building
 
             if (_entityQuery.IsEmpty) return;
             var config = SystemAPI.GetSingleton<PlacementSystemConfig>();
-            var customInputData = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var customInputData = SystemAPI.GetSingleton<InputMouseData>();
 
             var entities = _entityQuery.ToEntityArray(Allocator.Temp);
             var datas = _entityQuery.ToComponentDataArray<PlacementCommandData>(Allocator.Temp);

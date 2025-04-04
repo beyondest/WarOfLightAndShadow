@@ -16,8 +16,9 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<CustomInputSystemData>();
+            state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<UnitSelectionConfig>();
         }
@@ -29,29 +30,31 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             var unitSelectionConfig = SystemAPI.GetSingleton<UnitSelectionConfig>();
             var unitSelectionData = SystemAPI.GetSingletonRW<UnitSelectionData>();
             
-            var customInputSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
+            var inputUnitControlData = SystemAPI.GetSingleton<InputUnitControlData>();
+            
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var bufferLookup = SystemAPI.GetBufferLookup<LinkedEntityGroup>();
             var isDeselectAll = true;
             var isClickOnValid = false;
-            if(customInputSystemData.ChangeFaction)
+            if(inputUnitControlData.ChangeFaction)
                 unitSelectionData.ValueRW.CurrentSelectFaction = ~unitSelectionData.ValueRW.CurrentSelectFaction;
             
             // Left Click Start
-            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left, IsOverUI: false })
+            if (inputMouseData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left, IsOverUI: false })
             {
-                StartSelectionBox(ref unitSelectionData, customInputSystemData);
+                StartSelectionBox(ref unitSelectionData, inputMouseData);
                 // Press AddUnitKey
-                if (customInputSystemData.AddUnit)
+                if (inputUnitControlData.AddUnit)
                 {
                     isDeselectAll = false;  
                     LockSelected(ref state, ref ecb, true);
                 }
                 // Left click on clickable. Clickable layer consists of interactable layer and terrain layer. Interactable layer has basic attr always
-                if (customInputSystemData.HitEntity != Entity.Null && state.EntityManager.HasComponent<InteractableAttr>(customInputSystemData.HitEntity))
+                if (inputMouseData.HitEntity != Entity.Null && state.EntityManager.HasComponent<InteractableAttr>(inputMouseData.HitEntity))
                 {
                     var basicAttributes =
-                        state.EntityManager.GetComponentData<InteractableAttr>(customInputSystemData.HitEntity);
+                        state.EntityManager.GetComponentData<InteractableAttr>(inputMouseData.HitEntity);
                     if (basicAttributes.BaseTag == BaseTag.Units)
                     {
                         isClickOnValid = true;
@@ -62,13 +65,13 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                             if (isDeselectAll)
                             {
                                 // Clicked Object Not Selected
-                                if (false == state.EntityManager.IsComponentEnabled<Selected>(customInputSystemData
+                                if (false == state.EntityManager.IsComponentEnabled<Selected>(inputMouseData
                                         .HitEntity))
                                 {
                                     DeselectAll(ref state, ref ecb, ref bufferLookup, ref unitSelectionData,
                                         in unitSelectionConfig);
                                     SelectOne(ref state, ref ecb, ref bufferLookup, ref unitSelectionData,
-                                        customInputSystemData.HitEntity,
+                                        inputMouseData.HitEntity,
                                         unitSelectionConfig, true);
                                 }
                                 else
@@ -80,7 +83,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                             // Pressed AddUnitKey
                             else
                             {
-                                ToggleOne(ref state, ref ecb, ref bufferLookup,ref unitSelectionData, in customInputSystemData.HitEntity, in unitSelectionConfig);
+                                ToggleOne(ref state, ref ecb, ref bufferLookup,ref unitSelectionData, in inputMouseData.HitEntity, in unitSelectionConfig);
                             }
                         }
                     }
@@ -91,21 +94,21 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                         in unitSelectionConfig);
             }
             // Double Left Click
-            if(customInputSystemData is { ClickFlag: ClickFlag.DoubleClick, ClickType: ClickType.Left, IsOverUI: false })
-                StartSelectionBox(ref unitSelectionData, customInputSystemData);
+            if(inputMouseData is { ClickFlag: ClickFlag.DoubleClick, ClickType: ClickType.Left, IsOverUI: false })
+                StartSelectionBox(ref unitSelectionData, inputMouseData);
 
             // Left-Clicking
-            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Left, IsOverUI: false })
+            if (inputMouseData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Left, IsOverUI: false })
             {
-                RecordSelectionBox(ref unitSelectionData, customInputSystemData);
-                DragSelect(ref state, ref ecb,ref bufferLookup, ref unitSelectionData, customInputSystemData.AddUnit,
+                RecordSelectionBox(ref unitSelectionData, inputMouseData);
+                DragSelect(ref state, ref ecb,ref bufferLookup, ref unitSelectionData, inputUnitControlData.AddUnit,
                     unitSelectionConfig);
             }
 
             // Left Click Up
-            if (customInputSystemData is { ClickFlag: ClickFlag.End, ClickType: ClickType.Left })
+            if (inputMouseData is { ClickFlag: ClickFlag.End, ClickType: ClickType.Left })
             {
-                ResetSelectionBox(ref unitSelectionData, customInputSystemData);
+                ResetSelectionBox(ref unitSelectionData, inputMouseData);
                 LockSelected(ref state, ref ecb, false);
             }
 
@@ -212,22 +215,22 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         #region SelectionBox
 
         private static void StartSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
-            in CustomInputSystemData customInputSystemData)
+            in InputMouseData inputMouseData)
         {
             unitSelectionData.ValueRW.SelectionBoxStartPos = new float2
-                { x = customInputSystemData.MousePosition.x, y = customInputSystemData.MousePosition.y };
+                { x = inputMouseData.MousePosition.x, y = inputMouseData.MousePosition.y };
         }
 
         private static void RecordSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
-            in CustomInputSystemData customInputSystemData)
+            in InputMouseData inputMouseData)
         {
             unitSelectionData.ValueRW.SelectionBoxEndPos = new float2
-                { x = customInputSystemData.MousePosition.x, y = customInputSystemData.MousePosition.y };
+                { x = inputMouseData.MousePosition.x, y = inputMouseData.MousePosition.y };
             unitSelectionData.ValueRW.IsDragSelecting = true;
         }
 
         private static void ResetSelectionBox(ref RefRW<UnitSelectionData> unitSelectionData,
-            in CustomInputSystemData customInputSystemData)
+            in InputMouseData inputMouseData)
         {
             unitSelectionData.ValueRW.SelectionBoxStartPos = float2.zero;
             unitSelectionData.ValueRW.SelectionBoxEndPos = float2.zero;

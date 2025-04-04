@@ -16,6 +16,8 @@ namespace SparFlame.GamePlaySystem.Mouse
         [Header("Player Config")]
 
         public int leftClickIndex = 0;
+        public int rightClickIndex = 1;
+
         [Tooltip("Pressed")]
         public KeyCode focusKey = KeyCode.F;
         [Tooltip("Toggle")]
@@ -23,8 +25,10 @@ namespace SparFlame.GamePlaySystem.Mouse
         [Tooltip("Pressed")]
         public KeyCode addUnitKey = KeyCode.LeftShift;
 
+        
         public KeyCode exitConstructKey = KeyCode.Escape;
         public KeyCode clockRotateKey = KeyCode.Mouse0;
+        public KeyCode fineTuneKey = KeyCode.LeftShift;
         
         class Baker : Baker<CustomInputSystemAuthoring>
         {
@@ -39,7 +43,7 @@ namespace SparFlame.GamePlaySystem.Mouse
                     DoubleClickThreshold = authoring.doubleClickThreshold,
             
                 });
-                AddComponent(entity, new CustomInputSystemData
+                AddComponent(entity, new InputMouseData
                 {
                     ClickFlag = ClickFlag.None,
                     ClickType = ClickType.None,
@@ -47,18 +51,17 @@ namespace SparFlame.GamePlaySystem.Mouse
                     HitPosition = float3.zero,
                     MousePosition = float3.zero
                 });
+                AddComponent(entity, new InputUnitControlData());
                 AddComponent(entity, new CustomKeyMapping
                 {
-                    // General
                     LeftClickIndex = authoring.leftClickIndex,
-                    
-                    // Unit Control
+                    RightClickIndex = authoring.rightClickIndex,
                     FocusKey = authoring.focusKey,
                     ChangeFactionKey = authoring.changeFactionKey,
                     AddUnitKey = authoring.addUnitKey,
-                    
-                    // Construct
-                    
+                    ExitConstructKey = authoring.exitConstructKey,
+                    ClockRotateKey = authoring.clockRotateKey,
+                    FineTuneKey = authoring.fineTuneKey,
                 });
             }
         } 
@@ -85,22 +88,30 @@ namespace SparFlame.GamePlaySystem.Mouse
         public uint MouseRayLayerMask;
         public float RaycastDistance;
         public float DoubleClickThreshold;
-
     }
 
     public struct CustomKeyMapping : IComponentData
     {
+        // General
         public int LeftClickIndex;
+        public int RightClickIndex;
+        
+        // Unit Control
         public KeyCode FocusKey;
         public KeyCode ChangeFactionKey;
         public KeyCode AddUnitKey;
+        
+        // Construct
+        public KeyCode ExitConstructKey;
+        public KeyCode ClockRotateKey;
+        public KeyCode FineTuneKey;
     }
     
 
     /// <summary>
     /// The Only Reason to use the mouse system is to reduce the times of using raycast
     /// </summary>
-    public struct CustomInputSystemData : IComponentData
+    public struct InputMouseData : IComponentData
     {
         public ClickFlag ClickFlag;
         public ClickType ClickType;
@@ -111,8 +122,14 @@ namespace SparFlame.GamePlaySystem.Mouse
         public float3 HitPosition;
         public float3 MousePosition;
         public bool IsOverUI;
+    }
+
+    public struct InputUnitControlData : IComponentData
+    {
         public bool Focus;
         public bool ChangeFaction;
         public bool AddUnit;
     }
+
+    
 }

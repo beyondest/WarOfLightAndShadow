@@ -83,7 +83,7 @@ namespace SparFlame.UI.GamePlay
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-            _customInputData = _em.CreateEntityQuery(typeof(CustomInputSystemData));
+            _customInputData = _em.CreateEntityQuery(typeof(InputMouseData));
             _cursorData = _em.CreateEntityQuery(typeof(CursorData));
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
             Hide();
@@ -93,7 +93,7 @@ namespace SparFlame.UI.GamePlay
         {
             if (_notPauseTag.IsEmpty) return;
 
-            var customInputSystemData = _customInputData.GetSingleton<CustomInputSystemData>();
+            var customInputSystemData = _customInputData.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<CursorData>();
             var selectedData = _selectedData.GetSingleton<UnitSelectionData>();
 

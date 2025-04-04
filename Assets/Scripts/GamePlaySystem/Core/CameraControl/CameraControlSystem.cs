@@ -18,7 +18,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             RequireForUpdate<CameraData>();
             RequireForUpdate<CameraControlConfig>();
             RequireForUpdate<CameraControlData>();
-            RequireForUpdate<CustomInputSystemData>();
+            RequireForUpdate<InputMouseData>();
         }
 
 
@@ -30,7 +30,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             var camData = SystemAPI.GetComponentRW<CameraData>(cameraEntity);
             var cameraControlConfig = SystemAPI.GetSingleton<CameraControlConfig>();
             var cameraControlData = SystemAPI.GetComponentRW<CameraControlData>(cameraEntity);
-            var clickSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var clickSystemData = SystemAPI.GetSingleton<InputMouseData>();
             //var cameraControlData = SystemAPI.GetSingletonRW<CameraControlData>();
             
             var newPos = (float3)cam.transform.position;
@@ -52,18 +52,18 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
 
         private void MouseDrag(ref CameraControlData data, ref float3 newPos,
-            in CustomInputSystemData customInputSystemData,  Transform transform)
+            in InputMouseData inputMouseData,  Transform transform)
         {
-            if (customInputSystemData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Middle, IsOverUI: false })
+            if (inputMouseData is { ClickFlag: ClickFlag.Start, ClickType: ClickType.Middle, IsOverUI: false })
             {
-                data.DragStartPos = customInputSystemData.HitPosition;
+                data.DragStartPos = inputMouseData.HitPosition;
                 data.IsDragging = true;
             }
 
-            if (customInputSystemData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Middle, IsOverUI: false })
-                newPos = (float3)transform.position + data.DragStartPos - customInputSystemData.HitPosition;
+            if (inputMouseData is { ClickFlag: ClickFlag.Clicking, ClickType: ClickType.Middle, IsOverUI: false })
+                newPos = (float3)transform.position + data.DragStartPos - inputMouseData.HitPosition;
 
-            if (customInputSystemData is { ClickFlag: ClickFlag.End, IsOverUI: false })
+            if (inputMouseData is { ClickFlag: ClickFlag.End, IsOverUI: false })
                 data.IsDragging = false;
         }
 

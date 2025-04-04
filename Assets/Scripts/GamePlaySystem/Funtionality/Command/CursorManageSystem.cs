@@ -19,7 +19,7 @@ namespace SparFlame.GamePlaySystem.Command
         {
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<CursorData>();
-            state.RequireForUpdate<CustomInputSystemData>();
+            state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<CameraControlData>();
         }
@@ -27,7 +27,7 @@ namespace SparFlame.GamePlaySystem.Command
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var customInputSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var customInputSystemData = SystemAPI.GetSingleton<InputMouseData>();
             var cursorManageData = SystemAPI.GetSingletonRW<CursorData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             var cameraControlData = SystemAPI.GetSingleton<CameraControlData>();

@@ -3,7 +3,6 @@ using Unity.Mathematics;
 using Unity.Entities;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
-using Unity.Transforms;
 using UnityEngine.EventSystems;
 
 namespace SparFlame.GamePlaySystem.Mouse
@@ -14,6 +13,7 @@ namespace SparFlame.GamePlaySystem.Mouse
 
         
         private Camera _camera;
+        private float _currentClickInterval;
         private bool _isDoubleClick;
 
         private CustomInputSystemConfig _config;
@@ -22,8 +22,7 @@ namespace SparFlame.GamePlaySystem.Mouse
         {
             base.OnCreate();
             RequireForUpdate<NotPauseTag>();
-            RequireForUpdate<CustomInputSystemData>();
-            RequireForUpdate<CustomInputSystemConfig>();
+            RequireForUpdate<InputMouseData>();
         }
 
         protected override void OnStartRunning()
@@ -31,7 +30,6 @@ namespace SparFlame.GamePlaySystem.Mouse
             _camera = Camera.main;
             _config = SystemAPI.GetSingleton<CustomInputSystemConfig>();
             _keyMapping = SystemAPI.GetSingleton<CustomKeyMapping>();
-        
         }
 
         protected override void OnUpdate()
@@ -39,39 +37,42 @@ namespace SparFlame.GamePlaySystem.Mouse
             _camera = Camera.main;
             if (_camera == null) return;
            
-            var inputSystemDataEntity = SystemAPI.GetSingletonEntity<CustomInputSystemData>();
-            var data = new CustomInputSystemData
+            var inputMouseDataEntity = SystemAPI.GetSingletonEntity<InputMouseData>();
+            var inputUnitControlDataEntity = SystemAPI.GetSingletonEntity<InputUnitControlData>();
+            var inputMouseData = new InputMouseData
             {
-                AddUnit = false,
-                ChangeFaction = false,
                 ClickFlag = ClickFlag.None,
                 ClickType = ClickType.None,
                 IsOverUI = false,
-                Focus = false,
                 HitEntity = Entity.Null,
                 HitPosition = float3.zero,
                 MousePosition = float3.zero,
             };
+            var unitControlData = new InputUnitControlData();
             _isDoubleClick = false;
             if (EventSystem.current.IsPointerOverGameObject())
-                data.IsOverUI = true;
-            CheckMouseEventAndRaycastHit(ref data);
-            CheckKey(ref data, in config);
-            EntityManager.SetComponentData(inputSystemDataEntity, data);
+                inputMouseData.IsOverUI = true;
+            CheckMouseEventAndRaycastHit(ref inputMouseData);
+            CheckUnitControl(ref unitControlData, in _config);
+            
+            EntityManager.SetComponentData(inputMouseDataEntity, inputMouseData);
+            EntityManager.SetComponentData(inputUnitControlDataEntity, unitControlData);
+            
         }
 
-        private void CheckKey(ref CustomInputSystemData data, in CustomInputSystemConfig config)
+        private void CheckUnitControl(ref InputUnitControlData data, in CustomInputSystemConfig config)
         {
-            data.ChangeFaction = Input.GetKeyDown(config.ChangeFactionKey);
-            data.AddUnit = Input.GetKey(config.AddUnitKey);
-            data.Focus = Input.GetKey(config.FocusKey);
+            data.ChangeFaction = Input.GetKeyDown(_keyMapping.ChangeFactionKey);
+            data.AddUnit = Input.GetKey(_keyMapping.AddUnitKey);
+            data.Focus = Input.GetKey(_keyMapping.FocusKey);
         }
-
+    
+        
         /// <summary>
-        /// Only Detect Clickable Layer
+        /// Only Detect Clickable Layer = Terrain + other gameplay layers
         /// </summary>
         /// <returns></returns>
-        private void CheckMouseEventAndRaycastHit(ref CustomInputSystemData data)
+        private void CheckMouseEventAndRaycastHit(ref InputMouseData data)
         {
             data.MousePosition = Input.mousePosition;
             if (MouseCastOnEntity(out var entity, out var hitPosition))
@@ -82,11 +83,10 @@ namespace SparFlame.GamePlaySystem.Mouse
             
             if (Input.GetMouseButtonDown(_keyMapping.LeftClickIndex))
             {
-                if (_config. < _doubleClickThreshold)
+                if (_currentClickInterval < _config.DoubleClickThreshold)
                 {
                     _isDoubleClick = true;
                 }
-
                 data.ClickType = ClickType.Left;
                 data.ClickFlag = ClickFlag.Start;
             }
@@ -102,10 +102,10 @@ namespace SparFlame.GamePlaySystem.Mouse
                 data.ClickType = ClickType.Left;
                 data.ClickFlag = ClickFlag.End;
             }
-
-            if (Input.GetMouseButtonDown(_rightClickIndex))
+            
+            if (Input.GetMouseButtonDown(_keyMapping.RightClickIndex))
             {
-                if (_config. < _doubleClickThreshold)
+                if (_currentClickInterval < _config.DoubleClickThreshold)
                 {
                     _isDoubleClick = true;
                 }
@@ -114,13 +114,13 @@ namespace SparFlame.GamePlaySystem.Mouse
                 data.ClickFlag = ClickFlag.Start;
             }
 
-            if (Input.GetMouseButton(_rightClickIndex))
+            if (Input.GetMouseButton(_keyMapping.RightClickIndex))
             {
                 data.ClickType = ClickType.Right;
                 data.ClickFlag = (data.ClickFlag == ClickFlag.Start) ? ClickFlag.Start : ClickFlag.Clicking;
             }
 
-            if (Input.GetMouseButtonUp(_rightClickIndex))
+            if (Input.GetMouseButtonUp(_keyMapping.RightClickIndex))
             {
                 data.ClickType = ClickType.Right;
                 data.ClickFlag = ClickFlag.End;
@@ -155,13 +155,13 @@ namespace SparFlame.GamePlaySystem.Mouse
             // Check if double click
             if (data.ClickFlag != ClickFlag.Start)
             {
-                _config. += SystemAPI.Time.DeltaTime;
-                _config. = math.min(10000, _config.);
+                _currentClickInterval += SystemAPI.Time.DeltaTime;
+                _currentClickInterval = math.min(10000, _currentClickInterval);
             }
             else
             {
                 data.ClickFlag = _isDoubleClick ? ClickFlag.DoubleClick : ClickFlag.Start;
-                _config. = 0;
+                _currentClickInterval = 0;
             }
         }
 
@@ -170,17 +170,18 @@ namespace SparFlame.GamePlaySystem.Mouse
 
         private bool MouseCastOnEntity(out Entity hitEntity, out float3 hitPosition)
         {
+            
             var camRay = _camera.ScreenPointToRay(Input.mousePosition);
             float3 rayStart = camRay.origin;
-            var rayEnd = rayStart + (float3)camRay.direction * _raycastDistance;
+            var rayEnd = rayStart + (float3)camRay.direction * _config.RaycastDistance;
             var raycastInput = new RaycastInput
             {
                 Start = rayStart,
                 End = rayEnd,
                 Filter = new CollisionFilter
                 {
-                    BelongsTo = _mouseRayLayerMask,
-                    CollidesWith = _clickableLayerMask,
+                    BelongsTo = _config.MouseRayLayerMask,
+                    CollidesWith = _config.ClickableLayerMask,
                     GroupIndex = 0
                 }
             };
@@ -221,9 +222,6 @@ namespace SparFlame.GamePlaySystem.Mouse
             // If not parallel to plane
             if (math.abs(cosTheta) > 1e-6f)
             {
-                // Calculate distance between rayOrigin and hitPoint:
-                // t = dot(planePoint - rayOrigin, planeNormal) / dot(rayDirection, planeNormal)
-                // t = (Vertical Distance / Cos theta)
                 var t = math.dot(planePoint - rayOrigin, planeNormal) / cosTheta;
                 if (t >= 0f)
                 {

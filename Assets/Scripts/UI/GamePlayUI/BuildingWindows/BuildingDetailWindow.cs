@@ -62,7 +62,7 @@ namespace SparFlame.UI.GamePlay
                 return;
             }
             if(!ConstructWindow.Instance.IsOpened())
-                ConstructWindow.Instance.Show();
+                ConstructWindow.Instance.OnClickConstructEnter();
             EcsGhostShowTarget?.Invoke(_targetEntity);
         }
 
@@ -122,14 +122,14 @@ namespace SparFlame.UI.GamePlay
         private void UpdateBuildingDetailInfo()
         {
             var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
-            var attr = _em.GetComponentData<BuildingAttr>(_targetEntity);
+            _buildingAttr = _em.GetComponentData<BuildingAttr>(_targetEntity);
             var statData = _em.GetComponentData<StatData>(_targetEntity);
             var costList = _em.GetBuffer<CostList>(_targetEntity);
             // Visualize these attributes
-            buildingType.text = attr.Type.ToString();
+            buildingType.text = _buildingAttr.Type.ToString();
             buildingHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
                           statData.MaxValue.ToString(CultureInfo.InvariantCulture);
-            buildingIcon.sprite = BuildingWindowResourceManager.Instance.BuildingTypeSprites[attr.Type];
+            buildingIcon.sprite = BuildingWindowResourceManager.Instance.BuildingTypeSprites[_buildingAttr.Type];
             buildingHpIcon.sprite = BasicWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
             
             for (var i = 0; i < Slots.Count; i++)

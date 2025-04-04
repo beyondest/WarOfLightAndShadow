@@ -59,7 +59,7 @@ namespace SparFlame.GamePlaySystem.Construction
 
             if(!ConstructWindow.Instance.IsOpened())return;
             var selectData = SystemAPI.GetSingleton<UnitSelectionData>();
-            var customInput = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var customInput = SystemAPI.GetSingleton<InputMouseData>();
             _playerCurrentFaction = selectData.CurrentSelectFaction;
             
             if(_commandData.IsEmpty)return;
@@ -190,6 +190,7 @@ namespace SparFlame.GamePlaySystem.Construction
                 var data = datas[i];
                 data.CommandType = PlacementCommandType.Build;
                 EntityManager.SetComponentData(entities[i], data);
+                if(data.IsMovementShow)_showGhostBuilding = false;
             }
         }
 
