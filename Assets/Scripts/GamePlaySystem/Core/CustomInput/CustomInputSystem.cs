@@ -4,14 +4,12 @@ using Unity.Entities;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
 using UnityEngine.EventSystems;
-
-namespace SparFlame.GamePlaySystem.Mouse
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class CustomInputSystem : SystemBase
     {
-
-        
+        private CustomInputActions _customInputActions;
         private Camera _camera;
         private float _currentClickInterval;
         private bool _isDoubleClick;
@@ -20,9 +18,13 @@ namespace SparFlame.GamePlaySystem.Mouse
         private CustomKeyMapping _keyMapping;
         protected override void OnCreate()
         {
-            base.OnCreate();
             RequireForUpdate<NotPauseTag>();
             RequireForUpdate<InputMouseData>();
+            _customInputActions = new CustomInputActions();
+            _customInputActions.UnitSelection.Enable();
+            _customInputActions.CameraNormalMode.Enable();
+            _customInputActions.Construct.Enable();
+            _customInputActions.CameraNormalMode.Enable();
         }
 
         protected override void OnStartRunning()
@@ -30,6 +32,7 @@ namespace SparFlame.GamePlaySystem.Mouse
             _camera = Camera.main;
             _config = SystemAPI.GetSingleton<CustomInputSystemConfig>();
             _keyMapping = SystemAPI.GetSingleton<CustomKeyMapping>();
+            
         }
 
         protected override void OnUpdate()
@@ -54,19 +57,42 @@ namespace SparFlame.GamePlaySystem.Mouse
                 inputMouseData.IsOverUI = true;
             CheckMouseEventAndRaycastHit(ref inputMouseData);
             CheckUnitControl(ref unitControlData, in _config);
-            
+            CheckUnitSelection();
+            CheckCameraControl();
             EntityManager.SetComponentData(inputMouseDataEntity, inputMouseData);
             EntityManager.SetComponentData(inputUnitControlDataEntity, unitControlData);
-            
+        }
+
+        private void CheckCameraControl()
+        {
+            SystemAPI.SetSingleton(new InputCameraControlData
+            {
+                Movement = _customInputActions.CameraNormalMode.MoveCamera.ReadValue<Vector2>(),
+                RotateCamera = _customInputActions.CameraNormalMode.RotateCamera.ReadValue<Vector2>(),
+                ZoomCamera = _customInputActions.CameraNormalMode.ZoomCamera.ReadValue<Vector2>(),
+                DraggingCamera = math.length(_customInputActions.CameraNormalMode.DragCamera.ReadValue<Vector2>()) > 0.1f,
+                DragCameraStart = _customInputActions.CameraNormalMode.DragCamera.WasPressedThisFrame(),
+                SpeedUp = _customInputActions.CameraNormalMode.SpeedUp.ReadValue<float>() > 0f
+            });
+        }
+
+        private void CheckUnitSelection()
+        {
+            SystemAPI.SetSingleton(new InputUnitSelectionData
+            {
+                AddUnit = _customInputActions.UnitSelection.Add.ReadValue<float>() > 0,
+                DragSelectStart = _customInputActions.UnitSelection.DraggingSelect.WasPressedThisFrame(),
+                DraggingSelect = _customInputActions.UnitSelection.DraggingSelect.ReadValue<float>() > 0,
+                DragSelectEnd = _customInputActions.UnitSelection.DraggingSelect.WasReleasedThisFrame(),
+                SingleSelect = _customInputActions.UnitSelection.SingleSelect.WasPerformedThisFrame(),
+                ChangeFaction = _customInputActions.UnitSelection.ChangeFaction.WasPerformedThisFrame(),
+            });
         }
 
         private void CheckUnitControl(ref InputUnitControlData data, in CustomInputSystemConfig config)
         {
-            data.ChangeFaction = Input.GetKeyDown(_keyMapping.ChangeFactionKey);
-            data.AddUnit = Input.GetKey(_keyMapping.AddUnitKey);
             data.Focus = Input.GetKey(_keyMapping.FocusKey);
         }
-    
         
         /// <summary>
         /// Only Detect Clickable Layer = Terrain + other gameplay layers
@@ -164,8 +190,7 @@ namespace SparFlame.GamePlaySystem.Mouse
                 _currentClickInterval = 0;
             }
         }
-
-
+        
         #region MathRayCast
 
         private bool MouseCastOnEntity(out Entity hitEntity, out float3 hitPosition)

@@ -1,7 +1,7 @@
 ﻿using System;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Mouse;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.GamePlay;
 using Unity.Collections;

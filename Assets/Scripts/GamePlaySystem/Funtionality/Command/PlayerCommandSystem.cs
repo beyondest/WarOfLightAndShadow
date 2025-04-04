@@ -3,7 +3,7 @@ using Unity.Entities;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Mouse;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.GamePlaySystem.State;

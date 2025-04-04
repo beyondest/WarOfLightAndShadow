@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Mouse;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
 using Unity.Collections;

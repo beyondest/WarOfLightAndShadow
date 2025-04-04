@@ -11,37 +11,29 @@ namespace SparFlame.UI.GamePlay
 
     public class CursorController : MonoBehaviour
     {
+        [Header("Config")]
         [SerializeField] private Image cursorLeftImage; 
         [SerializeField] private Image cursorRightImage;
         [SerializeField] private Vector3 cursorLeftOffset;
         [SerializeField] private Vector3 cursorRightOffset;
+        
+        // Internal Data
         private RectTransform _cursorLeftRectTransform;
         private RectTransform _cursorRightRectTransform;
-        
-        [Tooltip("Asset/Resources/UI/Cursor/CursorAttack.png, then this should be set to UI/Cursor. Notice that all the cursors in that path should be Cursor + Enum(CursorType) name")]
-        [SerializeField] private string cursorSpritePath = "UI/Cursor";
-        
-        
-        private Dictionary<CursorType, Sprite> _cursorDictionary;
-        private EntityManager _em;
-        private EntityQuery _notPauseTag;
-        private EntityQuery _cursorData;
         private Quaternion _cursorLeftRotation;
         private Quaternion _cursorRightRotation;
         
+
+        
+        private EntityManager _em;
+        private EntityQuery _notPauseTag;
+        private EntityQuery _cursorData;
+    
+        
         private void Awake()
         {
-            _cursorDictionary = new Dictionary<CursorType, Sprite>();
-            // LoadCursorSprites();
-            _cursorDictionary = CR.ResourceLoadTypeSprites<CursorType>(cursorSpritePath, prefix: "Cursor");
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Confined;
-        }
-
-        private void OnEnable()
-        {
-            _cursorLeftRectTransform = cursorLeftImage.rectTransform;
-            _cursorRightRectTransform = cursorRightImage.rectTransform;
         }
 
         private void Start()
@@ -49,15 +41,17 @@ namespace SparFlame.UI.GamePlay
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
             _cursorData = _em.CreateEntityQuery(typeof(CursorData));
-            SetDefaultCursor();
+            _cursorLeftRectTransform = cursorLeftImage.rectTransform;
+            _cursorRightRectTransform = cursorRightImage.rectTransform;
             _cursorLeftRotation = cursorLeftImage.rectTransform.rotation;
             _cursorRightRotation = cursorRightImage.rectTransform.rotation;
         }
 
         private void Update()
         {
+            if(!BasicWindowResourceManager.Instance.IsResourceLoaded())return;
             HandleFocus();
-            _cursorLeftRectTransform.position = Input.mousePosition + cursorLeftOffset; // 让 UI 鼠标跟随鼠标
+            _cursorLeftRectTransform.position = Input.mousePosition + cursorLeftOffset; 
             _cursorRightRectTransform.position = Input.mousePosition + cursorRightOffset;
             _cursorLeftRectTransform.rotation = _cursorLeftRotation;
             _cursorRightRectTransform.rotation = _cursorRightRotation;
@@ -68,15 +62,15 @@ namespace SparFlame.UI.GamePlay
                 return;
             }
             var cursorManageData = _cursorData.GetSingleton<CursorData>();
-            cursorLeftImage.sprite = _cursorDictionary[cursorManageData.LeftCursorType];
-            cursorRightImage.sprite = _cursorDictionary[cursorManageData.RightCursorType];
+            cursorLeftImage.sprite = BasicWindowResourceManager.Instance.CursorSprites[cursorManageData.LeftCursorType];
+            cursorRightImage.sprite = BasicWindowResourceManager.Instance.CursorSprites[cursorManageData.RightCursorType];
 
         }
 
         private void SetDefaultCursor()
         {
-            cursorLeftImage.sprite = _cursorDictionary[CursorType.UI];
-            cursorRightImage.sprite = _cursorDictionary[CursorType.None];
+            cursorLeftImage.sprite = BasicWindowResourceManager.Instance.CursorSprites[CursorType.UI];
+            cursorRightImage.sprite = BasicWindowResourceManager.Instance.CursorSprites[CursorType.None];
         }
         private static void HandleFocus()
         {

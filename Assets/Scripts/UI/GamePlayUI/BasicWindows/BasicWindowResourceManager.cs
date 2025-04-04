@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
+using SparFlame.GamePlaySystem.Command;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
@@ -20,7 +21,9 @@ namespace SparFlame.UI.GamePlay
         [CanBeNull] private string resourceTypeSpriteSuffix;
         [SerializeField]
         [CanBeNull] private string factionTypeHpSpriteSuffix = "Hp";
-
+        [SerializeField]
+        [CanBeNull] private string cursorTypeSuffix;
+        
         
         public static BasicWindowResourceManager Instance;
         
@@ -29,13 +32,13 @@ namespace SparFlame.UI.GamePlay
         public readonly Dictionary<BuffType, Sprite> BuffSprites = new();
         public readonly Dictionary<ResourceType, Sprite> ResourceSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionHpSprites = new();
-
+        public readonly Dictionary<CursorType, Sprite> CursorSprites = new();
         
         private readonly AddressableResourceGroup _group = new();
         
         public override bool IsResourceLoaded()
         {
-            return _group.IsHandleCreated(4) && _group.IsDone;
+            return _group.IsHandleCreated(5) && _group.IsDone;
         }
 
         private void Awake()
@@ -70,6 +73,12 @@ namespace SparFlame.UI.GamePlay
                 result => CR.OnTypeSuffixLoadComplete(result, FactionHpSprites));
             _group.Add(handle4);
 
+            var handle5 = CR.LoadTypeSuffix<CursorType, Sprite>(cursorTypeSuffix, result =>
+            {
+                CR.OnTypeSuffixLoadComplete(result, CursorSprites);
+            });
+            _group.Add(handle5);
+
         }
 
         private void OnDisable()
@@ -79,6 +88,7 @@ namespace SparFlame.UI.GamePlay
             TierSprites.Clear();
             BuffSprites.Clear();
             FactionHpSprites.Clear();
+            CursorSprites.Clear();
         }
         
     }

@@ -1,10 +1,9 @@
 using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Physics.Authoring;
 
-namespace SparFlame.GamePlaySystem.Mouse
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     public class CustomInputSystemAuthoring : MonoBehaviour
     {
@@ -15,7 +14,7 @@ namespace SparFlame.GamePlaySystem.Mouse
 
         [Header("Player Config")]
 
-        public int leftClickIndex = 0;
+        public int leftClickIndex;
         public int rightClickIndex = 1;
 
         [Tooltip("Pressed")]
@@ -51,7 +50,6 @@ namespace SparFlame.GamePlaySystem.Mouse
                     HitPosition = float3.zero,
                     MousePosition = float3.zero
                 });
-                AddComponent(entity, new InputUnitControlData());
                 AddComponent(entity, new CustomKeyMapping
                 {
                     LeftClickIndex = authoring.leftClickIndex,
@@ -63,6 +61,9 @@ namespace SparFlame.GamePlaySystem.Mouse
                     ClockRotateKey = authoring.clockRotateKey,
                     FineTuneKey = authoring.fineTuneKey,
                 });
+                AddComponent(entity, new InputUnitControlData());
+                AddComponent(entity, new InputUnitSelectionData());
+                AddComponent(entity, new InputCameraControlData());
             }
         } 
     }
@@ -127,9 +128,28 @@ namespace SparFlame.GamePlaySystem.Mouse
     public struct InputUnitControlData : IComponentData
     {
         public bool Focus;
-        public bool ChangeFaction;
-        public bool AddUnit;
+        
     }
 
+    public struct InputUnitSelectionData : IComponentData
+    {
+        public bool SingleSelect;
+        public bool DragSelectStart;
+        public bool DraggingSelect;
+        public bool DragSelectEnd;
+        public bool AddUnit;
+        public bool ChangeFaction;
+    }
+
+    
+    public struct InputCameraControlData : IComponentData
+    {
+        public float2 Movement;
+        public float2 ZoomCamera;
+        public float2 RotateCamera;
+        public bool DraggingCamera;
+        public bool DragCameraStart;
+        public bool SpeedUp;
+    }
     
 }

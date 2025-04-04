@@ -14,27 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: GamePlayUI
   m_GUID: 1a0891b1fa76ef94bad09a964e90d557
-  m_SerializeEntries:
-  - m_GUID: 0808f130ee6d2ce4787a24ec83ba8212
-    m_Address: Recycle
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 253b4f4848a8d1f48ac8bd2eda23f493
-    m_Address: DivineRampart
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 277c19f8575df5e4493066a19ac48073
-    m_Address: Relocate
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4031e35ec8f777d42a7a5c062fc780f6
-    m_Address: Store
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
   m_SchemaSet:

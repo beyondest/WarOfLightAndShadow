@@ -1,6 +1,6 @@
 using SparFlame.GamePlaySystem.Command;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Mouse;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Entities;
 using UnityEngine;

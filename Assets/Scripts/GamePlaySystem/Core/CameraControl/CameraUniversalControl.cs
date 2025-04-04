@@ -65,12 +65,12 @@ namespace SparFlame.GamePlaySystem.CameraControl
                     transform.Translate(offset, Space.Self);
                 }
 
-                //drag camera around with Middle Mouse
-                if (Input.GetMouseButton(2))
-                {
-                    transform.Translate(-Input.GetAxisRaw("Mouse X") * Time.deltaTime * dragSpeed,
-                        -Input.GetAxisRaw("Mouse Y") * Time.deltaTime * dragSpeed, 0);
-                }
+                // //drag camera around with Middle Mouse
+                // if (Input.GetMouseButton(2))
+                // {
+                //     transform.Translate(-Input.GetAxisRaw("Mouse X") * Time.deltaTime * dragSpeed,
+                //         -Input.GetAxisRaw("Mouse Y") * Time.deltaTime * dragSpeed, 0);
+                // }
 
                 //Zoom in and out with Mouse Wheel
                 transform.Translate(0, 0, Input.GetAxis("Mouse ScrollWheel") * zoomSpeed, Space.Self);

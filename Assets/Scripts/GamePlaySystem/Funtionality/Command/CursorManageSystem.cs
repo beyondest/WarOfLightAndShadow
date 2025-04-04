@@ -6,12 +6,12 @@ using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.CameraControl;
-using SparFlame.GamePlaySystem.Mouse;
+using SparFlame.GamePlaySystem.CustomInput;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Command
 {
-    [UpdateAfter(typeof(UnitSelectionSystem))]
+    [UpdateAfter(typeof(UnitSelectionPlusSystem))]
     public partial struct CursorManageSystem : ISystem
     {
         [BurstCompile]
@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Command
             state.RequireForUpdate<CursorData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
-            state.RequireForUpdate<CameraControlData>();
+            state.RequireForUpdate<CameraMovementState>();
         }
 
         [BurstCompile]
@@ -30,7 +30,7 @@ namespace SparFlame.GamePlaySystem.Command
             var customInputSystemData = SystemAPI.GetSingleton<InputMouseData>();
             var cursorManageData = SystemAPI.GetSingletonRW<CursorData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
-            var cameraControlData = SystemAPI.GetSingleton<CameraControlData>();
+            var cameraControlData = SystemAPI.GetSingleton<CameraMovementState>();
 
             cursorManageData.ValueRW.LeftCursorType = CursorType.UI;
             cursorManageData.ValueRW.RightCursorType = CursorType.None;
@@ -141,9 +141,9 @@ namespace SparFlame.GamePlaySystem.Command
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsZoomingCamera(ref RefRW<CursorData> cursorManageData,
-            in CameraControlData cameraControlData)
+            in CameraMovementState cameraMovementState)
         {
-            cursorManageData.ValueRW.LeftCursorType = cameraControlData.ZState switch
+            cursorManageData.ValueRW.LeftCursorType = cameraMovementState.ZState switch
             {
                 CameraZoomState.ZoomIn => CursorType.ZoomIn,
                 CameraZoomState.ZoomOut => CursorType.ZoomOut,
@@ -153,10 +153,10 @@ namespace SparFlame.GamePlaySystem.Command
         }
 
         private static bool IsEdgeScrolling(ref RefRW<CursorData> cursorManageData,
-            in CameraControlData cameraControlData)
+            in CameraMovementState cameraMovementState)
         {
             cursorManageData.ValueRW.LeftCursorType =
-                cameraControlData.EState switch
+                cameraMovementState.EState switch
                 {
                     EdgeMoveState.Down => CursorType.ArrowDown,
                     EdgeMoveState.Up => CursorType.ArrowUp,
@@ -173,9 +173,9 @@ namespace SparFlame.GamePlaySystem.Command
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsDraggingCamera(ref RefRW<CursorData> cursorManageData,
-            in CameraControlData cameraControlData)
+            in CameraMovementState cameraMovementState)
         {
-            if (!cameraControlData.IsDragging) return false;
+            if (!cameraMovementState.IsDragging) return false;
             cursorManageData.ValueRW.LeftCursorType = CursorType.Drag;
             return true;
         }
