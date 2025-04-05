@@ -87,7 +87,7 @@ namespace SparFlame.GamePlaySystem.Building
         // Command side
         public PlacementCommandType CommandType;
         public FactionTag Faction;
-        public quaternion Rotation;
+        public float RotationAngle;
         public Entity TargetBuilding;
         public bool IsMovementShow;
 
@@ -98,6 +98,5 @@ namespace SparFlame.GamePlaySystem.Building
         
         // Internal data
         public LocalTransform OriTransform;
-        public LocalTransform RelativeTransformToParent;
     }
 }

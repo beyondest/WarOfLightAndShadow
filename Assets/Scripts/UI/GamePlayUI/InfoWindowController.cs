@@ -1,3 +1,4 @@
+using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Command;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
@@ -62,11 +63,12 @@ namespace SparFlame.UI.GamePlay
         }
 
         private bool _minimizeWindow;
-
+        private CustomInputActions _customInputActions;
+        
         private Entity _closeUpTarget;
         private EntityManager _em;
         private EntityQuery _notPauseTag;
-        private EntityQuery _customInputData;
+        private EntityQuery _customMouseDataQuery;
         private EntityQuery _cursorData;
         private EntityQuery _selectedData;
 
@@ -83,9 +85,10 @@ namespace SparFlame.UI.GamePlay
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-            _customInputData = _em.CreateEntityQuery(typeof(InputMouseData));
+            _customMouseDataQuery = _em.CreateEntityQuery(typeof(InputMouseData));
             _cursorData = _em.CreateEntityQuery(typeof(CursorData));
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
+            _customInputActions = InputListener.Instance.GetCustomInputActions();
             Hide();
         }
 
@@ -93,23 +96,23 @@ namespace SparFlame.UI.GamePlay
         {
             if (_notPauseTag.IsEmpty) return;
 
-            var customInputSystemData = _customInputData.GetSingleton<InputMouseData>();
+            var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<CursorData>();
             var selectedData = _selectedData.GetSingleton<UnitSelectionData>();
 
             // Check left click event
             // Valid when left click on interactable entity
-            var leftClickOnValid = customInputSystemData is
-                                       { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left, IsOverUI: false }
+            var leftClickOnValid = !inputMouseData.IsOverUI
+                                   && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
                                    && cursorData.LeftCursorType is not (CursorType.None);
-            var leftClickOnInvalid = customInputSystemData is
-                                         { ClickFlag: ClickFlag.Start, ClickType: ClickType.Left, IsOverUI: false }
+            var leftClickOnInvalid = !inputMouseData.IsOverUI
+                                     && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
                                      && cursorData.LeftCursorType is (CursorType.None);
 
             // Check should switch close up target
             if (leftClickOnValid)
             {
-                UpdateCloseUpTarget(customInputSystemData.HitEntity);
+                UpdateCloseUpTarget(inputMouseData.HitEntity);
             }
 
 

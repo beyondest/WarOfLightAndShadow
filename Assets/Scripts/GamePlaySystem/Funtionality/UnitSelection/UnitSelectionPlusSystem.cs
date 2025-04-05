@@ -17,7 +17,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<InputUnitSelectionData>();
+            state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<UnitSelectionConfig>();
@@ -32,7 +32,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             var unitSelectionData = SystemAPI.GetSingletonRW<UnitSelectionData>();
 
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
-            var inputUnitSelectionData = SystemAPI.GetSingleton<InputUnitSelectionData>();
+            var inputUnitSelectionData = SystemAPI.GetSingleton<InputUnitControlData>();
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
    

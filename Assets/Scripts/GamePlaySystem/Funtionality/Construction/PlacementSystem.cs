@@ -11,14 +11,13 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
-using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 // TODO : Check why location of ghost cannot be sync with hit position
 namespace SparFlame.GamePlaySystem.Building
 {
-    [UpdateAfter(typeof(CustomInputSystem))]
+    [UpdateAfter(typeof(InputMouseSystem))]
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct PlacementSystem : ISystem
     {
@@ -101,17 +100,29 @@ namespace SparFlame.GamePlaySystem.Building
 
                         if (valid)
                             SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, false);
+                        
                         // Synchronize the position and rotation of ghost building and ghost trigger with the input position
                         ref var ghostTransform =
                             ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostModelEntity).ValueRW;
                         ref var triggerTransform =
                             ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostTriggerEntity).ValueRW;
-                        var targetTransform = new LocalTransform
+                        
+                        // Get Target Transform
+                        var targetTransform = ghostTransform;
+                        float rotateAngle;
+                        if (math.abs(data.RotationAngle).Equals(15f) )
                         {
-                            Position = customInputData.HitPosition,
-                            Rotation = data.Rotation,
-                            Scale = 1
-                        };
+                            var curDeg = PlacementUtils.GetCurrentYDeg(targetTransform.Rotation);
+                            rotateAngle = PlacementUtils.SnapToNearest15(curDeg,data.RotationAngle);
+                        }
+                        else
+                        {
+                            rotateAngle = data.RotationAngle;
+                        }
+                        var rotationDelta = quaternion.RotateY(math.radians(rotateAngle));
+                        targetTransform.Position = customInputData.HitPosition;
+                        targetTransform.Scale = 1;
+                        targetTransform.Rotation = math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
                         ghostTransform = targetTransform;
                         triggerTransform = targetTransform;
                         state.EntityManager.SetComponentData(entity, data);
@@ -123,7 +134,6 @@ namespace SparFlame.GamePlaySystem.Building
                         {
                             DestroyPriorGhost(ref state, ref data);
                         }
-
                         // Create ghost preview
                         data.GhostModelEntity = InstantiateChildrenWithNewParent(ref state, data.TargetBuilding);
                         data.GhostTriggerEntity = state.EntityManager.Instantiate(config.GhostTriggerPrefab);
@@ -138,21 +148,15 @@ namespace SparFlame.GamePlaySystem.Building
                         {
                             state.EntityManager.SetComponentData(data.TargetBuilding, data.OriTransform);
                         }
-
                         DestroyPriorGhost(ref state, ref data);
                         state.EntityManager.DestroyEntity(entity);
                         break;
 
                     case PlacementCommandType.Build when data.State == PlacementStateType.Valid:
-                        // Reduce resources
-                        var newTransform = new LocalTransform
-                        {
-                            Position = customInputData.HitPosition,
-                            Rotation = data.Rotation,
-                            Scale = 1f
-                        };
+                        var newTransform = SystemAPI.GetComponent<LocalTransform>(data.GhostModelEntity);
                         if (!data.IsMovementShow)
                         {
+                            // Reduce resources
                             foreach (var cost in _costLookup[data.TargetBuilding])
                             {
                                 var r = resourceData[(int)cost.Type];
@@ -168,11 +172,11 @@ namespace SparFlame.GamePlaySystem.Building
                         }
                         else
                         {
+                            // Move building to new place
                             state.EntityManager.SetComponentData(data.TargetBuilding, newTransform);
                             DestroyPriorGhost(ref state, ref data);
                             state.EntityManager.DestroyEntity(entity); // Exit ghost show
                         }
-
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -253,7 +257,8 @@ namespace SparFlame.GamePlaySystem.Building
             }
 
             // Create new parent
-            var newParentEntity = state.EntityManager.CreateEntity(typeof(LocalTransform));
+            var newParentEntity = state.EntityManager.CreateEntity();
+            state.EntityManager.AddComponent<LocalTransform>(newParentEntity);
             state.EntityManager.AddComponent<LocalToWorld>(newParentEntity);
             var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(newParentEntity);
             buffer.Add(newParentEntity);

@@ -40,9 +40,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 },
                 {
                     ""name"": ""DragCamera"",
-                    ""type"": ""Value"",
+                    ""type"": ""Button"",
                     ""id"": ""0ffe4c60-af19-4ae7-9a16-06daa1afa938"",
-                    ""expectedControlType"": ""Vector2"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
@@ -78,6 +78,15 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""name"": ""SpeedUp"",
                     ""type"": ""Button"",
                     ""id"": ""3b31c2f5-6dd7-4b03-b6f5-2464f416bb24"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SwtichEdgeScrolling"",
+                    ""type"": ""Button"",
+                    ""id"": ""4e8c5237-e0a3-4179-9eec-f753fbec67fa"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -207,39 +216,6 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""One Modifier"",
-                    ""id"": ""edaf7084-714f-4fc6-9366-9ebacbf09c54"",
-                    ""path"": ""OneModifier"",
-                    ""interactions"": ""Press"",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""DragCamera"",
-                    ""isComposite"": true,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": ""modifier"",
-                    ""id"": ""42d2bbc5-7358-4456-80c1-ddf6b3d767b7"",
-                    ""path"": ""<Mouse>/middleButton"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""DragCamera"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": true
-                },
-                {
-                    ""name"": ""binding"",
-                    ""id"": ""e413ebbb-dc4f-4bf4-b6db-f6c4b76bf09b"",
-                    ""path"": ""<Mouse>/delta"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": "";Keyboard&Mouse"",
-                    ""action"": ""DragCamera"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": true
-                },
-                {
                     ""name"": ""Two Modifiers"",
                     ""id"": ""a3a994d4-e3c6-45a2-89da-1ee34441c3e3"",
                     ""path"": ""TwoModifiers"",
@@ -304,11 +280,33 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""action"": ""SpeedUp"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""34b7e844-3679-4b4d-9c57-48df27082388"",
+                    ""path"": ""<Keyboard>/capsLock"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""SwtichEdgeScrolling"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""87c609d0-68dc-4e21-a28e-60fb1dd657e5"",
+                    ""path"": ""<Mouse>/middleButton"",
+                    ""interactions"": ""Press(behavior=2)"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""DragCamera"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
         {
-            ""name"": ""UnitSelection"",
+            ""name"": ""UnitControl"",
             ""id"": ""b2feda2d-56c4-4692-a7ed-b9dc41cdc541"",
             ""actions"": [
                 {
@@ -360,6 +358,24 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""name"": ""ClassSelect"",
                     ""type"": ""Button"",
                     ""id"": ""bd9d13ed-6e16-4e27-aff1-af3a50a5ee81"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Command"",
+                    ""type"": ""Button"",
+                    ""id"": ""70172872-50c1-425d-b9e2-152db20a26f7"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Focus"",
+                    ""type"": ""Button"",
+                    ""id"": ""399a7cec-f87b-45c1-bda3-056db4ac2501"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -432,6 +448,28 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""action"": ""ClassSelect"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""40c0fd48-c053-45ff-8f63-101e54173ca9"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Command"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4efef0f7-7746-4f19-8d24-58654a0dcccb"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Focus"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -449,13 +487,76 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""Rotate"",
-                    ""type"": ""Value"",
-                    ""id"": ""0fb79579-456f-4321-8ab0-3b75dcfcce6d"",
+                    ""name"": ""Cancel"",
+                    ""type"": ""Button"",
+                    ""id"": ""f5d9cc6e-0143-4fb6-9d64-9e48a2fb06ed"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": true
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Snap"",
+                    ""type"": ""Button"",
+                    ""id"": ""9a738d1d-b0bb-4154-8561-2b1aff5a4db8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""FineAdjustment"",
+                    ""type"": ""Button"",
+                    ""id"": ""b4ed8eab-7bde-4eda-b255-ae2f765f5c38"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Recycle"",
+                    ""type"": ""Button"",
+                    ""id"": ""a917b7e5-4d9b-408b-80d4-6f7a09bc5037"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MoveBuilding"",
+                    ""type"": ""Button"",
+                    ""id"": ""df5fd923-4d69-46ce-a93d-1b79363078fa"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Store"",
+                    ""type"": ""Button"",
+                    ""id"": ""03d863d6-669c-4150-8d9b-170332e1a69a"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Rotate"",
+                    ""type"": ""Button"",
+                    ""id"": ""e0990edd-0be4-4f36-9878-beeb2bc46d05"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Exit"",
+                    ""type"": ""Button"",
+                    ""id"": ""de412013-dc95-4f2b-85e7-aa0df4bfcaf5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -472,12 +573,111 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 },
                 {
                     ""name"": """",
-                    ""id"": ""8f1c22b8-146b-488f-a47a-7a84c048f1d7"",
-                    ""path"": ""<Mouse>/scroll"",
+                    ""id"": ""31e940c0-1fbf-4170-b3f5-f52ce3a04cf0"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Cancel"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5d0f4fab-9f6a-4d94-9b4b-463c35a0154b"",
+                    ""path"": ""<Keyboard>/u"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Snap"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9db0da55-0356-489f-9226-5d61bcd29424"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""FineAdjustment"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""71e2e06d-7e54-4860-b1f6-49f6e6e446ae"",
+                    ""path"": ""<Keyboard>/x"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Recycle"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5dc3822b-9259-4977-8ea5-aaf9df263b02"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""MoveBuilding"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5d89b04b-21ee-4efa-b8aa-571a8a56639c"",
+                    ""path"": ""<Keyboard>/c"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Store"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""1D Axis"",
+                    ""id"": ""56f20726-0a15-4f73-ad5b-95132b415f4c"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Rotate"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""negative"",
+                    ""id"": ""797b8461-592d-4375-9879-f7cc96a05ca2"",
+                    ""path"": ""<Keyboard>/q"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""Rotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""d4472026-ceb1-43b4-8bee-4eb9a1e6dbe5"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Rotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""64bfdb03-fba3-4fb1-86c7-f8c9224cbb72"",
+                    ""path"": ""<Keyboard>/b"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Exit"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1474,34 +1674,6 @@ namespace SparFlame.GamePlaySystem.CustomInput
             ]
         },
         {
-            ""name"": ""UnitControl"",
-            ""id"": ""204c360a-02b4-4a59-820a-92aefd66dc7e"",
-            ""actions"": [
-                {
-                    ""name"": ""SetCommand"",
-                    ""type"": ""Button"",
-                    ""id"": ""a1bdf0e8-4610-4bdc-bfa7-a578482ce136"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                }
-            ],
-            ""bindings"": [
-                {
-                    ""name"": """",
-                    ""id"": ""5ba9a62f-b4a5-4504-ab9f-7076110061e1"",
-                    ""path"": ""<Mouse>/rightButton"",
-                    ""interactions"": ""Tap"",
-                    ""processors"": """",
-                    ""groups"": "";Keyboard&Mouse"",
-                    ""action"": ""SetCommand"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                }
-            ]
-        },
-        {
             ""name"": ""CameraFlyMode"",
             ""id"": ""274641e8-976b-4db1-808f-5ff5dc54a5c1"",
             ""actions"": [
@@ -1522,6 +1694,51 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Zoom"",
+                    ""type"": ""Value"",
+                    ""id"": ""d651024c-a212-4d60-99d1-8bb1e14cf923"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""FlyUp"",
+                    ""type"": ""Button"",
+                    ""id"": ""b6550575-d616-452b-9924-b1a748e80abf"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""FlyDown"",
+                    ""type"": ""Button"",
+                    ""id"": ""cb6c7df4-4804-4ae8-b451-2446e953affd"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SpeedUp"",
+                    ""type"": ""Button"",
+                    ""id"": ""9e5f065f-dd0f-408d-baeb-72f12388bb13"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Exit"",
+                    ""type"": ""Button"",
+                    ""id"": ""9ede4daf-434c-4100-9ef4-69d6a725d33b"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -1689,6 +1906,72 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""action"": ""Look"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4aa9a15e-02e2-4d7a-8137-8f67912915f4"",
+                    ""path"": ""<Mouse>/scroll"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Zoom"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""396aa868-c7af-4235-9510-2d5979d15cb1"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""FlyUp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8dca7268-7333-4c64-aff5-271d9fef83bd"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""FlyDown"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""217d7661-f941-41b7-8419-64b99635ad52"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""SpeedUp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""de421bad-6a0f-47f5-b7c9-e1d957667252"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Exit"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7527592a-3be8-40f6-92fa-df2aafdb0a94"",
+                    ""path"": ""<Keyboard>/capsLock"",
+                    ""interactions"": ""MultiTap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Exit"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1697,9 +1980,27 @@ namespace SparFlame.GamePlaySystem.CustomInput
             ""id"": ""2d4b5009-bcbd-4906-9aa2-df6b48d1efac"",
             ""actions"": [
                 {
-                    ""name"": ""New action"",
+                    ""name"": ""SwitchBuild"",
                     ""type"": ""Button"",
                     ""id"": ""91c26f35-fff8-4bc4-b5c0-03b7f0aedd2f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SwitchCameraFly"",
+                    ""type"": ""Button"",
+                    ""id"": ""2db6949b-b3b3-486e-9515-ba87864212c9"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Pause"",
+                    ""type"": ""Button"",
+                    ""id"": ""9492bb5b-c459-4f5e-bfec-4676be463676"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -1710,11 +2011,61 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 {
                     ""name"": """",
                     ""id"": ""2eb3d2e1-e949-491c-8486-7257c47ce107"",
-                    ""path"": """",
-                    ""interactions"": """",
+                    ""path"": ""<Keyboard>/b"",
+                    ""interactions"": ""Tap"",
                     ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""New action"",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""SwitchBuild"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""890bc4de-5f5f-4404-a900-b7dfbb657b24"",
+                    ""path"": ""<Keyboard>/capsLock"",
+                    ""interactions"": ""MultiTap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""SwitchCameraFly"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b2e5a894-f7aa-4e98-944e-8e9ebdef94cd"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""InfoWindow"",
+            ""id"": ""41cb7778-5fb7-4516-9aa2-f17454a0f828"",
+            ""actions"": [
+                {
+                    ""name"": ""CheckInfo"",
+                    ""type"": ""Button"",
+                    ""id"": ""29605f25-95db-46a2-aecc-62e2f40bfa22"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""c5b8a691-93a5-4a9d-ad8f-feb8021f8123"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""CheckInfo"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1792,18 +2143,28 @@ namespace SparFlame.GamePlaySystem.CustomInput
             m_CameraNormalMode_ZoomCamera = m_CameraNormalMode.FindAction("ZoomCamera", throwIfNotFound: true);
             m_CameraNormalMode_LockCameraAtTarget = m_CameraNormalMode.FindAction("LockCameraAtTarget", throwIfNotFound: true);
             m_CameraNormalMode_SpeedUp = m_CameraNormalMode.FindAction("SpeedUp", throwIfNotFound: true);
-            // UnitSelection
-            m_UnitSelection = asset.FindActionMap("UnitSelection", throwIfNotFound: true);
-            m_UnitSelection_SingleSelect = m_UnitSelection.FindAction("SingleSelect", throwIfNotFound: true);
-            m_UnitSelection_DraggingSelect = m_UnitSelection.FindAction("DraggingSelect", throwIfNotFound: true);
-            m_UnitSelection_Add = m_UnitSelection.FindAction("Add", throwIfNotFound: true);
-            m_UnitSelection_ChangeFaction = m_UnitSelection.FindAction("ChangeFaction", throwIfNotFound: true);
-            m_UnitSelection_DraggingSelectStart = m_UnitSelection.FindAction("DraggingSelectStart", throwIfNotFound: true);
-            m_UnitSelection_ClassSelect = m_UnitSelection.FindAction("ClassSelect", throwIfNotFound: true);
+            m_CameraNormalMode_SwtichEdgeScrolling = m_CameraNormalMode.FindAction("SwtichEdgeScrolling", throwIfNotFound: true);
+            // UnitControl
+            m_UnitControl = asset.FindActionMap("UnitControl", throwIfNotFound: true);
+            m_UnitControl_SingleSelect = m_UnitControl.FindAction("SingleSelect", throwIfNotFound: true);
+            m_UnitControl_DraggingSelect = m_UnitControl.FindAction("DraggingSelect", throwIfNotFound: true);
+            m_UnitControl_Add = m_UnitControl.FindAction("Add", throwIfNotFound: true);
+            m_UnitControl_ChangeFaction = m_UnitControl.FindAction("ChangeFaction", throwIfNotFound: true);
+            m_UnitControl_DraggingSelectStart = m_UnitControl.FindAction("DraggingSelectStart", throwIfNotFound: true);
+            m_UnitControl_ClassSelect = m_UnitControl.FindAction("ClassSelect", throwIfNotFound: true);
+            m_UnitControl_Command = m_UnitControl.FindAction("Command", throwIfNotFound: true);
+            m_UnitControl_Focus = m_UnitControl.FindAction("Focus", throwIfNotFound: true);
             // Construct
             m_Construct = asset.FindActionMap("Construct", throwIfNotFound: true);
             m_Construct_Build = m_Construct.FindAction("Build", throwIfNotFound: true);
+            m_Construct_Cancel = m_Construct.FindAction("Cancel", throwIfNotFound: true);
+            m_Construct_Snap = m_Construct.FindAction("Snap", throwIfNotFound: true);
+            m_Construct_FineAdjustment = m_Construct.FindAction("FineAdjustment", throwIfNotFound: true);
+            m_Construct_Recycle = m_Construct.FindAction("Recycle", throwIfNotFound: true);
+            m_Construct_MoveBuilding = m_Construct.FindAction("MoveBuilding", throwIfNotFound: true);
+            m_Construct_Store = m_Construct.FindAction("Store", throwIfNotFound: true);
             m_Construct_Rotate = m_Construct.FindAction("Rotate", throwIfNotFound: true);
+            m_Construct_Exit = m_Construct.FindAction("Exit", throwIfNotFound: true);
             // Player
             m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
             m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
@@ -1827,28 +2188,35 @@ namespace SparFlame.GamePlaySystem.CustomInput
             m_UI_ScrollWheel = m_UI.FindAction("ScrollWheel", throwIfNotFound: true);
             m_UI_TrackedDevicePosition = m_UI.FindAction("TrackedDevicePosition", throwIfNotFound: true);
             m_UI_TrackedDeviceOrientation = m_UI.FindAction("TrackedDeviceOrientation", throwIfNotFound: true);
-            // UnitControl
-            m_UnitControl = asset.FindActionMap("UnitControl", throwIfNotFound: true);
-            m_UnitControl_SetCommand = m_UnitControl.FindAction("SetCommand", throwIfNotFound: true);
             // CameraFlyMode
             m_CameraFlyMode = asset.FindActionMap("CameraFlyMode", throwIfNotFound: true);
             m_CameraFlyMode_Move = m_CameraFlyMode.FindAction("Move", throwIfNotFound: true);
             m_CameraFlyMode_Look = m_CameraFlyMode.FindAction("Look", throwIfNotFound: true);
+            m_CameraFlyMode_Zoom = m_CameraFlyMode.FindAction("Zoom", throwIfNotFound: true);
+            m_CameraFlyMode_FlyUp = m_CameraFlyMode.FindAction("FlyUp", throwIfNotFound: true);
+            m_CameraFlyMode_FlyDown = m_CameraFlyMode.FindAction("FlyDown", throwIfNotFound: true);
+            m_CameraFlyMode_SpeedUp = m_CameraFlyMode.FindAction("SpeedUp", throwIfNotFound: true);
+            m_CameraFlyMode_Exit = m_CameraFlyMode.FindAction("Exit", throwIfNotFound: true);
             // ModeSwitch
             m_ModeSwitch = asset.FindActionMap("ModeSwitch", throwIfNotFound: true);
-            m_ModeSwitch_Newaction = m_ModeSwitch.FindAction("New action", throwIfNotFound: true);
+            m_ModeSwitch_SwitchBuild = m_ModeSwitch.FindAction("SwitchBuild", throwIfNotFound: true);
+            m_ModeSwitch_SwitchCameraFly = m_ModeSwitch.FindAction("SwitchCameraFly", throwIfNotFound: true);
+            m_ModeSwitch_Pause = m_ModeSwitch.FindAction("Pause", throwIfNotFound: true);
+            // InfoWindow
+            m_InfoWindow = asset.FindActionMap("InfoWindow", throwIfNotFound: true);
+            m_InfoWindow_CheckInfo = m_InfoWindow.FindAction("CheckInfo", throwIfNotFound: true);
         }
 
         ~@CustomInputActions()
         {
             UnityEngine.Debug.Assert(!m_CameraNormalMode.enabled, "This will cause a leak and performance issues, CustomInputActions.CameraNormalMode.Disable() has not been called.");
-            UnityEngine.Debug.Assert(!m_UnitSelection.enabled, "This will cause a leak and performance issues, CustomInputActions.UnitSelection.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_UnitControl.enabled, "This will cause a leak and performance issues, CustomInputActions.UnitControl.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_Construct.enabled, "This will cause a leak and performance issues, CustomInputActions.Construct.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, CustomInputActions.Player.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, CustomInputActions.UI.Disable() has not been called.");
-            UnityEngine.Debug.Assert(!m_UnitControl.enabled, "This will cause a leak and performance issues, CustomInputActions.UnitControl.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_CameraFlyMode.enabled, "This will cause a leak and performance issues, CustomInputActions.CameraFlyMode.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_ModeSwitch.enabled, "This will cause a leak and performance issues, CustomInputActions.ModeSwitch.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_InfoWindow.enabled, "This will cause a leak and performance issues, CustomInputActions.InfoWindow.Disable() has not been called.");
         }
 
         public void Dispose()
@@ -1916,6 +2284,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private readonly InputAction m_CameraNormalMode_ZoomCamera;
         private readonly InputAction m_CameraNormalMode_LockCameraAtTarget;
         private readonly InputAction m_CameraNormalMode_SpeedUp;
+        private readonly InputAction m_CameraNormalMode_SwtichEdgeScrolling;
         public struct CameraNormalModeActions
         {
             private @CustomInputActions m_Wrapper;
@@ -1926,6 +2295,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
             public InputAction @ZoomCamera => m_Wrapper.m_CameraNormalMode_ZoomCamera;
             public InputAction @LockCameraAtTarget => m_Wrapper.m_CameraNormalMode_LockCameraAtTarget;
             public InputAction @SpeedUp => m_Wrapper.m_CameraNormalMode_SpeedUp;
+            public InputAction @SwtichEdgeScrolling => m_Wrapper.m_CameraNormalMode_SwtichEdgeScrolling;
             public InputActionMap Get() { return m_Wrapper.m_CameraNormalMode; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -1953,6 +2323,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @SpeedUp.started += instance.OnSpeedUp;
                 @SpeedUp.performed += instance.OnSpeedUp;
                 @SpeedUp.canceled += instance.OnSpeedUp;
+                @SwtichEdgeScrolling.started += instance.OnSwtichEdgeScrolling;
+                @SwtichEdgeScrolling.performed += instance.OnSwtichEdgeScrolling;
+                @SwtichEdgeScrolling.canceled += instance.OnSwtichEdgeScrolling;
             }
 
             private void UnregisterCallbacks(ICameraNormalModeActions instance)
@@ -1975,6 +2348,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @SpeedUp.started -= instance.OnSpeedUp;
                 @SpeedUp.performed -= instance.OnSpeedUp;
                 @SpeedUp.canceled -= instance.OnSpeedUp;
+                @SwtichEdgeScrolling.started -= instance.OnSwtichEdgeScrolling;
+                @SwtichEdgeScrolling.performed -= instance.OnSwtichEdgeScrolling;
+                @SwtichEdgeScrolling.canceled -= instance.OnSwtichEdgeScrolling;
             }
 
             public void RemoveCallbacks(ICameraNormalModeActions instance)
@@ -1993,34 +2369,38 @@ namespace SparFlame.GamePlaySystem.CustomInput
         }
         public CameraNormalModeActions @CameraNormalMode => new CameraNormalModeActions(this);
 
-        // UnitSelection
-        private readonly InputActionMap m_UnitSelection;
-        private List<IUnitSelectionActions> m_UnitSelectionActionsCallbackInterfaces = new List<IUnitSelectionActions>();
-        private readonly InputAction m_UnitSelection_SingleSelect;
-        private readonly InputAction m_UnitSelection_DraggingSelect;
-        private readonly InputAction m_UnitSelection_Add;
-        private readonly InputAction m_UnitSelection_ChangeFaction;
-        private readonly InputAction m_UnitSelection_DraggingSelectStart;
-        private readonly InputAction m_UnitSelection_ClassSelect;
-        public struct UnitSelectionActions
+        // UnitControl
+        private readonly InputActionMap m_UnitControl;
+        private List<IUnitControlActions> m_UnitControlActionsCallbackInterfaces = new List<IUnitControlActions>();
+        private readonly InputAction m_UnitControl_SingleSelect;
+        private readonly InputAction m_UnitControl_DraggingSelect;
+        private readonly InputAction m_UnitControl_Add;
+        private readonly InputAction m_UnitControl_ChangeFaction;
+        private readonly InputAction m_UnitControl_DraggingSelectStart;
+        private readonly InputAction m_UnitControl_ClassSelect;
+        private readonly InputAction m_UnitControl_Command;
+        private readonly InputAction m_UnitControl_Focus;
+        public struct UnitControlActions
         {
             private @CustomInputActions m_Wrapper;
-            public UnitSelectionActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
-            public InputAction @SingleSelect => m_Wrapper.m_UnitSelection_SingleSelect;
-            public InputAction @DraggingSelect => m_Wrapper.m_UnitSelection_DraggingSelect;
-            public InputAction @Add => m_Wrapper.m_UnitSelection_Add;
-            public InputAction @ChangeFaction => m_Wrapper.m_UnitSelection_ChangeFaction;
-            public InputAction @DraggingSelectStart => m_Wrapper.m_UnitSelection_DraggingSelectStart;
-            public InputAction @ClassSelect => m_Wrapper.m_UnitSelection_ClassSelect;
-            public InputActionMap Get() { return m_Wrapper.m_UnitSelection; }
+            public UnitControlActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
+            public InputAction @SingleSelect => m_Wrapper.m_UnitControl_SingleSelect;
+            public InputAction @DraggingSelect => m_Wrapper.m_UnitControl_DraggingSelect;
+            public InputAction @Add => m_Wrapper.m_UnitControl_Add;
+            public InputAction @ChangeFaction => m_Wrapper.m_UnitControl_ChangeFaction;
+            public InputAction @DraggingSelectStart => m_Wrapper.m_UnitControl_DraggingSelectStart;
+            public InputAction @ClassSelect => m_Wrapper.m_UnitControl_ClassSelect;
+            public InputAction @Command => m_Wrapper.m_UnitControl_Command;
+            public InputAction @Focus => m_Wrapper.m_UnitControl_Focus;
+            public InputActionMap Get() { return m_Wrapper.m_UnitControl; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
             public bool enabled => Get().enabled;
-            public static implicit operator InputActionMap(UnitSelectionActions set) { return set.Get(); }
-            public void AddCallbacks(IUnitSelectionActions instance)
+            public static implicit operator InputActionMap(UnitControlActions set) { return set.Get(); }
+            public void AddCallbacks(IUnitControlActions instance)
             {
-                if (instance == null || m_Wrapper.m_UnitSelectionActionsCallbackInterfaces.Contains(instance)) return;
-                m_Wrapper.m_UnitSelectionActionsCallbackInterfaces.Add(instance);
+                if (instance == null || m_Wrapper.m_UnitControlActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_UnitControlActionsCallbackInterfaces.Add(instance);
                 @SingleSelect.started += instance.OnSingleSelect;
                 @SingleSelect.performed += instance.OnSingleSelect;
                 @SingleSelect.canceled += instance.OnSingleSelect;
@@ -2039,9 +2419,15 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @ClassSelect.started += instance.OnClassSelect;
                 @ClassSelect.performed += instance.OnClassSelect;
                 @ClassSelect.canceled += instance.OnClassSelect;
+                @Command.started += instance.OnCommand;
+                @Command.performed += instance.OnCommand;
+                @Command.canceled += instance.OnCommand;
+                @Focus.started += instance.OnFocus;
+                @Focus.performed += instance.OnFocus;
+                @Focus.canceled += instance.OnFocus;
             }
 
-            private void UnregisterCallbacks(IUnitSelectionActions instance)
+            private void UnregisterCallbacks(IUnitControlActions instance)
             {
                 @SingleSelect.started -= instance.OnSingleSelect;
                 @SingleSelect.performed -= instance.OnSingleSelect;
@@ -2061,35 +2447,55 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @ClassSelect.started -= instance.OnClassSelect;
                 @ClassSelect.performed -= instance.OnClassSelect;
                 @ClassSelect.canceled -= instance.OnClassSelect;
+                @Command.started -= instance.OnCommand;
+                @Command.performed -= instance.OnCommand;
+                @Command.canceled -= instance.OnCommand;
+                @Focus.started -= instance.OnFocus;
+                @Focus.performed -= instance.OnFocus;
+                @Focus.canceled -= instance.OnFocus;
             }
 
-            public void RemoveCallbacks(IUnitSelectionActions instance)
+            public void RemoveCallbacks(IUnitControlActions instance)
             {
-                if (m_Wrapper.m_UnitSelectionActionsCallbackInterfaces.Remove(instance))
+                if (m_Wrapper.m_UnitControlActionsCallbackInterfaces.Remove(instance))
                     UnregisterCallbacks(instance);
             }
 
-            public void SetCallbacks(IUnitSelectionActions instance)
+            public void SetCallbacks(IUnitControlActions instance)
             {
-                foreach (var item in m_Wrapper.m_UnitSelectionActionsCallbackInterfaces)
+                foreach (var item in m_Wrapper.m_UnitControlActionsCallbackInterfaces)
                     UnregisterCallbacks(item);
-                m_Wrapper.m_UnitSelectionActionsCallbackInterfaces.Clear();
+                m_Wrapper.m_UnitControlActionsCallbackInterfaces.Clear();
                 AddCallbacks(instance);
             }
         }
-        public UnitSelectionActions @UnitSelection => new UnitSelectionActions(this);
+        public UnitControlActions @UnitControl => new UnitControlActions(this);
 
         // Construct
         private readonly InputActionMap m_Construct;
         private List<IConstructActions> m_ConstructActionsCallbackInterfaces = new List<IConstructActions>();
         private readonly InputAction m_Construct_Build;
+        private readonly InputAction m_Construct_Cancel;
+        private readonly InputAction m_Construct_Snap;
+        private readonly InputAction m_Construct_FineAdjustment;
+        private readonly InputAction m_Construct_Recycle;
+        private readonly InputAction m_Construct_MoveBuilding;
+        private readonly InputAction m_Construct_Store;
         private readonly InputAction m_Construct_Rotate;
+        private readonly InputAction m_Construct_Exit;
         public struct ConstructActions
         {
             private @CustomInputActions m_Wrapper;
             public ConstructActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
             public InputAction @Build => m_Wrapper.m_Construct_Build;
+            public InputAction @Cancel => m_Wrapper.m_Construct_Cancel;
+            public InputAction @Snap => m_Wrapper.m_Construct_Snap;
+            public InputAction @FineAdjustment => m_Wrapper.m_Construct_FineAdjustment;
+            public InputAction @Recycle => m_Wrapper.m_Construct_Recycle;
+            public InputAction @MoveBuilding => m_Wrapper.m_Construct_MoveBuilding;
+            public InputAction @Store => m_Wrapper.m_Construct_Store;
             public InputAction @Rotate => m_Wrapper.m_Construct_Rotate;
+            public InputAction @Exit => m_Wrapper.m_Construct_Exit;
             public InputActionMap Get() { return m_Wrapper.m_Construct; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -2102,9 +2508,30 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @Build.started += instance.OnBuild;
                 @Build.performed += instance.OnBuild;
                 @Build.canceled += instance.OnBuild;
+                @Cancel.started += instance.OnCancel;
+                @Cancel.performed += instance.OnCancel;
+                @Cancel.canceled += instance.OnCancel;
+                @Snap.started += instance.OnSnap;
+                @Snap.performed += instance.OnSnap;
+                @Snap.canceled += instance.OnSnap;
+                @FineAdjustment.started += instance.OnFineAdjustment;
+                @FineAdjustment.performed += instance.OnFineAdjustment;
+                @FineAdjustment.canceled += instance.OnFineAdjustment;
+                @Recycle.started += instance.OnRecycle;
+                @Recycle.performed += instance.OnRecycle;
+                @Recycle.canceled += instance.OnRecycle;
+                @MoveBuilding.started += instance.OnMoveBuilding;
+                @MoveBuilding.performed += instance.OnMoveBuilding;
+                @MoveBuilding.canceled += instance.OnMoveBuilding;
+                @Store.started += instance.OnStore;
+                @Store.performed += instance.OnStore;
+                @Store.canceled += instance.OnStore;
                 @Rotate.started += instance.OnRotate;
                 @Rotate.performed += instance.OnRotate;
                 @Rotate.canceled += instance.OnRotate;
+                @Exit.started += instance.OnExit;
+                @Exit.performed += instance.OnExit;
+                @Exit.canceled += instance.OnExit;
             }
 
             private void UnregisterCallbacks(IConstructActions instance)
@@ -2112,9 +2539,30 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @Build.started -= instance.OnBuild;
                 @Build.performed -= instance.OnBuild;
                 @Build.canceled -= instance.OnBuild;
+                @Cancel.started -= instance.OnCancel;
+                @Cancel.performed -= instance.OnCancel;
+                @Cancel.canceled -= instance.OnCancel;
+                @Snap.started -= instance.OnSnap;
+                @Snap.performed -= instance.OnSnap;
+                @Snap.canceled -= instance.OnSnap;
+                @FineAdjustment.started -= instance.OnFineAdjustment;
+                @FineAdjustment.performed -= instance.OnFineAdjustment;
+                @FineAdjustment.canceled -= instance.OnFineAdjustment;
+                @Recycle.started -= instance.OnRecycle;
+                @Recycle.performed -= instance.OnRecycle;
+                @Recycle.canceled -= instance.OnRecycle;
+                @MoveBuilding.started -= instance.OnMoveBuilding;
+                @MoveBuilding.performed -= instance.OnMoveBuilding;
+                @MoveBuilding.canceled -= instance.OnMoveBuilding;
+                @Store.started -= instance.OnStore;
+                @Store.performed -= instance.OnStore;
+                @Store.canceled -= instance.OnStore;
                 @Rotate.started -= instance.OnRotate;
                 @Rotate.performed -= instance.OnRotate;
                 @Rotate.canceled -= instance.OnRotate;
+                @Exit.started -= instance.OnExit;
+                @Exit.performed -= instance.OnExit;
+                @Exit.canceled -= instance.OnExit;
             }
 
             public void RemoveCallbacks(IConstructActions instance)
@@ -2361,63 +2809,27 @@ namespace SparFlame.GamePlaySystem.CustomInput
         }
         public UIActions @UI => new UIActions(this);
 
-        // UnitControl
-        private readonly InputActionMap m_UnitControl;
-        private List<IUnitControlActions> m_UnitControlActionsCallbackInterfaces = new List<IUnitControlActions>();
-        private readonly InputAction m_UnitControl_SetCommand;
-        public struct UnitControlActions
-        {
-            private @CustomInputActions m_Wrapper;
-            public UnitControlActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
-            public InputAction @SetCommand => m_Wrapper.m_UnitControl_SetCommand;
-            public InputActionMap Get() { return m_Wrapper.m_UnitControl; }
-            public void Enable() { Get().Enable(); }
-            public void Disable() { Get().Disable(); }
-            public bool enabled => Get().enabled;
-            public static implicit operator InputActionMap(UnitControlActions set) { return set.Get(); }
-            public void AddCallbacks(IUnitControlActions instance)
-            {
-                if (instance == null || m_Wrapper.m_UnitControlActionsCallbackInterfaces.Contains(instance)) return;
-                m_Wrapper.m_UnitControlActionsCallbackInterfaces.Add(instance);
-                @SetCommand.started += instance.OnSetCommand;
-                @SetCommand.performed += instance.OnSetCommand;
-                @SetCommand.canceled += instance.OnSetCommand;
-            }
-
-            private void UnregisterCallbacks(IUnitControlActions instance)
-            {
-                @SetCommand.started -= instance.OnSetCommand;
-                @SetCommand.performed -= instance.OnSetCommand;
-                @SetCommand.canceled -= instance.OnSetCommand;
-            }
-
-            public void RemoveCallbacks(IUnitControlActions instance)
-            {
-                if (m_Wrapper.m_UnitControlActionsCallbackInterfaces.Remove(instance))
-                    UnregisterCallbacks(instance);
-            }
-
-            public void SetCallbacks(IUnitControlActions instance)
-            {
-                foreach (var item in m_Wrapper.m_UnitControlActionsCallbackInterfaces)
-                    UnregisterCallbacks(item);
-                m_Wrapper.m_UnitControlActionsCallbackInterfaces.Clear();
-                AddCallbacks(instance);
-            }
-        }
-        public UnitControlActions @UnitControl => new UnitControlActions(this);
-
         // CameraFlyMode
         private readonly InputActionMap m_CameraFlyMode;
         private List<ICameraFlyModeActions> m_CameraFlyModeActionsCallbackInterfaces = new List<ICameraFlyModeActions>();
         private readonly InputAction m_CameraFlyMode_Move;
         private readonly InputAction m_CameraFlyMode_Look;
+        private readonly InputAction m_CameraFlyMode_Zoom;
+        private readonly InputAction m_CameraFlyMode_FlyUp;
+        private readonly InputAction m_CameraFlyMode_FlyDown;
+        private readonly InputAction m_CameraFlyMode_SpeedUp;
+        private readonly InputAction m_CameraFlyMode_Exit;
         public struct CameraFlyModeActions
         {
             private @CustomInputActions m_Wrapper;
             public CameraFlyModeActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
             public InputAction @Move => m_Wrapper.m_CameraFlyMode_Move;
             public InputAction @Look => m_Wrapper.m_CameraFlyMode_Look;
+            public InputAction @Zoom => m_Wrapper.m_CameraFlyMode_Zoom;
+            public InputAction @FlyUp => m_Wrapper.m_CameraFlyMode_FlyUp;
+            public InputAction @FlyDown => m_Wrapper.m_CameraFlyMode_FlyDown;
+            public InputAction @SpeedUp => m_Wrapper.m_CameraFlyMode_SpeedUp;
+            public InputAction @Exit => m_Wrapper.m_CameraFlyMode_Exit;
             public InputActionMap Get() { return m_Wrapper.m_CameraFlyMode; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -2433,6 +2845,21 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @Look.started += instance.OnLook;
                 @Look.performed += instance.OnLook;
                 @Look.canceled += instance.OnLook;
+                @Zoom.started += instance.OnZoom;
+                @Zoom.performed += instance.OnZoom;
+                @Zoom.canceled += instance.OnZoom;
+                @FlyUp.started += instance.OnFlyUp;
+                @FlyUp.performed += instance.OnFlyUp;
+                @FlyUp.canceled += instance.OnFlyUp;
+                @FlyDown.started += instance.OnFlyDown;
+                @FlyDown.performed += instance.OnFlyDown;
+                @FlyDown.canceled += instance.OnFlyDown;
+                @SpeedUp.started += instance.OnSpeedUp;
+                @SpeedUp.performed += instance.OnSpeedUp;
+                @SpeedUp.canceled += instance.OnSpeedUp;
+                @Exit.started += instance.OnExit;
+                @Exit.performed += instance.OnExit;
+                @Exit.canceled += instance.OnExit;
             }
 
             private void UnregisterCallbacks(ICameraFlyModeActions instance)
@@ -2443,6 +2870,21 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @Look.started -= instance.OnLook;
                 @Look.performed -= instance.OnLook;
                 @Look.canceled -= instance.OnLook;
+                @Zoom.started -= instance.OnZoom;
+                @Zoom.performed -= instance.OnZoom;
+                @Zoom.canceled -= instance.OnZoom;
+                @FlyUp.started -= instance.OnFlyUp;
+                @FlyUp.performed -= instance.OnFlyUp;
+                @FlyUp.canceled -= instance.OnFlyUp;
+                @FlyDown.started -= instance.OnFlyDown;
+                @FlyDown.performed -= instance.OnFlyDown;
+                @FlyDown.canceled -= instance.OnFlyDown;
+                @SpeedUp.started -= instance.OnSpeedUp;
+                @SpeedUp.performed -= instance.OnSpeedUp;
+                @SpeedUp.canceled -= instance.OnSpeedUp;
+                @Exit.started -= instance.OnExit;
+                @Exit.performed -= instance.OnExit;
+                @Exit.canceled -= instance.OnExit;
             }
 
             public void RemoveCallbacks(ICameraFlyModeActions instance)
@@ -2464,12 +2906,16 @@ namespace SparFlame.GamePlaySystem.CustomInput
         // ModeSwitch
         private readonly InputActionMap m_ModeSwitch;
         private List<IModeSwitchActions> m_ModeSwitchActionsCallbackInterfaces = new List<IModeSwitchActions>();
-        private readonly InputAction m_ModeSwitch_Newaction;
+        private readonly InputAction m_ModeSwitch_SwitchBuild;
+        private readonly InputAction m_ModeSwitch_SwitchCameraFly;
+        private readonly InputAction m_ModeSwitch_Pause;
         public struct ModeSwitchActions
         {
             private @CustomInputActions m_Wrapper;
             public ModeSwitchActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
-            public InputAction @Newaction => m_Wrapper.m_ModeSwitch_Newaction;
+            public InputAction @SwitchBuild => m_Wrapper.m_ModeSwitch_SwitchBuild;
+            public InputAction @SwitchCameraFly => m_Wrapper.m_ModeSwitch_SwitchCameraFly;
+            public InputAction @Pause => m_Wrapper.m_ModeSwitch_Pause;
             public InputActionMap Get() { return m_Wrapper.m_ModeSwitch; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -2479,16 +2925,28 @@ namespace SparFlame.GamePlaySystem.CustomInput
             {
                 if (instance == null || m_Wrapper.m_ModeSwitchActionsCallbackInterfaces.Contains(instance)) return;
                 m_Wrapper.m_ModeSwitchActionsCallbackInterfaces.Add(instance);
-                @Newaction.started += instance.OnNewaction;
-                @Newaction.performed += instance.OnNewaction;
-                @Newaction.canceled += instance.OnNewaction;
+                @SwitchBuild.started += instance.OnSwitchBuild;
+                @SwitchBuild.performed += instance.OnSwitchBuild;
+                @SwitchBuild.canceled += instance.OnSwitchBuild;
+                @SwitchCameraFly.started += instance.OnSwitchCameraFly;
+                @SwitchCameraFly.performed += instance.OnSwitchCameraFly;
+                @SwitchCameraFly.canceled += instance.OnSwitchCameraFly;
+                @Pause.started += instance.OnPause;
+                @Pause.performed += instance.OnPause;
+                @Pause.canceled += instance.OnPause;
             }
 
             private void UnregisterCallbacks(IModeSwitchActions instance)
             {
-                @Newaction.started -= instance.OnNewaction;
-                @Newaction.performed -= instance.OnNewaction;
-                @Newaction.canceled -= instance.OnNewaction;
+                @SwitchBuild.started -= instance.OnSwitchBuild;
+                @SwitchBuild.performed -= instance.OnSwitchBuild;
+                @SwitchBuild.canceled -= instance.OnSwitchBuild;
+                @SwitchCameraFly.started -= instance.OnSwitchCameraFly;
+                @SwitchCameraFly.performed -= instance.OnSwitchCameraFly;
+                @SwitchCameraFly.canceled -= instance.OnSwitchCameraFly;
+                @Pause.started -= instance.OnPause;
+                @Pause.performed -= instance.OnPause;
+                @Pause.canceled -= instance.OnPause;
             }
 
             public void RemoveCallbacks(IModeSwitchActions instance)
@@ -2506,6 +2964,52 @@ namespace SparFlame.GamePlaySystem.CustomInput
             }
         }
         public ModeSwitchActions @ModeSwitch => new ModeSwitchActions(this);
+
+        // InfoWindow
+        private readonly InputActionMap m_InfoWindow;
+        private List<IInfoWindowActions> m_InfoWindowActionsCallbackInterfaces = new List<IInfoWindowActions>();
+        private readonly InputAction m_InfoWindow_CheckInfo;
+        public struct InfoWindowActions
+        {
+            private @CustomInputActions m_Wrapper;
+            public InfoWindowActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
+            public InputAction @CheckInfo => m_Wrapper.m_InfoWindow_CheckInfo;
+            public InputActionMap Get() { return m_Wrapper.m_InfoWindow; }
+            public void Enable() { Get().Enable(); }
+            public void Disable() { Get().Disable(); }
+            public bool enabled => Get().enabled;
+            public static implicit operator InputActionMap(InfoWindowActions set) { return set.Get(); }
+            public void AddCallbacks(IInfoWindowActions instance)
+            {
+                if (instance == null || m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Add(instance);
+                @CheckInfo.started += instance.OnCheckInfo;
+                @CheckInfo.performed += instance.OnCheckInfo;
+                @CheckInfo.canceled += instance.OnCheckInfo;
+            }
+
+            private void UnregisterCallbacks(IInfoWindowActions instance)
+            {
+                @CheckInfo.started -= instance.OnCheckInfo;
+                @CheckInfo.performed -= instance.OnCheckInfo;
+                @CheckInfo.canceled -= instance.OnCheckInfo;
+            }
+
+            public void RemoveCallbacks(IInfoWindowActions instance)
+            {
+                if (m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            public void SetCallbacks(IInfoWindowActions instance)
+            {
+                foreach (var item in m_Wrapper.m_InfoWindowActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        public InfoWindowActions @InfoWindow => new InfoWindowActions(this);
         private int m_KeyboardMouseSchemeIndex = -1;
         public InputControlScheme KeyboardMouseScheme
         {
@@ -2559,8 +3063,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
             void OnZoomCamera(InputAction.CallbackContext context);
             void OnLockCameraAtTarget(InputAction.CallbackContext context);
             void OnSpeedUp(InputAction.CallbackContext context);
+            void OnSwtichEdgeScrolling(InputAction.CallbackContext context);
         }
-        public interface IUnitSelectionActions
+        public interface IUnitControlActions
         {
             void OnSingleSelect(InputAction.CallbackContext context);
             void OnDraggingSelect(InputAction.CallbackContext context);
@@ -2568,11 +3073,20 @@ namespace SparFlame.GamePlaySystem.CustomInput
             void OnChangeFaction(InputAction.CallbackContext context);
             void OnDraggingSelectStart(InputAction.CallbackContext context);
             void OnClassSelect(InputAction.CallbackContext context);
+            void OnCommand(InputAction.CallbackContext context);
+            void OnFocus(InputAction.CallbackContext context);
         }
         public interface IConstructActions
         {
             void OnBuild(InputAction.CallbackContext context);
+            void OnCancel(InputAction.CallbackContext context);
+            void OnSnap(InputAction.CallbackContext context);
+            void OnFineAdjustment(InputAction.CallbackContext context);
+            void OnRecycle(InputAction.CallbackContext context);
+            void OnMoveBuilding(InputAction.CallbackContext context);
+            void OnStore(InputAction.CallbackContext context);
             void OnRotate(InputAction.CallbackContext context);
+            void OnExit(InputAction.CallbackContext context);
         }
         public interface IPlayerActions
         {
@@ -2599,18 +3113,25 @@ namespace SparFlame.GamePlaySystem.CustomInput
             void OnTrackedDevicePosition(InputAction.CallbackContext context);
             void OnTrackedDeviceOrientation(InputAction.CallbackContext context);
         }
-        public interface IUnitControlActions
-        {
-            void OnSetCommand(InputAction.CallbackContext context);
-        }
         public interface ICameraFlyModeActions
         {
             void OnMove(InputAction.CallbackContext context);
             void OnLook(InputAction.CallbackContext context);
+            void OnZoom(InputAction.CallbackContext context);
+            void OnFlyUp(InputAction.CallbackContext context);
+            void OnFlyDown(InputAction.CallbackContext context);
+            void OnSpeedUp(InputAction.CallbackContext context);
+            void OnExit(InputAction.CallbackContext context);
         }
         public interface IModeSwitchActions
         {
-            void OnNewaction(InputAction.CallbackContext context);
+            void OnSwitchBuild(InputAction.CallbackContext context);
+            void OnSwitchCameraFly(InputAction.CallbackContext context);
+            void OnPause(InputAction.CallbackContext context);
+        }
+        public interface IInfoWindowActions
+        {
+            void OnCheckInfo(InputAction.CallbackContext context);
         }
     }
 }

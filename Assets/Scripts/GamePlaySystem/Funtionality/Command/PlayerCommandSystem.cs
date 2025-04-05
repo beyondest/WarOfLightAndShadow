@@ -20,10 +20,10 @@ namespace SparFlame.GamePlaySystem.Command
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<CommandConfig>();
+            state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<CursorData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
@@ -41,7 +41,8 @@ namespace SparFlame.GamePlaySystem.Command
             
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (unitSelectionData.CurrentSelectCount == 0) return;
-            if (inputMouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right, IsOverUI: false}) return;
+            // if (inputMouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right, IsOverUI: false}) return;
+            if(!inputUnitControlData.Command)return;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             
             switch (cursorData.RightCursorType)

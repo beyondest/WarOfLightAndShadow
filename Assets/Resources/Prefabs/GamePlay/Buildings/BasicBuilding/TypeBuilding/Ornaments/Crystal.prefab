@@ -12,6 +12,22 @@ PrefabInstance:
       propertyPath: interactRange
       value: 13
       objectReference: {fileID: 0}
+    - target: {fileID: 1233714316194514086, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
+      propertyPath: m_SphereRadius
+      value: 2.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1233714316194514086, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
+      propertyPath: m_Capsule.Height
+      value: 5.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1233714316194514086, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
+      propertyPath: m_Cylinder.Radius
+      value: 2.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1233714316194514086, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
+      propertyPath: m_PrimitiveSize.y
+      value: 5.2
+      objectReference: {fileID: 0}
     - target: {fileID: 1463668178276013281, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -74,7 +90,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5921869101449738563, guid: 0367bf83cb00b0242bf6a133a7157b5b, type: 3}
       propertyPath: m_Name
-      value: Base
+      value: Crystal
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

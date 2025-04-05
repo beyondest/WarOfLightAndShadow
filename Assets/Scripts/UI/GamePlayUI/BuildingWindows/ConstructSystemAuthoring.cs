@@ -9,21 +9,24 @@ namespace SparFlame.GamePlaySystem.Building
     {
        
         public BuildingDatabaseSo buildingDatabase;
+        [Tooltip("This location is used for hiding building when enter movement ghost show")]
         public float3 hideBuildingLocation  = new float3(0, -100, 0);
+
+        public float rotateSpeed = 2f;
         
-  
         private class Baker : Baker<ConstructSystemAuthoring>
         {
-            public override void Bake(ConstructSystemAuthoring dataBaseAuthoring)
+            public override void Bake(ConstructSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new ConstructSystemConfig
                 {
-                    HideBuildingLocation = dataBaseAuthoring.hideBuildingLocation,
+                    HideBuildingLocation = authoring.hideBuildingLocation,
+                    RotateSpeed = authoring.rotateSpeed,
                 });
                 var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
                 var buffer = AddBuffer<BuildingSlot>(entity2);
-                foreach (var buildingData in dataBaseAuthoring.buildingDatabase.buildingsData)
+                foreach (var buildingData in authoring.buildingDatabase.buildingsData)
                 {
                     buffer.Add(new BuildingSlot
                     {
@@ -44,5 +47,6 @@ namespace SparFlame.GamePlaySystem.Building
     public struct ConstructSystemConfig : IComponentData
     {
         public float3 HideBuildingLocation;
+        public float RotateSpeed;
     }
 }

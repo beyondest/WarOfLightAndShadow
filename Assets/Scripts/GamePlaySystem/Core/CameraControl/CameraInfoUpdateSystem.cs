@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.CameraControl
 {
-    [UpdateAfter(typeof(CameraControlPlusSystem))]
+    [UpdateAfter(typeof(NormalCameraControlSystem))]
     public partial class CameraInfoUpdateSystem : SystemBase
     {
         protected override void OnCreate()
