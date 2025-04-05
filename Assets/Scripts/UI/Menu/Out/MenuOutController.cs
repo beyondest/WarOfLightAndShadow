@@ -11,16 +11,13 @@ namespace SparFlame.UI.Menu.Out
 
         private void OnEnable()
         {
-            if (GameController.instance == null)
+            if (GameController.Instance == null)
             {
                 Debug.LogError("BootStrapper scene needs to be placed at first place");
             }
-            GameController.instance.OnPause += ShowPauseMenu;
-            GameController.instance.OnResume += HidePauseMenu;
+            GameController.Instance.OnPause += ShowPauseMenu;
+            GameController.Instance.OnResume += HidePauseMenu;
         }
-
-
-
 
         #region MenuMethods
 
@@ -53,31 +50,31 @@ namespace SparFlame.UI.Menu.Out
         public void ButtonPauseClicked()
         {
             ShowPauseMenu();
-            GameController.instance.PauseGame();
+            GameController.Instance.PauseGame();
         }
 
         public void ButtonResumeClicked()
         {
             HidePauseMenu();
-            GameController.instance.ResumeGame();
+            GameController.Instance.ResumeGame();
         }
 
         public void ButtonExitClicked()
         {
-            GameController.instance.ExitGame();
+            GameController.Instance.ExitGame();
         }
 
         public void ButtonGoToMainMenuClicked()
         {
             HidePauseMenu();
             ShowMainMenu();
-            GameController.instance.EndGameToMainMenu();
+            GameController.Instance.EndGameToMainMenu();
         }
 
         public void ButtonPlayClicked()
         {
             HideMainMenu();
-            GameController.instance.StartGame();
+            GameController.Instance.StartGame();
         }
 
         public void ButtonContinueClicked()

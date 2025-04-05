@@ -3,7 +3,7 @@ using Unity.Entities;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Mouse;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.GamePlaySystem.State;
@@ -23,8 +23,9 @@ namespace SparFlame.GamePlaySystem.Command
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<CommandConfig>();
+            state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<CursorData>();
-            state.RequireForUpdate<CustomInputSystemData>();
+            state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<BuildingConfig>();
         }
@@ -35,12 +36,14 @@ namespace SparFlame.GamePlaySystem.Command
         {
             var buildingConfig = SystemAPI.GetSingleton<BuildingConfig>();
             var cursorData = SystemAPI.GetSingleton<CursorData>();
-            var customInputSystemData = SystemAPI.GetSingleton<CustomInputSystemData>();
+            var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
+            var inputUnitControlData = SystemAPI.GetSingleton<InputUnitControlData>();
+            
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (unitSelectionData.CurrentSelectCount == 0) return;
-            if (customInputSystemData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right }) return;
+            // if (inputMouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right, IsOverUI: false}) return;
+            if(!inputUnitControlData.Command)return;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-
             
             switch (cursorData.RightCursorType)
             {
@@ -49,10 +52,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementAttackJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
-                        TargetEntity = customInputSystemData.HitEntity,
-                        Focus = customInputSystemData.Focus
+                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetEntity = inputMouseData.HitEntity,
+                        Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
 
                     break;
@@ -63,10 +66,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementGarrisonJob()
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
-                        TargetEntity = customInputSystemData.HitEntity,
-                        Focus = customInputSystemData.Focus,
+                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetEntity = inputMouseData.HitEntity,
+                        Focus = inputUnitControlData.Focus,
                         InteractiveRangeSq = buildingConfig.BuildingGarrisonRadiusSq
                     }.ScheduleParallel();
                     break;
@@ -77,10 +80,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementHarvestJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
-                        TargetEntity = customInputSystemData.HitEntity,
-                        Focus = customInputSystemData.Focus
+                        TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetEntity = inputMouseData.HitEntity,
+                        Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
                     break;
                 }
@@ -90,10 +93,10 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementHealJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(customInputSystemData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity).BoxColliderSize,
-                        TargetEntity = customInputSystemData.HitEntity,
-                        Focus = customInputSystemData.Focus
+                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
+                        TargetColliderShape = SystemAPI.GetComponent<InteractableAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetEntity = inputMouseData.HitEntity,
+                        Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
                     break;
                 }
@@ -103,8 +106,8 @@ namespace SparFlame.GamePlaySystem.Command
                     new MovementMarchJob
                     {
                         ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                        TargetPos = customInputSystemData.HitPosition,
-                        Focus = customInputSystemData.Focus
+                        TargetPos = inputMouseData.HitPosition,
+                        Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
                     break;
                 }
@@ -134,7 +137,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, attackAbility.RangeSq);
+                MovementCommandType.Interactive, attackAbility.Range);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.Focus = Focus;
@@ -163,7 +166,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, healingAbility.RangeSq);
+                MovementCommandType.Interactive, healingAbility.Range);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.TargetEntity = TargetEntity;
@@ -192,7 +195,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, harvestAbility.RangeSq);
+                MovementCommandType.Interactive, harvestAbility.Range);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.TargetEntity = TargetEntity;

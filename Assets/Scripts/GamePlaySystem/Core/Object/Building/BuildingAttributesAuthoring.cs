@@ -1,11 +1,15 @@
-﻿using Unity.Entities;
+﻿using SparFlame.GamePlaySystem.General;
+using Unity.Entities;
 using UnityEngine;
-using Unity.Mathematics;
+using UnityEngine.Serialization;
+
 namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingAttributesAuthoring : MonoBehaviour
     {
-        public Tier tier = Tier.Tier1;
+        public BuildingType buildingType;
+        public BuildingState buildingInitialState;
+
         private class BuildingAttributesAuthoringBaker : Baker<BuildingAttributesAuthoring>
         {
             public override void Bake(BuildingAttributesAuthoring authoring)
@@ -13,12 +17,13 @@ namespace SparFlame.GamePlaySystem.Building
                 var entity = GetEntity(TransformUsageFlags.WorldSpace);
                 AddComponent(entity, new BuildingAttr
                 {
-                    State = BuildingState.Constructing,
-                    Tier = authoring.tier,
+                    Type = authoring.buildingType,
+                    State = authoring.buildingInitialState
                 });
             }
         }
     }
+
     public enum BuildingState
     {
         Constructing,
@@ -28,10 +33,10 @@ namespace SparFlame.GamePlaySystem.Building
         Idle,
         UnderAttack
     }
-    
+
     public struct BuildingAttr : IComponentData
     {
+        public BuildingType Type;
         public BuildingState State;
-        public Tier Tier;
     }
 }

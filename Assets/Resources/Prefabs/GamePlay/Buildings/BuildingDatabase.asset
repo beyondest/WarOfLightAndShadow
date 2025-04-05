@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 417c3d83b0084e39b4e53e05516817c8, type: 3}
+  m_Name: BuildingDatabase
+  m_EditorClassIdentifier: 
+  buildingsData:
+  - prefab: {fileID: 2307382713200488490, guid: 57795a37735f3a446b428096dcec4f89, type: 3}
+    id: 0
+    subKey: 0
+    description: The energy core of ligh/dark faction. Crucial importance.
+    sprite2D:
+      m_AssetGUID: 329d65ab58d49494dadfbee923fe9a52
+      m_SubObjectName: CoreCrystal
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 1
+  - prefab: {fileID: 5160293650149789214, guid: d07f6033f9bb69a48ab709350297bccd, type: 3}
+    id: 0
+    subKey: 0
+    description: Basic attack tower
+    sprite2D:
+      m_AssetGUID: 1079cd8f3853831499db59ade939b165
+      m_SubObjectName: SanctifiedTurret
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 1
+  - prefab: {fileID: 757599177730345875, guid: c32303e926fcb294d814e8f9225aee59, type: 3}
+    id: 0
+    subKey: 0
+    description: Basic barrier
+    sprite2D:
+      m_AssetGUID: 2a36caa4c9cdc834b99c6170bfd6e558
+      m_SubObjectName: LightWall
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 1
+  - prefab: {fileID: 8731189999263076228, guid: 7bbaa01dcd0cf074e9afde361d0c9e96, type: 3}
+    id: 0
+    subKey: 0
+    description: Basic light energy convertor
+    sprite2D:
+      m_AssetGUID: 8cc8fb70be280ad49b5b3fce04a5c5ee
+      m_SubObjectName: AethericForge
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 0
+  - prefab: {fileID: 1570536175054790011, guid: a6d8047e3922b5f44bad7e90bf0a974e, type: 3}
+    id: 0
+    subKey: 0
+    description: Basic settle house for light units.
+    sprite2D:
+      m_AssetGUID: f3aa59c798cffef438c72e3b083958fa
+      m_SubObjectName: LightHut
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 0
+  - prefab: {fileID: 7187205173230360965, guid: 23c44a54d6ce6d34db3573c1a68cb5f2, type: 3}
+    id: 0
+    subKey: 0
+    description: Basic conjuring shrine for light units.
+    sprite2D:
+      m_AssetGUID: e43f7b46bc6c04348b05deb496c61b27
+      m_SubObjectName: RadiantSummoningCircle
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 1
+  - prefab: {fileID: 3830228975360612930, guid: 95875c8c13e4abe4787e28cd8364892f, type: 3}
+    id: 0
+    subKey: 0
+    description: Advanced barrier.
+    sprite2D:
+      m_AssetGUID: 253b4f4848a8d1f48ac8bd2eda23f493
+      m_SubObjectName: DivineRampart
+      m_SubObjectGUID: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_EditorAssetChanged: 1

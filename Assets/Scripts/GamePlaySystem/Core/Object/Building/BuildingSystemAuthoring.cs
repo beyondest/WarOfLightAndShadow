@@ -1,13 +1,14 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using Unity.Collections;
+using UnityEngine;
 using Unity.Entities;
-using UnityEngine.AI;
 
 namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingSystemAuthoring : MonoBehaviour
     {
         public float buildingGarrisonRadius = 1f;
-        
         private class BuildingSystemAuthoringBaker : Unity.Entities.Baker<BuildingSystemAuthoring>
         {
             public override void Bake(BuildingSystemAuthoring authoring)
@@ -21,11 +22,56 @@ namespace SparFlame.GamePlaySystem.Building
         }
     }
 
+
+    
     public struct BuildingConfig : IComponentData
     {
         public float BuildingGarrisonRadiusSq;
     }
 
+    public enum BuildingType 
+    {
+        Fortifications = 0,
+        Workshops = 1,
+        ConjuringShrines = 2,
+        Dwellings = 3,
+        Ornaments = 4,
+    }
+
+    public enum FortificationType
+    {
+        Wall = 0,
+        AttackableTower = 1,
+        HealableTower = 2,
+        BuffTower = 3,
+        DebuffTower = 4
+    }
+
+    public enum WorkshopType
+    {
+        EssenceConvertor = 0,
+        EssenceProducer = 1
+    }
+
+    public enum ConjuringShrineType
+    {
+        Melee = 0,
+        Ranged = 1,
+        Magic = 2,
+        Harvest = 3
+    }
+
+    public enum DwellingType
+    {
+        Lightness = 0,
+        Darkness = 1,
+    }
+
+    public enum OrnamentType
+    {
+        Type0 = 0
+    }
+    
     public enum AreaType
     {
         Walkable = 0,
@@ -49,12 +95,6 @@ namespace SparFlame.GamePlaySystem.Building
     }
 
 
-    public enum Tier
-    {
-        Tier1 = 3,
-        Tier2 = 4,
-        Tier3 = 5,
-        Tier4 = 6,
-        Tier5 = 7,
-    }
+
 }
+

@@ -28,8 +28,8 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             public override void Bake(ObstacleAttributesAuthoring authoring)
             {
-                float volumeRadius = 0f;
-                AreaType areaType = AreaType.Walkable;
+                var volumeRadius = 0f;
+                var areaType = AreaType.Walkable;
                 FactionTag factionTag;
 
                 if ((authoring.isObstacleDynamic && authoring.notGenerateObstacle)
@@ -46,13 +46,6 @@ namespace SparFlame.GamePlaySystem.Movement
                     // Only building needs check , because resource is neutral so being obstacle for all factions
                     if (interactableAttr.baseTag == BaseTag.Buildings)
                     {
-                        if (!authoring.TryGetComponent(out BuildingAttributesAuthoring buildingAttr))
-                        {
-                            Debug.LogError(
-                                "Building attributes sets in interactableAttr require an BuildingAttr component");
-                            return;
-                        }
-
                         // this is interactable building, like archer tower
                         if (authoring.TryGetComponent(out InteractAbilityAttributesAuthoring interactAbility))
                         {
@@ -63,14 +56,14 @@ namespace SparFlame.GamePlaySystem.Movement
                             // If this is an attackable building, the area is more dangerous and volume should be high cost
                             // And the areaType is determined by tier, the higher the tier, the higher cost it should be
                             areaType = interactAbility.interactType == InteractType.Attack
-                                ? (AreaType)buildingAttr.tier
-                                : (AreaType)(buildingAttr.tier + 10);
+                                ? (AreaType)interactableAttr.tier
+                                : (AreaType)(interactableAttr.tier + 10);
                         }
                         // this is not interactable building, volume radius set to default, and areaType set via tier
                         else
                         {
                             volumeRadius = 0f;
-                            areaType = (AreaType)buildingAttr.tier;
+                            areaType = (AreaType)interactableAttr.tier;
                         }
                     }
                 }

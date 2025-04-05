@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Buff
+  m_EditorClassIdentifier: 
+  m_GroupName: Buff
+  m_GUID: a9136a06a05b46f428861a5428c482be
+  m_SerializeEntries:
+  - m_GUID: 23aedef4fbfa9da439d881fd5a3d6c20
+    m_Address: EnergyOverdrive
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2566d7a07ec8be44ea357446a59adfb5
+    m_Address: Vulnerable
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3edf9bfec1573de419f0c7a4ed629e59
+    m_Address: MovementSlow
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3fe3672117ece1844adc3e4d6016f1c6
+    m_Address: SpeedBoost
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 55525ed68bac418448d7ca5b9287ac9d
+    m_Address: EnergyDrain
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7435a7807cb47544d814c5e4acec1645
+    m_Address: HealthRegeneration
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 957d1f668c6ce70418f207ea33ffdc0a
+    m_Address: ProjectileDeflection
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bbe40424eb52da944b602814e828bd91
+    m_Address: DamageBoost
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c100b3546c6cb1049bd404ff11056f76
+    m_Address: AttackSpeedLow
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: da59ec430ef06e047b51ee55d6b9c838
+    m_Address: BuffNone
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd8967fc7a02674448bd07fd13848d6a
+    m_Address: AttackSpeedUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f01bba51f26072244975914757dbfb73
+    m_Address: ShieldOvercharge
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 0e35fea6ddef2ee46a02ee7a37810e6f, type: 2}
+    - {fileID: 11400000, guid: e7ea516d093a7714a99a6c39501ad7c7, type: 2}

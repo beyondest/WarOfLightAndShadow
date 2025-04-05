@@ -12,14 +12,49 @@ namespace SparFlame.GamePlaySystem.Interact
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new BuffSystemConfig
                 {
-                    
                 });
             }
         }
     }
-    
-    public struct BuffData : IComponentData
+
+    public enum BuffType
     {
+        BuffNone = 0,
+
+        //---------Buff-----------
+        // Attack Up
+        DamageBoost = 1,
+        AttackSpeedUp = 2,
+
+        // Health Up
+        HealthRegeneration = 3,
+        ShieldOvercharge = 4,
+
+        // Others
+        SpeedBoost = 5,
+
+        // Buildings Up
+        EnergyOverdrive = 6,
+        ProjectileDeflection = 7,
+
+
+        //--------Debuff---------- 
+
+        // Vulnerable
+        Vulnerable = -1,
+
+
+        // Control
+        AttackSpeedLow = -2,
+        MovementSlow = -3,
+
+        // Building
+        EnergyDrain = -4
+    }
+
+    public struct BuffData : IBufferElementData
+    {
+        public BuffType Type;
         public float MoveSpeedMultiplier;
         public float InteractSpeedMultiplier;
         public float InteractRangeMultiplier;
@@ -29,6 +64,5 @@ namespace SparFlame.GamePlaySystem.Interact
 
     public struct BuffSystemConfig : IComponentData
     {
-        
     }
 }

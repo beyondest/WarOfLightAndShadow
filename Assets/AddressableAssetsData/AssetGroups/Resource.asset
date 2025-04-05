@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Resource
+  m_EditorClassIdentifier: 
+  m_GroupName: Resource
+  m_GUID: 77ccd14f23f0adc4485655cde4843a23
+  m_SerializeEntries:
+  - m_GUID: 0dfe250faee50df4f8b5792df486eb78
+    m_Address: Luminite
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35213b9f6121ba14eb9c74de0fda6d66
+    m_Address: LightEnergy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 842bb9c4df4dbb2429a4f715d115fd6e
+    m_Address: DarkEnergy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b52084688bd4b604d878e8049aafe9a2
+    m_Address: Essence
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f4be343b90e2ef24cb8fb7349dfed26b
+    m_Address: Obsidian
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: cb74d9213da4c364a8410cd6efbd8cc9, type: 2}
+    - {fileID: 11400000, guid: b0c820f291260ff45b515c7e944290e4, type: 2}

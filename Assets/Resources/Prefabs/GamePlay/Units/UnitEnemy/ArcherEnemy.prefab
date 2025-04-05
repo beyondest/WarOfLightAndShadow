@@ -108,6 +108,10 @@ PrefabInstance:
       propertyPath: m_Material.m_CollidesWithCategories.m_Value.Category02
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4673840040067756785, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6129536860545163464, guid: 6f67d49f5a1772d439e9e2323226d231, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

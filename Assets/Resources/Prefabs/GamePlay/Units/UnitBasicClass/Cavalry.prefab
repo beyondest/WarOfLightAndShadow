@@ -16,6 +16,22 @@ PrefabInstance:
       propertyPath: interactBasicAmount
       value: 12
       objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[0].amount
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].amount
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 742148082854026181, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: costResourceTypeAmount.Array.data[1].costResourceType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1265534293084046778, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Size.y
       value: 2
@@ -28,49 +44,73 @@ PrefabInstance:
       propertyPath: m_Center.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
-      propertyPath: m_Capsule.Axis
-      value: 2
+    - target: {fileID: 2897515523720364013, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: gameplayName
+      value: Cavalry
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
-      propertyPath: m_SphereRadius
+      propertyPath: m_Capsule.Axis
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_SphereRadius
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Cylinder.Axis
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Capsule.Height
-      value: 2
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Capsule.Radius
-      value: 0.75
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Cylinder.Height
-      value: 2
+      value: 1.2157927
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Cylinder.Radius
-      value: 0.75
+      value: 1.25
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_PrimitiveSize.x
-      value: 1.5
+      value: 1.2157927
+      objectReference: {fileID: 0}
+    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_PrimitiveSize.y
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_PrimitiveSize.z
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_PrimitiveCenter.x
+      value: 0.0071038604
+      objectReference: {fileID: 0}
+    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_PrimitiveCenter.y
-      value: 1
+      value: 1.1943978
       objectReference: {fileID: 0}
     - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_PrimitiveCenter.z
-      value: -0.3
+      value: -0.38
+      objectReference: {fileID: 0}
+    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_PrimitiveOrientation.Value.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_PrimitiveOrientation.Value.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3987472990888033682, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_Material.m_BelongsToCategories.m_Value.Category03
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4111803572573163848, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_VersionIndex
@@ -99,6 +139,10 @@ PrefabInstance:
     - target: {fileID: 5672437903288014313, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_Name
       value: Cavalry
+      objectReference: {fileID: 0}
+    - target: {fileID: 6283545588556373548, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: unitType
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6283545588556373548, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: moveSpeed
@@ -176,6 +220,10 @@ PrefabInstance:
       propertyPath: priority
       value: 70
       objectReference: {fileID: 0}
+    - target: {fileID: 8608156526567607616, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.05
+      objectReference: {fileID: 0}
     - target: {fileID: 9065997544713293671, guid: 36403ac1c07d25b44a8e340ef85aa4ce, type: 3}
       propertyPath: m_VersionIndex
       value: 430
@@ -215,7 +263,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5681411579948923627, guid: be721f1c8c7554e4b9883f47f85fc4c5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.615
+      value: 1.75
       objectReference: {fileID: 0}
     - target: {fileID: 5681411579948923627, guid: be721f1c8c7554e4b9883f47f85fc4c5, type: 3}
       propertyPath: m_LocalPosition.z

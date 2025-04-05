@@ -1,0 +1,128 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Cursor
+  m_EditorClassIdentifier: 
+  m_GroupName: Cursor
+  m_GUID: 949084bbaef47d24cbabaeac5d6d9544
+  m_SerializeEntries:
+  - m_GUID: 199185b7be37b204ba48b2ae9f3c34d4
+    m_Address: Gather
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1a47c73fbab6b4348ab345657b1eb8d5
+    m_Address: March
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2b93e1aa9f3386947ac849111360191e
+    m_Address: ControlSelect
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 37cf0a7e6dd47fc428e565ec894f816e
+    m_Address: CheckInfo
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 421f5b87542532141ab4f416c83efbbe
+    m_Address: ArrowRightDown
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 45c62cc4413e1414da0dd873d6508fd0
+    m_Address: ArrowLeftDown
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6816efda7ef80f74480e1358751d3088
+    m_Address: Harvest
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 736aae00cbb963544b745a022a9b138a
+    m_Address: ArrowRightUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7f66848c2fb7847409afde96d4c1ef21
+    m_Address: Attack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82f015fb977a18b4298d685ea0a843eb
+    m_Address: None
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 87b1ca6612844a14e89f061b6fc5b8ea
+    m_Address: ArrowLeft
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8f2de305c4eeb7b48ae607005be89ca8
+    m_Address: ArrowUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91b1e4f7af967ae49af6719e978aadf9
+    m_Address: ArrowDown
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 96bd3ddb546c2d54f8e37f078c14c416
+    m_Address: ArrowLeftUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a2451cd4fc39483488b262abd47af260
+    m_Address: Heal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c2d83d9249642fb44a30612608dc9eda
+    m_Address: ZoomIn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d393a497bce215d44a8034fe4ec7b95c
+    m_Address: UI
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: da4a47dd75433f14b93fb84ad273674a
+    m_Address: Garrison
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e952c78674dcc454c831dfdb4fb9ff21
+    m_Address: ArrowRight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee938ef6695eea949b93f502e74ebc24
+    m_Address: Drag
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f719219ae0a3eb84599215a5c9a174d0
+    m_Address: ZoomOut
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: d22eb1fcf9e74d446a03f5e84aca8c58, type: 2}
+    - {fileID: 11400000, guid: e8c9ec5e78902114eaa787271d398ec3, type: 2}

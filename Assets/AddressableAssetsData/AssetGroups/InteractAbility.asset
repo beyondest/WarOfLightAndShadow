@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: InteractAbility
+  m_EditorClassIdentifier: 
+  m_GroupName: InteractAbility
+  m_GUID: 93c80c8c2cff65b4abc35da068b6a7ce
+  m_SerializeEntries:
+  - m_GUID: 293439fb4afcfa74c83202f45ddefb12
+    m_Address: AttackSpeed
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2b4f830737737f549b1dc9d939a1d4d0
+    m_Address: HarvestRange
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 445441cfa5adfeb4098b97b9486f96a9
+    m_Address: HarvestSpeed
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 631523c216675ee4db2092aa9ea2536e
+    m_Address: AttackRange
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7bf3677a7f60f3949bef46604862ef28
+    m_Address: AttackAmount
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8747d7e4d751855479a148e14a5c3e6a
+    m_Address: HealTargets
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 97c3eb814fb14ad41993c1359f506945
+    m_Address: HarvestAmount
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd8031a2d28064e41a478ebae36eafa9
+    m_Address: AttackTargets
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4c3a30266540b04287eb5176f505014
+    m_Address: HarvestTargets
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d3df5f96f9c23c240b77a3cec23f1188
+    m_Address: HealSpeed
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f0ebad239a7099d4a95e6bc37851dd1d
+    m_Address: HealRange
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f2172db6c109ff34587ae0da9eb30972
+    m_Address: HealAmount
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 1ed4e2086b4e67d4ab326cdc47c9469c, type: 2}
+    - {fileID: 11400000, guid: 2275b271b1a832e4b81e4d60a18945d4, type: 2}

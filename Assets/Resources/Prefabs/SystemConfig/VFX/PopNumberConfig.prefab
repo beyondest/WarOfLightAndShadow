@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &417892690244062916
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2844520007434600174}
+  - component: {fileID: 6319863150139282129}
+  m_Layer: 0
+  m_Name: PopNumberConfig
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2844520007434600174
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 417892690244062916}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6319863150139282129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 417892690244062916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90a29b6c369d43e59748a0294cbb6580, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  popNumberPrefab: {fileID: 9213860244880309696, guid: f1b50cc4eb247f4479f4c35470f9930b, type: 3}
+  verticalMovementOffset: 3.79
+  movementTime: 1
+  scaleOffset: -0.1
+  zMovementOffset: 0.001
+  glyphZOffset: -0.28
+  glyphWidth: 0.23
+  popNumberTypeToColors:
+  - popNumberType: 0
+    popNumberColor: {r: 0.7610062, g: 0.026324024, b: 0.026324024, a: 0}
+  - popNumberType: 1
+    popNumberColor: {r: 1, g: 1, b: 1, a: 0}
+  - popNumberType: 2
+    popNumberColor: {r: 0.025631743, g: 0.9056604, b: 0.26016232, a: 0}
+  - popNumberType: 3
+    popNumberColor: {r: 0.46666667, g: 0.027450955, b: 0.90588236, a: 0}
+  - popNumberType: 4
+    popNumberColor: {r: 0.8050314, g: 0.7627608, b: 0.17467652, a: 0}
+  - popNumberType: 5
+    popNumberColor: {r: 0.8039216, g: 0.571669, b: 0.17647056, a: 0}
