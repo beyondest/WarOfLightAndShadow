@@ -31,6 +31,10 @@ namespace SparFlame.UI.GamePlay
             InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
         }
 
+        public bool HasTarget()
+        {
+            return _currentSelectCounts > 0;
+        }
 
         public override void Hide()
         {

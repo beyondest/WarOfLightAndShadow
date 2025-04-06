@@ -26,6 +26,10 @@ namespace SparFlame.GamePlaySystem.CameraControl
             cameraData.ViewMatrix = cam.worldToCameraMatrix;
             cameraData.ProjectionMatrix = cam.projectionMatrix;
             cameraData.ScreenSize = new float2(Screen.width, Screen.height);
+            cameraData.CameraRight = cam.transform.right;
+            cameraData.CameraForward = cam.transform.forward;
+            cameraData.CameraUp = cam.transform.up;
+            cameraData.CameraPosition = cam.transform.position;
         }
     }
 }

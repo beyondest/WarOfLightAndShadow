@@ -55,6 +55,10 @@ namespace SparFlame.GamePlaySystem.CameraControl
         public float4x4 ViewMatrix;
         public float4x4 ProjectionMatrix;
         public float2 ScreenSize;
+        public float3 CameraRight;
+        public float3 CameraForward;
+        public float3 CameraUp;
+        public float3 CameraPosition;
     }
 
 

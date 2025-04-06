@@ -1929,17 +1929,6 @@
                 },
                 {
                     "name": "",
-                    "id": "de421bad-6a0f-47f5-b7c9-e1d957667252",
-                    "path": "<Keyboard>/escape",
-                    "interactions": "Tap",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
-                    "action": "Exit",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "7527592a-3be8-40f6-92fa-df2aafdb0a94",
                     "path": "<Keyboard>/capsLock",
                     "interactions": "MultiTap",

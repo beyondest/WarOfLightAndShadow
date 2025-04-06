@@ -9,33 +9,32 @@ namespace SparFlame.Test
     public partial class TestPopNumberSystem : SystemBase
     {
         private Random _rnd;
-        private int count;
+        private int _count;
 
         protected override void OnCreate()
         {
             _rnd = new Random(8);
-            RequireForUpdate<NotPauseTag>();
-            RequireForUpdate<TestSpawner>();
-            count = 60;
+            RequireForUpdate<TestPopNumberConfig>();
+            _count = 60;
         }
 
         protected override void OnUpdate()
         {
-            count--;
-            if (count > 0) return;
-            count = 60;
-            var spawner = SystemAPI.GetSingleton<TestSpawner>();
+            _count--;
+            if (_count > 0) return;
+            var config = SystemAPI.GetSingleton<TestPopNumberConfig>();
+            _count = config.Count;
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var entities = spawner.EntitiesPerFrame;
+            var entities = config.EntitiesPerFrame;
             while (entities-- > 0)
             {
                 var entity = ecb.CreateEntity();
                 ecb.AddComponent(entity, new PopNumberRequest
                 {
-                    Value = _rnd.NextInt(1, 999999),
+                    Value = config.Value < 0 ? _rnd.NextInt(1, 999999) : config.Value,
                     ColorId = 0,
-                    Position = spawner.SpawnPosition,
-                    Scale = spawner.InitialScale,
+                    Position = config.SpawnPosition,
+                    Scale = config.InitialScale,
                 });
             }
             ecb.Playback(EntityManager);

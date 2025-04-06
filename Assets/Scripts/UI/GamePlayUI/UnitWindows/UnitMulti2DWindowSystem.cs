@@ -18,7 +18,6 @@ namespace SparFlame.UI.GamePlay
         }
 
 
-
         protected override void OnUpdate()
         {
             if (!_isInitialized && UnitMulti2DWindow.Instance != null)

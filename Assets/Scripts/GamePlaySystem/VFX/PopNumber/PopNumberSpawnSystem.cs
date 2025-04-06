@@ -1,4 +1,5 @@
-﻿using Unity.Burst;
+﻿using SparFlame.GamePlaySystem.CameraControl;
+using Unity.Burst;
 using Unity.Entities;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -17,24 +18,25 @@ namespace SparFlame.GamePlaySystem.PopNumber
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<PopNumberConfig>();
             state.RequireForUpdate<PopNumberColorConfig>();
             state.RequireForUpdate<PopNumberRequest>();
         }
-        
+
         public void OnDestroy(ref SystemState state)
         {
             _colorConfig.Dispose();
         }
-        
+
         [RequiredMember]
         public void OnStartRunning(ref SystemState state)
         {
             Debug.Log("OnStartRunning");
         }
-        
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -48,15 +50,15 @@ namespace SparFlame.GamePlaySystem.PopNumber
             var config = SystemAPI.GetSingleton<PopNumberConfig>();
             var elapsedTime = (float)SystemAPI.Time.ElapsedTime;
             var ecbSingleton = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>();
+            var cameraData = SystemAPI.GetSingleton<CameraData>();
 
             new ApplyGlyphsJob
             {
                 Ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 ElapsedTime = elapsedTime,
                 ColorConfig = _colorConfig,
-                GlyphEntity = config.GlyphPrefab,
-                GlyphZOffset = config.GlyphZOffset,
-                GlyphWidth = config.GlyphWidth
+                Config = config,
+                CameraData = cameraData
             }.ScheduleParallel();
         }
 
@@ -64,11 +66,10 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public partial struct ApplyGlyphsJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter Ecb;
-            [ReadOnly] public Entity GlyphEntity;
             [ReadOnly] public float ElapsedTime;
-            [ReadOnly] public float GlyphZOffset;
-            [ReadOnly] public float GlyphWidth;
+            [ReadOnly] public PopNumberConfig Config;
             [ReadOnly] public NativeArray<float4> ColorConfig;
+            [ReadOnly] public CameraData CameraData;
 
             private void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity,
                 in PopNumberRequest popNumberRequest)
@@ -76,30 +77,32 @@ namespace SparFlame.GamePlaySystem.PopNumber
                 var number = popNumberRequest.Value;
                 var color = ColorConfig[popNumberRequest.ColorId];
                 var glyphPosition = popNumberRequest.Position;
-                var offset = math.log10(number) / 2f * GlyphWidth;
-                glyphPosition.x += offset;
+                var totalOffset = math.log10(number) / 2f * Config.GlyphWidth;
                 
+                var endPosition = CameraData.CameraRight * totalOffset + glyphPosition;
                 // split to numbers
                 // we iterate from  rightmost digit to leftmost
                 while (number > 0)
                 {
                     var digit = number % 10;
                     number /= 10;
-                    var glyph = Ecb.Instantiate(chunkIndex, GlyphEntity);
+                    var glyph = Ecb.Instantiate(chunkIndex, Config.GlyphPrefab);
+                    // quaternion.LookRotationSafe(glyphPosition - CameraData.WorldPosition, math.up());
                     Ecb.SetComponent(chunkIndex, glyph, new LocalTransform
                     {
-                        Position = glyphPosition,
+                        Position = endPosition,
                         Rotation = quaternion.identity,
-                        Scale = popNumberRequest.Scale
+                        Scale =Config.Scale
                     });
 
-                    glyphPosition.x -= GlyphWidth;
-                    glyphPosition.z -= GlyphZOffset;
+                    endPosition -= CameraData.CameraRight * Config.GlyphWidth;
+                    endPosition -= Config.GlyphDeepOffset * CameraData.CameraForward;
                     Ecb.AddComponent(chunkIndex, glyph,
                         new PopNumberData
                         {
                             SpawnTime = ElapsedTime,
-                            OriginalY = glyphPosition.y,
+                            OriginalY = endPosition.y,
+                            OriginalPosition = endPosition
                         });
 
                     Ecb.SetComponent(chunkIndex, glyph, new PopNumberIDFloatOverride { Value = digit });

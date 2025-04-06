@@ -115,9 +115,14 @@ namespace SparFlame.UI.GamePlay
         private void Update()
         {
             if (_notPauseTag.IsEmpty) return;
+            if(!BasicWindowResourceManager.Instance.IsResourceLoaded())return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
-            if(!BasicWindowResourceManager.Instance.IsResourceLoaded())return;
+            if (!_em.HasComponent<InteractableAttr>(_targetEntity))
+            {
+                _targetEntity = Entity.Null;
+                return;
+            }
             switch (_currentBar)
             {
                 case InteractType.Attack:

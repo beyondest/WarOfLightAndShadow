@@ -49,16 +49,18 @@ namespace SparFlame.UI.GamePlay
         {
             base.Show(pos);
             closeUpCamera.enabled = true;
+            if(_closeUpTarget != Entity.Null)
+                SetLayerRecursively(_closeUpTarget,_closeUpLayerIndex);
         }
 
         public override void Hide()
         {
             base.Hide();
-            SetLayerRecursively(_closeUpTarget, _oriLayer);
-            _closeUpTarget = Entity.Null;
             closeUpCamera.enabled = false;
-            closeUpExpSlider.enabled = false;
-            closeUpExpText.enabled = false;
+            SetLayerRecursively(_closeUpTarget, _oriLayer);
+            // _closeUpTarget = Entity.Null;
+            // closeUpExpSlider.enabled = false;
+            // closeUpExpText.enabled = false;
         }
 
   
@@ -146,10 +148,14 @@ namespace SparFlame.UI.GamePlay
         {
             _cameraBias = camBias;
             if (_notPauseTag.IsEmpty) return;
-            if (_closeUpTarget == Entity.Null) return;
             if (!IsOpened()) return;
             if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
-
+            if (_closeUpTarget == Entity.Null ) return;
+            if (!_em.HasComponent<StatData>(_closeUpTarget))
+            {
+                _closeUpTarget = Entity.Null;
+                return;
+            }
             UpdateCloseUpShow();
         }
 

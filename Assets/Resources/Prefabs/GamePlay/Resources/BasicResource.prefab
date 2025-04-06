@@ -54,8 +54,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseTag: 2
   factionTag: 0
-  gameplayName: 
-  tier: 0
+  gameplayName: BasicResource
+  tier: 3
 --- !u!114 &691200165073467411
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68,6 +68,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4da2435968d741edbde0bc4abf415ef7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  state: 0
+  harvestAmountMultiplier: 1
+  resourceType: 0
 --- !u!114 &4067515277419015678
 MonoBehaviour:
   m_ObjectHideFlags: 0

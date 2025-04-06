@@ -74,9 +74,9 @@ namespace SparFlame.GamePlaySystem.Interact
     
     public enum InteractType
     {
-        Attack,
-        Heal,
-        Harvest,
+        Attack=0,
+        Heal =1,
+        Harvest = 2,
     }
     
     public interface IInteractAbility

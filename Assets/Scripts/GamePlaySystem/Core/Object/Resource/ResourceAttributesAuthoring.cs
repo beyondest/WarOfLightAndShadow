@@ -1,11 +1,14 @@
 ﻿using Unity.Entities;
 using UnityEngine;
-using Unity.Mathematics;
+using UnityEngine.Serialization;
+
 namespace SparFlame.GamePlaySystem.Resource
 {
     public class ResourceAttributesAuthoring : MonoBehaviour
     {
-        
+        public ResourceState state = ResourceState.Available;
+        public float harvestAmountMultiplier;
+        public ResourceType resourceType;
         private class ResourceAttributesAuthoringBaker : Baker<ResourceAttributesAuthoring>
         {
             public override void Bake(ResourceAttributesAuthoring authoring)
@@ -13,7 +16,9 @@ namespace SparFlame.GamePlaySystem.Resource
                 var entity = GetEntity(TransformUsageFlags.WorldSpace);
                 AddComponent(entity, new ResourceAttr
                 {
-                    State = ResourceState.Available,
+                    State = authoring.state,
+                    Type = authoring.resourceType,
+                    HarvestAmountMultiplier = authoring.harvestAmountMultiplier,
                 });
             }
         }
@@ -21,13 +26,15 @@ namespace SparFlame.GamePlaySystem.Resource
 
     public enum ResourceState
     {
-        Available,
-        Depleted,
-        Harvesting
+        Available = 0,
+        Depleted = 1,
+        Harvesting = 2
     }
 
     public struct ResourceAttr : IComponentData
     {
         public ResourceState State;
+        public ResourceType Type;
+        public float HarvestAmountMultiplier;   // This is used for making different resource harvested in different difficulties
     }
 }

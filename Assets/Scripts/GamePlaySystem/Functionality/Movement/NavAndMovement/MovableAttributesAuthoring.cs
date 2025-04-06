@@ -1,0 +1,178 @@
+﻿using UnityEngine;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Physics.Authoring;
+using UnityEngine.AI;
+
+namespace SparFlame.GamePlaySystem.Movement
+{
+    public class MovableAttributesAuthoring : MonoBehaviour
+    {
+
+        [Tooltip("This interval determines how long the path calculation is executed once")]
+        public float calculateInterval = 1.0f;
+         public float moveSpeed = 5f;
+
+        
+        private class Baker : Baker<MovableAttributesAuthoring>
+        {
+            public override void Bake(MovableAttributesAuthoring authoring)
+            {
+                var physicsShape = authoring.GetComponent<PhysicsShapeAuthoring>();
+                if (!authoring.TryGetComponent(out NavMeshAgent agent))
+                {
+                    Debug.Log("Movable unit requires NavMeshAgent component");
+                    return;
+                }
+                
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
+                
+                AddComponent(entity, new NavAgentComponent
+                {
+                    TargetPosition = float3.zero,
+                    CalculateInterval = authoring.calculateInterval,
+                    Extents = float3.zero,
+                    EnableCalculation = false,
+                    CalculationComplete = false,
+                    CurrentWaypoint = 0,
+                    ForceCalculate = false,
+                    AgentId = agent.agentTypeID
+                });
+                AddComponent(entity, new MovableData
+                {
+                    MoveSpeed = authoring.moveSpeed,
+                    TargetCenterPos = float3.zero,
+                    TargetColliderShapeXZ = float2.zero,
+                    MovementCommandType = MovementCommandType.None,
+                    InteractiveRangeSq = 0f,
+                    DetailInfo = DetailInfo.None,
+                    MovementState = MovementState.NotMoving,
+                    ForceCalculate = false,
+                    SelfColliderShapeXz = new float2(physicsShape.m_PrimitiveSize.x,physicsShape.m_PrimitiveSize.z),
+                });
+                AddComponent(entity, new Surroundings
+                {
+                    MoveSuccess = true,
+                    FrontEntity = Entity.Null,
+                    LeftEntity = Entity.Null,
+                    RightEntity = Entity.Null,
+                });
+                
+                AddBuffer<WaypointBuffer>(entity);
+                AddComponent<MovingStateTag>(entity);
+                SetComponentEnabled<MovingStateTag>(entity, false);
+            }
+        }
+    }
+
+
+    public struct MovableData : IComponentData
+    {
+        public float MoveSpeed;
+        public float3 TargetCenterPos;
+        /// <summary>
+        /// Target collider shape is used for calculating
+        /// the extents of nav agent, extra radius for reachable check
+        /// </summary>
+        public float2 TargetColliderShapeXZ;
+        public MovementCommandType MovementCommandType;
+        public MovementState MovementState;
+        public DetailInfo DetailInfo;
+        /// <summary>
+        /// This range is attack range for attack movement, garrison range for garrison movement...
+        /// </summary>
+        public float InteractiveRangeSq;
+        public bool ForceCalculate;
+        /// <summary>
+        /// This is the collider of object itself, used for raycast for obstacle avoidance 
+        /// </summary>
+        public float2 SelfColliderShapeXz;
+    }
+
+    public struct Surroundings : IComponentData
+    {
+        public bool MoveSuccess;
+        public Entity FrontEntity;
+        public Entity LeftEntity;
+        public Entity RightEntity;
+        public int CompromiseTimes;
+        // public float3 IdealDirection;
+        public float3 PrePos;
+        public float RecordPosTime;
+
+        /*Deprecated
+         public Entity LeftTailEntity;
+        public Entity RightTailEntity;
+        public bool ChooseRight;
+        public int SlideTimes;*/
+    }
+    
+    public struct NavAgentComponent : IComponentData
+    {
+        public bool EnableCalculation;
+        public float3 TargetPosition;
+        public bool CalculationComplete;
+        public int CurrentWaypoint;
+        public float NextPathCalculateTime;
+        public float CalculateInterval;
+        public float3 Extents;
+        public bool ForceCalculate;
+        public int AgentId;
+    }
+
+    public struct WaypointBuffer : IBufferElementData
+    {
+        public float3 WayPoint;
+    }
+
+
+
+    public struct MovingStateTag : IComponentData, IEnableableComponent
+    {
+        
+    }
+    
+
+    
+    public enum MovementCommandType
+    {
+        None,
+        /// <summary>
+        /// Interactive includes attack, heal, garrison, harvest
+        /// </summary>
+        Interactive,
+        March,
+    }
+
+    public enum MovementState
+    {
+        NotMoving ,
+        /// <summary>
+        /// Is moving 
+        /// </summary>
+        IsMoving ,
+        /// <summary>
+        /// Target reachable and reach
+        /// </summary>
+        MovementComplete ,
+        /// <summary>
+        /// Only reach the closest point , cause target not reachable
+        /// </summary>
+        MovementPartialComplete,
+    }
+
+    public enum DetailInfo
+    {
+        None,
+        Reachable,
+        NotReachable,
+        /// <summary>
+        /// Calculation not complete or fail will return this
+        /// </summary>
+        CalculationNotComplete,
+        AutoGiveWay,
+        Stuck
+    }
+
+
+}

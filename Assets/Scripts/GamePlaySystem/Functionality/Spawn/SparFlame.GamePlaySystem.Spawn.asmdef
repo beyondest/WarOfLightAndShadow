@@ -1,0 +1,22 @@
+{
+    "name": "SparFlame.GamePlaySystem.Spawn",
+    "rootNamespace": "SparFlame.GamePlaySystem.Spawn",
+    "references": [
+        "Unity.Entities",
+        "Unity.Collections",
+        "Unity.Entities.Hybrid",
+        "Unity.Mathematics",
+        "Unity.Transforms",
+        "Unity.Burst",
+        "SparFlame.GamePlaySystem.General"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

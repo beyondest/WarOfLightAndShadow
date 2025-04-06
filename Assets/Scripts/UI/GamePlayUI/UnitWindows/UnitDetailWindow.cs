@@ -13,20 +13,16 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>,UIUtils.ISingleTargetWindow
+    public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>, UIUtils.ISingleTargetWindow
     {
         // Config
-        [Header("Custom Config")] 
-        [SerializeField]
+        [Header("Custom Config")] [SerializeField]
         private TMP_Text unitType;
-        [SerializeField]
-        private TMP_Text unitHp;
-        [SerializeField]
-        private TMP_Text unitMoveSpeed;
-        [SerializeField]
-        private Image unitIcon;
-        [SerializeField]
-        private Image hpIcon;
+
+        [SerializeField] private TMP_Text unitHp;
+        [SerializeField] private TMP_Text unitMoveSpeed;
+        [SerializeField] private Image unitIcon;
+        [SerializeField] private Image hpIcon;
 
 
         // Interface
@@ -54,14 +50,11 @@ namespace SparFlame.UI.GamePlay
             return _targetEntity != Entity.Null;
         }
 
-    
-        
+
         // Internal Data
         private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
         private Entity _targetEntity = Entity.Null;
-        
-        
-        
+
 
         // ECS
         private EntityManager _em;
@@ -69,16 +62,14 @@ namespace SparFlame.UI.GamePlay
 
         #region EventFunction
 
-
         private void Awake()
         {
-            if(Instance == null)
+            if (Instance == null)
                 Instance = this;
             else
                 Destroy(gameObject);
         }
 
- 
 
         private void Start()
         {
@@ -91,11 +82,16 @@ namespace SparFlame.UI.GamePlay
         {
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
-            
-            if (!UnitWindowResourceManager.Instance.IsResourceLoaded() 
-                ||!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
-            if (_targetEntity != Entity.Null)
-                UpdateUnitDetailInfo();
+
+            if (!UnitWindowResourceManager.Instance.IsResourceLoaded()
+                || !BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
+            if (_targetEntity == Entity.Null) return;
+            if (!_em.HasComponent<InteractableAttr>(_targetEntity))
+            {
+                _targetEntity = Entity.Null;
+                return;
+            }
+            UpdateUnitDetailInfo();
         }
 
         #endregion
@@ -133,6 +129,4 @@ namespace SparFlame.UI.GamePlay
             }
         }
     }
-
-
 }

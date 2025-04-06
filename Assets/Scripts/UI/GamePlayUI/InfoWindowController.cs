@@ -60,6 +60,12 @@ namespace SparFlame.UI.GamePlay
                 if(!BuildingDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     BuildingDetailWindow.Instance.Hide();
             }
+
+            if (ResourceDetailWindow.Instance.IsOpened())
+            {
+                if(!ResourceDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
+                    ResourceDetailWindow.Instance.Hide();
+            }
         }
 
         private bool _minimizeWindow;
@@ -95,7 +101,9 @@ namespace SparFlame.UI.GamePlay
         private void Update()
         {
             if (_notPauseTag.IsEmpty) return;
-
+            if(!_em.Exists(_closeUpTarget))
+                _closeUpTarget = Entity.Null;
+            
             var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<CursorData>();
             var selectedData = _selectedData.GetSingleton<UnitSelectionData>();
@@ -120,7 +128,6 @@ namespace SparFlame.UI.GamePlay
             // show info window when select some units or left click on valid
             var shouldShowInfoWindow = selectedData.CurrentSelectCount > 0 || leftClickOnValid;
 
-            var shouldHideInfoWindow = leftClickOnInvalid;
 
             if (shouldShowInfoWindow)
             {
@@ -130,13 +137,7 @@ namespace SparFlame.UI.GamePlay
                     maximizeButton.SetActive(true);
             }
 
-            if (shouldHideInfoWindow)
-            {
-                if (_minimizeWindow)
-                    maximizeButton.SetActive(false);
-                else if (!_minimizeWindow && infoPanel.activeSelf)
-                    Hide();
-            }
+         
 
             // Check should show or hide Unit multi 2D , interact , detail window
             // Show multi unit window when select count > 1
@@ -169,6 +170,9 @@ namespace SparFlame.UI.GamePlay
                 if (!BuildingDetailWindow.Instance.IsOpened() &&
                     BuildingDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     BuildingDetailWindow.Instance.Show();
+                if(!ResourceDetailWindow.Instance.IsOpened() && 
+                   ResourceDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
+                    ResourceDetailWindow.Instance.Show();
             }
             else
             {
@@ -178,6 +182,20 @@ namespace SparFlame.UI.GamePlay
                     UnitDetailWindow.Instance.Hide();
                 if (BuildingDetailWindow.Instance.IsOpened())
                     BuildingDetailWindow.Instance.Hide();
+                if(ResourceDetailWindow.Instance.IsOpened())
+                    ResourceDetailWindow.Instance.Hide();
+            }
+            var shouldHideInfoWindow = leftClickOnInvalid || (!UnitDetailWindow.Instance.HasTarget()
+                && !BuildingDetailWindow.Instance.HasTarget()
+                && !InteractAbilityWindow.Instance.HasTarget()
+                && !UnitMulti2DWindow.Instance.HasTarget()
+                && !ResourceDetailWindow.Instance.HasTarget());
+            if (shouldHideInfoWindow)
+            {
+                if (_minimizeWindow)
+                    maximizeButton.SetActive(false);
+                else if (!_minimizeWindow && infoPanel.activeSelf)
+                    Hide();
             }
         }
 

@@ -32,4 +32,10 @@ namespace SparFlame.GamePlaySystem.Resource
         public ResourceType costResourceType;
         public int amount;
     }
+    
+    public struct CostList : IBufferElementData
+    {
+        public ResourceType Type;
+        public int Amount;
+    }
 }
