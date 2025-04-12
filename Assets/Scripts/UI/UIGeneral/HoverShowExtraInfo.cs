@@ -1,30 +1,37 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace SparFlame.UI.General
 {
-
     public class HoverShowExtraInfoText : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        public TMP_Text extraInfoText;
+        public List<TMP_Text> extraInfoTexts;
 
         private void Start()
         {
-            if (extraInfoText != null)
-                extraInfoText.gameObject.SetActive(false); 
+            foreach (var extraInfoText in extraInfoTexts)
+            {
+                if (extraInfoText != null)
+                    extraInfoText.gameObject.SetActive(false);
+            }
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (extraInfoText != null)
-                extraInfoText.gameObject.SetActive(true); 
+            foreach (var extraInfoText in extraInfoTexts)
+            {
+                extraInfoText.gameObject.SetActive(false);
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (extraInfoText != null)
-                extraInfoText.gameObject.SetActive(false); 
+            foreach (var extraInfoText in extraInfoTexts)
+            {
+                extraInfoText.gameObject.SetActive(false);
+            }
         }
     }
 }

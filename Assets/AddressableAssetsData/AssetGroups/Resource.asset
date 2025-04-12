@@ -15,28 +15,28 @@ MonoBehaviour:
   m_GroupName: Resource
   m_GUID: 77ccd14f23f0adc4485655cde4843a23
   m_SerializeEntries:
-  - m_GUID: 0dfe250faee50df4f8b5792df486eb78
-    m_Address: Luminite
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 35213b9f6121ba14eb9c74de0fda6d66
-    m_Address: LightEnergy
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 842bb9c4df4dbb2429a4f715d115fd6e
-    m_Address: DarkEnergy
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b52084688bd4b604d878e8049aafe9a2
+  - m_GUID: 3cc555e104461b84dbc03a4c631c9a17
     m_Address: Essence
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f4be343b90e2ef24cb8fb7349dfed26b
+  - m_GUID: 3d261c37bcec3ef4b94b0a48db81d165
     m_Address: Obsidian
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6e3c26144b6b7b641b6f3bdc3172f2e4
+    m_Address: Luminite
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ad646dce0b413f94e84162b7a6dad8c2
+    m_Address: DarkEnergy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fdfebd9b1b4ad5e4a9ec12c07fbb65c7
+    m_Address: LightEnergy
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

@@ -64,13 +64,17 @@ PrefabInstance:
       propertyPath: factionTag
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3371037726439184987, guid: 50942f5282d64eb49866620f7a605fc2, type: 3}
+      propertyPath: gameplayName
+      value: CoreCrystal
+      objectReference: {fileID: 0}
     - target: {fileID: 4787786586390162096, guid: 50942f5282d64eb49866620f7a605fc2, type: 3}
       propertyPath: sightPrefab
       value: 
       objectReference: {fileID: 6424518809402768789, guid: 56c3f9ef68148734fa48ea40d90fa752, type: 3}
     - target: {fileID: 5837656806177703368, guid: 50942f5282d64eb49866620f7a605fc2, type: 3}
       propertyPath: m_Name
-      value: AllyBase
+      value: CoreCrystal
       objectReference: {fileID: 0}
     - target: {fileID: 8335884690084023522, guid: 50942f5282d64eb49866620f7a605fc2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'

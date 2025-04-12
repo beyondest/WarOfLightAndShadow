@@ -64,6 +64,10 @@ PrefabInstance:
       propertyPath: factionTag
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8762703214276701655, guid: 350fdfb072f1c254eb3d9960bfa6639d, type: 3}
+      propertyPath: gameplayName
+      value: AethericForge
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

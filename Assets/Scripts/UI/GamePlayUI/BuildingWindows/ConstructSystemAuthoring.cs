@@ -26,7 +26,7 @@ namespace SparFlame.GamePlaySystem.Building
                 });
                 var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
                 var buffer = AddBuffer<BuildingSlot>(entity2);
-                foreach (var buildingData in authoring.buildingDatabase.buildingsData)
+                foreach (var buildingData in authoring.buildingDatabase.buildingsData) // Bake all building entity prefabs to singleton buffer for further use
                 {
                     buffer.Add(new BuildingSlot
                     {

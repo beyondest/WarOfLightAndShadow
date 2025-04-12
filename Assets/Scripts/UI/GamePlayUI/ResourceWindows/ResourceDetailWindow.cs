@@ -1,32 +1,42 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.UI.General;
+using TMPro;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
     public class ResourceDetailWindow : MonoBehaviour,UIUtils.ISingleTargetWindow
     {
 
-        [SerializeField] private GameObject panel;
+        [FormerlySerializedAs("panel")] 
+        [SerializeField] private GameObject resourceDetailPanel;
+        [SerializeField] private TMP_Text resourceTypeText;
+        [SerializeField] private Image resourceTypeIcon;
+        [SerializeField] private TMP_Text resourceAmountText;
+
+        [SerializeField] private TMP_Text remainingTime;
+        [SerializeField] private GameObject regeneratingGo;
         
         // Interface
         public static ResourceDetailWindow Instance;
         public void Show(Vector2? pos = null)
         {
-            panel.SetActive(true);
+            resourceDetailPanel.SetActive(true);
         }
 
         public void Hide()
         {
-            panel.SetActive(false);
+            resourceDetailPanel.SetActive(false);
+            regeneratingGo.SetActive(false);
         }
 
         public bool IsOpened()
         {
-            return panel.activeSelf;
+            return resourceDetailPanel.activeSelf;
         }
 
         public bool TrySwitchTarget(Entity target)
@@ -79,7 +89,25 @@ namespace SparFlame.UI.GamePlay
 
         private void UpdateResourceInfo()
         {
+            var resourceAttr = _em.GetComponentData<ResourceAttr>(_targetEntity);
             
+            resourceTypeIcon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[resourceAttr.Type];
+            resourceTypeText.text = resourceAttr.Type.ToString();
+            
+            if (_em.HasComponent<RenewableData>(_targetEntity) )
+            {
+                if (_em.HasComponent<RegeneratingTag>(_targetEntity))
+                {
+                    var renewableResourceData = _em.GetComponentData<RenewableData>(_targetEntity);
+                    regeneratingGo.SetActive(true);
+                    remainingTime.enabled = true;
+                    remainingTime.text =UIMathMethods.FormatTime((int)renewableResourceData.RegeneratingLeftTime);
+                    return;
+                }
+            }
+            regeneratingGo.SetActive(false);
+            remainingTime.enabled = false;
+            resourceAmountText.text = resourceAttr.AmountRange.lower + " - " + resourceAttr.AmountRange.upper;
         }
     }
 }

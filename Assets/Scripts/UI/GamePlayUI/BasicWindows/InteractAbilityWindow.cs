@@ -1,34 +1,64 @@
 ﻿using System;
+using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using Unity.Entities;
 using UnityEngine;
 using SparFlame.UI.General;
+using TMPro;
 using Unity.Mathematics;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class InteractAbilityWindow :UIUtils.MultiSlotsWindow<AttributeSlot>,UIUtils.ISingleTargetWindow
+    public class InteractAbilityWindow : MonoBehaviour, UIUtils.ISingleTargetWindow
     {
         // public static InteractAbilityWindow Instance;
 
-        [Header("Custom Config")]
-        [SerializeField]
-        private Button attackBar;
-        [SerializeField]
-        private Button healBar;
-        [SerializeField]
-        private Button harvestBar;
+        [Header("Custom Config")] [SerializeField]
+        private float colorSwitchDuration = 1.0f;
+        [Tooltip("This list must in sequence of interact type : Attack, Heal, Harvest ")]
+        [SerializeField] private List<InteractTypeColorPair> interactTypeColorPairs;
 
+        [Header("Internal Config")] [SerializeField]
+        private GameObject panel;
 
+        [SerializeField] private GameObject attackBar;
+        [SerializeField] private GameObject healBar;
+        [SerializeField] private GameObject harvestBar;
+
+        [SerializeField] private TMP_Text amountLabelText;
+        [SerializeField] private TMP_Text amountValueText;
+        [SerializeField] private Image amountIcon;
+        [SerializeField] private TMP_Text rangeLabelText;
+        [SerializeField] private TMP_Text rangeValueText;
+        [SerializeField] private Image rangeIcon;
+        [SerializeField] private TMP_Text speedLabelText;
+        [SerializeField] private TMP_Text speedValueText;
+        [SerializeField] private Image speedIcon;
+        [SerializeField] private TMP_Text targetsLabelText;
+        [SerializeField] private TMP_Text targetsValueText;
+        [FormerlySerializedAs("targetIcon")] [SerializeField] private Image targetsIcon;
+
+        // Interface
         public static InteractAbilityWindow Instance;
 
-        public override void Hide()
+        public void Show(Vector2? pos = null)
         {
-            base.Hide();
+            panel.SetActive(true);
+        }
+
+        public void Hide()
+        {
+            panel.SetActive(false);
             _targetEntity = Entity.Null;
+        }
+
+        public bool IsOpened()
+        {
+            return panel.activeSelf;
         }
 
         public bool TrySwitchTarget(Entity target)
@@ -38,15 +68,17 @@ namespace SparFlame.UI.GamePlay
             var harvestable = _em.HasComponent<HarvestAbility>(target);
 
             if (!attackable && !healable && !harvestable) return false;
-            
-            attackBar.interactable  = attackable;
-            healBar.interactable  = healable;
-            harvestBar.interactable  = harvestable;
+
+            attackBar.SetActive(attackable);
+            healBar.SetActive(healable);
+            harvestBar.SetActive(harvestable);
             _targetEntity = target;
+
             // Use this sequence to ensure attack ability show first if it has
             if (harvestable) OnClickHarvestBar();
             if (healable) OnClickHealBar();
             if (attackable) OnClickAttackBar();
+
             return true;
         }
 
@@ -55,9 +87,6 @@ namespace SparFlame.UI.GamePlay
             return _targetEntity != Entity.Null;
         }
 
-
-   
-
         #region ButtonMethods
 
         public void OnClickAttackBar()
@@ -65,6 +94,7 @@ namespace SparFlame.UI.GamePlay
             var ability = _em.GetComponentData<AttackAbility>(_targetEntity);
             UpdateInteractAbilityInfo(ability);
             _currentBar = InteractType.Attack;
+            ChangeColorGradually();
         }
 
         public void OnClickHealBar()
@@ -72,6 +102,7 @@ namespace SparFlame.UI.GamePlay
             var ability = _em.GetComponentData<HealAbility>(_targetEntity);
             UpdateInteractAbilityInfo(ability);
             _currentBar = InteractType.Heal;
+            ChangeColorGradually();
         }
 
         public void OnClickHarvestBar()
@@ -79,6 +110,7 @@ namespace SparFlame.UI.GamePlay
             var ability = _em.GetComponentData<HarvestAbility>(_targetEntity);
             UpdateInteractAbilityInfo(ability);
             _currentBar = InteractType.Harvest;
+            ChangeColorGradually();
         }
 
         #endregion
@@ -91,31 +123,34 @@ namespace SparFlame.UI.GamePlay
         private EntityManager _em;
         private EntityQuery _notPauseTag;
 
- 
-
-        private void Awake()
+        protected virtual void Awake()
         {
-            if(Instance == null)
+            if (Instance == null)
                 Instance = this;
             else
                 Destroy(gameObject);
+            
         }
-
-  
-
-        private void Start()
+        
+        protected virtual void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-        
+            for (var i = 0; i < interactTypeColorPairs.Count; i++)
+            {
+                var pair = interactTypeColorPairs[i];
+                if ((int)pair.type != i)
+                    throw new ArgumentException(
+                        "InteractAbility Window parameters wrong, color pairs must match the sequence of " +
+                        "Interact type enum");
+            }
             Hide();
-             
         }
-        
-        private void Update()
+
+        protected virtual void Update()
         {
             if (_notPauseTag.IsEmpty) return;
-            if(!BasicWindowResourceManager.Instance.IsResourceLoaded())return;
+            if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
             if (!_em.HasComponent<InteractableAttr>(_targetEntity))
@@ -123,6 +158,7 @@ namespace SparFlame.UI.GamePlay
                 _targetEntity = Entity.Null;
                 return;
             }
+
             switch (_currentBar)
             {
                 case InteractType.Attack:
@@ -141,9 +177,6 @@ namespace SparFlame.UI.GamePlay
 
         private void UpdateInteractAbilityInfo(IInteractAbility interactAbility)
         {
-            var properties = typeof(IInteractAbility).GetProperties();
-            var spriteList =
-                UnitWindowResourceManager.Instance.InteractAbilitySprites[interactAbility.InteractType];
             var prefix = interactAbility.InteractType switch
             {
                 InteractType.Attack => "Attack",
@@ -151,31 +184,34 @@ namespace SparFlame.UI.GamePlay
                 InteractType.Harvest => "Harvest",
                 _ => throw new ArgumentOutOfRangeException()
             };
-            
-            for (var i = 0; i < Slots.Count; i++)
-            {
-                if (i <spriteList.Count) // Length - 1 is because last property is InteractType
-                {
-                    var oriName = properties[i].Name;
-                 
-                    Slots[i].SetActive(true);
-                    var attrSlot = SlotComponents[i];
-                    var value = properties[i].GetValue(interactAbility);
-                    if (oriName == "Range" && value is float floatValue)
-                    {
-                        value = math.sqrt(floatValue);
-                    }
-                    var newName = prefix + oriName;
-                    attrSlot.icon.sprite = spriteList[i];
-                    attrSlot.label.text = newName + ":";
-                    attrSlot.value.text = value.ToString();
-                }
-                else
-                {
-                    Slots[i].SetActive(false);
-                }
-            }
+            amountLabelText.text = prefix + " Amount";
+            amountValueText.text = interactAbility.Amount.ToString();
+            rangeLabelText.text = prefix + " Range";
+            rangeValueText.text = ((int)math.sqrt(interactAbility.RangeSq)).ToString();
+            speedLabelText.text = prefix + " Speed";
+            speedValueText.text = ((int)interactAbility.Speed).ToString();
+            targetsLabelText.text = prefix + " Targets";
+            targetsValueText.text = ((int)interactAbility.Targets).ToString();
+        }
+
+        private void ChangeColorGradually()
+        {
+            UIMathMethods.AnimateColorAsync(amountIcon, amountIcon.color,
+                interactTypeColorPairs[(int)_currentBar].color,
+                colorSwitchDuration);
+            UIMathMethods.AnimateColorAsync(speedIcon, speedIcon.color, interactTypeColorPairs[(int)_currentBar].color,
+                colorSwitchDuration);
+            UIMathMethods.AnimateColorAsync(rangeIcon, rangeIcon.color, interactTypeColorPairs[(int)_currentBar].color,
+                colorSwitchDuration);
+            UIMathMethods.AnimateColorAsync(targetsIcon, targetsIcon.color, interactTypeColorPairs[(int)_currentBar].color,
+                colorSwitchDuration);
+        }
+
+        [Serializable]
+        public struct InteractTypeColorPair
+        {
+            public InteractType type;
+            public Color color;
         }
     }
-
 }

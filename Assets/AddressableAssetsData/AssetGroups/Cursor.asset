@@ -26,7 +26,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2b93e1aa9f3386947ac849111360191e
-    m_Address: ControlSelect
+    m_Address: ControlSelect2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -35,23 +35,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 421f5b87542532141ab4f416c83efbbe
-    m_Address: ArrowRightDown
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 45c62cc4413e1414da0dd873d6508fd0
-    m_Address: ArrowLeftDown
+  - m_GUID: 5ca09de8a59d06e419b2a6c85a536d94
+    m_Address: Drag
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6816efda7ef80f74480e1358751d3088
     m_Address: Harvest
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 736aae00cbb963544b745a022a9b138a
-    m_Address: ArrowRightUp
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -62,26 +52,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 82f015fb977a18b4298d685ea0a843eb
     m_Address: None
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 87b1ca6612844a14e89f061b6fc5b8ea
-    m_Address: ArrowLeft
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8f2de305c4eeb7b48ae607005be89ca8
-    m_Address: ArrowUp
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 91b1e4f7af967ae49af6719e978aadf9
-    m_Address: ArrowDown
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 96bd3ddb546c2d54f8e37f078c14c416
-    m_Address: ArrowLeftUp
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -102,16 +72,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: da4a47dd75433f14b93fb84ad273674a
     m_Address: Garrison
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e952c78674dcc454c831dfdb4fb9ff21
-    m_Address: ArrowRight
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ee938ef6695eea949b93f502e74ebc24
-    m_Address: Drag
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

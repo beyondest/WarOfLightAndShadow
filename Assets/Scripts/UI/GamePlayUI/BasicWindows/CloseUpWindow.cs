@@ -12,35 +12,42 @@ using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
+
 // ReSharper disable PossibleNullReferenceException
 
 namespace SparFlame.UI.GamePlay
 {
-    public class CloseUpWindow : UIUtils.MultiSlotsWindow<BuffSlot>,UIUtils.ISingleTargetWindow
+    public class CloseUpWindow : UIUtils.MultiSlotsWindow<BuffSlot>, UIUtils.ISingleTargetWindow
     {
-
         // Config
-        [Header("Custom Config")]
-        [SerializeField]
+        [Header("Custom Config")] [SerializeField]
         private Camera closeUpCamera;
-        [SerializeField]
-        private RawImage closeUpImage;
-        [SerializeField]
-        private Slider closeUpStatSlider;
-        [SerializeField]
-        private Slider closeUpExpSlider;
-        [SerializeField]
-        private TMP_Text closeUpTargetName;
-        [SerializeField]
-        private Image closeUpTargetTier;
-        [SerializeField]
-        private TMP_Text closeUpExpText;
-        [SerializeField]
-        private Vector3 camBias;
-        [SerializeField]
-        private LayerMask closeUpLayerMask;
+
+        [SerializeField] private RawImage closeUpRawImage;
+
+        [SerializeField] private GameObject lightExpObj;
+        [SerializeField] private GameObject lightHpObj;
+        [SerializeField] private GameObject darkExpObj;
+        [SerializeField] private GameObject darkHpObj;
+        [SerializeField] private GameObject neutralHpObj;
+        [SerializeField] private Image lightExpFilled;
+        [SerializeField] private Image lightHpFilled;
+        [SerializeField] private Image darkExpFilled;
+        [SerializeField] private Image darkHpFilled;
+        [SerializeField] private Image neutralHpFilled;
+        
+        
+        [SerializeField] private TMP_Text statValueText;
+        [SerializeField] private TMP_Text expValueText;
+        [SerializeField] private TMP_Text statLabelText; 
+        [SerializeField] private TMP_Text closeUpTargetName;
+
+        [SerializeField] private List<TierImagePair> tierImagePairs;
 
 
+        [SerializeField] private Vector3 camBias;
+
+        [SerializeField] private LayerMask closeUpLayerMask;
 
         // Interface
         public static CloseUpWindow Instance;
@@ -49,8 +56,8 @@ namespace SparFlame.UI.GamePlay
         {
             base.Show(pos);
             closeUpCamera.enabled = true;
-            if(_closeUpTarget != Entity.Null)
-                SetLayerRecursively(_closeUpTarget,_closeUpLayerIndex);
+            if (_closeUpTarget != Entity.Null)
+                SetLayerRecursively(_closeUpTarget, _closeUpLayerIndex);
         }
 
         public override void Hide()
@@ -58,12 +65,17 @@ namespace SparFlame.UI.GamePlay
             base.Hide();
             closeUpCamera.enabled = false;
             SetLayerRecursively(_closeUpTarget, _oriLayer);
-            // _closeUpTarget = Entity.Null;
-            // closeUpExpSlider.enabled = false;
-            // closeUpExpText.enabled = false;
+            lightExpObj.SetActive(false);
+            darkExpObj.SetActive(false);
+            darkHpObj.SetActive(false);
+            lightHpObj.SetActive(false);
+            neutralHpObj.SetActive(false);
+            for (var i = 0; i < tierImagePairs.Count; i++)
+            {
+                tierImagePairs[i].image.enabled = false;
+            }
         }
 
-  
 
         public bool TrySwitchTarget(Entity target)
         {
@@ -73,6 +85,7 @@ namespace SparFlame.UI.GamePlay
 
             if (!_em.HasComponent<InteractableAttr>(target)) return false;
             var attr = _em.GetComponentData<InteractableAttr>(target);
+            _targetHasExp = _em.HasComponent<ExpData>(target);
             _closeUpTargetColliderSize = attr.BoxColliderSize;
             _closeUpTarget = target;
 
@@ -81,11 +94,57 @@ namespace SparFlame.UI.GamePlay
 
             // Update close up window static value
             closeUpTargetName.text = attr.GameplayName.ToString();
-            closeUpExpText.enabled =
-                closeUpExpSlider.enabled = _closeUpTargetExpEnabled = _em.HasComponent<ExpData>(target);
-            closeUpTargetTier.sprite = BasicWindowResourceManager.Instance.TierSprites[attr.Tier];
+            switch (attr.FactionTag)
+            {
+                case FactionTag.Ally:
+                    lightHpObj.SetActive(true);
+                    darkHpObj.SetActive(false);
+                    lightExpObj.SetActive(_targetHasExp);
+                    darkExpObj.SetActive(false);
+                    neutralHpObj.SetActive(false);
+                    _statFilled = lightHpFilled;
+                    _expFilled = lightExpFilled;
+                    statLabelText.text = "Hp";
+                    for (var i = 0; i < tierImagePairs.Count; i++)
+                    {
+                        tierImagePairs[i].image.enabled = i == (int)attr.Tier - 3;
+                        tierImagePairs[i].image.color = Color.white;
+                    }
+                    break;
+                case FactionTag.Enemy:
+                    lightHpObj.SetActive(false);
+                    darkHpObj.SetActive(true);
+                    lightExpObj.SetActive(false);
+                    darkExpObj.SetActive(_targetHasExp);
+                    neutralHpObj.SetActive(false);
+                    _statFilled = darkHpFilled;
+                    _expFilled = darkExpFilled;
+                    statLabelText.text = "Hp";
+                    for (var i = 0; i < tierImagePairs.Count; i++)
+                    {
+                        tierImagePairs[i].image.enabled = i == (int)attr.Tier - 3;
+                        tierImagePairs[i].image.color = Color.black;
+                    }
+                    break;
+                case FactionTag.Neutral:
+                    lightExpObj.SetActive(false);
+                    darkExpObj.SetActive(false);
+                    darkHpObj.SetActive(false);
+                    lightHpObj.SetActive(false);
+                    neutralHpObj.SetActive(true);
+                    _statFilled = neutralHpFilled;
+                    statLabelText.text = "Resource";
+                    for (var i = 0; i < tierImagePairs.Count; i++)
+                    {
+                        tierImagePairs[i].image.enabled = i == (int)attr.Tier - 3;
+                        tierImagePairs[i].image.color = Color.yellow;
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
-
+            
             return true;
         }
 
@@ -105,13 +164,15 @@ namespace SparFlame.UI.GamePlay
         private int _oriLayer;
         private Vector3 _cameraBias;
         private Vector3 _closeUpTargetColliderSize = Vector3.zero;
-        private bool _closeUpTargetExpEnabled;
+        private bool _targetHasExp;
         private Entity _closeUpTarget = Entity.Null;
         private AsyncOperationHandle<GameObject> _buffSlotHandle;
 
-        
+
         // Cache
         private GameObject _buffSlotPrefab;
+        private Image _expFilled;
+        private Image _statFilled;
 
 
         // ECS
@@ -121,7 +182,7 @@ namespace SparFlame.UI.GamePlay
 
         private void Awake()
         {
-            if(Instance == null)
+            if (Instance == null)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -133,12 +194,12 @@ namespace SparFlame.UI.GamePlay
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
             var rt = new RenderTexture(
-                (int)closeUpImage.rectTransform.rect.width,
-                (int)closeUpImage.rectTransform.rect.height,
+                (int)closeUpRawImage.rectTransform.rect.width,
+                (int)closeUpRawImage.rectTransform.rect.height,
                 16
             );
             closeUpCamera.targetTexture = rt;
-            closeUpImage.texture = rt;
+            closeUpRawImage.texture = rt;
             _closeUpLayerIndex = (int)math.log2(closeUpLayerMask.value);
             Hide();
         }
@@ -150,27 +211,30 @@ namespace SparFlame.UI.GamePlay
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
             if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
-            if (_closeUpTarget == Entity.Null ) return;
+            if (_closeUpTarget == Entity.Null) return;
             if (!_em.HasComponent<StatData>(_closeUpTarget))
             {
                 _closeUpTarget = Entity.Null;
                 return;
             }
+
             UpdateCloseUpShow();
         }
 
         private void UpdateCloseUpShow()
         {
+            
+            
             // Update Hp
             var statData = _em.GetComponentData<StatData>(_closeUpTarget);
-            closeUpStatSlider.value = 1 - (float)statData.CurValue / statData.MaxValue;
-            
+            _statFilled.fillAmount = (float)statData.CurValue / statData.MaxValue;
+            statValueText.text = statData.CurValue + " / " + statData.MaxValue;
             // Update Exp
-            if (_closeUpTargetExpEnabled)
+            if (_targetHasExp)
             {
                 var expData = _em.GetComponentData<ExpData>(_closeUpTarget);
-                closeUpExpSlider.value = (float)expData.CurValue / expData.MaxValue;
-                closeUpExpText.text = expData.CurValue + "/" + expData.MaxValue;
+                _expFilled.fillAmount = (float)expData.CurValue / expData.MaxValue;
+                expValueText.text = expData.CurValue + "/" + expData.MaxValue;
             }
 
             // Update camera close up show
@@ -180,7 +244,7 @@ namespace SparFlame.UI.GamePlay
             var z = _closeUpTargetColliderSize.z * 0.5f;
             closeUpCamera.transform.position = (Vector3)tarTransform.Position + _cameraBias + new Vector3(x, y, z);
             closeUpCamera.transform.LookAt(tarTransform.Position + new float3(0, 0.5f * y, 0));
-            
+
             // Update BuffData
             if (_em.HasComponent<BuffData>(_closeUpTarget))
             {
@@ -232,6 +296,13 @@ namespace SparFlame.UI.GamePlay
             }
 
             return oriLayer;
+        }
+        
+        [Serializable]
+        public struct TierImagePair
+        {
+            public Tier tier;
+            public Image image;
         }
     }
 }

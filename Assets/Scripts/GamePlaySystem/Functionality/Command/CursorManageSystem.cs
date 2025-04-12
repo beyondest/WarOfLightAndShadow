@@ -7,7 +7,6 @@ using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.CustomInput;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Command
 {
@@ -27,7 +26,7 @@ namespace SparFlame.GamePlaySystem.Command
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var customInputSystemData = SystemAPI.GetSingleton<InputMouseData>();
+            var customMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var cursorManageData = SystemAPI.GetSingletonRW<CursorData>();
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             var cameraControlData = SystemAPI.GetSingleton<CameraMovementState>();
@@ -43,17 +42,15 @@ namespace SparFlame.GamePlaySystem.Command
 
             // Check is zooming
             if (IsZoomingCamera(ref cursorManageData, in cameraControlData)) return;
-
-            
             
             // Not Clickable. Like Nav layer object; default layer objects; or over UI
-            if (customInputSystemData.HitEntity == Entity.Null || customInputSystemData.IsOverUI)
+            if (customMouseData.HitEntity == Entity.Null || customMouseData.IsOverUI)
                 return;
 
             // Clickable = Interactable Layer + Terrain Layer
 
             // Hover on terrain 
-            if (!SystemAPI.HasComponent<InteractableAttr>(customInputSystemData.HitEntity))
+            if (!SystemAPI.HasComponent<InteractableAttr>(customMouseData.HitEntity))
             {
                 if (unitSelectionData.CurrentSelectCount == 0)
                 {
@@ -69,27 +66,27 @@ namespace SparFlame.GamePlaySystem.Command
             }
             
             // Hover on interactable
-            var basicAttr = SystemAPI.GetComponent<InteractableAttr>(customInputSystemData.HitEntity);
+            var basicAttr = SystemAPI.GetComponent<InteractableAttr>(customMouseData.HitEntity);
             BuildingAttr buildingAttr = new BuildingAttr
             {
                 State = BuildingState.Idle
             };
-            ResourceAttr resourceAttr = new ResourceAttr
-            {
-                State = ResourceState.Depleted
-            };
+            var isResourceValid = true;
             switch (basicAttr.BaseTag)
             {
                 case BaseTag.Buildings:
-                    buildingAttr = SystemAPI.GetComponent<BuildingAttr>(customInputSystemData.HitEntity);
+                    buildingAttr = SystemAPI.GetComponent<BuildingAttr>(customMouseData.HitEntity);
                     break;
                 case BaseTag.Resources:
-                    resourceAttr = SystemAPI.GetComponent<ResourceAttr>(customInputSystemData.HitEntity);
+                    if (state.EntityManager.HasComponent<RegeneratingTag>(customMouseData.HitEntity))
+                    {
+                        isResourceValid = false;
+                    }
                     break;
             }
 
             CheckMouseHovering(ref cursorManageData, in unitSelectionData, in basicAttr, in buildingAttr,
-                in resourceAttr);
+                isResourceValid);
         }
 
 
@@ -98,7 +95,7 @@ namespace SparFlame.GamePlaySystem.Command
         
         private static void CheckMouseHovering(ref RefRW<CursorData> cursorManageData,
             in UnitSelectionData unitSelectionData,
-            in InteractableAttr interactableAttr, in BuildingAttr buildingAttr, in ResourceAttr resourceAttr)
+            in InteractableAttr interactableAttr, in BuildingAttr buildingAttr, bool isResourceValid)
         {
             var attr = interactableAttr;
             if(unitSelectionData.CurrentSelectFaction != FactionTag.Ally)
@@ -112,9 +109,9 @@ namespace SparFlame.GamePlaySystem.Command
                     {
                         (FactionTag.Neutral, BaseTag.Resources) => (CursorType.CheckInfo, CursorType.None),
                         (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.None),
-                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Worked => (
                             CursorType.Gather, CursorType.None),
-                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Produced => (
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Worked => (
                             CursorType.ControlSelect, CursorType.None),
                         (FactionTag.Enemy, _) => (CursorType.CheckInfo, CursorType.None),
                         (_, _) => (CursorType.UI, CursorType.None),
@@ -126,12 +123,12 @@ namespace SparFlame.GamePlaySystem.Command
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
                     (TeamTag: attr.FactionTag, attr.BaseTag) switch
                     {
-                        (FactionTag.Neutral, BaseTag.Resources) when resourceAttr.State == ResourceState.Available => (
+                        (FactionTag.Neutral, BaseTag.Resources) when isResourceValid => (
                             CursorType.CheckInfo, CursorType.Harvest),
                         (FactionTag.Ally, BaseTag.Units) => (CursorType.ControlSelect, CursorType.Heal),
-                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Produced => (
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State == BuildingState.Worked => (
                             CursorType.Gather, CursorType.Garrison),
-                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Produced => (
+                        (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.State != BuildingState.Worked => (
                             CursorType.ControlSelect, CursorType.Garrison),
                         (FactionTag.Enemy, _) => (CursorType.CheckInfo, CursorType.Attack),
                         (_, _) => (CursorType.UI, CursorType.None),

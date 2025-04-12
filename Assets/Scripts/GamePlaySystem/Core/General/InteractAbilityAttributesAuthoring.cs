@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         {
                             Speed = authoring.interactSpeed,
                             Targets = authoring.interactCount,
-                            Range = authoring.interactRange * authoring.interactRange,
+                            RangeSq = authoring.interactRange * authoring.interactRange,
                             Amount = authoring.interactBasicAmount,
                             InteractType = InteractType.Attack
                         });
@@ -47,7 +47,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         {
                             Speed = authoring.interactSpeed,
                             Targets = authoring.interactCount,
-                            Range = authoring.interactRange * authoring.interactRange,
+                            RangeSq = authoring.interactRange * authoring.interactRange,
                             Amount = authoring.interactBasicAmount,
                             InteractType = InteractType.Heal
                         });
@@ -59,7 +59,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         {
                             Speed = authoring.interactSpeed,
                             Targets = authoring.interactCount,
-                            Range = authoring.interactRange * authoring.interactRange,
+                            RangeSq = authoring.interactRange * authoring.interactRange,
                             Amount = authoring.interactBasicAmount,
                             InteractType = InteractType.Harvest
                         });
@@ -82,7 +82,7 @@ namespace SparFlame.GamePlaySystem.Interact
     public interface IInteractAbility
     {
         int Amount { get; set; }
-        float Range { get; set; }
+        float RangeSq { get; set; }
         float Speed { get; set; }
         float Targets { get; set; }
         // This is rangeSq for real, remaining range for better show
@@ -93,7 +93,7 @@ namespace SparFlame.GamePlaySystem.Interact
     {
         public float Speed { get; set; }
         public float Targets { get; set; }
-        public float Range { get; set; }
+        public float RangeSq { get; set; }
         public int Amount { get; set; }
         public InteractType InteractType { get; set; }
     }
@@ -103,7 +103,7 @@ namespace SparFlame.GamePlaySystem.Interact
     {
         public float Speed { get; set; }
         public float Targets { get; set; }
-        public float Range { get; set; }
+        public float RangeSq { get; set; }
         public int Amount { get; set; }
         public InteractType InteractType { get; set; }
     }
@@ -111,7 +111,7 @@ namespace SparFlame.GamePlaySystem.Interact
     {
         public float Speed { get; set; }
         public float Targets { get; set; }
-        public float Range { get; set; }
+        public float RangeSq { get; set; }
         public int Amount { get; set; }
         public InteractType InteractType { get; set; }
     }

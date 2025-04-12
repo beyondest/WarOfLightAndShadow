@@ -8,7 +8,6 @@ using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
@@ -19,50 +18,45 @@ namespace SparFlame.UI.GamePlay
         [Header("Custom Config")] [SerializeField]
         private TMP_Text unitType;
 
-        [SerializeField] private TMP_Text unitHp;
         [SerializeField] private TMP_Text unitMoveSpeed;
         [SerializeField] private Image unitIcon;
-        [SerializeField] private Image hpIcon;
-
-
+        
         // Interface
         public static UnitDetailWindow Instance;
 
         public override void Hide()
         {
             base.Hide();
-            _targetEntity = Entity.Null;
+            TargetEntity = Entity.Null;
         }
 
         public bool TrySwitchTarget(Entity target)
         {
-            if (!_em.HasComponent<UnitAttr>(target)
-                || !_em.HasComponent<MovableData>(target)
-                || !_em.HasBuffer<CostList>(target)
-                || !_em.HasComponent<StatData>(target))
+            if (!Em.HasComponent<UnitAttr>(target)
+                || !Em.HasComponent<MovableData>(target)
+                || !Em.HasBuffer<CostList>(target)
+                || !Em.HasComponent<StatData>(target))
                 return false;
-            _targetEntity = target;
+            TargetEntity = target;
+            UpdateUnitDetailInfo();
             return true;
         }
 
         public bool HasTarget()
         {
-            return _targetEntity != Entity.Null;
+            return TargetEntity != Entity.Null;
         }
 
-
         // Internal Data
-        private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
-        private Entity _targetEntity = Entity.Null;
-
+        protected Entity TargetEntity = Entity.Null;
 
         // ECS
-        private EntityManager _em;
-        private EntityQuery _notPauseTag;
+        protected EntityManager Em;
+        protected EntityQuery NotPauseTag;
 
         #region EventFunction
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (Instance == null)
                 Instance = this;
@@ -71,24 +65,25 @@ namespace SparFlame.UI.GamePlay
         }
 
 
-        private void Start()
+        protected virtual void Start()
         {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            NotPauseTag = Em.CreateEntityQuery(typeof(NotPauseTag));
             panel.SetActive(false);
         }
 
-        private void Update()
+        protected virtual void Update()
         {
-            if (_notPauseTag.IsEmpty) return;
+            if (NotPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
 
             if (!UnitWindowResourceManager.Instance.IsResourceLoaded()
-                || !BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
-            if (_targetEntity == Entity.Null) return;
-            if (!_em.HasComponent<InteractableAttr>(_targetEntity))
+                || !BasicWindowResourceManager.Instance.IsResourceLoaded()
+                || !IsResourceLoaded()) return;
+            if (TargetEntity == Entity.Null) return;
+            if (!Em.HasComponent<InteractableAttr>(TargetEntity))
             {
-                _targetEntity = Entity.Null;
+                TargetEntity = Entity.Null;
                 return;
             }
             UpdateUnitDetailInfo();
@@ -99,18 +94,14 @@ namespace SparFlame.UI.GamePlay
 
         private void UpdateUnitDetailInfo()
         {
-            var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
-            var attr = _em.GetComponentData<UnitAttr>(_targetEntity);
-            var movableData = _em.GetComponentData<MovableData>(_targetEntity);
-            var statData = _em.GetComponentData<StatData>(_targetEntity);
-            var costList = _em.GetBuffer<CostList>(_targetEntity);
+            // var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
+            var attr = Em.GetComponentData<UnitAttr>(TargetEntity);
+            var movableData = Em.GetComponentData<MovableData>(TargetEntity);
+            var costList = Em.GetBuffer<CostList>(TargetEntity);
             // Visualize these attributes
             unitType.text = attr.Type.ToString();
             unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
-            unitHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
-                          statData.MaxValue.ToString(CultureInfo.InvariantCulture);
             unitIcon.sprite = UnitWindowResourceManager.Instance.UnitSprites[attr.Type];
-            hpIcon.sprite = BasicWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
             for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < costList.Length)
@@ -120,7 +111,7 @@ namespace SparFlame.UI.GamePlay
                     var costSlot = SlotComponents[i];
                     costSlot.icon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
-                    costSlot.value.text = cost.Amount.ToString();
+                    costSlot.value.text = $"x{cost.Amount}";
                 }
                 else
                 {

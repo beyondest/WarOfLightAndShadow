@@ -19,8 +19,7 @@ namespace SparFlame.UI.GamePlay
 
 
         [Header("Custom config")] public GameObject infoPanel;
-
-        [FormerlySerializedAs("maxmizeButton")] [SerializeField]
+        [SerializeField]
         private GameObject maximizeButton;
 
 
@@ -95,7 +94,7 @@ namespace SparFlame.UI.GamePlay
             _cursorData = _em.CreateEntityQuery(typeof(CursorData));
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
             _customInputActions = InputListener.Instance.GetCustomInputActions();
-            Hide();
+            infoPanel.SetActive(false);
         }
 
         private void Update()
@@ -148,10 +147,10 @@ namespace SparFlame.UI.GamePlay
             if (shouldShowUnitMulti2D)
             {
                 if (!UnitMulti2DWindow.Instance.IsOpened())
+                {
                     UnitMulti2DWindow.Instance.Show();
-                // Unit multi 2D will default show slot 0 as close up target if there is none
-                if (UnitMulti2DWindow.Instance.IsOpened() && !CloseUpWindow.Instance.HasTarget())
-                    UnitMulti2DWindow.Instance.OnClickSlot(0);
+                    UnitMulti2DWindow.Instance.OnClickSlot(0); // TODO : Due to the unit multi system update after the multi window is opened, this may not show when first drag select
+                }
             }
             else
             {
@@ -189,7 +188,8 @@ namespace SparFlame.UI.GamePlay
                 && !BuildingDetailWindow.Instance.HasTarget()
                 && !InteractAbilityWindow.Instance.HasTarget()
                 && !UnitMulti2DWindow.Instance.HasTarget()
-                && !ResourceDetailWindow.Instance.HasTarget());
+                && !ResourceDetailWindow.Instance.HasTarget()
+                && !CloseUpWindow.Instance.HasTarget());
             if (shouldHideInfoWindow)
             {
                 if (_minimizeWindow)

@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1059126764408058159, guid: 1a7ac3e302032ab44a29971f7b4f1848, type: 3}
       propertyPath: m_Name
-      value: ArcherTowerAlly
+      value: SanctifiedTurret
       objectReference: {fileID: 0}
     - target: {fileID: 2143961127591206487, guid: 1a7ac3e302032ab44a29971f7b4f1848, type: 3}
       propertyPath: sightPrefab
@@ -75,6 +75,10 @@ PrefabInstance:
     - target: {fileID: 8176592104007577276, guid: 1a7ac3e302032ab44a29971f7b4f1848, type: 3}
       propertyPath: factionTag
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176592104007577276, guid: 1a7ac3e302032ab44a29971f7b4f1848, type: 3}
+      propertyPath: gameplayName
+      value: SanctifiedTurret
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

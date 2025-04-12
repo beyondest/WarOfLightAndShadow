@@ -55,7 +55,7 @@ MonoBehaviour:
   baseTag: 1
   factionTag: 0
   gameplayName: 
-  tier: 0
+  tier: 3
 --- !u!114 &5786025005029521595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,7 +69,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buildingType: 0
-  buildingInitialState: 4
+  buildingInitialState: 0
+  subTypeIndex: 0
+  conjuringShrineTypeCheckList: 0
+  fortificationTypeCheckList: 0
+  dwellingTypeCheckList: 0
+  generatorTypeCheckList: 0
+  ornamentTypeCheckList: 0
 --- !u!114 &3107138050394431953
 MonoBehaviour:
   m_ObjectHideFlags: 0

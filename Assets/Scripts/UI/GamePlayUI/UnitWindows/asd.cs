@@ -10,13 +10,13 @@ internal class LoadMultiple : MonoBehaviour
     public List<string> keys = new List<string>() {"characters", "animals"};
 
     // Operation handle used to load and release assets
-    AsyncOperationHandle<IList<GameObject>> loadHandle;
+    AsyncOperationHandle<IList<GameObject>> _loadHandle;
 
     // Load Addressables by Label
     public IEnumerator Start()
     {
         float x = 0, z = 0;
-        loadHandle = Addressables.LoadAssetsAsync<GameObject>(
+        _loadHandle = Addressables.LoadAssetsAsync<GameObject>(
             keys,
             addressable =>
             {
@@ -34,12 +34,12 @@ internal class LoadMultiple : MonoBehaviour
             }, Addressables.MergeMode.Union, // How to combine multiple labels 
             false); // Whether to fail and release if any asset fails to load
 
-        yield return loadHandle;
+        yield return _loadHandle;
     }
 
     private void OnDestroy()
     {
-        loadHandle.Release();
+        _loadHandle.Release();
         // Release all the loaded assets associated with loadHandle
         // Note that if you do not make loaded addressables a child of this object,
         // then you will need to devise another way of releasing the handle when

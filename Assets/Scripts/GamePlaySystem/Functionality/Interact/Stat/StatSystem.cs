@@ -20,7 +20,7 @@ namespace SparFlame.GamePlaySystem.Interact
         private ComponentLookup<StatData> _statDataLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<ResourceAttr> _resourceAttrLookup;
-
+        private ComponentLookup<RenewableData> _renewableResourceDataLookup;
         private BufferLookup<InsightTarget> _insightTargetLookup;
 
         [BurstCompile]
@@ -38,6 +38,7 @@ namespace SparFlame.GamePlaySystem.Interact
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
             _resourceAttrLookup = state.GetComponentLookup<ResourceAttr>();
+            _renewableResourceDataLookup = state.GetComponentLookup<RenewableData>(true);
         }
 
         [BurstCompile]
@@ -48,23 +49,26 @@ namespace SparFlame.GamePlaySystem.Interact
             _volumeObstacleTagLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
             _resourceAttrLookup.Update(ref state);
-
+            _renewableResourceDataLookup.Update(ref state);
             _insightTargetLookup.Update(ref state);
 
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             // var config = SystemAPI.GetSingleton<StatSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
-
+            var statRnd = SystemAPI.GetSingletonRW<StatRnd>();
+            var rndValue = statRnd.ValueRW.Rnd.NextFloat();
             new CheckStatChangeRequest
             {
                 ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                RandomValue = rndValue,
                 InteractableAttrLookup = _interactableAttrLookup,
                 ObstacleTagLookup = _volumeObstacleTagLookup,
                 StatLookup = _statDataLookup,
                 TransformLookup = _localTransformLookup,
                 TargetListLookup = _insightTargetLookup,
                 ResourceAttrLookup = _resourceAttrLookup,
+                RenewableResourceDataLookup = _renewableResourceDataLookup,
                 SightConfig = autoChooseTargetSystemConfig,
             }.ScheduleParallel();
         }
@@ -79,12 +83,15 @@ namespace SparFlame.GamePlaySystem.Interact
         public partial struct CheckStatChangeRequest : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
+            public float RandomValue;
             [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetListLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatLookup;
+            
             [ReadOnly] public ComponentLookup<InteractableAttr> InteractableAttrLookup;
             [ReadOnly] public ComponentLookup<VolumeObstacleTag> ObstacleTagLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<ResourceAttr> ResourceAttrLookup;
+            [ReadOnly] public ComponentLookup<RenewableData> RenewableResourceDataLookup;
             [ReadOnly] public SightSystemConfig SightConfig;
 
 
@@ -112,7 +119,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 // Remove Dead Entities, like units, resources, buildings
                 if (statInteractee.CurValue <= 0)
                 {
-                    RemoveAndSendRequest(request.Interactee, index, in interacteeAttr);
+                    RemoveAndSendRequest(ref statInteractee,request.Interactee, index, in interacteeAttr);
                 }
 
                 // Destroy this stat change request, cause each request is dealt only one time
@@ -172,8 +179,6 @@ namespace SparFlame.GamePlaySystem.Interact
                     case InteractType.Heal:
                         StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr,index, ECB);
                         break;
-                    default:
-                        break;
                 }
             }
 
@@ -182,33 +187,49 @@ namespace SparFlame.GamePlaySystem.Interact
             /// This method should contain every post process of that dead entity,
             /// cause entity is destroyed and invalid after this system update
             /// </summary>
+            /// <param name="statInteractee"></param>
             /// <param name="interacteeEntity"></param>
             /// <param name="index"></param>
             /// <param name="interacteeAttr"></param>
-            private void RemoveAndSendRequest(Entity interacteeEntity, int index, in InteractableAttr interacteeAttr)
+            private void RemoveAndSendRequest(ref StatData statInteractee,Entity interacteeEntity, int index, in InteractableAttr interacteeAttr)
             {
                 switch (interacteeAttr.BaseTag)
                 {
                     case BaseTag.Units:
+                        ECB.DestroyEntity(index, interacteeEntity);
                         break;
                     case BaseTag.Buildings:
                         if (ObstacleTagLookup.HasComponent(interacteeEntity))
                         {
                             StatUtils.GenerateDestroyObstacleRequest(interacteeEntity, false, index, ECB);
                         }
+                        ECB.DestroyEntity(index, interacteeEntity);
                         break;
                     case BaseTag.Resources:
-                        if (ObstacleTagLookup.HasComponent(interacteeEntity))
+                        // Check if renewable resource
+                        if (RenewableResourceDataLookup.TryGetComponent(interacteeEntity, out var renewableData))
                         {
-                            StatUtils.GenerateDestroyObstacleRequest(interacteeEntity, true, index, ECB);
+                            var resourceAttr = ResourceAttrLookup[interacteeEntity];
+                            renewableData.RegeneratingLeftTime = renewableData.RegeneratingTime;
+                            var bias = (resourceAttr.AmountRange.upper - resourceAttr.AmountRange.lower) * RandomValue;
+                            statInteractee.MaxValue = (int)(resourceAttr.AmountRange.lower + bias);
+                            statInteractee.CurValue = statInteractee.MaxValue;
+                            ECB.AddComponent<RegeneratingTag>(index,interacteeEntity);
+                            ECB.SetComponent(index,interacteeEntity,renewableData );
                         }
-                        
+                        else
+                        {
+                            if (ObstacleTagLookup.HasComponent(interacteeEntity))
+                            {
+                                StatUtils.GenerateDestroyObstacleRequest(interacteeEntity, true, index, ECB);
+                            }
+                            ECB.DestroyEntity(index, interacteeEntity);
+                        }
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
 
-                ECB.DestroyEntity(index, interacteeEntity);
             }
 
 

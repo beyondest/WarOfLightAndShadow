@@ -25,11 +25,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2973f686921123148a166756305bd479
-    m_Address: Ornaments
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2a36caa4c9cdc834b99c6170bfd6e558
     m_Address: LightWall
     m_ReadOnly: 0
@@ -45,28 +40,33 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 364bd07a55157f843a1177ce3830383d
-    m_Address: Fortifications
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8cc8fb70be280ad49b5b3fce04a5c5ee
     m_Address: AethericForge
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9399fd3b0778d8b428ad3414af8cbdbe
+  - m_GUID: 9fc153f074b093c45b570ffb5973f945
     m_Address: ConjuringShrines
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a1f05f18f0dc33a419cb3cf23fc6325c
-    m_Address: Workshops
+  - m_GUID: a5f9a1d760144c147bd331d64884d104
+    m_Address: Ornaments
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e43f7b46bc6c04348b05deb496c61b27
     m_Address: RadiantSummoningCircle
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e74b60644b365d84f84f812fa2327456
+    m_Address: Fortifications
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea40b018d5ae94c4c9811685be04469b
+    m_Address: Generators
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

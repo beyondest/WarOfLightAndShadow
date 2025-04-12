@@ -14,7 +14,82 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: GamePlayUI
   m_GUID: 1a0891b1fa76ef94bad09a964e90d557
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 0b0248e1dafd72046acbc4953f74bb83
+    m_Address: ArrowLeftDown
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1025c0855c560d245ab3fbeaa5d00fe6
+    m_Address: ArrowDown
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1e774084d59501548a516a1408f6cb1e
+    m_Address: ControlSelect
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 32b9550c36a5cc643b2f671af298fc62
+    m_Address: ControlSelect2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34fe3c7a1617e66419a2d96bb1deb258
+    m_Address: ArrowRightDown
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ec0be9985aa7944aaca6ad1c74ed9e1
+    m_Address: Assets/Resources_moved/Prefabs/UI/GamePlay/Slots/CostSlotNew.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4a3632426882a3246b0e22bbca548490
+    m_Address: ArrowLeftUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ef0e98acca740e4bbe3bc73f23866b0
+    m_Address: ArrowUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62d580e66754f4949848d627757923f3
+    m_Address: ArrowLeft
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a9019865f7069a45bd77f9c02e49b41
+    m_Address: ControlSelect3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9bb49d49e22de1d44a5037a2d4bc0790
+    m_Address: Regenerating
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: acc0060f410c544449e4a5ef92d63ad5
+    m_Address: ArrowRight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b21a20afccdceb243940c8d40c2cb5f8
+    m_Address: ArrowRightUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d6648b72106f98f4e8db335155fd0bd6
+    m_Address: Idle
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ddb653812e6d61143b9f0d3962bc4748
+    m_Address: Assets/Resources_moved/Prefabs/UI/GamePlay/Slots/Unit2DSlotLight.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
   m_SchemaSet:

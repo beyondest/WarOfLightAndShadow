@@ -16,6 +16,10 @@ PrefabInstance:
       propertyPath: factionTag
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1344133196791611608, guid: a4a8fb393eb3826479ba594b3d986db1, type: 3}
+      propertyPath: gameplayName
+      value: DivineRampart
+      objectReference: {fileID: 0}
     - target: {fileID: 3102357819358032617, guid: a4a8fb393eb3826479ba594b3d986db1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

@@ -32,7 +32,7 @@ namespace SparFlame.GamePlaySystem.Building
     public enum BuildingType 
     {
         Fortifications = 0,
-        Workshops = 1,
+        Generators = 1,
         ConjuringShrines = 2,
         Dwellings = 3,
         Ornaments = 4,
@@ -47,7 +47,7 @@ namespace SparFlame.GamePlaySystem.Building
         DebuffTower = 4
     }
 
-    public enum WorkshopType
+    public enum GeneratorType
     {
         EssenceConvertor = 0,
         EssenceProducer = 1
@@ -55,10 +55,11 @@ namespace SparFlame.GamePlaySystem.Building
 
     public enum ConjuringShrineType
     {
-        Melee = 0,
+        Shield = 0,
         Ranged = 1,
         Magic = 2,
-        Harvest = 3
+        Cavalry = 3,
+        Harvest = 4
     }
 
     public enum DwellingType
@@ -69,7 +70,9 @@ namespace SparFlame.GamePlaySystem.Building
 
     public enum OrnamentType
     {
-        Type0 = 0
+        PureOrnament = 0,
+        BuffOrnament = 1,
+        DebuffOrnament = 2,
     }
     
     public enum AreaType

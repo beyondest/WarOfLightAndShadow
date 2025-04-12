@@ -21,26 +21,19 @@ namespace SparFlame.GamePlaySystem.Movement
         private NavMeshWorld _navMeshWorld;
         private NativeList<NavMeshQuery> _navMeshQueries;
         private EntityQuery _entityQuery;
+        private NativeHashMap<int,float> _navAgentRadius;
         
-        
-        // private BufferLookup<WaypointBuffer> _waypointLookup;
-        // private ComponentLookup<NavAgentComponent> _navAgentLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<NavAgentSystemConfig>();
-            // _navMeshWorld = NavMeshWorld.GetDefaultWorld();
-            // _waypointLookup = state.GetBufferLookup<WaypointBuffer>();
-            // _navAgentLookup = state.GetComponentLookup<NavAgentComponent>();
-            
             _entityQuery = SystemAPI.QueryBuilder()
                 .WithAllRW<NavAgentComponent>()
                 .WithAll<MovingStateTag>()
                 .WithAll<LocalTransform>().Build();
-
-            // _navMeshQueries = new NativeList<NavMeshQuery>(Allocator.Persistent);
+            
         }
 
 
@@ -48,9 +41,15 @@ namespace SparFlame.GamePlaySystem.Movement
         public void OnUpdate(ref SystemState state)
         {
             ref var config =ref SystemAPI.GetSingletonRW<NavAgentSystemConfig>().ValueRW;
-            if (!config.IsPoolInitialized)
+            if (!config.IsInitialized)
             {
                 InitNavMeshQueries(ref config);
+                var buffer = SystemAPI.GetSingletonBuffer<AgentIdRadiusPair>();
+                _navAgentRadius = new NativeHashMap<int, float>(buffer.Length + 1,Allocator.Persistent);
+                foreach (var pair in buffer)
+                {
+                    _navAgentRadius[pair.Id] = pair.Radius;
+                }
             }
             
             if (_entityQuery.IsEmpty) return;
@@ -76,12 +75,14 @@ namespace SparFlame.GamePlaySystem.Movement
                 {
                     Entity = entities[i],
                     NavAgent = navAgents[i],
+                    NavAgentRadius = _navAgentRadius,
                     FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
                     ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                     Iterations = config.MaxIterations,
-                    MaxPathSize = config.MaxPathSize
+                    MaxPathSize = config.MaxPathSize,
+                    ExtentsOffset = config.ExtentsOffset
                 };
                 jobHandles[i] = calculatePathJob.Schedule();
             }
@@ -107,8 +108,8 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            // _entityQuery.Dispose();
             DisposeNavMeshQueries();
+            _navAgentRadius.Dispose();
         }
 
 
@@ -116,14 +117,15 @@ namespace SparFlame.GamePlaySystem.Movement
         private struct CalculatePathJob : IJob
         {
             public Entity Entity;
-            public NavAgentComponent NavAgent;
             public EntityCommandBuffer ECB;
             public NavMeshQuery Query;
-            
+            [ReadOnly] public NavAgentComponent NavAgent;
+            [ReadOnly] public NativeHashMap<int,float> NavAgentRadius;
             [ReadOnly] public float3 FromPosition;
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public int MaxPathSize;
             [ReadOnly] public int Iterations;
+            [ReadOnly] public float3 ExtentsOffset;
 
             public void Execute()
             {
@@ -132,16 +134,18 @@ namespace SparFlame.GamePlaySystem.Movement
                 if (!NavAgent.EnableCalculation) return;
                 // Only recalculate the path once in an interval OR the target is updated
                 if (!(NavAgent.ForceCalculate || NavAgent.NextPathCalculateTime < ElapsedTime)) return;
-                
+                // TODO : Sometimes will cause bug : Farmer get inverse direction waypoint far away from resource. Don't know why
                 NavAgent.NextPathCalculateTime = ElapsedTime + NavAgent.CalculateInterval;
                 NavAgent.CalculationComplete = false;
                 NavAgent.ForceCalculate = false;
                 ECB.SetComponent(Entity, NavAgent);
                 
                 var toPosition = NavAgent.TargetPosition;
-
-                var fromLocation = Query.MapLocation(FromPosition, NavAgent.Extents, NavAgent.AgentId);
-                var toLocation = Query.MapLocation(toPosition, NavAgent.Extents, NavAgent.AgentId);
+                var radius = NavAgentRadius[NavAgent.AgentId];
+                var extents = new float3(NavAgent.Extents.x + radius, NavAgent.Extents.y, NavAgent.Extents.z + radius);
+                extents += ExtentsOffset;
+                var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.AgentId);
+                var toLocation = Query.MapLocation(toPosition, extents, NavAgent.AgentId);
                 if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
 
                 var status = Query.BeginFindPath(fromLocation, toLocation);
@@ -217,7 +221,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
         private void InitNavMeshQueries(ref NavAgentSystemConfig config)
         {
-            config.IsPoolInitialized = true;
+            config.IsInitialized = true;
             _navMeshWorld = NavMeshWorld.GetDefaultWorld();
             _navMeshQueries = new NativeList<NavMeshQuery>(config.InitialNavMeshQueriesCapacity, Allocator.Persistent);
             for (int i = 0; i < config.InitialNavMeshQueriesCapacity; i++)

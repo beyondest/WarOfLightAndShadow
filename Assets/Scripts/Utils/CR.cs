@@ -154,12 +154,12 @@ namespace SparFlame.UI.General
 
             foreach (T type in Enum.GetValues(typeof(T)))
             {
-                string fullName = type.ToString();
+                var fullName = type.ToString();
                 if (!string.IsNullOrEmpty(prefix))
                     fullName = prefix + fullName;
 
-                string fullPath = $"{path}/{fullName}";
-                Sprite sprite = Resources.Load<Sprite>(fullPath);
+                var fullPath = $"{path}/{fullName}";
+                var sprite = Resources.Load<Sprite>(fullPath);
 
                 if (sprite != null)
                 {

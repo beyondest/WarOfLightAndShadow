@@ -30,7 +30,7 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<BasicStateData> _basicState;
         private ComponentLookup<HealStateTag> _healState;
         private ComponentLookup<HarvestStateTag> _harvestState;
-        private ComponentLookup<ResourceAttr> _resourceAttr;
+        private ComponentLookup<RegeneratingTag> _regeneratingTag;
 
         private EntityQuery _attackEntityQuery;
         private EntityQuery _healEntityQuery;
@@ -62,7 +62,7 @@ namespace SparFlame.GamePlaySystem.State
             _localTransform = state.GetComponentLookup<LocalTransform>();
             _movable = state.GetComponentLookup<MovableData>();
             _basicState = state.GetComponentLookup<BasicStateData>();
-            _resourceAttr = state.GetComponentLookup<ResourceAttr>();
+            _regeneratingTag = state.GetComponentLookup<RegeneratingTag>();
         }
 
         [BurstCompile]
@@ -79,7 +79,7 @@ namespace SparFlame.GamePlaySystem.State
             _insightTarget.Update(ref state);
             _basicState.Update(ref state);
             _healState.Update(ref state);
-            _resourceAttr.Update(ref state);
+            _regeneratingTag.Update(ref state);
             _harvestState.Update(ref state);
 
             var attackAbilities = _attackEntityQuery.ToComponentDataArray<AttackAbility>(Allocator.TempJob);
@@ -94,7 +94,7 @@ namespace SparFlame.GamePlaySystem.State
                 TransformLookup = _localTransform,
                 InteractableLookup = _interactable,
                 InsightTarget = _insightTarget,
-                ResourceAttributesLookup = _resourceAttr,
+                RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
                 MovableLookup = _movable,
                 BasicStateData = _basicState,
@@ -116,7 +116,7 @@ namespace SparFlame.GamePlaySystem.State
                 TransformLookup = _localTransform,
                 InteractableLookup = _interactable,
                 InsightTarget = _insightTarget,
-                ResourceAttributesLookup = _resourceAttr,
+                RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
                 MovableLookup = _movable,
                 BasicStateData = _basicState,
@@ -138,7 +138,7 @@ namespace SparFlame.GamePlaySystem.State
                 TransformLookup = _localTransform,
                 InteractableLookup = _interactable,
                 InsightTarget = _insightTarget,
-                ResourceAttributesLookup = _resourceAttr,
+                RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
                 MovableLookup = _movable,
                 BasicStateData = _basicState,
@@ -174,7 +174,7 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public ComponentLookup<InteractableAttr> InteractableLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
-            [ReadOnly] public ComponentLookup<ResourceAttr> ResourceAttributesLookup;
+            [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
             [ReadOnly] public BufferLookup<InsightTarget> InsightTarget;
 
             [ReadOnly] public float InteractTurnSpeed;
@@ -198,7 +198,7 @@ namespace SparFlame.GamePlaySystem.State
                 var ability = Ability[index];
                 ref var selfStateData = ref BasicStateData.GetRefRW(entity).ValueRW;
                 var selfFactionTag = InteractableLookup[entity].FactionTag;
-                
+
                 // Pre Check 
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (selfStateData.CurState != UnitState.Attacking
@@ -208,7 +208,7 @@ namespace SparFlame.GamePlaySystem.State
                 if (!InsightTarget.TryGetBuffer(entity, out var targetList)) return; // This should never return
 
                 // Check if target is valid
-                
+
                 /*Target is dead and removed. This may happen when it kills target after exactly this attack, but the entity is removed next frame end
                 This may happen due to truly switch state always happen in te end of frame(ECB Playback) .
                 Fake Interact State , next frame will turn to another state*/
@@ -222,7 +222,8 @@ namespace SparFlame.GamePlaySystem.State
                 else
                 {
                     isTargetValid = InteractUtils.IsTargetValid(in targetInteractAttr, in selfFactionTag,
-                        in targetStat, HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity));
+                        in targetStat, HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity),
+                        !RegeneratingTagLookup.HasComponent(selfStateData.TargetEntity));
                 }
 
                 if (!isTargetValid) // Current target is invalid
@@ -258,17 +259,16 @@ namespace SparFlame.GamePlaySystem.State
                     return;
                 }
 
-                
+
                 ref var transform = ref TransformLookup.GetRefRW(entity).ValueRW;
                 var curPos = transform.Position;
                 var targetPos = TransformLookup[selfStateData.TargetEntity].Position;
-                
-                
-                
+
+
                 // Check if target in range
                 /*As long as target is valid, movable unit will never change target in interact state.
                  The target can only be changed while moving*/
-                if (!IsTargetInRange(ability.Range, in curPos, in targetPos, in targetInteractAttr))
+                if (!IsTargetInRange(ability.RangeSq, in curPos, in targetPos, in targetInteractAttr))
                 {
                     // Interacter is movable
                     if (MovableLookup.HasComponent(entity))
@@ -306,30 +306,23 @@ namespace SparFlame.GamePlaySystem.State
                 if (++selfStateData.InteractCounter > (int)counter)
                 {
                     selfStateData.InteractCounter = 0;
-                    var amount = ability.Amount;
-                    if (targetInteractAttr.BaseTag == BaseTag.Resources)
-                    {
-                        var resourceAttr = ResourceAttributesLookup[selfStateData.TargetEntity];
-                        amount = (int)(amount * resourceAttr.HarvestAmountMultiplier);
-                    }
-                    SendStatChangeRequest(selfStateData.TargetEntity, amount, index, entity, ability.InteractType);
+                    // Calculate True Interact Amount
+                    SendStatChangeRequest(selfStateData.TargetEntity, ability.Amount, index, entity, ability.InteractType);
                 }
             }
 
             #region Interact Target Analyse Methods
-
-            
 
             private bool ShouldChangeTarget(ref BasicStateData selfStateData, bool heal,
                 in DynamicBuffer<InsightTarget> targets, Entity selfEntity)
             {
                 // Focus mode cannot switch target unless this is a healer and healer heal first
                 if (selfStateData.Focus && (!heal || !Config.HealerAlwaysHealFirst)) return false;
-                
+
                 var selfStatData = StatDataLookup[selfEntity];
                 var originalTarget = selfStateData.TargetEntity;
                 // Heal self first
-                if (heal && selfStatData.CurValue < selfStatData.MaxValue )
+                if (heal && selfStatData.CurValue < selfStatData.MaxValue)
                 {
                     selfStateData.TargetEntity = selfEntity;
                     return originalTarget != selfStateData.TargetEntity;
@@ -371,7 +364,7 @@ namespace SparFlame.GamePlaySystem.State
                 var tarColliderShape = InteractableLookup[stateData.TargetEntity].BoxColliderSize;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
-                    ability.Range
+                    ability.RangeSq
                 );
                 stateData.TargetState = UnitState.Moving;
                 StateUtils.SwitchState(ref stateData, ECB, entity, index);
@@ -396,9 +389,8 @@ namespace SparFlame.GamePlaySystem.State
                 var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
                 return disSqPointToRect < rangeSq;
             }
-            
-            #endregion
 
+            #endregion
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -17,6 +18,7 @@ namespace SparFlame.GamePlaySystem.Interact
         private ComponentLookup<HarvestStateTag> _harvestLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<InteractPriority> _priorityLookup;
+        private ComponentLookup<RegeneratingTag> _resourceAttrLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -28,6 +30,7 @@ namespace SparFlame.GamePlaySystem.Interact
             _healLookup = state.GetComponentLookup<HealStateTag>(true);
             _harvestLookup = state.GetComponentLookup<HarvestStateTag>(true);
             _priorityLookup = state.GetComponentLookup<InteractPriority>(true);
+            _resourceAttrLookup = state.GetComponentLookup<RegeneratingTag>(true);
         }
 
         [BurstCompile]
@@ -40,6 +43,7 @@ namespace SparFlame.GamePlaySystem.Interact
             _healLookup.Update(ref state);
             _harvestLookup.Update(ref state);
             _priorityLookup.Update(ref state);
+            _resourceAttrLookup.Update(ref state);
             new UpdateTargetListJob
             {
                 Config = config,
@@ -49,6 +53,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 HarvestLookup = _harvestLookup,
                 TransformLookup = _localTransformLookup,
                 PriorityLookup = _priorityLookup,
+                RegeneratingTagLookup = _resourceAttrLookup
             }.ScheduleParallel();
         }
 
@@ -62,24 +67,26 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
+            [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
             [ReadOnly] public SightSystemConfig Config;
 
-            private void Execute(ref DynamicBuffer<InsightTarget> targets, Entity entity)
+            private void Execute(ref DynamicBuffer<InsightTarget> targets, Entity selfEntity)
             {
-                var selfFaction = InteractableAttrLookup[entity].FactionTag;
-                var selfPos = TransformLookup[entity].Position;
+                var selfFaction = InteractableAttrLookup[selfEntity].FactionTag;
+                var selfPos = TransformLookup[selfEntity].Position;
 
                 for (var i = targets.Length - 1; i >=0 ; i--)
                 {
                     var insightTarget = targets[i];
                     var target = insightTarget.Entity;
-                    var canHarvest = HarvestLookup.HasComponent(entity);
-                    var canHeal = HealLookup.HasComponent(entity);
+                    var canHarvest = HarvestLookup.HasComponent(selfEntity);
+                    var canHeal = HealLookup.HasComponent(selfEntity);
+                   
                     // Remove invalid target
                     if (!InteractableAttrLookup.TryGetComponent(insightTarget.Entity, out var targetInteractAttr)
                         ||!StatDataLookup.TryGetComponent(insightTarget.Entity, out var targetStatData)
                         ||!InteractUtils.IsTargetValid(in targetInteractAttr,in selfFaction,in targetStatData,canHeal ,
-                           canHarvest))
+                           canHarvest, !RegeneratingTagLookup.HasComponent(target) ))
                     {
                         targets.RemoveAt(i);
                         continue;

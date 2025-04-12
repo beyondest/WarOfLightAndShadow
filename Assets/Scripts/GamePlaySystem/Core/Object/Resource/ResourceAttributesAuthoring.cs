@@ -1,4 +1,6 @@
-﻿using Unity.Entities;
+﻿using SparFlame.GamePlaySystem.General;
+using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -6,9 +8,11 @@ namespace SparFlame.GamePlaySystem.Resource
 {
     public class ResourceAttributesAuthoring : MonoBehaviour
     {
-        public ResourceState state = ResourceState.Available;
         public float harvestAmountMultiplier;
         public ResourceType resourceType;
+        public bool renewable;
+        public float regeneratingTime;
+        public GeneralDS.Range amountRange;
         private class ResourceAttributesAuthoringBaker : Baker<ResourceAttributesAuthoring>
         {
             public override void Bake(ResourceAttributesAuthoring authoring)
@@ -16,10 +20,18 @@ namespace SparFlame.GamePlaySystem.Resource
                 var entity = GetEntity(TransformUsageFlags.WorldSpace);
                 AddComponent(entity, new ResourceAttr
                 {
-                    State = authoring.state,
                     Type = authoring.resourceType,
-                    HarvestAmountMultiplier = authoring.harvestAmountMultiplier,
+                    AmountRange = authoring.amountRange
+            
                 });
+                if (authoring.renewable)
+                {
+                    AddComponent(entity, new RenewableData
+                    {
+                        RegeneratingLeftTime = 0f,
+                        RegeneratingTime =  authoring.regeneratingTime,
+                    });
+                }
             }
         }
     }
@@ -27,14 +39,23 @@ namespace SparFlame.GamePlaySystem.Resource
     public enum ResourceState
     {
         Available = 0,
-        Depleted = 1,
-        Harvesting = 2
+        Regenerating = 1,
     }
 
     public struct ResourceAttr : IComponentData
     {
-        public ResourceState State;
+        public GeneralDS.Range AmountRange; 
         public ResourceType Type;
-        public float HarvestAmountMultiplier;   // This is used for making different resource harvested in different difficulties
+    }
+
+    public struct RenewableData : IComponentData
+    {
+        public float RegeneratingTime;
+        public float RegeneratingLeftTime;
+    }
+    
+    public struct RegeneratingTag : IComponentData
+    {
+        
     }
 }

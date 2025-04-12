@@ -62,7 +62,7 @@ MonoBehaviour:
   baseTag: 0
   factionTag: 0
   gameplayName: 
-  tier: 0
+  tier: 3
 --- !u!114 &6283545588556373548
 MonoBehaviour:
   m_ObjectHideFlags: 0

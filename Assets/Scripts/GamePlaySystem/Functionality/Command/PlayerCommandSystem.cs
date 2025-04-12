@@ -137,7 +137,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, attackAbility.Range);
+                MovementCommandType.Interactive, attackAbility.RangeSq);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.Focus = Focus;
@@ -166,7 +166,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, healingAbility.Range);
+                MovementCommandType.Interactive, healingAbility.RangeSq);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.TargetEntity = TargetEntity;
@@ -195,7 +195,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, harvestAbility.Range);
+                MovementCommandType.Interactive, harvestAbility.RangeSq);
             basicStateData.TargetState = UnitState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.TargetEntity = TargetEntity;

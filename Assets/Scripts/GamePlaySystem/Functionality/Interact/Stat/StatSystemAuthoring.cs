@@ -1,18 +1,23 @@
 ﻿using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
-
+using Random = Unity.Mathematics.Random;
 namespace SparFlame.GamePlaySystem.Interact
 {
     public class StatSystemAuthoring : MonoBehaviour
     {
+        
         
         [Header("Stat Calculation Config")]
         public float statMultiplier = 1.0f;
         
         [Header("PopNumber VFX")]
         public float popNumberScale = 1.0f;
-        private class Baker : Baker<StatSystemAuthoring>
+        
+        [Header("Random seed for reassign resource stat")]
+        public uint seed = 1;
+        private class Baker : Baker<StatSystemAuthoring
+         
+        >
         {
             public override void Bake(StatSystemAuthoring authoring)
             {
@@ -21,6 +26,10 @@ namespace SparFlame.GamePlaySystem.Interact
                 {
                     Multiplier   = authoring.statMultiplier,
                     PopNumberScale = authoring.popNumberScale,
+                });
+                AddComponent(entity, new StatRnd
+                {
+                    Rnd = new Random(authoring.seed)
                 });
             }
         }
@@ -31,7 +40,11 @@ namespace SparFlame.GamePlaySystem.Interact
         public float Multiplier;
         public float PopNumberScale;
     }
-    
+
+    public struct StatRnd : IComponentData
+    {
+        public Random Rnd;
+    }
     
     /// <summary>
     /// This request is handled by stat system,TODO pop number system

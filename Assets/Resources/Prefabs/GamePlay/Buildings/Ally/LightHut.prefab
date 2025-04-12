@@ -68,6 +68,10 @@ PrefabInstance:
       propertyPath: factionTag
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7081201475286030295, guid: be2b38844cf02804d8bd77ef5967d964, type: 3}
+      propertyPath: gameplayName
+      value: LightHut
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

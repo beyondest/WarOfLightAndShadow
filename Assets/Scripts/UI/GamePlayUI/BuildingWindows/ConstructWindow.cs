@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.NetworkInformation;
 using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
+using Unity.Entities;
 using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.UI;
 
 // ReSharper disable PossibleNullReferenceException
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConstructWindow : UIUtils.MultiSlotsWindow<BuildingSlot>
+    public class ConstructWindow : UIUtils.MultiSlotsWindow<BuildingMultiSlot>
     {
         [Header("Custom config")] [SerializeField]
         private GameObject constructEnterButton;
@@ -22,10 +19,10 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private GameObject constructExitButton;
 
 
-        // Interaface
+        // Interface
         public static ConstructWindow Instance;
         [NonSerialized] public bool InitWindowEvents = false;
-        public Action<BuildingType, int> EcsGhostShowTargetByTypeIndex;
+        public Action<Entity> EcsGhostShowTargetByTypeIndex;
         public Action EcsExitGhostShow;
 
 
@@ -33,7 +30,8 @@ namespace SparFlame.UI.GamePlay
 
         public override void OnClickSlot(int slotIndex)
         {
-            EcsGhostShowTargetByTypeIndex?.Invoke(_currentBuildingType, _saveIndices[slotIndex]);
+            // EcsGhostShowTargetByTypeIndex?.Invoke(_currentBuildingType, _saveIndices[slotIndex]);
+            EcsGhostShowTargetByTypeIndex?.Invoke(_entities[slotIndex]);
         }
 
         public void OnClickConstructEnter()
@@ -95,9 +93,8 @@ namespace SparFlame.UI.GamePlay
 
 
         // Cache
-        private readonly List<Sprite> _buildingSprites = new();
-        private readonly List<int> _saveIndices = new();
-        private readonly List<string> _buildingNames = new();
+        private readonly List<Sprite> _sprites = new();
+        private readonly List<Entity> _entities = new();
 
         private void Awake()
         {
@@ -117,20 +114,19 @@ namespace SparFlame.UI.GamePlay
         private void UpdateBuildingCandidates()
         {
             if (!BuildingWindowResourceManager.Instance.IsResourceLoaded()) return;
-            _buildingSprites.Clear();
-            _saveIndices.Clear();
-            _buildingNames.Clear();
-            BuildingWindowResourceManager.Instance.GetFilteredBuildingSprites(_currentBuildingType, _buildingSprites,
-                _saveIndices, _buildingNames, _currentSubType, _currentTier);
-            var count = Mathf.Min(Slots.Count, _buildingSprites.Count);
+            _sprites.Clear();
+            _entities.Clear();
+            BuildingWindowResourceManager.Instance.GetFilteredBuildingSprites(_currentBuildingType, _sprites,
+                 _entities, _currentSubType, _currentTier);
+            var count = Mathf.Min(Slots.Count, _sprites.Count);
             for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < count)
                 {
                     Slots[i].SetActive(true);
                     var buildingSlot = SlotComponents[i];
-                    buildingSlot.button.image.sprite = _buildingSprites[i];
-                    buildingSlot.gameplayNameText.text = _buildingNames[i];
+                    buildingSlot.button.image.sprite = _sprites[i];
+                    buildingSlot.SetTarget(_entities[i]);
                 }
                 else
                 {

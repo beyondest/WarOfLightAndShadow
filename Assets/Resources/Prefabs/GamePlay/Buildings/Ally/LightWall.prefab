@@ -60,16 +60,46 @@ PrefabInstance:
       propertyPath: factionTag
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3353980114071508263, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
+      propertyPath: gameplayName
+      value: LightWall
+      objectReference: {fileID: 0}
     - target: {fileID: 3926764820500299221, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 5313656776300836802, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5854796308609551028, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
       propertyPath: m_Name
-      value: AllyWall
+      value: LightWall
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5854796308609551028, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3054524952336534202}
   m_SourcePrefab: {fileID: 100100000, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
+--- !u!1 &757599177730345875 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5854796308609551028, guid: 4899461c3b456694d87f2c2df0253ec4, type: 3}
+  m_PrefabInstance: {fileID: 6612377480270315815}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3054524952336534202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 757599177730345875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ebbf34651234baea3bbc7c3e4d82458, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: 0
+  data2: {fileID: 11400000, guid: 8f818526398dcbb4c978c58a20bc6b45, type: 2}

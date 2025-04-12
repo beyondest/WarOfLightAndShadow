@@ -15,38 +15,8 @@ MonoBehaviour:
   m_GroupName: DetailInfo
   m_GUID: d369d20acd80d48459c490b3f50b2963
   m_SerializeEntries:
-  - m_GUID: 0808f130ee6d2ce4787a24ec83ba8212
-    m_Address: Recycle
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 25a0a516e6d2a1b4cb5c9ab66fcb9ca2
     m_Address: MoveSpeed
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 277c19f8575df5e4493066a19ac48073
-    m_Address: Relocate
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4031e35ec8f777d42a7a5c062fc780f6
-    m_Address: Store
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 45e9320790bfe4e488cd680cc7a65b8a
-    m_Address: AllyHp
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 821e7e208b461d547b51a8d364b4856c
-    m_Address: EnemyHp
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c6564eed342e7404884b483146137364
-    m_Address: NeutralHp
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

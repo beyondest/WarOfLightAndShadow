@@ -13,7 +13,6 @@ namespace SparFlame.UI.GamePlay
 {
     public class UnitWindowResourceManager : CustomResourceManager
     {
-
         
         // Config
         [Header("Resource config")]
@@ -23,14 +22,11 @@ namespace SparFlame.UI.GamePlay
         // Interface
         public static UnitWindowResourceManager Instance;
         public readonly Dictionary<UnitType, Sprite> UnitSprites = new();
-        public readonly Dictionary<InteractType, List<Sprite>> InteractAbilitySprites = new();
-        
-        
+        private readonly Dictionary<UnitType, List<UnitInfoSpritePair>> _unitInfoSpritePairs = new();
         private readonly AddressableResourceGroup _infoWindowResourceGroup = new();
-
+        
         private void OnEnable()
         {
-            CR.LoadEnumProperties<InteractType,IInteractAbility,Sprite>(_infoWindowResourceGroup, InteractAbilitySprites,1);
             var handle1 = CR.LoadTypeSuffix<UnitType, Sprite>(unitType2DSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, UnitSprites));
             
@@ -43,7 +39,6 @@ namespace SparFlame.UI.GamePlay
         {
             _infoWindowResourceGroup.Release();
             UnitSprites.Clear();
-            InteractAbilitySprites.Clear();
         }
 
         private void Awake()
@@ -59,32 +54,11 @@ namespace SparFlame.UI.GamePlay
             return _infoWindowResourceGroup.IsHandleCreated(4)
                    && _infoWindowResourceGroup.IsDone;
         }
-        
-        private void LoadEnumAndPropertyResource()
+
+        private struct UnitInfoSpritePair
         {
-            var interactProperties = typeof(IInteractAbility).GetProperties();
-            var propertyNames = new List<string>();
-            foreach (var propertyInfo in interactProperties)
-            {
-                propertyNames.Add(propertyInfo.Name);
-            }
             
-            foreach (InteractType type in Enum.GetValues(typeof(InteractType)))
-            {
-                var spriteList = new List<Sprite>();
-                var prefix = Enum.GetName(typeof(InteractType), type);
-                var keys = new List<string>();
-                foreach (var propertyName in propertyNames)
-                {
-                    keys.Add(prefix + propertyName);
-                }
-                var handle = CR.LoadAssetsNameAsync<Sprite> (keys, null, result =>
-                {
-                    spriteList.AddRange(result);
-                    InteractAbilitySprites.Add(type, spriteList);
-                });
-                _infoWindowResourceGroup.Add(handle);
-            }
         }
+      
     }
 }

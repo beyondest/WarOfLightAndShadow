@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using SparFlame.Utils.Utils;
 using Unity.Entities;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -44,19 +48,43 @@ namespace SparFlame.UI.General
                 cellWidth = rect.rect.width;
             }
 
-            for (var r = 0; r < config.rows; r++)
+            if (config.ifSquare)
             {
-                for (var c = 0; c < config.cols; c++)
+                for (var r = 0; r < config.rows; r++)
+                {
+                    for (var c = 0; c < config.cols; c++)
+                    {
+                        var slot = Object.Instantiate(slotPrefab, panel.transform);
+                        var slotRect = slot.GetComponent<RectTransform>();
+                        var posX = config.startPos.x + c * (cellWidth + config.columnSpacing);
+                        var posY = config.startPos.y - r * (cellHeight + config.rowSpacing);
+                        slotRect.sizeDelta = new Vector2(cellWidth, cellHeight);
+                        slotRect.anchoredPosition = new Vector2(posX, posY);
+                        slot.SetActive(false);
+                        var slotComponent = slot.GetComponent<TMultiShowSlot>();
+                        slotComponent.Index = r * config.cols + c;
+                        if (onClickSlot != null && slotComponent.button != null)
+                            slotComponent.button.onClick.AddListener((() => { onClickSlot(slotComponent.Index); }));
+                        slots.Add(slot);
+                        slotComponents.Add(slotComponent);
+                    }
+                }
+            }
+            else
+            {
+                Assert.IsFalse(config.autoCellSize); // Circle must not be auto cell size
+                var points =
+                    CustomMathMethods.GenerateCirclePoints(config.center, config.radius, config.circleElemCount);
+                for (var i = 0; i < config.circleElemCount; i++)
                 {
                     var slot = Object.Instantiate(slotPrefab, panel.transform);
                     var slotRect = slot.GetComponent<RectTransform>();
-                    var posX = config.startPos.x + c * (cellWidth + config.columnSpacing);
-                    var posY = config.startPos.y - r * (cellHeight + config.rowSpacing);
                     slotRect.sizeDelta = new Vector2(cellWidth, cellHeight);
-                    slotRect.anchoredPosition = new Vector2(posX, posY);
+                    slotRect.anchoredPosition = points[(i + config.elemBias) % config.circleElemCount];
                     slot.SetActive(false);
+
                     var slotComponent = slot.GetComponent<TMultiShowSlot>();
-                    slotComponent.Index = r * config.cols + c;
+                    slotComponent.Index = i;
                     if (onClickSlot != null && slotComponent.button != null)
                         slotComponent.button.onClick.AddListener((() => { onClickSlot(slotComponent.Index); }));
                     slots.Add(slot);
@@ -140,15 +168,20 @@ namespace SparFlame.UI.General
                 Slots.Clear();
                 SlotComponents.Clear();
             }
-        }
 
-     
+            protected virtual bool IsResourceLoaded()
+            {
+                return SlotPrefabHandle.IsValid() && SlotPrefabHandle.IsDone;
+            }
+        }
 
 
         [Serializable]
         public struct MultiShowSlotConfig
         {
-            [Tooltip("If disable auto cell size, will use prefab width and height")]
+            [Header("Choose Square or Circle")] public bool ifSquare;
+
+            [Header("Square Config")] [Tooltip("If disable auto cell size, will use prefab width and height")]
             public bool autoCellSize;
 
             public int rows;
@@ -159,6 +192,12 @@ namespace SparFlame.UI.General
 
             public float columnSpacing;
             public float rowSpacing;
+
+            [Header("Circle Config")] public float radius;
+            public int circleElemCount;
+            [Tooltip("This bias is used when you want to change the start position of first slot")]
+            public int elemBias;
+            public Vector2 center;
         }
     }
 }

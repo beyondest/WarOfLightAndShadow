@@ -1,6 +1,7 @@
 ﻿using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
+using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Burst;
 using Unity.Collections;
@@ -26,10 +27,9 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<AttackAbility> _attackabilityLookup;
         private ComponentLookup<HealAbility> _healabilityLookup;
         private ComponentLookup<HarvestAbility> _harvestabilityLookup;
-
+        private ComponentLookup<RegeneratingTag> _regeneratingTag;
         private ComponentLookup<StatData> _statLookup;
-        // private ComponentLookup<AutoGiveWayData> _autoGiveWayLookup;
-        // private ComponentLookup<SqueezeData> _squeezeLookup;
+
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -47,9 +47,8 @@ namespace SparFlame.GamePlaySystem.State
             _attackabilityLookup = state.GetComponentLookup<AttackAbility>();
             _healabilityLookup = state.GetComponentLookup<HealAbility>();
             _harvestabilityLookup = state.GetComponentLookup<HarvestAbility>();
+            _regeneratingTag = state.GetComponentLookup<RegeneratingTag>();
             _statLookup = state.GetComponentLookup<StatData>();
-            // _autoGiveWayLookup = state.GetComponentLookup<AutoGiveWayData>(true);
-            // _squeezeLookup = state.GetComponentLookup<SqueezeData>(true);
         }
 
         [BurstCompile]
@@ -70,6 +69,7 @@ namespace SparFlame.GamePlaySystem.State
             _healabilityLookup.Update(ref state);
             _harvestabilityLookup.Update(ref state);
             _statLookup.Update(ref state);
+            _regeneratingTag.Update(ref state);
             // _squeezeLookup.Update(ref state);
             // _autoGiveWayLookup.Update(ref state);
             new CheckMovingState
@@ -84,14 +84,9 @@ namespace SparFlame.GamePlaySystem.State
                 HealLookup = _healabilityLookup,
                 HarvestLookup = _harvestabilityLookup,
                 StatLookup = _statLookup,
-                // DeltaTime = SystemAPI.Time.DeltaTime,
                 Config = config,
+                RegeneratingTagLookup = _regeneratingTag,
                 SightSystemConfig = sightConfig
-                // AutoGiveWayLookup = _autoGiveWayLookup,
-                // SqueezeLookup = _squeezeLookup,
-                // ChooseSideTimes = config.ChooseSideTimes,
-                // MaxAllowedCompromiseTimesForSqueeze = config.MaxAllowedCompromiseTimesForSqueeze,
-                // SqueezeRatio = config.SqueezeRatio,
             }.ScheduleParallel();
         }
 
@@ -105,12 +100,12 @@ namespace SparFlame.GamePlaySystem.State
 
             [ReadOnly] public ComponentLookup<Selected> Selected;
 
-            // [ReadOnly] public ComponentLookup<AutoGiveWayData> AutoGiveWayLookup;
-            // [ReadOnly] public ComponentLookup<SqueezeData> SqueezeLookup;
+
             [ReadOnly] public ComponentLookup<AttackAbility> AttackLookup;
             [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup;
             [ReadOnly] public ComponentLookup<StatData> StatLookup;
+            [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
 
             // Resolve self stuck will modify transform and lookup random transform for squeeze direction
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransLookup;
@@ -124,10 +119,8 @@ namespace SparFlame.GamePlaySystem.State
             // [ReadOnly] public float DeltaTime;
 
             [ReadOnly] public MovingStateMachineConfig Config;
+
             [ReadOnly] public SightSystemConfig SightSystemConfig;
-            // [ReadOnly] public int MaxAllowedCompromiseTimesForSqueeze;
-            // [ReadOnly] public int ChooseSideTimes;
-            // [ReadOnly] public float SqueezeRatio;
 
             private void Execute([ChunkIndexInQuery] int index, ref Surroundings surroundings,
                 ref DynamicBuffer<InsightTarget> targets,
@@ -140,7 +133,6 @@ namespace SparFlame.GamePlaySystem.State
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (stateData.CurState != UnitState.Moving) return;
 
-                // Debug.Log($"stateData : {stateData.TargetEntity}");
                 if (CheckTaunted(ref surroundings, ref movableData, ref stateData,
                         ref targets, entity, index))
                     return;
@@ -189,7 +181,8 @@ namespace SparFlame.GamePlaySystem.State
                     {
                         var targetStat = StatLookup[stateData.TargetEntity];
                         if (InteractUtils.IsTargetValid(in targetInteractAttr, in selfFactionTag, in targetStat,
-                                HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity)))
+                                HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity),
+                                !RegeneratingTagLookup.HasComponent(stateData.TargetEntity)))
                         {
                             return;
                         }
@@ -220,17 +213,17 @@ namespace SparFlame.GamePlaySystem.State
                 if (targetInteractAttr.FactionTag == selfFactionTag)
                 {
                     stateData.TargetState = UnitState.Healing;
-                    rangSq = HealLookup[entity].Range;
+                    rangSq = HealLookup[entity].RangeSq;
                 }
                 else if (targetInteractAttr.BaseTag == BaseTag.Resources)
                 {
                     stateData.TargetState = UnitState.Harvesting;
-                    rangSq = HarvestLookup[entity].Range;
+                    rangSq = HarvestLookup[entity].RangeSq;
                 }
                 else
                 {
                     stateData.TargetState = UnitState.Attacking;
-                    rangSq = AttackLookup[entity].Range;
+                    rangSq = AttackLookup[entity].RangeSq;
                 }
 
                 MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderSize,
@@ -338,7 +331,7 @@ namespace SparFlame.GamePlaySystem.State
             }
 
             private bool CheckTaunted(ref Surroundings surroundings, ref MovableData movableData,
-                ref BasicStateData stateData, ref DynamicBuffer<InsightTarget> targets,Entity entity, int index)
+                ref BasicStateData stateData, ref DynamicBuffer<InsightTarget> targets, Entity entity, int index)
             {
                 if (surroundings.MoveSuccess) return false;
                 if (!InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)) return false;
@@ -348,6 +341,7 @@ namespace SparFlame.GamePlaySystem.State
                     InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
                         SightSystemConfig.MemoryTargetWhenFocus);
                 }
+
                 // Turn to Attacking State
                 stateData.TargetState = UnitState.Attacking;
                 stateData.TargetEntity = surroundings.FrontEntity;

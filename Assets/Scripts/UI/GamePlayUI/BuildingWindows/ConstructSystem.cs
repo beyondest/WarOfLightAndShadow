@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Construction
         private ConstructSystemConfig _config;
         
         // Cache
-        private NativeHashMap<int, NativeList<Entity>> _buildingDatabase;
+        // private NativeHashMap<int, NativeList<Entity>> _buildingDatabase; // (int)BuildingType to building entity prefab list
         private InputConstructData _inputData;
         private PlacementCommandData _commandData;
         private Entity _commandEntity = Entity.Null;
@@ -44,17 +44,21 @@ namespace SparFlame.GamePlaySystem.Construction
 
         protected override void OnUpdate()
         {
-            if (!_buildingDatabase.IsCreated)
-            {
-                InitBuildingDatabase();
-            }
+            // if (!_buildingDatabase.IsCreated)
+            // {
+            //     InitBuildingDatabase();
+            // }
 
             if (ConstructWindow.Instance == null || BuildingDetailWindow.Instance == null) return;
             if (!ConstructWindow.Instance.InitWindowEvents)
             {
-                ConstructWindow.Instance.EcsGhostShowTargetByTypeIndex += (buildingType, saveIndex) =>
+                // ConstructWindow.Instance.EcsGhostShowTargetByTypeIndex += (buildingType, saveIndex) =>
+                // {
+                //     GhostShowTargetBuilding(_buildingDatabase[(int)buildingType][saveIndex]);
+                // };
+                ConstructWindow.Instance.EcsGhostShowTargetByTypeIndex += entity =>
                 {
-                    GhostShowTargetBuilding(_buildingDatabase[(int)buildingType][saveIndex]);
+                    GhostShowTargetBuilding(entity);
                 };
                 ConstructWindow.Instance.EcsExitGhostShow += ExitGhostShow;
                 ConstructWindow.Instance.InitWindowEvents = true;
@@ -99,18 +103,7 @@ namespace SparFlame.GamePlaySystem.Construction
             EntityManager.SetComponentData(_commandEntity, _commandData);
         }
 
-        protected override void OnDestroy()
-        {
-            if (_buildingDatabase.IsCreated)
-            {
-                foreach (var pair in _buildingDatabase)
-                {
-                    pair.Value.Dispose();
-                }
 
-                _buildingDatabase.Dispose();
-            }
-        }
 
 
         #region CheckInputMethods
@@ -201,27 +194,6 @@ namespace SparFlame.GamePlaySystem.Construction
         #endregion
 
 
-        private void InitBuildingDatabase()
-        {
-            var buildingTypes = Enum.GetValues(typeof(BuildingType)).Length;
-            _buildingDatabase =
-                new NativeHashMap<int, NativeList<Entity>>(buildingTypes,
-                    Allocator.Persistent);
-            foreach (BuildingType buildingType in Enum.GetValues(typeof(BuildingType)))
-            {
-                _buildingDatabase.Add((int)buildingType, new NativeList<Entity>(Allocator.Persistent));
-            }
-
-            var buffer = SystemAPI.GetSingletonBuffer<BuildingSlot>();
-            var bufferEntity = SystemAPI.GetSingletonEntity<BuildingSlot>();
-            foreach (var buildingSlot in buffer)
-            {
-                var buildingList = _buildingDatabase[(int)buildingSlot.Type];
-                buildingList.Add(buildingSlot.Entity);
-            }
-
-            EntityManager.DestroyEntity(bufferEntity);
-        }
 
 
         #region GhostShow

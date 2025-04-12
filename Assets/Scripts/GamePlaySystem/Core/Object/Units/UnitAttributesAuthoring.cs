@@ -29,11 +29,11 @@ namespace SparFlame.GamePlaySystem.Units
     }
     public enum UnitType
     {
-        Melee, // Attack
-        Archer,// Attack
-        Mage, // Attack, heal
-        Cavalry, // Attack
-        Farmer // Attack, harvest
+        Shield = 0, // Attack
+        Ranged = 1,// Attack
+        Magic = 2, // Attack, heal
+        Cavalry = 3, // Attack
+        Worker = 4 // Attack, harvest
     }
 
     

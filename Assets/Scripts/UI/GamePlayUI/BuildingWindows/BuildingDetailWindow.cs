@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Globalization;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Generate;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
+using SparFlame.GamePlaySystem.Spawn;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
-using Unity.Plastic.Newtonsoft.Json.Serialization;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
@@ -20,15 +21,26 @@ namespace SparFlame.UI.GamePlay
         [Header("Custom Config")] [SerializeField]
         private TMP_Text buildingType;
 
-        [SerializeField] private TMP_Text buildingHp;
-        [SerializeField] private Image buildingIcon;
-        [SerializeField] private Image buildingHpIcon;
+        [SerializeField] private Image buildingTypeIcon;
+
+        [SerializeField] private Image functionIcon;
+        [SerializeField] private TMP_Text functionNameText;
+
+        [SerializeField] private TMP_Text doingThingsRemainedTimeText;
+        [SerializeField] private Image doingThingsIcon;
+        [SerializeField] private TMP_Text doingThingsDescriptionText;
+        [SerializeField] private TMP_Text doingLabelText;
+        [SerializeField] private TMP_Text thingsLabelText;
+        [SerializeField] private AssetReferenceSprite buildingIdleIcon;
 
         // Interface
         public static BuildingDetailWindow Instance;
         public Action<Entity> EcsGhostShowTarget;
         [NonSerialized] public bool InitWindowEvents = false;
 
+        // Cache
+        private Sprite _idleSprite;
+        
         public override void Hide()
         {
             base.Hide();
@@ -78,8 +90,8 @@ namespace SparFlame.UI.GamePlay
         #endregion
 
         // Internal Data
-        private AsyncOperationHandle<GameObject> _costSlotPrefabHandle;
         private Entity _targetEntity = Entity.Null;
+        private AsyncOperationHandle<Sprite> _spriteHandle;
 
         // Cache
         private GameObject _costSlotPrefab;
@@ -100,6 +112,23 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            _spriteHandle = CR.LoadAssetRefAsync<Sprite>(buildingIdleIcon, sprite =>
+            {
+                _idleSprite = sprite;
+            });
+        }
+
+ 
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            Addressables.Release(_spriteHandle);
+        }
+
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
@@ -111,7 +140,8 @@ namespace SparFlame.UI.GamePlay
         {
             if (_notPauseTag.IsEmpty) return;
             if (!BuildingWindowResourceManager.Instance.IsResourceLoaded()
-                || !BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
+                || !BasicWindowResourceManager.Instance.IsResourceLoaded()
+                || !IsResourceLoaded()) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
             if (!_em.HasComponent<InteractableAttr>(_targetEntity))
@@ -119,24 +149,28 @@ namespace SparFlame.UI.GamePlay
                 _targetEntity = Entity.Null;
                 return;
             }
+
             UpdateBuildingDetailInfo();
         }
 
         #endregion
 
+        protected override bool IsResourceLoaded()
+        {
+            return base.IsResourceLoaded() && _spriteHandle.IsValid() && _spriteHandle.IsDone;
+        }
+        
         private void UpdateBuildingDetailInfo()
         {
             var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
             _buildingAttr = _em.GetComponentData<BuildingAttr>(_targetEntity);
-            var statData = _em.GetComponentData<StatData>(_targetEntity);
             var costList = _em.GetBuffer<CostList>(_targetEntity);
-            // Visualize these attributes
+            
+            // Visualize type attributes
             buildingType.text = _buildingAttr.Type.ToString();
-            buildingHp.text = statData.CurValue.ToString(CultureInfo.InvariantCulture) + "/" +
-                              statData.MaxValue.ToString(CultureInfo.InvariantCulture);
-            buildingIcon.sprite = BuildingWindowResourceManager.Instance.BuildingTypeSprites[_buildingAttr.Type];
-            buildingHpIcon.sprite = BasicWindowResourceManager.Instance.FactionHpSprites[interactableAttr.FactionTag];
-
+            buildingTypeIcon.sprite = BuildingWindowResourceManager.Instance.BuildingTypeSprites[_buildingAttr.Type];
+            
+            // Visualize cost attributes
             for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < costList.Length)
@@ -146,12 +180,72 @@ namespace SparFlame.UI.GamePlay
                     var costSlot = SlotComponents[i];
                     costSlot.icon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
-                    costSlot.value.text = cost.Amount.ToString();
+                    costSlot.value.text = $"x{cost.Amount}";
                 }
                 else
                 {
                     Slots[i].SetActive(false);
                 }
+            }
+            // Visualize function panel and doingThings panel
+            if (_buildingAttr.State != BuildingState.Working)
+            {
+                doingThingsIcon.sprite = _idleSprite;
+                doingThingsRemainedTimeText.text = "";
+                doingThingsDescriptionText.text = "";
+                thingsLabelText.text = "";
+                doingLabelText.text = "Idle";
+            }
+            switch (_buildingAttr.Type)
+            {
+                case BuildingType.ConjuringShrines:
+                {
+                    var conjureAttribute = _em.GetComponentData<ConjureAttr>(_targetEntity);
+                    functionIcon.enabled = true;
+                    functionIcon.sprite =
+                        BuildingWindowResourceManager.Instance.FunctionConjuringButtonSprites[interactableAttr.Tier];
+                    functionNameText.enabled = true;
+                    functionNameText.text = "Conjure";
+                    if (_buildingAttr.State == BuildingState.Working)
+                    {
+                        doingThingsIcon.sprite =
+                            UnitWindowResourceManager.Instance.UnitSprites[conjureAttribute.ConjuringType];
+                        doingThingsRemainedTimeText.text = UIMathMethods.FormatTime(conjureAttribute.RemainingTime);
+                        doingThingsDescriptionText.text =
+                            $"{conjureAttribute.ConjuredAmount} / {conjureAttribute.TargetAmount}";
+                        doingLabelText.text = "Conjuring";
+                        thingsLabelText.text = conjureAttribute.ConjuringType.ToString();
+                    }
+                    break;
+                }
+                case BuildingType.Generators:
+                {
+                    functionIcon.enabled = true;
+                    var generateAttribute = _em.GetComponentData<GenerateAttr>(_targetEntity);
+                    functionIcon.sprite =
+                        BuildingWindowResourceManager.Instance.FunctionGeneratingButtonSprites[interactableAttr.Tier];
+                    functionNameText.enabled = true;
+                    functionNameText.text = "Generate";
+                    if (_buildingAttr.State == BuildingState.Working)
+                    {
+                        doingThingsIcon.sprite =
+                            BasicWindowResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
+                        doingThingsRemainedTimeText.text = UIMathMethods.FormatTime(generateAttribute.RemainingTime);
+                        doingThingsDescriptionText.text =
+                            $"{generateAttribute.GeneratedAmount} / {generateAttribute.TargetAmount}";
+                        doingLabelText.text = "Generating";
+                        thingsLabelText.text = generateAttribute.GenerateResourceType.ToString();
+                    }
+                    break;
+                }
+                case BuildingType.Fortifications:
+                case BuildingType.Dwellings:
+                case BuildingType.Ornaments:
+                    functionIcon.enabled = false;
+                    functionNameText.enabled = false;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }

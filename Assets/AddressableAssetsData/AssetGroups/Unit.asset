@@ -15,28 +15,28 @@ MonoBehaviour:
   m_GroupName: Unit
   m_GUID: ee9194b0945b920489255e9312b5f0de
   m_SerializeEntries:
-  - m_GUID: 67c6944f579368148af33724204abda1
-    m_Address: Archer
+  - m_GUID: 033db6a08813dfa40a223085b6d59c4f
+    m_Address: Worker
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8268a52e5babd2441ba69d9a5097095d
+  - m_GUID: 0655b66c24f1d2445b46aab2e3ac3c95
     m_Address: Cavalry
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ba5c3b1c2d1e2684e80a4ef0889c6bf5
-    m_Address: Melee
+  - m_GUID: 5dc5860144c60284dbb4344c546ec641
+    m_Address: Magic
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: bda70d8b26493f14b9523b053a3dec36
-    m_Address: Mage
+  - m_GUID: 73f59d90ba862da4f968a3e7612e82ca
+    m_Address: Shield
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e163357be41bf3344a2539b8539decbc
-    m_Address: Farmer
+  - m_GUID: a5b70966df352564d8c4b2f70e664374
+    m_Address: Ranged
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

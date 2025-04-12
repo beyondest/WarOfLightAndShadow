@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,8 +15,9 @@ namespace SparFlame.UI.GamePlay
         [Header("Custom Config")] [SerializeField]
         private GameObject pageUpButton;
 
+        [SerializeField] private Tier maxTier;
         [SerializeField] private GameObject pageDownButton;
-
+        
 
         // Interface
         public static UnitMulti2DWindow Instance;
@@ -63,7 +65,9 @@ namespace SparFlame.UI.GamePlay
                     var unitInfo = unitInfos[startIdx + i];
                     unitShowSlot.button.image.sprite =
                         UnitWindowResourceManager.Instance.UnitSprites[unitInfo.UnitType];
-                    unitShowSlot.hp.value = unitInfo.HpRatio;
+                    unitShowSlot.hpFilled.fillAmount = unitInfo.HpRatio;
+                    var tier = (int)unitInfo.Tier - 2;
+                    unitShowSlot.tierImage.fillAmount = tier / _maxTierF;
                 }
                 else
                 {
@@ -92,10 +96,14 @@ namespace SparFlame.UI.GamePlay
 
         #endregion
 
+        
+        // Internal Data
         private int _slotsMaxCountPerPage;
         private int _currentPage;
         private int _currentSelectIndex = -1;
         private int _currentSelectCounts;
+        private float _maxTierF;
+        
         private Entity _targetEntity;
         
         #region EventFunction
@@ -113,6 +121,7 @@ namespace SparFlame.UI.GamePlay
             base.OnEnable();
             _slotsMaxCountPerPage = config.rows * config.cols;
             _currentSelectIndex = -1;
+             _maxTierF = (int)maxTier - 2;
         }
 
         #endregion
