@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
-using SparFlame.Utils.Utils;
+using SparFlame.Utils;
 using Unity.Entities;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.Serialization;
-using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace SparFlame.UI.General
@@ -28,7 +25,7 @@ namespace SparFlame.UI.General
         /// <param name="onClickSlot">This function will call when click on slot button 
         /// but notice that if you use page techniques to show info counts bigger than max slot count per page,
         /// you have to add bias via current page by yourself</param>
-        public static void InstantiateMultiShowSlotsByIndex<TMultiShowSlot>(List<GameObject> slots,
+        private static void InstantiateMultiShowSlotsByIndex<TMultiShowSlot>(List<GameObject> slots,
             List<TMultiShowSlot> slotComponents,
             GameObject panel, GameObject slotPrefab, in MultiShowSlotConfig config,
             [CanBeNull] Action<int> onClickSlot = null) where TMultiShowSlot : MultiShowSlot
@@ -64,7 +61,11 @@ namespace SparFlame.UI.General
                         var slotComponent = slot.GetComponent<TMultiShowSlot>();
                         slotComponent.Index = r * config.cols + c;
                         if (onClickSlot != null && slotComponent.button != null)
-                            slotComponent.button.onClick.AddListener((() => { onClickSlot(slotComponent.Index); }));
+                        {
+                            // TODO : Extend original button class to support right click event and long click event
+                            slotComponent.button.onClick.AddListener(() => { onClickSlot(slotComponent.Index); });
+                        }
+
                         slots.Add(slot);
                         slotComponents.Add(slotComponent);
                     }
@@ -116,14 +117,22 @@ namespace SparFlame.UI.General
             [SerializeField] private AssetReferenceGameObject slotPrefab;
             [SerializeField] protected MultiShowSlotConfig config;
 
+            public bool shouldReleasePrefabsWhenDisabled;
 
             protected AsyncOperationHandle<GameObject> SlotPrefabHandle;
 
-            protected GameObject SlotPrefab;
+            private bool _initialized;
+            private GameObject _slotPrefab;
             protected readonly List<GameObject> Slots = new();
             protected readonly List<TMultiShowSlot> SlotComponents = new();
 
-
+            /// <summary>
+            /// TODO : Add not use multi slots support, for building detail main window
+            /// </summary>
+            public void SetInitialized()
+            {
+                _initialized = true;
+            }
             public virtual void OnClickSlot(int slotIndex)
             {
             }
@@ -144,34 +153,37 @@ namespace SparFlame.UI.General
                 return panel.activeSelf;
             }
 
+            
 
             protected virtual void OnEnable()
             {
+                if (_initialized) return;
+                _initialized = true;
                 SlotPrefabHandle = CR.LoadAssetRefAsync<GameObject>(slotPrefab,
                     go =>
                     {
-                        SlotPrefab = go;
+                        _slotPrefab = go;
                         InstantiateMultiShowSlotsByIndex(Slots, SlotComponents, panel,
-                            SlotPrefab, in config, OnClickSlot);
+                            _slotPrefab, in config, OnClickSlot);
                     });
-                panel.SetActive(false);
             }
 
             protected virtual void OnDisable()
             {
+                if (!shouldReleasePrefabsWhenDisabled) return;
+                _initialized = false;
                 Addressables.Release(SlotPrefabHandle);
                 foreach (var slot in Slots)
                 {
                     Destroy(slot);
                 }
-
                 Slots.Clear();
                 SlotComponents.Clear();
             }
 
-            protected virtual bool IsResourceLoaded()
+            public virtual bool IsResourceLoaded()
             {
-                return SlotPrefabHandle.IsValid() && SlotPrefabHandle.IsDone;
+                return _initialized && SlotPrefabHandle.IsValid() && SlotPrefabHandle.IsDone;
             }
         }
 
@@ -195,8 +207,10 @@ namespace SparFlame.UI.General
 
             [Header("Circle Config")] public float radius;
             public int circleElemCount;
+
             [Tooltip("This bias is used when you want to change the start position of first slot")]
             public int elemBias;
+
             public Vector2 center;
         }
     }

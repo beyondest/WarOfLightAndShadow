@@ -1,48 +1,52 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
+using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.State
 {
     public struct StateUtils
     {
-        public static void SwitchState(ref BasicStateData stateData,  EntityCommandBuffer.ParallelWriter ecb, Entity entity,int index)
+        public static void SwitchState(ref BasicStateData stateData, EntityCommandBuffer.ParallelWriter ecb,
+            Entity entity, int index)
         {
-            // Debug.Log($"Cur state : {stateData.CurState}, Target state : {stateData.TargetState}");
-            if(stateData.TargetState == stateData.CurState)return;
+            if (stateData.TargetState == stateData.CurState) return;
             switch (stateData.TargetState)
             {
-                case UnitState.Idle:
+                case InteractState.Idle:
                 {
-                    ecb.SetComponentEnabled<IdleStateTag>(index,entity,true);
+                    stateData.TargetEntity = Entity.Null;
+                    stateData.Focus = false;
+                    ecb.SetComponentEnabled<IdleStateTag>(index, entity, true);
                     break;
                 }
-                case UnitState.Attacking:
+                case InteractState.Attacking:
                 {
-                    ecb.SetComponentEnabled<AttackStateTag>(index,entity,true);
+                    ecb.SetComponentEnabled<AttackStateTag>(index, entity, true);
                     break;
                 }
-                case UnitState.Moving:
+                case InteractState.Moving:
                 {
-                    ecb.SetComponentEnabled<MovingStateTag>(index,entity,true);
+                    ecb.SetComponentEnabled<MovingStateTag>(index, entity, true);
                     break;
                 }
-                case UnitState.Garrison:
+                case InteractState.Garrison:
                 {
-                    ecb.SetComponentEnabled<GarrisonStateTag>(index,entity,true);
+                    ecb.SetComponentEnabled<GarrisonStateTag>(index, entity, true);
                     break;
                 }
-                case UnitState.Harvesting:
+                case InteractState.Harvesting:
                 {
-                    ecb.SetComponentEnabled<HarvestStateTag>(index,entity,true);
+                    ecb.SetComponentEnabled<HarvestStateTag>(index, entity, true);
                     break;
                 }
-                case UnitState.Healing:
+                case InteractState.Healing:
                 {
-                    ecb.SetComponentEnabled<HealStateTag>(index,entity,true);
+                    ecb.SetComponentEnabled<HealStateTag>(index, entity, true);
                     break;
                 }
                 default:
@@ -51,55 +55,57 @@ namespace SparFlame.GamePlaySystem.State
 
             switch (stateData.CurState)
             {
-                case UnitState.Idle:
+                case InteractState.Idle:
                 {
-                    ecb.SetComponentEnabled<IdleStateTag>(index,entity,false);
+                    ecb.SetComponentEnabled<IdleStateTag>(index, entity, false);
                     break;
                 }
-                case UnitState.Attacking:
+                case InteractState.Attacking:
                 {
-                    ecb.SetComponentEnabled<AttackStateTag>(index,entity,false);
+                    ecb.SetComponentEnabled<AttackStateTag>(index, entity, false);
                     break;
                 }
-                case UnitState.Moving:
+                case InteractState.Moving:
                 {
-                    ecb.SetComponentEnabled<MovingStateTag>(index,entity,false);
+                    ecb.SetComponentEnabled<MovingStateTag>(index, entity, false);
                     break;
                 }
-                case UnitState.Garrison:
+                case InteractState.Garrison:
                 {
-                    ecb.SetComponentEnabled<GarrisonStateTag>(index,entity,false);
+                    ecb.SetComponentEnabled<GarrisonStateTag>(index, entity, false);
                     break;
                 }
-                case UnitState.Harvesting:
+                case InteractState.Harvesting:
                 {
-                    ecb.SetComponentEnabled<HarvestStateTag>(index,entity,false);
+                    ecb.SetComponentEnabled<HarvestStateTag>(index, entity, false);
                     break;
                 }
-                case UnitState.Healing:
+                case InteractState.Healing:
                 {
-                    ecb.SetComponentEnabled<HealStateTag>(index,entity,false);
+                    ecb.SetComponentEnabled<HealStateTag>(index, entity, false);
                     break;
                 }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             stateData.CurState = stateData.TargetState;
         }
-    
 
-        
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SetTargetStateViaTargetType(in FactionTag selfFactionTag,
-            in InteractableAttr targetInteractAttr,ref BasicStateData selfStateData)
+            in GeneralAttr targetgeneralAttr, ref BasicStateData selfStateData)
         {
-            if (selfFactionTag == targetInteractAttr.FactionTag)
-                selfStateData.TargetState = UnitState.Healing;
-            if (targetInteractAttr.BaseTag == BaseTag.Resources)
-                selfStateData.TargetState = UnitState.Harvesting;
-            if (selfFactionTag == ~targetInteractAttr.FactionTag)
-                selfStateData.TargetState = UnitState.Attacking;
+            if (selfFactionTag == targetgeneralAttr.FactionTag)
+                selfStateData.TargetState = InteractState.Healing;
+            if (targetgeneralAttr.BaseTag == BaseTag.Resources)
+                selfStateData.TargetState = InteractState.Harvesting;
+            if (selfFactionTag == ~targetgeneralAttr.FactionTag)
+                selfStateData.TargetState = InteractState.Attacking;
         }
+
+
+  
     }
 }

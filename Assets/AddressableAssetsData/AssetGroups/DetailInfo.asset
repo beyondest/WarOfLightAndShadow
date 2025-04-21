@@ -15,8 +15,18 @@ MonoBehaviour:
   m_GroupName: DetailInfo
   m_GUID: d369d20acd80d48459c490b3f50b2963
   m_SerializeEntries:
-  - m_GUID: 25a0a516e6d2a1b4cb5c9ab66fcb9ca2
-    m_Address: MoveSpeed
+  - m_GUID: 15811ac7c8dc17b458e0dea0472eaf33
+    m_Address: AllyHp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3bb8cb9ce13a1b744a480999c6d6bd09
+    m_Address: NeutralHp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 912904e125c034c459979bbcf90e9d51
+    m_Address: EnemyHp
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

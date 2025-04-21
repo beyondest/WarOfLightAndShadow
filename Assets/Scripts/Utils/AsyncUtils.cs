@@ -50,9 +50,9 @@ namespace SparFlame.Utils
     
             public bool IsDone => _handles.All(o => o.IsDone);
 
-            public bool IsHandleCreated(int targetCount)
+            public bool IsHandleCreated()
             {
-                return targetCount >= _handles.Count;
+                 return _handles.Count >0;
             }
 
 

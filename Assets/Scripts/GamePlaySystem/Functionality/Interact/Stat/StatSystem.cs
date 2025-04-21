@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Garrison;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
+using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.Resource;
+using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Interact
@@ -15,13 +19,16 @@ namespace SparFlame.GamePlaySystem.Interact
     [UpdateBefore(typeof(ResourceSystem))]
     public partial struct StatSystem : ISystem
     {
-        private ComponentLookup<InteractableAttr> _interactableAttrLookup;
+        private ComponentLookup<GeneralAttr> _interactableAttrLookup;
         private ComponentLookup<VolumeObstacleTag> _volumeObstacleTagLookup;
         private ComponentLookup<StatData> _statDataLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<ResourceAttr> _resourceAttrLookup;
         private ComponentLookup<RenewableData> _renewableResourceDataLookup;
+        private ComponentLookup<InGarrison> _inGarrisonLookup;
+        private ComponentLookup<OocTag> _oocTagLookup;
         private BufferLookup<InsightTarget> _insightTargetLookup;
+        private BufferLookup<CostList> _costListLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -32,13 +39,18 @@ namespace SparFlame.GamePlaySystem.Interact
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<StatSystemConfig>();
             state.RequireForUpdate<SightSystemConfig>();
-            _interactableAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
+            state.RequireForUpdate<OocSystemConfig>();
+            
+            _interactableAttrLookup = state.GetComponentLookup<GeneralAttr>(true);
             _volumeObstacleTagLookup = state.GetComponentLookup<VolumeObstacleTag>(true);
             _statDataLookup = state.GetComponentLookup<StatData>();
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
             _resourceAttrLookup = state.GetComponentLookup<ResourceAttr>();
             _renewableResourceDataLookup = state.GetComponentLookup<RenewableData>(true);
+            _oocTagLookup = state.GetComponentLookup<OocTag>();
+            _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
+            _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
+            _costListLookup = state.GetBufferLookup<CostList>(true);
         }
 
         [BurstCompile]
@@ -51,8 +63,11 @@ namespace SparFlame.GamePlaySystem.Interact
             _resourceAttrLookup.Update(ref state);
             _renewableResourceDataLookup.Update(ref state);
             _insightTargetLookup.Update(ref state);
-
+            _inGarrisonLookup.Update(ref state);
+            _oocTagLookup.Update(ref state);
+            _costListLookup.Update(ref state);
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
+            var oocSystemConfig = SystemAPI.GetSingleton<OocSystemConfig>();
             // var config = SystemAPI.GetSingleton<StatSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
@@ -69,14 +84,15 @@ namespace SparFlame.GamePlaySystem.Interact
                 TargetListLookup = _insightTargetLookup,
                 ResourceAttrLookup = _resourceAttrLookup,
                 RenewableResourceDataLookup = _renewableResourceDataLookup,
+                InGarrisonLookup = _inGarrisonLookup,
+                OocTagLookup = _oocTagLookup,
+                CostListLookup = _costListLookup,
                 SightConfig = autoChooseTargetSystemConfig,
+                OocConfig = oocSystemConfig
             }.ScheduleParallel();
         }
 
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-        }
+
 
 
         [BurstCompile]
@@ -86,13 +102,17 @@ namespace SparFlame.GamePlaySystem.Interact
             public float RandomValue;
             [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetListLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatLookup;
-            
-            [ReadOnly] public ComponentLookup<InteractableAttr> InteractableAttrLookup;
+
+            [ReadOnly] public ComponentLookup<GeneralAttr> InteractableAttrLookup;
             [ReadOnly] public ComponentLookup<VolumeObstacleTag> ObstacleTagLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<ResourceAttr> ResourceAttrLookup;
             [ReadOnly] public ComponentLookup<RenewableData> RenewableResourceDataLookup;
+            [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
+            [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
+            [ReadOnly] public BufferLookup<CostList> CostListLookup; // For population release
             [ReadOnly] public SightSystemConfig SightConfig;
+            [ReadOnly] public OocSystemConfig OocConfig;
 
 
             private void Execute([ChunkIndexInQuery] int index, in StatChangeRequest request, Entity entity)
@@ -115,11 +135,11 @@ namespace SparFlame.GamePlaySystem.Interact
 
                 // Check interact type and do different jobs according to interact type 
                 CheckInteractType(in request, in statInteractee, in interactorAttr, in interacteeAttr, index);
-                
+
                 // Remove Dead Entities, like units, resources, buildings
                 if (statInteractee.CurValue <= 0)
                 {
-                    RemoveAndSendRequest(ref statInteractee,request.Interactee, index, in interacteeAttr);
+                    RemoveAndSendRequest(ref statInteractee, request.Interactee, index, in interacteeAttr);
                 }
 
                 // Destroy this stat change request, cause each request is dealt only one time
@@ -127,7 +147,7 @@ namespace SparFlame.GamePlaySystem.Interact
             }
 
             private void CheckInteractType(in StatChangeRequest request, in StatData statInteractee,
-                in InteractableAttr interactorAttr, in InteractableAttr interacteeAttr,
+                in GeneralAttr interactorAttr, in GeneralAttr interacteeAttr,
                 int index)
             {
                 switch (request.InteractType)
@@ -136,7 +156,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     case InteractType.Attack when statInteractee.CurValue > 0:
                     {
                         // TODO : This should cause a race condition, but it works fine for now.
-                        // Target may be no interact ability target, like walls, they don't have targetsBuffer
+                        // Update interactee targetList if it has
                         if (TargetListLookup.TryGetBuffer(request.Interactee, out var targetsBuffer))
                         {
                             int i;
@@ -148,8 +168,9 @@ namespace SparFlame.GamePlaySystem.Interact
                                 target.StatChangValue += statChangeValue;
                                 targetsBuffer[i] = target;
                             }
+
                             // Target Not in sight but get attacked, should add it to target list
-                            if(i == targetsBuffer.Length)
+                            if (i == targetsBuffer.Length)
                                 ECB.AppendToBuffer(index, request.Interactee, new InsightTarget
                                 {
                                     Entity = request.Interactor,
@@ -161,23 +182,18 @@ namespace SparFlame.GamePlaySystem.Interact
                                     TotalValue = 0f
                                 });
                         }
-                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request,interactorAttr,index, ECB);
+                        // Update Ooc info(attack state or under attack state tag)
+                        UpdateOocInfo(request, interactorAttr, interacteeAttr, index);
+                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr, index, ECB);
                         break;
                     }
                     case InteractType.Harvest:
                         var resourceAttr = ResourceAttrLookup[request.Interactee];
-                        if (interacteeAttr.Tier <= interactorAttr.Tier)
-                        {
-                            StatUtils.GenerateHarvestResourceRequest(request, interactorAttr, resourceAttr, index, ECB);
-                            StatUtils.GeneratePopNumberRequest(ref TransformLookup, request,  interactorAttr,index, ECB);
-                        }
-                        else
-                        {
-                            StatUtils.GenerateResourceTierNotMatchHint(ref TransformLookup,request, index, ECB);
-                        }
+                        StatUtils.GenerateHarvestResourceRequest(request, interactorAttr, resourceAttr, index, ECB);
+                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr, index, ECB);
                         break;
                     case InteractType.Heal:
-                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr,index, ECB);
+                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr, index, ECB);
                         break;
                 }
             }
@@ -191,12 +207,22 @@ namespace SparFlame.GamePlaySystem.Interact
             /// <param name="interacteeEntity"></param>
             /// <param name="index"></param>
             /// <param name="interacteeAttr"></param>
-            private void RemoveAndSendRequest(ref StatData statInteractee,Entity interacteeEntity, int index, in InteractableAttr interacteeAttr)
+            private void RemoveAndSendRequest(ref StatData statInteractee, Entity interacteeEntity, int index,
+                in GeneralAttr interacteeAttr)
             {
                 switch (interacteeAttr.BaseTag)
                 {
                     case BaseTag.Units:
+                        StatUtils.GenerateGarrisonUnitDieRequest(interacteeEntity, index, interacteeAttr, ref InGarrisonLookup, ECB);
+                        StatUtils.GenerateReleasePopulationRequest(interacteeEntity, index, interacteeAttr, ref CostListLookup, ECB);
+                        var entity = ECB.CreateEntity(index);
+                        ECB.AddComponent(index, entity, new UnitSelectReduceRequest
+                        {
+                            IsDead = true,
+                            SelectedEntity = Entity.Null
+                        });
                         ECB.DestroyEntity(index, interacteeEntity);
+
                         break;
                     case BaseTag.Buildings:
                         if (ObstacleTagLookup.HasComponent(interacteeEntity))
@@ -210,12 +236,12 @@ namespace SparFlame.GamePlaySystem.Interact
                         if (RenewableResourceDataLookup.TryGetComponent(interacteeEntity, out var renewableData))
                         {
                             var resourceAttr = ResourceAttrLookup[interacteeEntity];
-                            renewableData.RegeneratingLeftTime = renewableData.RegeneratingTime;
+                            renewableData.RegeneratingLeftTime = renewableData.RegenerationTimeSeconds;
                             var bias = (resourceAttr.AmountRange.upper - resourceAttr.AmountRange.lower) * RandomValue;
                             statInteractee.MaxValue = (int)(resourceAttr.AmountRange.lower + bias);
                             statInteractee.CurValue = statInteractee.MaxValue;
-                            ECB.AddComponent<RegeneratingTag>(index,interacteeEntity);
-                            ECB.SetComponent(index,interacteeEntity,renewableData );
+                            ECB.AddComponent<RegeneratingTag>(index, interacteeEntity);
+                            ECB.SetComponent(index, interacteeEntity, renewableData);
                         }
                         else
                         {
@@ -223,15 +249,56 @@ namespace SparFlame.GamePlaySystem.Interact
                             {
                                 StatUtils.GenerateDestroyObstacleRequest(interacteeEntity, true, index, ECB);
                             }
+
                             ECB.DestroyEntity(index, interacteeEntity);
                         }
+
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-
             }
 
+   
+
+            private void UpdateOocInfo(StatChangeRequest request, GeneralAttr interactorAttr, GeneralAttr interacteeAttr, int index)
+            {
+                var interacteeSeconds = interacteeAttr.BaseTag == BaseTag.Buildings
+                    ? OocConfig.BuildingOocSeconds
+                    : OocConfig.UnitOocSeconds;
+                var interactorSeconds = interactorAttr.BaseTag == BaseTag.Buildings
+                    ? OocConfig.BuildingOocSeconds
+                    : OocConfig.UnitOocSeconds;
+                if (OocTagLookup.HasComponent(request.Interactee))
+                {
+                    ECB.SetComponent(index, request.Interactee, new OocTag
+                    {
+                        Seconds = interacteeSeconds
+                    });
+                }
+                else
+                {
+                    ECB.AddComponent(index, request.Interactee, new OocTag
+                    {
+                        Seconds = interacteeSeconds
+                    });
+                }
+                // Set interactor ooc data
+                if (OocTagLookup.HasComponent(request.Interactor))
+                {
+                    ECB.SetComponent(index, request.Interactor, new OocTag
+                    {
+                        Seconds = interactorSeconds
+                    });
+                }
+                else
+                {
+                    ECB.AddComponent(index, request.Interactor, new OocTag
+                    {
+                        Seconds = interactorSeconds
+                    });
+                }
+            }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float CalStatChangeValue(float requestAmount, in SightSystemConfig config)

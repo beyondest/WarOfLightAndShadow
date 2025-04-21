@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using SparFlame.Database;
+using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
@@ -11,7 +13,7 @@ using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitWindowResourceManager : CustomResourceManager
+    public class UnitWindowResourceManager : TypeResourceManager<UnitType, UnitDataItem, UnitEntityPrefabData>
     {
         
         // Config
@@ -19,26 +21,28 @@ namespace SparFlame.UI.GamePlay
         [SerializeField]
         [CanBeNull] private string unitType2DSpriteSuffix;
  
+        
         // Interface
         public static UnitWindowResourceManager Instance;
-        public readonly Dictionary<UnitType, Sprite> UnitSprites = new();
-        private readonly Dictionary<UnitType, List<UnitInfoSpritePair>> _unitInfoSpritePairs = new();
-        private readonly AddressableResourceGroup _infoWindowResourceGroup = new();
+        public readonly Dictionary<UnitType, Sprite> UnitGeneralTypeSprites = new();
         
-        private void OnEnable()
+        
+        
+
+
+        protected override void OnEnable()
         {
+            base.OnEnable();
             var handle1 = CR.LoadTypeSuffix<UnitType, Sprite>(unitType2DSpriteSuffix,
-                result => CR.OnTypeSuffixLoadComplete(result, UnitSprites));
-            
-            _infoWindowResourceGroup.Add(handle1);
+                result => CR.OnTypeSuffixLoadComplete(result, UnitGeneralTypeSprites));
+            ResourceGroup.Add(handle1);
         }
 
-        
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
-            _infoWindowResourceGroup.Release();
-            UnitSprites.Clear();
+            base.OnDisable();
+            UnitGeneralTypeSprites.Clear();
         }
 
         private void Awake()
@@ -48,17 +52,5 @@ namespace SparFlame.UI.GamePlay
             else
                 Destroy(gameObject);
         }
-
-        public override bool IsResourceLoaded()
-        {
-            return _infoWindowResourceGroup.IsHandleCreated(4)
-                   && _infoWindowResourceGroup.IsDone;
-        }
-
-        private struct UnitInfoSpritePair
-        {
-            
-        }
-      
     }
 }

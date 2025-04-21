@@ -2,27 +2,37 @@
 using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(InputMouseSystem))]
-    public partial struct InputUnitControlSystem : ISystem
+    public partial class InputUnitControlSystem : SystemBase
     {
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
+        private int _commandCounter;
+
+        protected override void OnCreate()
         {
-            state.RequireForUpdate<InputMouseData>();
-            state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<InputUnitControlData>();
+            RequireForUpdate<InputMouseData>();
+            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<InputUnitControlData>();
+            _commandCounter = 0;
         }
 
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        protected override void OnUpdate()
         {
             var customInputActions = InputListener.Instance.GetCustomInputActions();
             var isOverUi = SystemAPI.GetSingleton<InputMouseData>().IsOverUI;
+            if (customInputActions.UnitControl.Command.WasPerformedThisFrame() && !isOverUi)
+            {
+                _commandCounter = 2;
+            }
+            else
+            {
+                _commandCounter = math.clamp(_commandCounter - 1, 0, 2);
+            }
             SystemAPI.SetSingleton(new InputUnitControlData
             {
                 Enabled = customInputActions.UnitControl.enabled,
@@ -33,14 +43,9 @@ namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.I
                 SingleSelect = customInputActions.UnitControl.SingleSelect.WasPerformedThisFrame() && !isOverUi,
                 ChangeFaction = customInputActions.UnitControl.ChangeFaction.WasPerformedThisFrame(),
                 Focus = customInputActions.UnitControl.Focus.ReadValue<float>() > 0,
-                Command = customInputActions.UnitControl.Command.WasPerformedThisFrame() && !isOverUi,
+                Command = _commandCounter > 0,
+                MoveOutSameIdUnits = customInputActions.UnitControl.MoveOutSameIdUnits.ReadValue<float>() >0,
             });
-        }
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-
         }
     }
 }

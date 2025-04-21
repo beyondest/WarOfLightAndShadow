@@ -1,6 +1,5 @@
 ﻿using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.CustomInput;
-using SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;

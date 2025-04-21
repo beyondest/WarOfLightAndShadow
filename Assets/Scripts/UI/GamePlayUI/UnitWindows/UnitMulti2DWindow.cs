@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using Unity.Collections;
@@ -64,7 +65,7 @@ namespace SparFlame.UI.GamePlay
                     var unitShowSlot = SlotComponents[i];
                     var unitInfo = unitInfos[startIdx + i];
                     unitShowSlot.button.image.sprite =
-                        UnitWindowResourceManager.Instance.UnitSprites[unitInfo.UnitType];
+                        UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitInfo.UnitType];
                     unitShowSlot.hpFilled.fillAmount = unitInfo.HpRatio;
                     var tier = (int)unitInfo.Tier - 2;
                     unitShowSlot.tierImage.fillAmount = tier / _maxTierF;

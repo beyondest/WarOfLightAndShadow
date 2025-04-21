@@ -38,6 +38,11 @@ namespace SparFlame.UI.GamePlay
             Show();
         }
 
+        /// <summary>
+        /// Will close all incorrect opened detail windows for target entity
+        /// But WILL NOT OPEN correct detail window, you have to open it manually before calling this methods
+        /// </summary>
+        /// <param name="target"></param>
         public void UpdateCloseUpTarget(Entity target)
         {
             _closeUpTarget = target;
@@ -47,19 +52,16 @@ namespace SparFlame.UI.GamePlay
                 if(!UnitDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     UnitDetailWindow.Instance.Hide();
             }
-
             if (InteractAbilityWindow.Instance.IsOpened())
             {
                 if(!InteractAbilityWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     InteractAbilityWindow.Instance.Hide();
             }
-
             if (BuildingDetailWindow.Instance.IsOpened())
             {
                 if(!BuildingDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     BuildingDetailWindow.Instance.Hide();
             }
-
             if (ResourceDetailWindow.Instance.IsOpened())
             {
                 if(!ResourceDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
@@ -199,7 +201,7 @@ namespace SparFlame.UI.GamePlay
             }
         }
 
-        private void Show()
+        public void Show()
         {
             infoPanel.SetActive(true);
             // Close up window should always open with unit info window and should never be blank
@@ -207,7 +209,7 @@ namespace SparFlame.UI.GamePlay
             CloseUpWindow.Instance.Show();
         }
 
-        private void Hide()
+        public void Hide()
         {
             infoPanel.SetActive(false);
             CloseUpWindow.Instance.Hide();

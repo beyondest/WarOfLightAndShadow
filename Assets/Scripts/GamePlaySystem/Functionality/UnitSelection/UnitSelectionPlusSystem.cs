@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
+using SparFlame.GamePlaySystem.Garrison;
 using Unity.Burst;
 
 namespace SparFlame.GamePlaySystem.UnitSelection
@@ -80,11 +81,19 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             }
 
             // Reduce selection count when they are dead
-            foreach (var (_, entity) in SystemAPI.Query<RefRO<UnitSelectReduceRequest>>().WithEntityAccess())
+            foreach (var (request, entity) in SystemAPI.Query<RefRO<UnitSelectReduceRequest>>().WithEntityAccess())
             {
-                unitSelectionData.ValueRW.CurrentSelectCount -= 1;
+                if (!request.ValueRO.IsDead)
+                {
+                    SelectOne(ref state, ref ecb, ref unitSelectionData, request.ValueRO.SelectedEntity, unitSelectionConfig, false);
+                }
+                else
+                {
+                    unitSelectionData.ValueRW.CurrentSelectCount -= 1;
+                }
                 ecb.DestroyEntity(entity);
             }
+            
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -139,8 +148,8 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             CalculateMinMax(unitSelectionData.ValueRW.SelectionBoxStartPos,
                 unitSelectionData.ValueRW.SelectionBoxEndPos, out float2 min, out float2 max);
 
-            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<InteractableAttr>>()
-                         .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess())
+            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<GeneralAttr>>()
+                         .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess().WithNone<InGarrison>())
             {
                 // Inside selection box
 
@@ -251,7 +260,6 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             {
                 return;
             }
-
             ecb.SetEnabled(linkedEntities[unitSelectionConfig.SelectedIndicatorIndex].Value, isEnable);
         }
 

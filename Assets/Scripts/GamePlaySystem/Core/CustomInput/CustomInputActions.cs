@@ -380,6 +380,15 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MoveOutSameIdUnits"",
+                    ""type"": ""Button"",
+                    ""id"": ""39d8e8c8-184b-4a78-a1ba-575eeaee96b9"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -468,6 +477,17 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Focus"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""37dfc8dc-e5bc-4cc5-9302-ab743c7cd661"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""MoveOutSameIdUnits"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -2059,6 +2079,142 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Conjure"",
+            ""id"": ""65939e12-82f2-4ef8-b029-99e557408f8c"",
+            ""actions"": [
+                {
+                    ""name"": ""FullConjure"",
+                    ""type"": ""Button"",
+                    ""id"": ""cd9f4a71-5fcb-489e-8442-5d26ad1ebec8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ConjureHotKey"",
+                    ""type"": ""Button"",
+                    ""id"": ""eb0eccef-8f8f-4034-b388-2343251410a6"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": ""Press"",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""589eb753-3e74-4505-bf05-e05d642a9ee6"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""FullConjure"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5f666adb-fb23-4155-8031-4f6f125f7945"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""35d42c09-a073-4521-b890-924cba5f47a3"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4990639f-0c34-4f77-b83e-897a6dedc696"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a99a9fe5-8ebc-422e-82bb-fb8e674b188f"",
+                    ""path"": ""<Keyboard>/4"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b7f48a7c-0903-48c3-8123-94c9e901e9ba"",
+                    ""path"": ""<Keyboard>/5"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""01782cb3-2207-48b2-8ee1-0be86f655de7"",
+                    ""path"": ""<Keyboard>/6"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0431d22b-bf15-4329-8744-cd5fd46bdae8"",
+                    ""path"": ""<Keyboard>/7"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f345dc0a-1bd7-46d4-a633-075f0ed8fdf7"",
+                    ""path"": ""<Keyboard>/8"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c70c2746-8e94-4939-bb16-34c9b7966f48"",
+                    ""path"": ""<Keyboard>/9"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ConjureHotKey"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -2143,6 +2299,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
             m_UnitControl_ClassSelect = m_UnitControl.FindAction("ClassSelect", throwIfNotFound: true);
             m_UnitControl_Command = m_UnitControl.FindAction("Command", throwIfNotFound: true);
             m_UnitControl_Focus = m_UnitControl.FindAction("Focus", throwIfNotFound: true);
+            m_UnitControl_MoveOutSameIdUnits = m_UnitControl.FindAction("MoveOutSameIdUnits", throwIfNotFound: true);
             // Construct
             m_Construct = asset.FindActionMap("Construct", throwIfNotFound: true);
             m_Construct_Build = m_Construct.FindAction("Build", throwIfNotFound: true);
@@ -2194,6 +2351,10 @@ namespace SparFlame.GamePlaySystem.CustomInput
             // InfoWindow
             m_InfoWindow = asset.FindActionMap("InfoWindow", throwIfNotFound: true);
             m_InfoWindow_CheckInfo = m_InfoWindow.FindAction("CheckInfo", throwIfNotFound: true);
+            // Conjure
+            m_Conjure = asset.FindActionMap("Conjure", throwIfNotFound: true);
+            m_Conjure_FullConjure = m_Conjure.FindAction("FullConjure", throwIfNotFound: true);
+            m_Conjure_ConjureHotKey = m_Conjure.FindAction("ConjureHotKey", throwIfNotFound: true);
         }
 
         ~@CustomInputActions()
@@ -2206,6 +2367,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
             UnityEngine.Debug.Assert(!m_CameraFlyMode.enabled, "This will cause a leak and performance issues, CustomInputActions.CameraFlyMode.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_ModeSwitch.enabled, "This will cause a leak and performance issues, CustomInputActions.ModeSwitch.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_InfoWindow.enabled, "This will cause a leak and performance issues, CustomInputActions.InfoWindow.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_Conjure.enabled, "This will cause a leak and performance issues, CustomInputActions.Conjure.Disable() has not been called.");
         }
 
         public void Dispose()
@@ -2369,6 +2531,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private readonly InputAction m_UnitControl_ClassSelect;
         private readonly InputAction m_UnitControl_Command;
         private readonly InputAction m_UnitControl_Focus;
+        private readonly InputAction m_UnitControl_MoveOutSameIdUnits;
         public struct UnitControlActions
         {
             private @CustomInputActions m_Wrapper;
@@ -2381,6 +2544,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
             public InputAction @ClassSelect => m_Wrapper.m_UnitControl_ClassSelect;
             public InputAction @Command => m_Wrapper.m_UnitControl_Command;
             public InputAction @Focus => m_Wrapper.m_UnitControl_Focus;
+            public InputAction @MoveOutSameIdUnits => m_Wrapper.m_UnitControl_MoveOutSameIdUnits;
             public InputActionMap Get() { return m_Wrapper.m_UnitControl; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -2414,6 +2578,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @Focus.started += instance.OnFocus;
                 @Focus.performed += instance.OnFocus;
                 @Focus.canceled += instance.OnFocus;
+                @MoveOutSameIdUnits.started += instance.OnMoveOutSameIdUnits;
+                @MoveOutSameIdUnits.performed += instance.OnMoveOutSameIdUnits;
+                @MoveOutSameIdUnits.canceled += instance.OnMoveOutSameIdUnits;
             }
 
             private void UnregisterCallbacks(IUnitControlActions instance)
@@ -2442,6 +2609,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @Focus.started -= instance.OnFocus;
                 @Focus.performed -= instance.OnFocus;
                 @Focus.canceled -= instance.OnFocus;
+                @MoveOutSameIdUnits.started -= instance.OnMoveOutSameIdUnits;
+                @MoveOutSameIdUnits.performed -= instance.OnMoveOutSameIdUnits;
+                @MoveOutSameIdUnits.canceled -= instance.OnMoveOutSameIdUnits;
             }
 
             public void RemoveCallbacks(IUnitControlActions instance)
@@ -2999,6 +3169,60 @@ namespace SparFlame.GamePlaySystem.CustomInput
             }
         }
         public InfoWindowActions @InfoWindow => new InfoWindowActions(this);
+
+        // Conjure
+        private readonly InputActionMap m_Conjure;
+        private List<IConjureActions> m_ConjureActionsCallbackInterfaces = new List<IConjureActions>();
+        private readonly InputAction m_Conjure_FullConjure;
+        private readonly InputAction m_Conjure_ConjureHotKey;
+        public struct ConjureActions
+        {
+            private @CustomInputActions m_Wrapper;
+            public ConjureActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
+            public InputAction @FullConjure => m_Wrapper.m_Conjure_FullConjure;
+            public InputAction @ConjureHotKey => m_Wrapper.m_Conjure_ConjureHotKey;
+            public InputActionMap Get() { return m_Wrapper.m_Conjure; }
+            public void Enable() { Get().Enable(); }
+            public void Disable() { Get().Disable(); }
+            public bool enabled => Get().enabled;
+            public static implicit operator InputActionMap(ConjureActions set) { return set.Get(); }
+            public void AddCallbacks(IConjureActions instance)
+            {
+                if (instance == null || m_Wrapper.m_ConjureActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_ConjureActionsCallbackInterfaces.Add(instance);
+                @FullConjure.started += instance.OnFullConjure;
+                @FullConjure.performed += instance.OnFullConjure;
+                @FullConjure.canceled += instance.OnFullConjure;
+                @ConjureHotKey.started += instance.OnConjureHotKey;
+                @ConjureHotKey.performed += instance.OnConjureHotKey;
+                @ConjureHotKey.canceled += instance.OnConjureHotKey;
+            }
+
+            private void UnregisterCallbacks(IConjureActions instance)
+            {
+                @FullConjure.started -= instance.OnFullConjure;
+                @FullConjure.performed -= instance.OnFullConjure;
+                @FullConjure.canceled -= instance.OnFullConjure;
+                @ConjureHotKey.started -= instance.OnConjureHotKey;
+                @ConjureHotKey.performed -= instance.OnConjureHotKey;
+                @ConjureHotKey.canceled -= instance.OnConjureHotKey;
+            }
+
+            public void RemoveCallbacks(IConjureActions instance)
+            {
+                if (m_Wrapper.m_ConjureActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            public void SetCallbacks(IConjureActions instance)
+            {
+                foreach (var item in m_Wrapper.m_ConjureActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_ConjureActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        public ConjureActions @Conjure => new ConjureActions(this);
         private int m_KeyboardMouseSchemeIndex = -1;
         public InputControlScheme KeyboardMouseScheme
         {
@@ -3064,6 +3288,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
             void OnClassSelect(InputAction.CallbackContext context);
             void OnCommand(InputAction.CallbackContext context);
             void OnFocus(InputAction.CallbackContext context);
+            void OnMoveOutSameIdUnits(InputAction.CallbackContext context);
         }
         public interface IConstructActions
         {
@@ -3121,6 +3346,11 @@ namespace SparFlame.GamePlaySystem.CustomInput
         public interface IInfoWindowActions
         {
             void OnCheckInfo(InputAction.CallbackContext context);
+        }
+        public interface IConjureActions
+        {
+            void OnFullConjure(InputAction.CallbackContext context);
+            void OnConjureHotKey(InputAction.CallbackContext context);
         }
     }
 }

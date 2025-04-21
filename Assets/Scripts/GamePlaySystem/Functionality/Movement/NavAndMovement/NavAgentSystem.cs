@@ -87,10 +87,10 @@ namespace SparFlame.GamePlaySystem.Movement
                 jobHandles[i] = calculatePathJob.Schedule();
             }
 
-            if (entities.Length < _navMeshQueries.Length)
-            {
-                DisposeRedundantNavMeshQueries(_navMeshQueries.Length - _navMeshQueries.Length, in config);
-            }
+            // if (entities.Length < _navMeshQueries.Length)
+            // {
+            //     DisposeRedundantNavMeshQueries(_navMeshQueries.Length - _navMeshQueries.Length, in config);
+            // }
 
             JobHandle.CompleteAll(jobHandles);
             for (var i = 0; i < entities.Length; i++)
@@ -108,7 +108,9 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            DisposeNavMeshQueries();
+            if(_navMeshQueries.IsCreated)
+                DisposeNavMeshQueries();
+
             _navAgentRadius.Dispose();
         }
 
@@ -119,7 +121,7 @@ namespace SparFlame.GamePlaySystem.Movement
             public Entity Entity;
             public EntityCommandBuffer ECB;
             public NavMeshQuery Query;
-            [ReadOnly] public NavAgentComponent NavAgent;
+            public NavAgentComponent NavAgent;
             [ReadOnly] public NativeHashMap<int,float> NavAgentRadius;
             [ReadOnly] public float3 FromPosition;
             [ReadOnly] public float ElapsedTime;
@@ -252,12 +254,10 @@ namespace SparFlame.GamePlaySystem.Movement
 
         private void DisposeNavMeshQueries()
         { 
-            if(!_navMeshQueries.IsCreated)return;
             foreach (var query in _navMeshQueries)
             {
                 query.Dispose();
             }
-
             _navMeshQueries.Dispose();
         }
 

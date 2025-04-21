@@ -1,6 +1,5 @@
 ﻿using Unity.Collections;
 using Unity.Entities;
-using Unity.Physics.Systems;
 
 namespace SparFlame.GamePlaySystem.General
 {
@@ -17,7 +16,25 @@ namespace SparFlame.GamePlaySystem.General
         {
             var pauseQuery = SystemAPI.QueryBuilder().WithAll<PauseRequest>().Build();
             var resumeQuery = SystemAPI.QueryBuilder().WithAll<ResumeRequest>().Build();
-            
+            // if (!SystemAPI.HasSingleton<AllyCoreCrystalTag>())
+            // {
+            //     var entity = EntityManager.CreateEntity(typeof(GameOverReqeust));
+            //     EntityManager.SetComponentData(entity, new GameOverReqeust
+            //     {
+            //         Winner =  FactionTag.Enemy
+            //     });
+            //     return;
+            // }
+            //
+            // if (!SystemAPI.HasSingleton<EnemyCoreCrystalTag>())
+            // {
+            //     var entity = EntityManager.CreateEntity(typeof(GameOverReqeust));
+            //     EntityManager.SetComponentData(entity, new GameOverReqeust
+            //     {
+            //         Winner = FactionTag.Ally
+            //     });
+            //     return;
+            // }
             if ( pauseQuery.CalculateEntityCount() != 0)
             {
                 var pauseEntities = pauseQuery.ToEntityArray(Allocator.Temp);

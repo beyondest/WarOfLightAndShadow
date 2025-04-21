@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-namespace SparFlame.Utils.Utils
+namespace SparFlame.Utils
 {
     public static class CustomMathMethods
     {
@@ -39,6 +40,29 @@ namespace SparFlame.Utils.Utils
             var upper = lower + l;
 
             return (lower, upper);
+        }
+        
+        
+        public static List<TGet> GetChildrenFromMatching<TGet, TItems>(
+            List<TItems> sourceList,
+            Func<TItems, bool> condition,
+            Func<TItems, TGet> childSelector)
+        {
+            List<TGet> result = new List<TGet>();
+
+            foreach (var item in sourceList)
+            {
+                if (condition(item))
+                {
+                    var childrenComponents = childSelector(item);
+                    if (childrenComponents != null)
+                    {
+                        result.Add(childrenComponents); // 保留顺序
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

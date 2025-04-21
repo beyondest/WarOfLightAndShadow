@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SparFlame.Database;
 using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
@@ -35,15 +36,15 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private Image darkExpFilled;
         [SerializeField] private Image darkHpFilled;
         [SerializeField] private Image neutralHpFilled;
-        
-        
+
+
         [SerializeField] private TMP_Text statValueText;
         [SerializeField] private TMP_Text expValueText;
-        [SerializeField] private TMP_Text statLabelText; 
+        [SerializeField] private TMP_Text statLabelText;
         [SerializeField] private TMP_Text closeUpTargetName;
 
-        [SerializeField] private List<TierImagePair> tierImagePairs;
-
+        // [SerializeField] private List<TierImagePair> tierImagePairs;
+        [SerializeField] private Image tierIcon;
 
         [SerializeField] private Vector3 camBias;
 
@@ -56,101 +57,44 @@ namespace SparFlame.UI.GamePlay
         {
             base.Show(pos);
             closeUpCamera.enabled = true;
-            if (_closeUpTarget != Entity.Null)
-                SetLayerRecursively(_closeUpTarget, _closeUpLayerIndex);
+            if (_targetEntity != Entity.Null)
+                SetLayerRecursively(_targetEntity, _closeUpLayerIndex);
         }
 
         public override void Hide()
         {
             base.Hide();
             closeUpCamera.enabled = false;
-            SetLayerRecursively(_closeUpTarget, _oriLayer);
+            SetLayerRecursively(_targetEntity, _oriLayer);
             lightExpObj.SetActive(false);
             darkExpObj.SetActive(false);
             darkHpObj.SetActive(false);
             lightHpObj.SetActive(false);
             neutralHpObj.SetActive(false);
-            for (var i = 0; i < tierImagePairs.Count; i++)
-            {
-                tierImagePairs[i].image.enabled = false;
-            }
+            tierIcon.enabled = false;
         }
 
 
         public bool TrySwitchTarget(Entity target)
         {
-            if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return false;
+            if (!BasicResourceManager.Instance.IsResourceLoaded()) return false;
             // reset the last target layer
-            SetLayerRecursively(_closeUpTarget, _oriLayer);
+            SetLayerRecursively(_targetEntity, _oriLayer);
 
-            if (!_em.HasComponent<InteractableAttr>(target)) return false;
-            var attr = _em.GetComponentData<InteractableAttr>(target);
+            if (!_em.HasComponent<GeneralAttr>(target)) return false;
             _targetHasExp = _em.HasComponent<ExpData>(target);
-            _closeUpTargetColliderSize = attr.BoxColliderSize;
-            _closeUpTarget = target;
-
+            _targetEntity = target;
             // set target layer to closeup camera cull layer so that only this target is in view
-            _oriLayer = SetLayerRecursively(_closeUpTarget, _closeUpLayerIndex);
-
+            _oriLayer = SetLayerRecursively(_targetEntity, _closeUpLayerIndex);
             // Update close up window static value
-            closeUpTargetName.text = attr.GameplayName.ToString();
-            switch (attr.FactionTag)
-            {
-                case FactionTag.Ally:
-                    lightHpObj.SetActive(true);
-                    darkHpObj.SetActive(false);
-                    lightExpObj.SetActive(_targetHasExp);
-                    darkExpObj.SetActive(false);
-                    neutralHpObj.SetActive(false);
-                    _statFilled = lightHpFilled;
-                    _expFilled = lightExpFilled;
-                    statLabelText.text = "Hp";
-                    for (var i = 0; i < tierImagePairs.Count; i++)
-                    {
-                        tierImagePairs[i].image.enabled = i == (int)attr.Tier - 3;
-                        tierImagePairs[i].image.color = Color.white;
-                    }
-                    break;
-                case FactionTag.Enemy:
-                    lightHpObj.SetActive(false);
-                    darkHpObj.SetActive(true);
-                    lightExpObj.SetActive(false);
-                    darkExpObj.SetActive(_targetHasExp);
-                    neutralHpObj.SetActive(false);
-                    _statFilled = darkHpFilled;
-                    _expFilled = darkExpFilled;
-                    statLabelText.text = "Hp";
-                    for (var i = 0; i < tierImagePairs.Count; i++)
-                    {
-                        tierImagePairs[i].image.enabled = i == (int)attr.Tier - 3;
-                        tierImagePairs[i].image.color = Color.black;
-                    }
-                    break;
-                case FactionTag.Neutral:
-                    lightExpObj.SetActive(false);
-                    darkExpObj.SetActive(false);
-                    darkHpObj.SetActive(false);
-                    lightHpObj.SetActive(false);
-                    neutralHpObj.SetActive(true);
-                    _statFilled = neutralHpFilled;
-                    statLabelText.text = "Resource";
-                    for (var i = 0; i < tierImagePairs.Count; i++)
-                    {
-                        tierImagePairs[i].image.enabled = i == (int)attr.Tier - 3;
-                        tierImagePairs[i].image.color = Color.yellow;
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            
+            UpdateStaticData();
             return true;
         }
 
+
         public bool HasTarget()
         {
-            return _closeUpTarget != Entity.Null;
+            return _targetEntity != Entity.Null;
         }
 
 
@@ -165,7 +109,7 @@ namespace SparFlame.UI.GamePlay
         private Vector3 _cameraBias;
         private Vector3 _closeUpTargetColliderSize = Vector3.zero;
         private bool _targetHasExp;
-        private Entity _closeUpTarget = Entity.Null;
+        private Entity _targetEntity = Entity.Null;
         private AsyncOperationHandle<GameObject> _buffSlotHandle;
 
 
@@ -210,35 +154,33 @@ namespace SparFlame.UI.GamePlay
             _cameraBias = camBias;
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
-            if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
-            if (_closeUpTarget == Entity.Null) return;
-            if (!_em.HasComponent<StatData>(_closeUpTarget))
+            if (!BasicResourceManager.Instance.IsResourceLoaded()) return;
+            if (_targetEntity == Entity.Null) return;
+            if (!_em.HasComponent<StatData>(_targetEntity))
             {
-                _closeUpTarget = Entity.Null;
+                _targetEntity = Entity.Null;
                 return;
             }
 
-            UpdateCloseUpShow();
+            UpdateDynamicData();
         }
 
-        private void UpdateCloseUpShow()
+        private void UpdateDynamicData()
         {
-            
-            
             // Update Hp
-            var statData = _em.GetComponentData<StatData>(_closeUpTarget);
+            var statData = _em.GetComponentData<StatData>(_targetEntity);
             _statFilled.fillAmount = (float)statData.CurValue / statData.MaxValue;
             statValueText.text = statData.CurValue + " / " + statData.MaxValue;
             // Update Exp
             if (_targetHasExp)
             {
-                var expData = _em.GetComponentData<ExpData>(_closeUpTarget);
+                var expData = _em.GetComponentData<ExpData>(_targetEntity);
                 _expFilled.fillAmount = (float)expData.CurValue / expData.MaxValue;
                 expValueText.text = expData.CurValue + "/" + expData.MaxValue;
             }
 
             // Update camera close up show
-            var tarTransform = _em.GetComponentData<LocalTransform>(_closeUpTarget);
+            var tarTransform = _em.GetComponentData<LocalTransform>(_targetEntity);
             var x = _closeUpTargetColliderSize.x * 0.5f;
             var y = _closeUpTargetColliderSize.y;
             var z = _closeUpTargetColliderSize.z * 0.5f;
@@ -246,9 +188,9 @@ namespace SparFlame.UI.GamePlay
             closeUpCamera.transform.LookAt(tarTransform.Position + new float3(0, 0.5f * y, 0));
 
             // Update BuffData
-            if (_em.HasComponent<BuffData>(_closeUpTarget))
+            if (_em.HasComponent<BuffData>(_targetEntity))
             {
-                var buffData = _em.GetBuffer<BuffData>(_closeUpTarget);
+                var buffData = _em.GetBuffer<BuffData>(_targetEntity);
                 var count = Mathf.Min(Slots.Count, buffData.Length);
                 for (var i = 0; i < Slots.Count; i++)
                 {
@@ -256,7 +198,7 @@ namespace SparFlame.UI.GamePlay
                     {
                         Slots[i].SetActive(true);
                         var buff = SlotComponents[i];
-                        buff.button.image.sprite = BasicWindowResourceManager.Instance.BuffSprites[buffData[i].Type];
+                        buff.button.image.sprite = BasicResourceManager.Instance.BuffSprites[buffData[i].Type];
                     }
                     else
                     {
@@ -266,6 +208,71 @@ namespace SparFlame.UI.GamePlay
             }
         }
 
+
+        private void UpdateStaticData()
+        {
+            var attr = _em.GetComponentData<GeneralAttr>(_targetEntity);
+            _closeUpTargetColliderSize = attr.BoxColliderSize;
+            closeUpTargetName.text = attr.BaseTag switch
+            {
+                BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(attr.ID).gameplayName,
+                BaseTag.Buildings => DatabaseManager.BuildingDatabaseSo.GetItemById(attr.ID).gameplayName,
+                BaseTag.Resources => DatabaseManager.ResourceDatabaseSo.GetItemById(attr.ID).gameplayName,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            if (_em.HasComponent<ExpData>(_targetEntity))
+            {
+                var tier = _em.GetComponentData<ExpData>(_targetEntity).CurTier;
+                tierIcon.sprite = BasicResourceManager.Instance.TierSprites[tier];
+            }
+            else
+            {
+                tierIcon.enabled = false;
+            }
+            switch (attr.FactionTag)
+            {
+                case FactionTag.Ally:
+                    lightHpObj.SetActive(true);
+                    darkHpObj.SetActive(false);
+                    lightExpObj.SetActive(_targetHasExp);
+                    darkExpObj.SetActive(false);
+                    neutralHpObj.SetActive(false);
+                    _statFilled = lightHpFilled;
+                    _expFilled = lightExpFilled;
+                    statLabelText.text = "Hp";
+                    statValueText.enabled = true;
+                    tierIcon.color = Color.white;
+
+                    break;
+                case FactionTag.Enemy:
+                    lightHpObj.SetActive(false);
+                    darkHpObj.SetActive(true);
+                    lightExpObj.SetActive(false);
+                    darkExpObj.SetActive(_targetHasExp);
+                    neutralHpObj.SetActive(false);
+                    _statFilled = darkHpFilled;
+                    _expFilled = darkExpFilled;
+                    statLabelText.text = "Hp";
+                    statValueText.enabled = true;
+                    tierIcon.color = Color.black;
+                    break;
+                case FactionTag.Neutral:
+                    lightExpObj.SetActive(false);
+                    darkExpObj.SetActive(false);
+                    darkHpObj.SetActive(false);
+                    lightHpObj.SetActive(false);
+                    neutralHpObj.SetActive(true);
+
+                    _expFilled = lightExpFilled;
+                    _statFilled = neutralHpFilled;
+                    statLabelText.text = "";
+                    statValueText.enabled = false;
+                    tierIcon.color = Color.yellow;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
 
         /// <summary>
         /// Set all child entity in parent entity to specified layer  
@@ -297,7 +304,7 @@ namespace SparFlame.UI.GamePlay
 
             return oriLayer;
         }
-        
+
         [Serializable]
         public struct TierImagePair
         {

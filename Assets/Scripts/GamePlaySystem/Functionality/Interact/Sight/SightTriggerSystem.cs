@@ -13,7 +13,7 @@ namespace SparFlame.GamePlaySystem.Interact
     [UpdateAfter(typeof(StatefulTriggerEventBufferSystem))]
     public partial struct SightTriggerSystem : ISystem
     {
-        private ComponentLookup<InteractPriority> _priorityLookup;
+        private ComponentLookup<SightPriority> _priorityLookup;
         private BufferLookup<InsightTarget> _targetLookup;
         
         [BurstCompile]
@@ -22,8 +22,8 @@ namespace SparFlame.GamePlaySystem.Interact
             state.RequireForUpdate<SimulationSingleton>();
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<SightSystemConfig>();
-            // _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
-            _priorityLookup = state.GetComponentLookup<InteractPriority>(true);
+            // _interactableLookup = state.GetComponentLookup<GeneralAttr>(true);
+            _priorityLookup = state.GetComponentLookup<SightPriority>(true);
             _targetLookup = state.GetBufferLookup<InsightTarget>();
         }
 
@@ -46,7 +46,7 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         public partial struct SightTriggerJob : IJobEntity
         {
-            // [ReadOnly] public ComponentLookup<InteractPriority> PriorityLookup;
+            // [ReadOnly] public ComponentLookup<SightPriority> PriorityLookup;
             [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetLookup;
             
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in SightData data,

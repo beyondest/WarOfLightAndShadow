@@ -1,32 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using Unity.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Entities;
 
 namespace SparFlame.GamePlaySystem.Building
 {
     public class BuildingSystemAuthoring : MonoBehaviour
     {
-        public float buildingGarrisonRadius = 1f;
-        private class BuildingSystemAuthoringBaker : Unity.Entities.Baker<BuildingSystemAuthoring>
+        private class BuildingSystemAuthoringBaker : Baker<BuildingSystemAuthoring>
         {
             public override void Bake(BuildingSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new BuildingConfig
-                {
-                    BuildingGarrisonRadiusSq = authoring.buildingGarrisonRadius * authoring.buildingGarrisonRadius,
-                });
+                AddComponent(entity, new BuildingSystemConfig());
             }
         }
     }
 
 
-    
-    public struct BuildingConfig : IComponentData
+
+    public struct BuildingSystemConfig : IComponentData
     {
-        public float BuildingGarrisonRadiusSq;
     }
 
     public enum BuildingType 
@@ -37,43 +29,47 @@ namespace SparFlame.GamePlaySystem.Building
         Dwellings = 3,
         Ornaments = 4,
     }
-
-    public enum FortificationType
-    {
-        Wall = 0,
-        AttackableTower = 1,
-        HealableTower = 2,
-        BuffTower = 3,
-        DebuffTower = 4
-    }
-
-    public enum GeneratorType
-    {
-        EssenceConvertor = 0,
-        EssenceProducer = 1
-    }
-
+    
     public enum ConjuringShrineType
     {
-        Shield = 0,
-        Ranged = 1,
-        Magic = 2,
-        Cavalry = 3,
-        Harvest = 4
+        AegisShrine = 0,    // Stone Sigil（石之符印）, Ward Circle（守护法阵）, Bulwark Core（壁垒核心）
+        StormSpire = 1,     // Wind Glyph（风之印记）, Arrow Rift（箭矢裂隙）, Tempest Spire（风暴尖塔）
+        EldritchSeal = 2,   // Mana Ring（法力之环）, Arcane Core（奥术核心）, Eldritch Pillar（神秘石柱）
+        PhantomGate = 3,    // Wild Rift（野性裂隙）, Charge Beacon（充能灯塔）, Thunder Gate（雷霆之门）
+        TerraNexus = 4      // Rune Pad（符文阵盘）, Soul Anchor（灵魂锚点）, Golem Crucible（魔像熔炉）
     }
 
     public enum DwellingType
     {
-        Lightness = 0,
-        Darkness = 1,
+        CommonDwelling = 0, // Hut（小屋）, Lodge（山屋）, Hall（大厅）
+        FlameDwelling = 1,  // Hearth（炉台）, Crucible（熔炉）, Pyrelord Hall（火主大厅）
+        MysticDwelling = 2, // Chapel（礼拜堂）, Sanctum（密室）, Sanctuary（圣域）
     }
+
+    
+    public enum FortificationType
+    {
+        Wall = 0,          // Fence（木栅栏）, Rampart（防坡墙）, Bastion（棱堡）
+        Tower = 1,         // Watchpost（瞭望哨）, Guard Tower（守卫塔）, Keep（主堡楼）
+    }
+
+
+    public enum GeneratorType
+    {
+        Converter = 0,     // Seedling Converter（幼芽转化器）, Core Converter（核心转化器）, Arcane Forge（奥术熔炉）
+        BloomSpire = 1,    // Bloom Pod（花蕾囊）, Bloom Spire（绽放尖塔）, Bloom Throne（盛放王座）
+    }
+
+
+
 
     public enum OrnamentType
     {
-        PureOrnament = 0,
-        BuffOrnament = 1,
-        DebuffOrnament = 2,
+        Crystal = 0,       // Shard（水晶碎片）, Cluster（水晶簇）, Monolith（晶体巨柱）
+        StorableOrnament = 1,      // Crate（储物箱）, Depot（储存站）, Warehouse（仓库）
+        UnStorableOrnament = 2,    // Relic（遗物）, Totem（图腾柱）, Monument（纪念碑）
     }
+
     
     public enum AreaType
     {

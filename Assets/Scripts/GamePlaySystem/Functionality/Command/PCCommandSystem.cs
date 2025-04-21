@@ -27,7 +27,7 @@ namespace SparFlame.GamePlaySystem.Command
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-
+        
         }
     }
 }

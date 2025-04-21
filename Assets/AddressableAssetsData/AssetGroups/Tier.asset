@@ -15,8 +15,18 @@ MonoBehaviour:
   m_GroupName: Tier
   m_GUID: b0388ffa1abfc3446ac2cd0498fe4f8b
   m_SerializeEntries:
-  - m_GUID: 05f9b4f652d4a8e45a34745e7161b36c
-    m_Address: TierNone
+  - m_GUID: 1522a0b713999b349b13953559f4e741
+    m_Address: Tier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 71b25b466c46a864f9238aff9bc81226
+    m_Address: Tier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eb1acf793b9e13a47b46fbb4e8064fd8
+    m_Address: Tier1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

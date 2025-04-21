@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using SparFlame.BootStrapper;
+using UnityEngine;
 using UnityEngine.UI;
 using Unity.Entities;
 using SparFlame.GamePlaySystem.General;
@@ -61,7 +62,7 @@ namespace SparFlame.UI.GamePlay
 
         private void Update()
         {
-            if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
+            if (!BasicResourceManager.Instance.IsResourceLoaded()) return;
             if (!HandleFocus()) return;
 
             if (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame)
@@ -75,7 +76,7 @@ namespace SparFlame.UI.GamePlay
             }
 
             // When game paused, do not check moving cursor
-            if (_notPauseTag.IsEmpty)
+            if (_notPauseTag.IsEmpty || !GameController.Instance.IsGameStarted())
             {
                 return;
             }
@@ -93,7 +94,7 @@ namespace SparFlame.UI.GamePlay
             {
                 Cursor.visible = false;
                 cursorLeftImage.enabled = true;
-                cursorLeftImage.sprite = BasicWindowResourceManager.Instance.CursorSprites[data.LeftCursorType];
+                cursorLeftImage.sprite = BasicResourceManager.Instance.CursorSprites[data.LeftCursorType];
             }
             else
             {

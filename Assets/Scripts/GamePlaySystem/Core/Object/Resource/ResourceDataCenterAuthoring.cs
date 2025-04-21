@@ -32,6 +32,7 @@ namespace SparFlame.GamePlaySystem.Resource
                         Amount = pair.amount
                     });
                 }
+                
                 switch (authoring.factionTag)
                 {
                     case FactionTag.Neutral:
@@ -39,9 +40,11 @@ namespace SparFlame.GamePlaySystem.Resource
                         break;
                     case FactionTag.Ally:
                         AddComponent<AllyResourceDataTag>(entity);
+                        AddComponent<PopulationOccupiedData>(entity);
                         break;
                     case FactionTag.Enemy:
                         AddComponent<EnemyResourceDataTag>(entity);
+                        AddComponent<PopulationOccupiedData>(entity);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -60,6 +63,11 @@ namespace SparFlame.GamePlaySystem.Resource
     {
         public ResourceType ResourceType;
         public int Amount;
+    }
+
+    public struct PopulationOccupiedData : IComponentData
+    {
+        public int Value;
     }
 
     public struct AllyResourceDataTag : IComponentData

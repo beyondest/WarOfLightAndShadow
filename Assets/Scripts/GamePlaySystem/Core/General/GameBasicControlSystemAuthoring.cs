@@ -36,4 +36,9 @@ namespace SparFlame.GamePlaySystem.General
     {
         
     }
+
+    public struct GameOverReqeust : IComponentData
+    {
+        public FactionTag Winner;
+    }
 }

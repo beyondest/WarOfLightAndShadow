@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class SubsceneReimport : EditorWindow
 {
-    [MenuItem("Tools/Fix SubScene Import")]
+    [MenuItem("Tools/Custom/Fix SubScene Import")]
     public static void FixSubScene()
     {
         Debug.Log("Forcing SubScene reimport...");

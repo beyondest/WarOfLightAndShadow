@@ -9,7 +9,7 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct InteractUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsTargetValid(in InteractableAttr targetInteractAttr, in FactionTag selfFactionTag, in StatData targetStatData,
+        public static bool IsTargetValid(in GeneralAttr targetgeneralAttr, in FactionTag selfFactionTag, in StatData targetStatData,
             bool canHeal, bool canHarvest,bool resourceAvailable)
         {
             // Target is dead or not valid
@@ -18,13 +18,13 @@ namespace SparFlame.GamePlaySystem.Interact
                 return false;
             }
             // Healing state but target stat is already full. If it is in healing state, target should be ally unit, this logic is determined by Auto Choose System
-            if (targetInteractAttr.FactionTag == selfFactionTag)
+            if (targetgeneralAttr.FactionTag == selfFactionTag)
             {
                 if (!canHeal) return false;
                 return targetStatData.CurValue < targetStatData.MaxValue;
             }
             // Harvest target
-            if (targetInteractAttr.BaseTag == BaseTag.Resources)
+            if (targetgeneralAttr.BaseTag == BaseTag.Resources)
             {
                 return canHarvest && resourceAvailable;
             }

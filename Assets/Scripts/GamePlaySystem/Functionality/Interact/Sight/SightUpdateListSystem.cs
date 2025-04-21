@@ -12,24 +12,24 @@ namespace SparFlame.GamePlaySystem.Interact
     [BurstCompile]
     public partial struct SightUpdateListSystem : ISystem
     {
-        private ComponentLookup<InteractableAttr> _interactableLookup;
+        private ComponentLookup<GeneralAttr> _interactableLookup;
         private ComponentLookup<StatData> _statDataLookup;
         private ComponentLookup<HealStateTag> _healLookup;
         private ComponentLookup<HarvestStateTag> _harvestLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
-        private ComponentLookup<InteractPriority> _priorityLookup;
+        private ComponentLookup<SightPriority> _priorityLookup;
         private ComponentLookup<RegeneratingTag> _resourceAttrLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<SightSystemConfig>();
-            _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
+            _interactableLookup = state.GetComponentLookup<GeneralAttr>(true);
             _statDataLookup = state.GetComponentLookup<StatData>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _healLookup = state.GetComponentLookup<HealStateTag>(true);
             _harvestLookup = state.GetComponentLookup<HarvestStateTag>(true);
-            _priorityLookup = state.GetComponentLookup<InteractPriority>(true);
+            _priorityLookup = state.GetComponentLookup<SightPriority>(true);
             _resourceAttrLookup = state.GetComponentLookup<RegeneratingTag>(true);
         }
 
@@ -61,8 +61,8 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         private partial struct UpdateTargetListJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<InteractPriority> PriorityLookup;
-            [ReadOnly] public ComponentLookup<InteractableAttr> InteractableAttrLookup;
+            [ReadOnly] public ComponentLookup<SightPriority> PriorityLookup;
+            [ReadOnly] public ComponentLookup<GeneralAttr> InteractableAttrLookup;
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
@@ -83,9 +83,9 @@ namespace SparFlame.GamePlaySystem.Interact
                     var canHeal = HealLookup.HasComponent(selfEntity);
                    
                     // Remove invalid target
-                    if (!InteractableAttrLookup.TryGetComponent(insightTarget.Entity, out var targetInteractAttr)
+                    if (!InteractableAttrLookup.TryGetComponent(insightTarget.Entity, out var targetgeneralAttr)
                         ||!StatDataLookup.TryGetComponent(insightTarget.Entity, out var targetStatData)
-                        ||!InteractUtils.IsTargetValid(in targetInteractAttr,in selfFaction,in targetStatData,canHeal ,
+                        ||!InteractUtils.IsTargetValid(in targetgeneralAttr,in selfFaction,in targetStatData,canHeal ,
                            canHarvest, !RegeneratingTagLookup.HasComponent(target) ))
                     {
                         targets.RemoveAt(i);
@@ -94,13 +94,13 @@ namespace SparFlame.GamePlaySystem.Interact
                     // Update InteractOverride, which used for healer and farmer
                     if ((canHarvest || canHeal) && insightTarget.InteractOverride == 0f )
                     {
-                        if (targetInteractAttr.BaseTag == BaseTag.Resources)
+                        if (targetgeneralAttr.BaseTag == BaseTag.Resources)
                         {   // Harvest
                             insightTarget.InteractOverride = Config.HarvestAboveAttack;
                         }
                         else
                         {   // Heal
-                            if (targetInteractAttr.FactionTag == selfFaction)
+                            if (targetgeneralAttr.FactionTag == selfFaction)
                             {
                                 insightTarget.InteractOverride = Config.HealAboveAttack;
                             }

@@ -25,7 +25,7 @@ namespace SparFlame.GamePlaySystem.State
 
         private ComponentLookup<StatData> _stat;
         private ComponentLookup<LocalTransform> _localTransform;
-        private ComponentLookup<InteractableAttr> _interactable;
+        private ComponentLookup<GeneralAttr> _interactable;
         private ComponentLookup<MovableData> _movable;
         private ComponentLookup<BasicStateData> _basicState;
         private ComponentLookup<HealStateTag> _healState;
@@ -55,7 +55,7 @@ namespace SparFlame.GamePlaySystem.State
 
 
             _stat = state.GetComponentLookup<StatData>(true);
-            _interactable = state.GetComponentLookup<InteractableAttr>(true);
+            _interactable = state.GetComponentLookup<GeneralAttr>(true);
             _insightTarget = state.GetBufferLookup<InsightTarget>(true);
             _healState = state.GetComponentLookup<HealStateTag>(true);
             _harvestState = state.GetComponentLookup<HarvestStateTag>(true);
@@ -171,7 +171,7 @@ namespace SparFlame.GamePlaySystem.State
             public NativeArray<Entity> Entities;
 
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
-            [ReadOnly] public ComponentLookup<InteractableAttr> InteractableLookup;
+            [ReadOnly] public ComponentLookup<GeneralAttr> InteractableLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
             [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
@@ -201,9 +201,9 @@ namespace SparFlame.GamePlaySystem.State
 
                 // Pre Check 
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
-                if (selfStateData.CurState != UnitState.Attacking
-                    && selfStateData.TargetState != UnitState.Healing
-                    && selfStateData.TargetState != UnitState.Harvesting) return;
+                if (selfStateData.CurState != InteractState.Attacking
+                    && selfStateData.TargetState != InteractState.Healing
+                    && selfStateData.TargetState != InteractState.Harvesting) return;
 
                 if (!InsightTarget.TryGetBuffer(entity, out var targetList)) return; // This should never return
 
@@ -213,7 +213,7 @@ namespace SparFlame.GamePlaySystem.State
                 This may happen due to truly switch state always happen in te end of frame(ECB Playback) .
                 Fake Interact State , next frame will turn to another state*/
                 bool isTargetValid;
-                if (!InteractableLookup.TryGetComponent(selfStateData.TargetEntity, out var targetInteractAttr)
+                if (!InteractableLookup.TryGetComponent(selfStateData.TargetEntity, out var targetgeneralAttr)
                     || !StatDataLookup.TryGetComponent(selfStateData.TargetEntity, out var targetStat))
                 {
                     selfStateData.TargetEntity = Entity.Null;
@@ -221,7 +221,7 @@ namespace SparFlame.GamePlaySystem.State
                 }
                 else
                 {
-                    isTargetValid = InteractUtils.IsTargetValid(in targetInteractAttr, in selfFactionTag,
+                    isTargetValid = InteractUtils.IsTargetValid(in targetgeneralAttr, in selfFactionTag,
                         in targetStat, HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity),
                         !RegeneratingTagLookup.HasComponent(selfStateData.TargetEntity));
                 }
@@ -233,8 +233,7 @@ namespace SparFlame.GamePlaySystem.State
                     // No enemy around , turn to idle
                     if (targetList.IsEmpty)
                     {
-                        selfStateData.TargetEntity = Entity.Null;
-                        selfStateData.TargetState = UnitState.Idle;
+                        selfStateData.TargetState = InteractState.Idle;
                     }
                     // Target insight, choose the highest value target
                     else
@@ -268,7 +267,7 @@ namespace SparFlame.GamePlaySystem.State
                 // Check if target in range
                 /*As long as target is valid, movable unit will never change target in interact state.
                  The target can only be changed while moving*/
-                if (!IsTargetInRange(ability.RangeSq, in curPos, in targetPos, in targetInteractAttr))
+                if (!IsTargetInRange(ability.RangeSq, in curPos, in targetPos, in targetgeneralAttr))
                 {
                     // Interacter is movable
                     if (MovableLookup.HasComponent(entity))
@@ -282,8 +281,7 @@ namespace SparFlame.GamePlaySystem.State
                     if (targetList.IsEmpty)
                     {
                         // No enemy around, turn to idle
-                        selfStateData.TargetState = UnitState.Idle;
-                        selfStateData.TargetEntity = Entity.Null;
+                        selfStateData.TargetState = InteractState.Idle;
                         StateUtils.SwitchState(ref selfStateData, ECB, entity, index);
                     }
                     else
@@ -366,13 +364,13 @@ namespace SparFlame.GamePlaySystem.State
                     MovementCommandType.Interactive,
                     ability.RangeSq
                 );
-                stateData.TargetState = UnitState.Moving;
+                stateData.TargetState = InteractState.Moving;
                 StateUtils.SwitchState(ref stateData, ECB, entity, index);
                 stateData.TargetState = ability.InteractType switch
                 {
-                    InteractType.Attack => UnitState.Attacking,
-                    InteractType.Heal => UnitState.Healing,
-                    InteractType.Harvest => UnitState.Harvesting,
+                    InteractType.Attack => InteractState.Attacking,
+                    InteractType.Heal => InteractState.Healing,
+                    InteractType.Harvest => InteractState.Harvesting,
                     _ => throw new ArgumentOutOfRangeException()
                 };
             }
@@ -380,12 +378,12 @@ namespace SparFlame.GamePlaySystem.State
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool IsTargetInRange(float rangeSq, in float3 curPos, in float3 targetPos,
-                in InteractableAttr targetInteractAttr)
+                in GeneralAttr targetgeneralAttr)
             {
                 var curPos2 = new float2(curPos.x, curPos.z);
                 var targetPos2 = new float2(targetPos.x, targetPos.z);
-                var targetColliderSizeXz = new float2(targetInteractAttr.BoxColliderSize.x,
-                    targetInteractAttr.BoxColliderSize.z);
+                var targetColliderSizeXz = new float2(targetgeneralAttr.BoxColliderSize.x,
+                    targetgeneralAttr.BoxColliderSize.z);
                 var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
                 return disSqPointToRect < rangeSq;
             }

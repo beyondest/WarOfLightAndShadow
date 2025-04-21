@@ -1,5 +1,6 @@
 ﻿using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.Movement;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -13,13 +14,13 @@ namespace SparFlame.GamePlaySystem.State
     [BurstCompile]
     public partial struct IdleStateMachine : ISystem
     {
-        private ComponentLookup<InteractableAttr> _interactableAttrLookup;
+        private ComponentLookup<GeneralAttr> _interactableAttrLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<NotPauseTag>();
-            _interactableAttrLookup = state.GetComponentLookup<InteractableAttr>();
+            _interactableAttrLookup = state.GetComponentLookup<GeneralAttr>();
         }
 
         [BurstCompile]
@@ -30,7 +31,7 @@ namespace SparFlame.GamePlaySystem.State
             new IdleStateJob
             {
                 ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                InteractableAttrLookup = _interactableAttrLookup
+                GeneralAttrLookup = _interactableAttrLookup
             }.ScheduleParallel();
         }
 
@@ -45,15 +46,15 @@ namespace SparFlame.GamePlaySystem.State
         public partial struct IdleStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<InteractableAttr> InteractableAttrLookup;
+            [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookup;
             
-            private void Execute([ChunkIndexInQuery] int index,ref BasicStateData stateData,in DynamicBuffer<InsightTarget> targets, Entity entity)
+            private void Execute([ChunkIndexInQuery] int index,ref BasicStateData stateData, in DynamicBuffer<InsightTarget> targets, Entity entity)
             {
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
-                if(stateData.CurState != UnitState.Idle)return;
+                if(stateData.CurState != InteractState.Idle )return;
                 
                 stateData.TargetEntity = Entity.Null;
-                stateData.TargetState = UnitState.Idle;
+                stateData.TargetState = InteractState.Idle;
                 stateData.Focus = false;
                 
                 CheckIfHomeUnderAttack();
@@ -61,15 +62,15 @@ namespace SparFlame.GamePlaySystem.State
                 
                 // TODO : This target is not exist ???
                 stateData.TargetEntity = InteractUtils.ChooseTarget(targets);
-                var targetInteractAttr = InteractableAttrLookup[stateData.TargetEntity];
-                var selfInteractAttr = InteractableAttrLookup[entity];
+                var targetGeneralAttr = GeneralAttrLookup[stateData.TargetEntity];
+                var selfGeneralAttr = GeneralAttrLookup[entity];
                 
-                if (selfInteractAttr.FactionTag == targetInteractAttr.FactionTag)
-                    stateData.TargetState = UnitState.Healing;
-                if(targetInteractAttr.BaseTag == BaseTag.Resources)
-                    stateData.TargetState = UnitState.Harvesting;
-                if(selfInteractAttr.FactionTag == ~targetInteractAttr.FactionTag)
-                    stateData.TargetState = UnitState.Attacking;
+                if (selfGeneralAttr.FactionTag == targetGeneralAttr.FactionTag)
+                    stateData.TargetState = InteractState.Healing;
+                if(targetGeneralAttr.BaseTag == BaseTag.Resources)
+                    stateData.TargetState = InteractState.Harvesting;
+                if(selfGeneralAttr.FactionTag == ~targetGeneralAttr.FactionTag)
+                    stateData.TargetState = InteractState.Attacking;
                 StateUtils.SwitchState(ref stateData,ECB,entity, index);
             }
             private void CheckIfHomeUnderAttack()

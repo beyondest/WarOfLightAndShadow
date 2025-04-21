@@ -15,18 +15,18 @@ MonoBehaviour:
   m_GroupName: Building
   m_GUID: d8d82ea7a0e5e7f468c4625a77d97879
   m_SerializeEntries:
-  - m_GUID: 1079cd8f3853831499db59ade939b165
-    m_Address: SanctifiedTurret
+  - m_GUID: 14b5d0bd96b0e1342b173668d9280870
+    m_Address: BloomSpire
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 253b4f4848a8d1f48ac8bd2eda23f493
-    m_Address: DivineRampart
+  - m_GUID: 1d851edbc8eac2f439c5055a2ee4a8a9
+    m_Address: AegisShrine
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2a36caa4c9cdc834b99c6170bfd6e558
-    m_Address: LightWall
+  - m_GUID: 2a3f32ae5d44f3944bb39834ac5d982b
+    m_Address: Converter
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -35,13 +35,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 329d65ab58d49494dadfbee923fe9a52
-    m_Address: CoreCrystal
+  - m_GUID: 2fe5f6991bebacf4dab24f78b6161d8c
+    m_Address: Wall
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8cc8fb70be280ad49b5b3fce04a5c5ee
-    m_Address: AethericForge
+  - m_GUID: 6cc572f770ca274438582f63599023c3
+    m_Address: StorableOrnament
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6d3c030cafce7b540af1bd2434484618
+    m_Address: PhantomGate
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8dadae0185a689544b2f47c2128cf5ea
+    m_Address: EldritchSeal
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -55,8 +65,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e43f7b46bc6c04348b05deb496c61b27
-    m_Address: RadiantSummoningCircle
+  - m_GUID: b4ad27c5a19776542a4422522dff1fb0
+    m_Address: StormSpire
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc02e25ee0e23e647bdf76131c64be00
+    m_Address: CommonDwelling
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce58d1540a52dfc49b7b8ac82f8b1bb3
+    m_Address: Tower
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1324007bcfdbf74b99396974dbf51da
+    m_Address: FlameDwelling
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -70,8 +95,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f3aa59c798cffef438c72e3b083958fa
-    m_Address: LightHut
+  - m_GUID: efd8dfceec138044aa8ff92be2283e26
+    m_Address: MysticDwelling
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f8be27eaf0202004c8193ff69043f9e2
+    m_Address: Crystal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fbd001ba6bfa96441b88d36a60c07d12
+    m_Address: UnstorableOrnament
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ff91efb0640a9a44fb6b9f00e6afe43b
+    m_Address: TerraNexus
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

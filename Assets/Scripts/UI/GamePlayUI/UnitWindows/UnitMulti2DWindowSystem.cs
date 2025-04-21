@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -34,8 +35,8 @@ namespace SparFlame.UI.GamePlay
             if (!_isInitialized) return;
             if (!UnitMulti2DWindow.Instance.IsOpened()) return;
             _unitInfos.Clear();
-            foreach (var (unitAttr,interactableAttr, statData, entity) in SystemAPI
-                         .Query<RefRO<UnitAttr>, RefRO<InteractableAttr>, RefRO<StatData>>()
+            foreach (var (unitAttr, statData,expData, entity) in SystemAPI
+                         .Query<RefRO<UnitAttr>, RefRO<StatData>, RefRO<ExpData>>()
                          .WithEntityAccess().WithAll<Selected>())
             {
                 _unitInfos.Add(new UnitRealTimeInfo
@@ -43,7 +44,7 @@ namespace SparFlame.UI.GamePlay
                     Entity = entity,
                     HpRatio = (float)statData.ValueRO.CurValue / statData.ValueRO.MaxValue,
                     UnitType = unitAttr.ValueRO.Type,
-                    Tier = interactableAttr.ValueRO.Tier
+                    Tier = expData.ValueRO.CurTier
                 });
             }
             UnitMulti2DWindow.Instance.UpdateSelectedUnitView(_unitInfos);

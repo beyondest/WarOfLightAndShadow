@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using SparFlame.Database;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
@@ -15,11 +16,19 @@ namespace SparFlame.UI.GamePlay
     public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>, UIUtils.ISingleTargetWindow
     {
         // Config
-        [Header("Custom Config")] [SerializeField]
-        private TMP_Text unitType;
+        [Header("General")] 
+        [SerializeField]
+        private bool showCostSlots;
+        [SerializeField] private TMP_Text generalTypeText;
+        [SerializeField] private Image generalTypeIcon;
+        [SerializeField] private TMP_Text description;
+        [SerializeField] private Image idSingleIcon;
+        [SerializeField] private Image interactAbilityTriangle;
 
+
+        [Header("Unit Detail")]
         [SerializeField] private TMP_Text unitMoveSpeed;
-        [SerializeField] private Image unitIcon;
+        
         
         // Interface
         public static UnitDetailWindow Instance;
@@ -38,7 +47,8 @@ namespace SparFlame.UI.GamePlay
                 || !Em.HasComponent<StatData>(target))
                 return false;
             TargetEntity = target;
-            UpdateUnitDetailInfo();
+            UpdateStaticInfo();
+            UpdateDynamicInfo();
             return true;
         }
 
@@ -52,7 +62,7 @@ namespace SparFlame.UI.GamePlay
 
         // ECS
         protected EntityManager Em;
-        protected EntityQuery NotPauseTag;
+        private EntityQuery _notPauseTag;
 
         #region EventFunction
 
@@ -64,44 +74,58 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
+        protected override void OnEnable()
+        {
+            if(showCostSlots)
+                base.OnEnable();
+        }
+
+        protected override void OnDisable()
+        {
+            if(showCostSlots)
+                base.OnDisable();
+        }
 
         protected virtual void Start()
         {
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            NotPauseTag = Em.CreateEntityQuery(typeof(NotPauseTag));
+            _notPauseTag = Em.CreateEntityQuery(typeof(NotPauseTag));
             panel.SetActive(false);
         }
 
         protected virtual void Update()
         {
-            if (NotPauseTag.IsEmpty) return;
+            if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
 
             if (!UnitWindowResourceManager.Instance.IsResourceLoaded()
-                || !BasicWindowResourceManager.Instance.IsResourceLoaded()
+                || !BasicResourceManager.Instance.IsResourceLoaded()
                 || !IsResourceLoaded()) return;
             if (TargetEntity == Entity.Null) return;
-            if (!Em.HasComponent<InteractableAttr>(TargetEntity))
+            if (!Em.HasComponent<GeneralAttr>(TargetEntity))
             {
                 TargetEntity = Entity.Null;
                 return;
             }
-            UpdateUnitDetailInfo();
+            UpdateDynamicInfo();
         }
 
         #endregion
 
 
-        private void UpdateUnitDetailInfo()
+        private void UpdateStaticInfo()
         {
-            // var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
-            var attr = Em.GetComponentData<UnitAttr>(TargetEntity);
-            var movableData = Em.GetComponentData<MovableData>(TargetEntity);
+            var generalAttr = Em.GetComponentData<GeneralAttr>(TargetEntity);
+            var unitAttr = Em.GetComponentData<UnitAttr>(TargetEntity);
+            description.text = DatabaseManager.UnitDatabaseSo.GetItemById(generalAttr.ID).description;
+            generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.Type];
+            generalTypeText.text = unitAttr.Type.ToString();
+            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfo(unitAttr.Type, generalAttr.ID).Sprite;
+            UpdateCostSlots();
+        }
+        public virtual void UpdateCostSlots()
+        {
             var costList = Em.GetBuffer<CostList>(TargetEntity);
-            // Visualize these attributes
-            unitType.text = attr.Type.ToString();
-            unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
-            unitIcon.sprite = UnitWindowResourceManager.Instance.UnitSprites[attr.Type];
             for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < costList.Length)
@@ -109,7 +133,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var cost = costList[i];
                     var costSlot = SlotComponents[i];
-                    costSlot.icon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[cost.Type];
+                    costSlot.icon.sprite = BasicResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = $"x{cost.Amount}";
                 }
@@ -118,6 +142,13 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(false);
                 }
             }
+        }
+        
+        private void UpdateDynamicInfo()
+        {
+            var movableData = Em.GetComponentData<MovableData>(TargetEntity);
+            // Visualize these attributes
+            unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

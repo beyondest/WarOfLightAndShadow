@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.CustomInput;
-using SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -235,7 +234,11 @@ namespace SparFlame.GamePlaySystem.CameraControl
                 //create smooth slow down
                 _horizontalVelocity = math.lerp(_horizontalVelocity, float3.zero,
                     SystemAPI.Time.DeltaTime * _config.TranslationDamping);
-                _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.Time.DeltaTime;
+                if (!math.any(math.isnan(_horizontalVelocity)))
+                {
+                    _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.Time.DeltaTime;
+                }
+                // _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.Time.DeltaTime;
             }
 
             //reset for next frame

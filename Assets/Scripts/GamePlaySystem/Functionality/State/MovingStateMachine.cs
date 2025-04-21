@@ -7,6 +7,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
+using UnityEngine;
 
 // ReSharper disable ReplaceWithSingleAssignment.False
 
@@ -19,7 +20,7 @@ namespace SparFlame.GamePlaySystem.State
     [UpdateBefore(typeof(StatSystem))]
     public partial struct MovingStateMachine : ISystem
     {
-        private ComponentLookup<InteractableAttr> _interactableLookup;
+        private ComponentLookup<GeneralAttr> _interactableLookup;
         private ComponentLookup<Selected> _selectedLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<MovableData> _movableLookup;
@@ -38,7 +39,7 @@ namespace SparFlame.GamePlaySystem.State
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MovingStateMachineConfig>();
             state.RequireForUpdate<NotPauseTag>();
-            _interactableLookup = state.GetComponentLookup<InteractableAttr>(true);
+            _interactableLookup = state.GetComponentLookup<GeneralAttr>(true);
             _selectedLookup = state.GetComponentLookup<Selected>(true);
 
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
@@ -96,7 +97,7 @@ namespace SparFlame.GamePlaySystem.State
         public partial struct CheckMovingState : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<InteractableAttr> InteractLookUp;
+            [ReadOnly] public ComponentLookup<GeneralAttr> InteractLookUp;
 
             [ReadOnly] public ComponentLookup<Selected> Selected;
 
@@ -131,7 +132,7 @@ namespace SparFlame.GamePlaySystem.State
                 ref var transform = ref TransLookup.GetRefRW(entity).ValueRW;
                 var selfFaction = InteractLookUp[entity].FactionTag;
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
-                if (stateData.CurState != UnitState.Moving) return;
+                if (stateData.CurState != InteractState.Moving) return;
 
                 if (CheckTaunted(ref surroundings, ref movableData, ref stateData,
                         ref targets, entity, index))
@@ -163,7 +164,7 @@ namespace SparFlame.GamePlaySystem.State
             )
             {
                 var shouldChangeTarget = false;
-                InteractableAttr targetInteractAttr;
+                GeneralAttr targetgeneralAttr;
                 // Not focus march, see target, should choose target
                 if (
                     !stateData.Focus
@@ -177,10 +178,15 @@ namespace SparFlame.GamePlaySystem.State
                 if (movableData.MovementCommandType == MovementCommandType.Interactive)
                 {
                     // If current target valid, do nothing
-                    if (InteractLookUp.TryGetComponent(stateData.TargetEntity, out targetInteractAttr))
+                    if (InteractLookUp.TryGetComponent(stateData.TargetEntity, out targetgeneralAttr))
                     {
                         var targetStat = StatLookup[stateData.TargetEntity];
-                        if (InteractUtils.IsTargetValid(in targetInteractAttr, in selfFactionTag, in targetStat,
+                        // If current target is to garrison into building, do not check if valid
+                        if (stateData.TargetState == InteractState.Garrison && targetStat.CurValue > 0)
+                        {
+                            return;
+                        }
+                        if (InteractUtils.IsTargetValid(in targetgeneralAttr, in selfFactionTag, in targetStat,
                                 HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity),
                                 !RegeneratingTagLookup.HasComponent(stateData.TargetEntity)))
                         {
@@ -192,8 +198,7 @@ namespace SparFlame.GamePlaySystem.State
                     if (targets.IsEmpty)
                     {
                         MovementUtils.ResetMovableData(ref movableData);
-                        stateData.TargetEntity = Entity.Null;
-                        stateData.TargetState = UnitState.Idle;
+                        stateData.TargetState = InteractState.Idle;
                         StateUtils.SwitchState(ref stateData, ECB, entity, index);
                         return;
                     }
@@ -206,23 +211,23 @@ namespace SparFlame.GamePlaySystem.State
                 // Interact move to target. Because it is in moving state already, so don't need to switch state;
                 // Because moving state machine Update after update target list system, choose target should always be valid
                 stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
-                targetInteractAttr = InteractLookUp[stateData.TargetEntity];
+                targetgeneralAttr = InteractLookUp[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
-                var targetColliderSize = targetInteractAttr.BoxColliderSize;
+                var targetColliderSize = targetgeneralAttr.BoxColliderSize;
                 float rangSq;
-                if (targetInteractAttr.FactionTag == selfFactionTag)
+                if (targetgeneralAttr.FactionTag == selfFactionTag)
                 {
-                    stateData.TargetState = UnitState.Healing;
+                    stateData.TargetState = InteractState.Healing;
                     rangSq = HealLookup[entity].RangeSq;
                 }
-                else if (targetInteractAttr.BaseTag == BaseTag.Resources)
+                else if (targetgeneralAttr.BaseTag == BaseTag.Resources)
                 {
-                    stateData.TargetState = UnitState.Harvesting;
+                    stateData.TargetState = InteractState.Harvesting;
                     rangSq = HarvestLookup[entity].RangeSq;
                 }
                 else
                 {
-                    stateData.TargetState = UnitState.Attacking;
+                    stateData.TargetState = InteractState.Attacking;
                     rangSq = AttackLookup[entity].RangeSq;
                 }
 
@@ -235,10 +240,20 @@ namespace SparFlame.GamePlaySystem.State
                 in MovableData movableData,
                 ref BasicStateData stateData, ref LocalTransform transform, Entity entity, int index)
             {
-                // Calculation not complete, can do nothing now
                 if (movableData.DetailInfo == DetailInfo.CalculationNotComplete)
-                    return false;
-
+                {
+                    // Calculation not complete and not stuck too many times, wait for calculation
+                    if(surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck)
+                        return false;
+                    // Calculation not complete for too many times, consider wrong target
+                    else
+                    { 
+                        stateData.TargetState = InteractState.Idle;
+                        StateUtils.SwitchState(ref stateData, ECB, entity, index);
+                        return true;
+                    }
+                }
+                
                 // Stuck times too much
                 if (surroundings.MoveSuccess
                     || surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck) return false;
@@ -251,7 +266,7 @@ namespace SparFlame.GamePlaySystem.State
                     InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
                         SightSystemConfig.MemoryTargetAfterStuckByBuilding);
                     stateData.TargetEntity = surroundings.FrontEntity;
-                    stateData.TargetState = UnitState.Attacking;
+                    stateData.TargetState = InteractState.Attacking;
                     stateData.Focus = true;
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     return true;
@@ -272,7 +287,7 @@ namespace SparFlame.GamePlaySystem.State
                     stateData.TargetEntity = leftIsEnemy
                         ? surroundings.LeftEntity
                         : surroundings.RightEntity;
-                    stateData.TargetState = UnitState.Attacking;
+                    stateData.TargetState = InteractState.Attacking;
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     return true;
                 }
@@ -284,23 +299,25 @@ namespace SparFlame.GamePlaySystem.State
             private bool CheckIfCompleteMoving(ref Surroundings surroundings, ref MovableData movableData,
                 ref BasicStateData stateData, Entity entity, int index)
             {
+                if (movableData.ForceCalculate) return false; // This is the first time command, do not affected by units surrounded
                 // If itself moving job is completed
                 if (movableData.MovementState is MovementState.MovementComplete
                     or MovementState.MovementPartialComplete)
                 {
                     MovementUtils.ResetMovableData(ref movableData);
                     MovementUtils.ResetSurroundings(ref surroundings);
-                    if (stateData.TargetState == UnitState.Idle) stateData.TargetEntity = Entity.Null;
+                    if (stateData.TargetState == InteractState.Idle) stateData.TargetEntity = Entity.Null;
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     return true;
                 }
 
-                // Check if surrounded ally unit reached. 
+                // Check if surrounded ally unit reached. This only work when target state is idle and surrounded unit is in
+                // same selection state of this one
                 var isSelected = Selected.IsComponentEnabled(entity);
-                if (CheckIfSurroundReach(ref surroundings, isSelected))
+                if (isSelected) return false;
+                if (CheckIfSurroundReach(ref surroundings, isSelected) && stateData.TargetState == InteractState.Idle)
                 {
-                    stateData.TargetState = UnitState.Idle;
-                    stateData.TargetEntity = Entity.Null;
+                    stateData.TargetState = InteractState.Idle;
                     MovementUtils.ResetMovableData(ref movableData);
                     MovementUtils.ResetSurroundings(ref surroundings);
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
@@ -313,9 +330,11 @@ namespace SparFlame.GamePlaySystem.State
             private bool CheckIfSurroundReach(ref Surroundings surroundings, bool selected)
             {
                 if (surroundings.MoveSuccess) return false;
-                return IsObstacleSelectedAllyIdle(surroundings.FrontEntity, selected)
-                       || IsObstacleSelectedAllyIdle(surroundings.LeftEntity, selected)
-                       || IsObstacleSelectedAllyIdle(surroundings.RightEntity, selected);
+                var result = IsObstacleSelectedAllyIdle(surroundings.FrontEntity, selected)
+                             || IsObstacleSelectedAllyIdle(surroundings.LeftEntity, selected)
+                             || IsObstacleSelectedAllyIdle(surroundings.RightEntity, selected);
+  
+                return result;
             }
 
             private bool IsObstacleSelectedAllyIdle(Entity entity, bool selected)
@@ -327,7 +346,7 @@ namespace SparFlame.GamePlaySystem.State
                     && Selected.IsComponentEnabled(entity) == selected
                     && iData is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
                     && StateLookup.TryGetComponent(entity, out var stateData)
-                    && stateData.CurState == UnitState.Idle;
+                    && stateData.CurState == InteractState.Idle;
             }
 
             private bool CheckTaunted(ref Surroundings surroundings, ref MovableData movableData,
@@ -343,7 +362,7 @@ namespace SparFlame.GamePlaySystem.State
                 }
 
                 // Turn to Attacking State
-                stateData.TargetState = UnitState.Attacking;
+                stateData.TargetState = InteractState.Attacking;
                 stateData.TargetEntity = surroundings.FrontEntity;
                 surroundings.MoveSuccess = true;
                 surroundings.FrontEntity = surroundings.LeftEntity = surroundings.RightEntity = Entity.Null;
@@ -422,7 +441,7 @@ namespace SparFlame.GamePlaySystem.State
         || iData is not { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
         || Selected.IsComponentEnabled(surroundings.FrontEntity)
         || !StateLookup.TryGetComponent(surroundings.FrontEntity, out var stateData)
-        || stateData.CurState != UnitState.Idle)
+        || stateData.CurState != InteractState.Idle)
         return false;
 
     // Only let one unit give way once, until it finishes auto give way.

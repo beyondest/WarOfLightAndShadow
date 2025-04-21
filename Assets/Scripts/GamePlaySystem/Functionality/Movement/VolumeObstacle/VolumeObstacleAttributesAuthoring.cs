@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Physics.Authoring;
 using UnityEngine.AI;
@@ -39,10 +39,11 @@ namespace SparFlame.GamePlaySystem.Movement
                 }
 
                 // This is interactable obstacle/volume, like buildings, resources
-                if (authoring.TryGetComponent<InteractableAttributesAuthoring>(out var interactableAttr))
+                if (authoring.TryGetComponent<GeneralAttributesAuthoring>(out var interactableAttr) &&
+                    authoring.TryGetComponent<ExpAttributeAuthoring>(out var expAttribute))
                 {
                     factionTag = interactableAttr.factionTag;
-                   
+
                     // Only building needs check , because resource is neutral so being obstacle for all factions
                     if (interactableAttr.baseTag == BaseTag.Buildings)
                     {
@@ -56,14 +57,14 @@ namespace SparFlame.GamePlaySystem.Movement
                             // If this is an attackable building, the area is more dangerous and volume should be high cost
                             // And the areaType is determined by tier, the higher the tier, the higher cost it should be
                             areaType = interactAbility.interactType == InteractType.Attack
-                                ? (AreaType)interactableAttr.tier
-                                : (AreaType)(interactableAttr.tier + 10);
+                                ? (AreaType)expAttribute.currentTier
+                                : (AreaType)(expAttribute.currentTier + 10);
                         }
                         // this is not interactable building, volume radius set to default, and areaType set via tier
                         else
                         {
                             volumeRadius = 0f;
-                            areaType = (AreaType)interactableAttr.tier;
+                            areaType = (AreaType)expAttribute.currentTier;
                         }
                     }
                 }

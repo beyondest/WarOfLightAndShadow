@@ -17,16 +17,23 @@ namespace SparFlame.BootStrapper
         
         public event Action OnPause;
         public event Action OnResume;
+        public event Action<FactionTag> OnGameOver;
 
+        public bool IsGameStarted() => _isGaming;
+        
+        
         // Internal Data
         private bool _isPaused;
         private bool _isReadyForPlayer;
         private bool _isGaming ;
+        private bool _isCrystalDetected;
         private CustomInputActions _customInputActions;
         
         // ECS
         private EntityManager _em;
-        
+        private EntityQuery _notPauseTag;
+        private EntityQuery _allyTag;
+        private EntityQuery _enemyTag;
         
         
         private void Awake()
@@ -42,17 +49,18 @@ namespace SparFlame.BootStrapper
             }
         }
 
-        private void OnEnable()
-        {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-        }
+       
 
         private void Start()
         {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             SceneController.Instance.OnSceneGroupLoaded += CheckLoadingState;
             SceneController.Instance.OnSceneGroupUnloaded += CheckUnloadingState;
-            SceneController.Instance.LoadSceneGroup(mainMenuGroupName);
+            // SceneController.Instance.LoadSceneGroup(mainMenuGroupName);
             _customInputActions = InputListener.Instance.GetCustomInputActions();
+            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _allyTag = _em.CreateEntityQuery(typeof(AllyCoreCrystalTag));
+            _enemyTag = _em.CreateEntityQuery(typeof(EnemyCoreCrystalTag));
         }
 
         
@@ -60,17 +68,44 @@ namespace SparFlame.BootStrapper
 
         private void Update()
         {
-            if(!_isReadyForPlayer) return;
-            if (!_isPaused && _isGaming && (!Application.isFocused ||_customInputActions.ModeSwitch.Pause.WasPerformedThisFrame()))
+            // TODO : Check resources prepared here
+            // if(!_isReadyForPlayer) return;
+            // Check Player Pause Action
+            if(!_isGaming)return;
+            
+            CheckPlayerPauseAction();
+            if (!_isCrystalDetected)
+            {
+                if(_allyTag.IsEmpty || _enemyTag.IsEmpty)return;
+                _isCrystalDetected = true;
+            }
+            if (_allyTag.IsEmpty)
+            {
+                OnGameOver?.Invoke(FactionTag.Enemy);
+                _isGaming = false;
+                return;
+            }
+            if (_enemyTag.IsEmpty)
+            {
+                OnGameOver?.Invoke(FactionTag.Ally);
+                _isGaming = false;
+                return;
+            }
+        }
+
+        private void CheckPlayerPauseAction()
+        {
+            if (!_isPaused  && (!Application.isFocused ||_customInputActions.ModeSwitch.Pause.WasPerformedThisFrame()))
             {
                 OnPause?.Invoke();
                 PauseGame();
             }
-            else if (_isPaused&&_isGaming && Application.isFocused && _customInputActions.ModeSwitch.Pause.WasPerformedThisFrame())
+            else if (_isPaused && Application.isFocused && _customInputActions.ModeSwitch.Pause.WasPerformedThisFrame())
             {
                 OnResume?.Invoke();
                 ResumeGame();
             }
+            
         }
 
         public void PauseGame()
@@ -96,20 +131,18 @@ namespace SparFlame.BootStrapper
             ResumeGame();
             _isReadyForPlayer = false;
             SceneController.Instance.UnloadSceneGroup(gamingGroupName);
-            Debug.LogWarning("Go to main menu without saving.");
             _isGaming = false;
         }
 
         public void ExitGame()
         {
-            Debug.LogWarning("Exit without saving the game.");
+            Debug.LogWarning("Exit game.");
             _isGaming = false;
             Application.Quit();
         }
 
         public void StartGame()
         {
-            if (!_isReadyForPlayer) return;
             Debug.Log("Starting game.");
             SceneController.Instance.LoadSceneGroup(gamingGroupName);
         }
@@ -117,16 +150,22 @@ namespace SparFlame.BootStrapper
         
         private void CheckLoadingState(SceneGroup sceneGroup)
         {
-            if(sceneGroup.groupName == mainMenuGroupName)
-                _isReadyForPlayer = true;
-            if(sceneGroup.groupName == gamingGroupName)
+            // if(sceneGroup.groupName == mainMenuGroupName)
+            //     _isReadyForPlayer = true;
+            
+            if (sceneGroup.groupName == gamingGroupName)
+            {
+                
                 _isGaming = true;
+                InputListener.Instance.EnableNessesaryMaps();
+            }
+            
         }
 
         private void CheckUnloadingState(SceneGroup sceneGroup)
         {
             if(sceneGroup.groupName == gamingGroupName)
-                _isReadyForPlayer = true;
+                _isReadyForPlayer = false;
         }
     }
 }

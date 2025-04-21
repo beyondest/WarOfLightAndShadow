@@ -65,4 +65,12 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct BuffSystemConfig : IComponentData
     {
     }
+    
+    
+    public struct StaticBuffAttr : IComponentData
+    {
+        public BuffType Type;
+        public float RangeSq;
+        public float LastSeconds;
+    }
 }

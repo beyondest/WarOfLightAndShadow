@@ -5,14 +5,16 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
+using Unity.Physics.Systems;
 
 // ReSharper disable UseIndexFromEndExpression
 
 
 namespace SparFlame.GamePlaySystem.Movement
 {
-    // Update After player command system, PC command system
     [BurstCompile]
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
+    [UpdateBefore(typeof(PhysicsSystemGroup))]
     public partial struct MovementSystem : ISystem
     {
 
@@ -58,7 +60,7 @@ namespace SparFlame.GamePlaySystem.Movement
 
         private void Execute(
             ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
-            ref Surroundings surroundings,
+            ref Surroundings surroundings,/*ref PhysicsVelocity physicsVelocity,in PhysicsMass mass,*/
             in DynamicBuffer<WaypointBuffer> waypointBuffer
         )
         {
@@ -236,8 +238,8 @@ namespace SparFlame.GamePlaySystem.Movement
             {
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
-                TryMove(ref transform, ref movableData, ref surroundings, in navAgent,
-                    in idealDirection, curPosY0
+                TryMove(ref transform, ref movableData, ref surroundings,  navAgent,
+                     idealDirection, curPosY0/*, ref physicsVelocity, mass*/
                 );
                 // surroundings.IdealDirection = idealDirection;
             }
@@ -260,9 +262,10 @@ namespace SparFlame.GamePlaySystem.Movement
             ref Surroundings surroundings,
             in NavAgentComponent navAgent,
             in float3 idealFront, in float3 curPosY0
+            // ref PhysicsVelocity velocity,
+            // in PhysicsMass mass
         )
         {
-            
             
             var moveLength = DeltaTime * movableData.MoveSpeed;
             // Record Pos for checking stuck
@@ -273,6 +276,11 @@ namespace SparFlame.GamePlaySystem.Movement
             }
             surroundings.MoveSuccess = !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
             var targetRotation = quaternion.LookRotationSafe(-idealFront, math.up());
+            // targetRotation =  math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
+            // var targetPos = transform.Position + moveLength * idealFront;
+            // var targetTransform = new RigidTransform(targetRotation, targetPos);
+            // velocity = PhysicsVelocity.CalculateVelocityToTarget(mass, transform.Position, transform.Rotation,
+            //     targetTransform, 1/DeltaTime);
             transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
             transform.Position += moveLength * idealFront;
         }

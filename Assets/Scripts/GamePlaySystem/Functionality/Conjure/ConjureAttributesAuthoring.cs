@@ -1,5 +1,6 @@
 ﻿using SparFlame.GamePlaySystem.Units;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Spawn
@@ -16,6 +17,7 @@ namespace SparFlame.GamePlaySystem.Spawn
                 {
                     ConjuringType = authoring.conjuringType
                 });
+                AddBuffer<ConjuringData>(entity);
             }
         }
     }
@@ -23,8 +25,16 @@ namespace SparFlame.GamePlaySystem.Spawn
     public struct ConjureAttr : IComponentData
     {
         public UnitType ConjuringType;
+        public float3 ConjurePositionBias;
+    }
+
+    public struct ConjuringData : IBufferElementData
+    {
+        public Entity ConjuringEntity;
         public int TargetAmount;
         public int ConjuredAmount;
-        public int RemainingTime;
+        public float RemainingTimeSeconds;
+        public float Counter;
     }
+    
 }

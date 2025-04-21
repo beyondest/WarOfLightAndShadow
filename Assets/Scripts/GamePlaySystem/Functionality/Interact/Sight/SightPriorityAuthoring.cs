@@ -12,7 +12,7 @@ namespace SparFlame.GamePlaySystem.Interact
             public override void Bake(SightPriorityAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new InteractPriority
+                AddComponent(entity, new SightPriority
                 {
                     Value = authoring.priority
                 });
@@ -20,7 +20,7 @@ namespace SparFlame.GamePlaySystem.Interact
         }
     }
 
-    public struct InteractPriority : IComponentData
+    public struct SightPriority : IComponentData
     {
         /// <summary>
         /// This value is the basic value of target, not consider its damage dealt or distance

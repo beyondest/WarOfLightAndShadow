@@ -32,8 +32,7 @@ namespace SparFlame.GamePlaySystem.Resource
 
             // var config = SystemAPI.GetSingleton<ResourceSystemConfig>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            CheckHarvestRequest(ref state, ecb);
-            
+            DealResourceChangeRequest(ref state, ecb);
             
             UpdateGlobalResourceDataCenter(ref state);
             
@@ -41,26 +40,53 @@ namespace SparFlame.GamePlaySystem.Resource
             ecb.Dispose();
         }
 
-        private void CheckHarvestRequest(ref SystemState state, EntityCommandBuffer ecb)
+        private void DealResourceChangeRequest(ref SystemState state, EntityCommandBuffer ecb)
         {
             var allyDataCenter = SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
             var enemyDataCenter = SystemAPI.GetSingletonEntity<EnemyResourceDataTag>();
-            foreach (var (requestRO, entity) in SystemAPI.Query<RefRO<HarvestResourceRequest>>().WithEntityAccess())
+            foreach (var (requestRO, entity) in SystemAPI.Query<RefRO<ResourceChangeRequest>>().WithEntityAccess())
             {
                 var request = requestRO.ValueRO;
                 var resourceKey = (int)request.Type;
-                var amount = request.HarvestAmount;
-                var v = _globalResourceDataCenter[resourceKey];
-                v.Amount -= amount;
-                _globalResourceDataCenter[resourceKey] = v;
+                var amount = request.Amount;
+                
+                // If from harvest, then reduce global data center resource
+                if (request.RequestType == ResourceRequestType.Harvest)
+                {
+                    var v = _globalResourceDataCenter[resourceKey];
+                    v.Amount -= amount;
+                    _globalResourceDataCenter[resourceKey] = v;
+                }
+                
                 var targetCenter = request.FromFaction == FactionTag.Ally ? allyDataCenter : enemyDataCenter;
                 var buffer = SystemAPI.GetBuffer<ResourceData>(targetCenter);
-                var v2 = buffer[resourceKey];
-                v2.Amount += amount;
-                buffer[resourceKey] = v2;
+                
+                // Except for population release, others will change total amount. 
+                // NOTICE : Population total amount accounts for available value, true total value = available + occupied
+                if (request.RequestType != ResourceRequestType.Release)
+                {
+                    var v2 = buffer[resourceKey];
+                    v2.Amount += amount;
+                    buffer[resourceKey] = v2;
+                }
+                // Population consume and release must be handled separately, for correct showing : current occupied/total value
+
+                if (request is { Type: ResourceType.Population, RequestType: ResourceRequestType.Consume } 
+                    or { Type: ResourceType.Population, RequestType: ResourceRequestType.Release })
+                {
+                    var pData= SystemAPI.GetComponent<PopulationOccupiedData>(targetCenter);
+                    SystemAPI.SetComponent(targetCenter, new PopulationOccupiedData
+                    {
+                        Value = pData.Value - amount // Consume population : amount should be negative, but recording should add;
+                                                     // Release population : amount should be positive, but recording should minus
+                    });
+                }
+                
                 ecb.DestroyEntity(entity);
             }
         }
+
+
 
         private void UpdateGlobalResourceDataCenter(ref SystemState state)
         {

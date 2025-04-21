@@ -30,6 +30,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 72c0ff0e838768f4d8c4ebb569a4da21
+    m_Address: Population
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9bb49d49e22de1d44a5037a2d4bc0790
+    m_Address: Regenerating
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ad646dce0b413f94e84162b7a6dad8c2
     m_Address: DarkEnergy
     m_ReadOnly: 0

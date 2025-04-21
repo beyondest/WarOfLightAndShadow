@@ -154,6 +154,8 @@ namespace Unity.Physics.Authoring
         [SerializeField]
         PhysicsMaterialProperties m_Material = new PhysicsMaterialProperties(true);
 
+        public float GetCylinderRadius() => m_Cylinder.Radius;
+        public void SetCylinderRadius(float radius) => m_Cylinder.Radius = radius;
         public BoxGeometry GetBoxProperties() => GetBoxProperties(out _);
 
         internal BoxGeometry GetBoxProperties(out EulerAngles orientation)
@@ -198,7 +200,7 @@ namespace Unity.Physics.Authoring
                 Radius = radius
             };
         }
-
+        
         public CylinderGeometry GetCylinderProperties() => GetCylinderProperties(out _);
 
         internal CylinderGeometry GetCylinderProperties(out EulerAngles orientation)

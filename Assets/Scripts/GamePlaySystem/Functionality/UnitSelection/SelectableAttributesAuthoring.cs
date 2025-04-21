@@ -20,7 +20,6 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 {
                     ScreenPosition = float2.zero
                 });
-                //AddComponent<Selectable>(entity);
             }
         }
     }
@@ -38,8 +37,10 @@ namespace SparFlame.GamePlaySystem.UnitSelection
     {
         public float2 ScreenPosition;
     }
-    //public struct Selectable : IComponentData
-    //{
 
-    //}
+
+    public struct AITag : IComponentData
+    {
+        
+    }
 }

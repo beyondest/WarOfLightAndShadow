@@ -55,9 +55,9 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
     public struct UnitSelectReduceRequest : IComponentData
     {
-        
+        public Entity SelectedEntity;
+        public bool IsDead;
     }
-
 }
 
 

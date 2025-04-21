@@ -1,16 +1,18 @@
 ﻿using System;
+using SparFlame.Database;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Generate;
 using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Spawn;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
@@ -18,29 +20,59 @@ namespace SparFlame.UI.GamePlay
     public class BuildingDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>, UIUtils.ISingleTargetWindow
     {
         // Config
-        [Header("Custom Config")] [SerializeField]
-        private TMP_Text buildingType;
+        [Header("General Information")] [SerializeField]
+        private bool showCostSlots;
 
-        [SerializeField] private Image buildingTypeIcon;
+        [SerializeField] private bool isMainInfoSingleton;
 
-        [SerializeField] private Image functionIcon;
-        [SerializeField] private TMP_Text functionNameText;
+        [SerializeField] private TMP_Text generalTypeText;
+        [SerializeField] private Image generalTypeIcon;
+        [SerializeField] private TMP_Text description;
+        [SerializeField] private Image idSingleIcon;
+        [SerializeField] private Image interactAbilityTriangle;
 
-        [SerializeField] private TMP_Text doingThingsRemainedTimeText;
-        [SerializeField] private Image doingThingsIcon;
-        [SerializeField] private TMP_Text doingThingsDescriptionText;
-        [SerializeField] private TMP_Text doingLabelText;
-        [SerializeField] private TMP_Text thingsLabelText;
-        [SerializeField] private AssetReferenceSprite buildingIdleIcon;
+        [Header("Building detail")] [SerializeField]
+        private Image buildingStateIcon;
 
+        [SerializeField] private TMP_Text buildingStateText;
+
+        [Header("Garrison Panel")]
+        [SerializeField]
+        private GameObject garrisonInfoPanel;
+
+        [SerializeField] private TMP_Text garrisonCountText;
+        
+        [Header("Generate panel")] [SerializeField]
+        private GameObject generatePanel;
+
+        [SerializeField] private Image generateResourceIcon;
+        [SerializeField] private TMP_Text generateTypeText;
+        [SerializeField] private TMP_Text generateSpeedText;
+        [SerializeField] private TMP_Text generateMinRequireUnitsText;
+        
+        [Header("Conjure panel")] [SerializeField]
+        private GameObject conjurePanel;
+
+        [SerializeField] private Image conjureButtonIcon;
+        [SerializeField] private TMP_Text conjureTypeNameText;
+
+        [Header("Dwelling panel")]
+        [SerializeField]
+        private GameObject dwellingPanel;
+        [SerializeField] private TMP_Text dwellingCountText;
+        [SerializeField] private Image dwellingResourceIcon;
+        [Header("Ornament panel")]
+        [SerializeField] private GameObject ornamentPanel;
+        [SerializeField] private Image ornamentBuffImage;
+        [SerializeField] private TMP_Text ornamentBuffDescriptionText;
+        
         // Interface
         public static BuildingDetailWindow Instance;
         public Action<Entity> EcsGhostShowTarget;
-        [NonSerialized] public bool InitWindowEvents = false;
 
-        // Cache
-        private Sprite _idleSprite;
-        
+        [NonSerialized] public bool InitConstructEvents = false;
+
+
         public override void Hide()
         {
             base.Hide();
@@ -49,11 +81,12 @@ namespace SparFlame.UI.GamePlay
 
         public bool TrySwitchTarget(Entity target)
         {
-            if (!_em.HasComponent<BuildingAttr>(target)
-                || !_em.HasBuffer<CostList>(target)
-                || !_em.HasComponent<StatData>(target))
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if (!Em.HasComponent<BuildingAttr>(target))
                 return false;
             _targetEntity = target;
+            UpdateStaticData();
+            // UpdateDynamicData();
             return true;
         }
 
@@ -64,11 +97,21 @@ namespace SparFlame.UI.GamePlay
 
         #region ButtonMethods
 
+        public void OnClickConjureButton()
+        {
+            if (!ConjureWindow.Instance.IsOpened())
+                ConjureWindow.Instance.Show();
+            ConjureWindow.Instance.TrySwitchTarget(_targetEntity);
+        }
+
         public void OnClickRelocate()
         {
-            if (_buildingAttr.State != BuildingState.Idle)
+            if (Em.HasComponent<OocTag>(_targetEntity) ||
+                Em.HasComponent<ConstructingTag>(_targetEntity)
+                ||_hasGarrisonUnits)
             {
-                Debug.Log("Not in idle state, cannot enter building movement state");
+                // TODO : Hints pop support
+                Debug.Log(" not allow to relocate, this should pop up hints");
                 return;
             }
 
@@ -76,6 +119,7 @@ namespace SparFlame.UI.GamePlay
                 ConstructWindow.Instance.OnClickConstructEnter();
             EcsGhostShowTarget?.Invoke(_targetEntity);
         }
+
 
         public void OnClickStore()
         {
@@ -91,20 +135,20 @@ namespace SparFlame.UI.GamePlay
 
         // Internal Data
         private Entity _targetEntity = Entity.Null;
-        private AsyncOperationHandle<Sprite> _spriteHandle;
-
+        private bool _hasGarrisonUnits;
+        
+        
         // Cache
         private GameObject _costSlotPrefab;
         private BuildingAttr _buildingAttr;
 
-
         // ECS
-        private EntityManager _em;
+        protected EntityManager Em;
         private EntityQuery _notPauseTag;
 
         #region EventFunction
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (Instance == null)
                 Instance = this;
@@ -114,62 +158,208 @@ namespace SparFlame.UI.GamePlay
 
         protected override void OnEnable()
         {
-            base.OnEnable();
-            _spriteHandle = CR.LoadAssetRefAsync<Sprite>(buildingIdleIcon, sprite =>
+            if (showCostSlots)
+                base.OnEnable();
+            else
             {
-                _idleSprite = sprite;
-            });
+                SetInitialized();
+            }
+            generatePanel.SetActive(false);
+            dwellingPanel.SetActive(false);
+            ornamentPanel.SetActive(false);
+            conjurePanel.SetActive(false);
+            interactAbilityTriangle.enabled = false;
+            
         }
-
- 
 
         protected override void OnDisable()
         {
-            base.OnDisable();
-            Addressables.Release(_spriteHandle);
+            if (showCostSlots)
+                base.OnDisable();
         }
 
-        private void Start()
+        protected virtual void Start()
         {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-            panel.SetActive(false);
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _notPauseTag = Em.CreateEntityQuery(typeof(NotPauseTag));
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             if (_notPauseTag.IsEmpty) return;
             if (!BuildingWindowResourceManager.Instance.IsResourceLoaded()
-                || !BasicWindowResourceManager.Instance.IsResourceLoaded()
-                || !IsResourceLoaded()) return;
+                || !BasicResourceManager.Instance.IsResourceLoaded()) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
-            if (!_em.HasComponent<InteractableAttr>(_targetEntity))
+            if (!Em.HasComponent<GeneralAttr>(_targetEntity))
             {
                 _targetEntity = Entity.Null;
                 return;
             }
 
-            UpdateBuildingDetailInfo();
+            UpdateDynamicData();
         }
 
         #endregion
 
-        protected override bool IsResourceLoaded()
+
+        private void UpdateStaticData()
         {
-            return base.IsResourceLoaded() && _spriteHandle.IsValid() && _spriteHandle.IsDone;
-        }
-        
-        private void UpdateBuildingDetailInfo()
-        {
-            var interactableAttr = _em.GetComponentData<InteractableAttr>(_targetEntity);
-            _buildingAttr = _em.GetComponentData<BuildingAttr>(_targetEntity);
-            var costList = _em.GetBuffer<CostList>(_targetEntity);
-            
+            var generalAttr = Em.GetComponentData<GeneralAttr>(_targetEntity);
+            var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(generalAttr.ID);
+            _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
+            description.text = dataItem.description;
             // Visualize type attributes
-            buildingType.text = _buildingAttr.Type.ToString();
-            buildingTypeIcon.sprite = BuildingWindowResourceManager.Instance.BuildingTypeSprites[_buildingAttr.Type];
+            generalTypeText.text = _buildingAttr.Type.ToString();
+            generalTypeIcon.sprite =
+                BuildingWindowResourceManager.Instance.BuildingGeneralTypeSprites[_buildingAttr.Type];
+            idSingleIcon.sprite = BuildingWindowResourceManager.Instance
+                .GetInfo(_buildingAttr.Type, generalAttr.ID).Sprite;
+            if (showCostSlots)
+                VisualizeCostSlots();
             
+            
+            interactAbilityTriangle.enabled = false; // fortification panel
+            generatePanel.SetActive(false);
+            conjurePanel.SetActive(false);
+            dwellingPanel.SetActive(false);
+            ornamentPanel.SetActive(false);
+            
+            if (Em.HasComponent<GarrisonAttr>(_targetEntity))
+            {
+                var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
+                garrisonInfoPanel.SetActive(true);
+                if (!isMainInfoSingleton) garrisonCountText.text = $"{garrisonAttr.MaxGarrisonCount}";
+            }
+            
+            switch (_buildingAttr.Type)
+            {
+                case BuildingType.Generators:
+                    generatePanel.SetActive(true);
+                    var generateAttribute = Em.GetComponentData<GenerateAttr>(_targetEntity);
+                    generateResourceIcon.sprite =
+                        BasicResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
+                    generateTypeText.text = generateAttribute.GenerateResourceType.ToString();
+                    generateMinRequireUnitsText.text = generateAttribute.MinCultivatorsRequireToGenerate.ToString();
+                    if (!isMainInfoSingleton)
+                        generateSpeedText.text = $"{generateAttribute.MinCultivatorsRequireToGenerate}/s";
+                    break;
+                case BuildingType.Fortifications:
+                    interactAbilityTriangle.enabled = true;
+                    break;
+                case BuildingType.ConjuringShrines:
+                    conjurePanel.SetActive(true);
+                    var conjureAttribute = Em.GetComponentData<ConjureAttr>(_targetEntity);
+                    var currentTier = Em.GetComponentData<ExpData>(_targetEntity).CurTier;
+                    // Main building window then set to conjure button icon, building slot then set to unitType icon
+                    conjureButtonIcon.sprite = isMainInfoSingleton
+                        ? BuildingWindowResourceManager.Instance.FunctionConjuringButtonSprites[currentTier]
+                        : UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[conjureAttribute.ConjuringType];
+                    conjureTypeNameText.text = conjureAttribute.ConjuringType + "Conjuration";
+                    break;
+                case BuildingType.Dwellings:
+                    dwellingPanel.SetActive(true);
+                    var dwellingAttr = Em.GetComponentData<DwellingAttr>(_targetEntity);
+                    dwellingCountText.text = dwellingAttr.Amount.ToString();
+                    dwellingResourceIcon.sprite =
+                        BasicResourceManager.Instance.ResourceSprites[dwellingAttr.ResourceType];
+                    
+                    break;
+                case BuildingType.Ornaments:
+                    if(Em.HasComponent<AttackAbility>(_targetEntity)
+                       || Em.HasComponent<HealAbility>(_targetEntity)
+                       || Em.HasComponent<HarvestAbility>(_targetEntity))
+                        interactAbilityTriangle.enabled = true;
+                    if (Em.HasComponent<StaticBuffAttr>(_targetEntity))
+                    {
+                        var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity); 
+                        ornamentPanel.SetActive(true);
+                        ornamentBuffImage.sprite = BasicResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
+                        ornamentBuffDescriptionText.text = "Not implemented";
+                    }
+                    
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            // Check should open garrison window or conjure queue window
+            if (isMainInfoSingleton)
+                ShouldOpenGarrisonInfoConjureQueueAndMiniConjure();
+        }
+
+        private void ShouldOpenGarrisonInfoConjureQueueAndMiniConjure()
+        {
+            if (GarrisonInfoWindow.Instance.TrySwitchTarget(_targetEntity))
+            {
+                if( !GarrisonInfoWindow.Instance.IsOpened())
+                    GarrisonInfoWindow.Instance.Show();
+            }
+            else GarrisonInfoWindow.Instance.Hide();
+
+            if (ConjureQueueWindow.Instance.TrySwitchTarget(_targetEntity)
+               )
+            {
+                if(!ConjureQueueWindow.Instance.IsOpened())
+                    ConjureQueueWindow.Instance.Show();
+            }
+            else
+                ConjureQueueWindow.Instance.Hide();
+
+            if (MiniConjureWindow.Instance.TrySwitchTarget(_targetEntity)
+               )
+            {
+                if(!MiniConjureWindow.Instance.IsOpened())
+                    MiniConjureWindow.Instance.Show();
+            }
+            else MiniConjureWindow.Instance.Hide();
+        }
+
+        private void UpdateDynamicData()
+        {
+            _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
+            // Visualize function panel and doingThings panel
+            var underAttack = Em.HasComponent<OocTag>(_targetEntity);
+            var constructing = Em.HasComponent<ConstructingTag>(_targetEntity);
+            var generating = Em.HasComponent<GeneratingTag>(_targetEntity);
+            var conjuring = Em.HasComponent<ConjuringTag>(_targetEntity);
+            var currentState = BuildingUtils.GetBuildingState(underAttack, constructing, conjuring, generating);
+            buildingStateIcon.sprite =
+                BuildingWindowResourceManager.Instance.BuildingStateSprites[currentState];
+            buildingStateText.text = currentState.ToString();
+            
+            // Check garrison data
+            _hasGarrisonUnits = false;
+            if (Em.HasComponent<GarrisonAttr>(_targetEntity))
+            {
+                var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
+                var entities = Em.GetBuffer<GarrisonEntity>(_targetEntity);
+                garrisonCountText.text = $"{entities.Length} / {garrisonAttr.MaxGarrisonCount}";
+                if (entities.Length > 0) _hasGarrisonUnits = true;
+            }
+            
+            switch (_buildingAttr.Type)
+            {
+                case BuildingType.Generators:
+                {
+                    var generateAttribute = Em.GetComponentData<GenerateAttr>(_targetEntity);
+                    generateSpeedText.text = $"Current : {generateAttribute.CurGenerateSpeed}/s" + "\n" +
+                                             $"Max : {generateAttribute.MaxGenerateSpeed}/s";
+                    break;
+                }
+                case BuildingType.ConjuringShrines:
+                case BuildingType.Fortifications:
+                case BuildingType.Dwellings:
+                case BuildingType.Ornaments:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void VisualizeCostSlots()
+        {
+            var costList = Em.GetBuffer<CostList>(_targetEntity);
             // Visualize cost attributes
             for (var i = 0; i < Slots.Count; i++)
             {
@@ -178,7 +368,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var cost = costList[i];
                     var costSlot = SlotComponents[i];
-                    costSlot.icon.sprite = BasicWindowResourceManager.Instance.ResourceSprites[cost.Type];
+                    costSlot.icon.sprite = BasicResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = $"x{cost.Amount}";
                 }
@@ -186,66 +376,6 @@ namespace SparFlame.UI.GamePlay
                 {
                     Slots[i].SetActive(false);
                 }
-            }
-            // Visualize function panel and doingThings panel
-            if (_buildingAttr.State != BuildingState.Working)
-            {
-                doingThingsIcon.sprite = _idleSprite;
-                doingThingsRemainedTimeText.text = "";
-                doingThingsDescriptionText.text = "";
-                thingsLabelText.text = "";
-                doingLabelText.text = "Idle";
-            }
-            switch (_buildingAttr.Type)
-            {
-                case BuildingType.ConjuringShrines:
-                {
-                    var conjureAttribute = _em.GetComponentData<ConjureAttr>(_targetEntity);
-                    functionIcon.enabled = true;
-                    functionIcon.sprite =
-                        BuildingWindowResourceManager.Instance.FunctionConjuringButtonSprites[interactableAttr.Tier];
-                    functionNameText.enabled = true;
-                    functionNameText.text = "Conjure";
-                    if (_buildingAttr.State == BuildingState.Working)
-                    {
-                        doingThingsIcon.sprite =
-                            UnitWindowResourceManager.Instance.UnitSprites[conjureAttribute.ConjuringType];
-                        doingThingsRemainedTimeText.text = UIMathMethods.FormatTime(conjureAttribute.RemainingTime);
-                        doingThingsDescriptionText.text =
-                            $"{conjureAttribute.ConjuredAmount} / {conjureAttribute.TargetAmount}";
-                        doingLabelText.text = "Conjuring";
-                        thingsLabelText.text = conjureAttribute.ConjuringType.ToString();
-                    }
-                    break;
-                }
-                case BuildingType.Generators:
-                {
-                    functionIcon.enabled = true;
-                    var generateAttribute = _em.GetComponentData<GenerateAttr>(_targetEntity);
-                    functionIcon.sprite =
-                        BuildingWindowResourceManager.Instance.FunctionGeneratingButtonSprites[interactableAttr.Tier];
-                    functionNameText.enabled = true;
-                    functionNameText.text = "Generate";
-                    if (_buildingAttr.State == BuildingState.Working)
-                    {
-                        doingThingsIcon.sprite =
-                            BasicWindowResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
-                        doingThingsRemainedTimeText.text = UIMathMethods.FormatTime(generateAttribute.RemainingTime);
-                        doingThingsDescriptionText.text =
-                            $"{generateAttribute.GeneratedAmount} / {generateAttribute.TargetAmount}";
-                        doingLabelText.text = "Generating";
-                        thingsLabelText.text = generateAttribute.GenerateResourceType.ToString();
-                    }
-                    break;
-                }
-                case BuildingType.Fortifications:
-                case BuildingType.Dwellings:
-                case BuildingType.Ornaments:
-                    functionIcon.enabled = false;
-                    functionNameText.enabled = false;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
     }

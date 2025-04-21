@@ -63,6 +63,7 @@ namespace SparFlame.UI.GamePlay
 
         public bool TrySwitchTarget(Entity target)
         {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             var attackable = _em.HasComponent<AttackAbility>(target);
             var healable = _em.HasComponent<HealAbility>(target);
             var harvestable = _em.HasComponent<HarvestAbility>(target);
@@ -120,7 +121,7 @@ namespace SparFlame.UI.GamePlay
         private AsyncOperationHandle<GameObject> _slotHandle;
 
         private Entity _targetEntity;
-        private EntityManager _em;
+        protected EntityManager _em;
         private EntityQuery _notPauseTag;
 
         protected virtual void Awake()
@@ -150,10 +151,10 @@ namespace SparFlame.UI.GamePlay
         protected virtual void Update()
         {
             if (_notPauseTag.IsEmpty) return;
-            if (!BasicWindowResourceManager.Instance.IsResourceLoaded()) return;
+            if (!BasicResourceManager.Instance.IsResourceLoaded()) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
-            if (!_em.HasComponent<InteractableAttr>(_targetEntity))
+            if (!_em.HasComponent<GeneralAttr>(_targetEntity))
             {
                 _targetEntity = Entity.Null;
                 return;
@@ -187,9 +188,9 @@ namespace SparFlame.UI.GamePlay
             amountLabelText.text = prefix + " Amount";
             amountValueText.text = interactAbility.Amount.ToString();
             rangeLabelText.text = prefix + " Range";
-            rangeValueText.text = ((int)math.sqrt(interactAbility.RangeSq)).ToString();
+            rangeValueText.text = math.sqrt(interactAbility.RangeSq).ToString("F2");
             speedLabelText.text = prefix + " Speed";
-            speedValueText.text = ((int)interactAbility.Speed).ToString();
+            speedValueText.text = interactAbility.Speed.ToString("F2");
             targetsLabelText.text = prefix + " Targets";
             targetsValueText.text = ((int)interactAbility.Targets).ToString();
         }

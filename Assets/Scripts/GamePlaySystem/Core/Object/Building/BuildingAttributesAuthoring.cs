@@ -8,14 +8,8 @@ namespace SparFlame.GamePlaySystem.Building
     public class BuildingAttributesAuthoring : MonoBehaviour
     {
         public BuildingType buildingType;
-        public BuildingState buildingInitialState = BuildingState.Idle;
         public int subTypeIndex;
-        public ConjuringShrineType conjuringShrineTypeCheckList;
-        public FortificationType fortificationTypeCheckList;
-        public DwellingType dwellingTypeCheckList;
-        public GeneratorType generatorTypeCheckList;
-        public OrnamentType ornamentTypeCheckList;
-        
+ 
         
         private class BuildingAttributesAuthoringBaker : Baker<BuildingAttributesAuthoring>
         {
@@ -25,7 +19,6 @@ namespace SparFlame.GamePlaySystem.Building
                 AddComponent(entity, new BuildingAttr
                 {
                     Type = authoring.buildingType,
-                    State = authoring.buildingInitialState,
                     SubTypeIndex = authoring.subTypeIndex
                 });
             }
@@ -36,17 +29,22 @@ namespace SparFlame.GamePlaySystem.Building
     {
         Idle = 0,
         Constructing =1,
-        Constructed = 2,
-        Working = 3,
-        Worked = 4,
-        UnderAttack = 5
+        Working = 2,
+        UnderAttack = 3,
+        // Worked = 4, // Obsolete
     }
 
+    public struct ConstructingTag : IComponentData
+    {
+        
+    }
+    
     public struct BuildingAttr : IComponentData
     {
         public BuildingType Type;
-        public BuildingState State;
+        // public BuildingState CurBuildingState;
         public int SubTypeIndex;
+        // public float BuildingStateCount;
     }
 
 

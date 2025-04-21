@@ -35,6 +35,8 @@ namespace SparFlame.GamePlaySystem.Movement
             movableData.TargetColliderShapeXZ = new float2(targetColliderSize.x, targetColliderSize.z);
             movableData.MovementCommandType = commandType;
             movableData.InteractiveRangeSq = interactRangeSq;
+            movableData.MovementState = MovementState.NotMoving;
+            movableData.DetailInfo = DetailInfo.None;
         }
         
         public static void ResetNavAgent(ref NavAgentComponent navAgentComponent)

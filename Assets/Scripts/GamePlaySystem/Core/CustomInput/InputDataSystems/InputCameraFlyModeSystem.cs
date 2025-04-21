@@ -4,7 +4,7 @@ using Unity.Burst;
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(InputMouseSystem))]
     public partial class InputCameraFlyModeSystem : SystemBase

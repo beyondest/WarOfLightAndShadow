@@ -2,7 +2,7 @@
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.Interact
+namespace SparFlame.GamePlaySystem.General
 {
     public class InteractAbilityAttributesAuthoring : MonoBehaviour
     {
@@ -24,7 +24,6 @@ namespace SparFlame.GamePlaySystem.Interact
             public override void Bake(InteractAbilityAttributesAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-
 
                 switch (authoring.interactType)
                 {
@@ -124,40 +123,25 @@ namespace SparFlame.GamePlaySystem.Interact
         
     }
 
-    // public struct AttackAbility : IComponentData
-    // {
-    //     public float Speed;
-    //     public float Count;
-    //     public float RangeSq;
-    //     public int BasicAmount;
-    //     public int CurCounter;
-    // }
 
     public struct HarvestStateTag : IComponentData, IEnableableComponent
     {
     }
 
-    // public struct HarvestAbility : IComponentData
-    // {
-    //     public float RangeSq;
-    //     public float BasicAmount;
-    //     public float Speed;
-    //     public int Count;
-    // }
+
 
     public struct HealStateTag : IComponentData, IEnableableComponent
     {
     }
 
-    // public struct HealingAbility : IComponentData
-    // {
-    //     public float RangeSq;
-    //     public float BasicAmount;
-    //     public float Speed;
-    //     public int Count;
-    // }
+
 
     public struct GarrisonStateTag : IComponentData, IEnableableComponent
     {
+    }
+    
+    public struct IdleStateTag : IComponentData, IEnableableComponent
+    {
+        
     }
 }

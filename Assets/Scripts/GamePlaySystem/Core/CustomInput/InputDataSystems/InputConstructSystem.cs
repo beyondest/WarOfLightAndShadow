@@ -3,7 +3,7 @@ using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Entities;
 
-namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(InputMouseSystem))]
     public partial class InputConstructSystem : SystemBase

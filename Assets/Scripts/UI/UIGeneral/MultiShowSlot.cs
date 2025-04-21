@@ -11,11 +11,6 @@ namespace SparFlame.UI.General
         [CanBeNull] public Button button;
 
         
-        public virtual void SetTarget(Entity target)
-        {
-            
-        }
-        
-        
+  
     }
 }

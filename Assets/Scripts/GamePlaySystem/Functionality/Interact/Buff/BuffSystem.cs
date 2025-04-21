@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Movement;
+﻿using SparFlame.GamePlaySystem.Garrison;
+using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Physics.Systems;
@@ -29,6 +30,18 @@ namespace SparFlame.GamePlaySystem.Interact
         public void OnDestroy(ref SystemState state)
         {
 
+        }
+        
+        
+        [BurstCompile]
+        [WithAll(typeof(GarrisonStateTag))]
+        [WithAll(typeof(InGarrison))]
+        private partial struct GarrisonUnitsRegenerateHp : IJobEntity
+        {
+            private void Execute(ref StatData statData, Entity entity)
+            {
+                    
+            }
         }
     }
 }

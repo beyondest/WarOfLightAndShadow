@@ -1,6 +1,6 @@
 ﻿using System;
 using Unity.Entities;
-using Unity.Physics.Stateful;
+using Unity.Physics;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
@@ -16,20 +16,16 @@ namespace SparFlame.GamePlaySystem.Interact
                 AddBuffer<InsightTarget>(entity);
                 AddComponent(entity, new GenerateSightRequest
                 {
-                    SightPrefab = GetEntity(authoring.sightPrefab, TransformUsageFlags.Dynamic)
+                    SightPrefab = GetEntity(authoring.sightPrefab, TransformUsageFlags.Dynamic),
                 });
             }
         }
     }
 
 
-    public interface IEntityContained
+    public struct InsightTarget : IBufferElementData, IComparable<InsightTarget>,IEquatable<InsightTarget>
     {
-        Entity Entity { get; set; }
-    }
-    public struct InsightTarget : IBufferElementData, IComparable<InsightTarget>,IEquatable<InsightTarget>, IEntityContained
-    {
-        public Entity Entity { get; set; }
+        public Entity Entity;
         public float PriorityValue;
         public float DisValue;
         public float StatChangValue;
@@ -50,6 +46,8 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct GenerateSightRequest : IComponentData
     {
         public Entity SightPrefab;
+        // public float SightRange;
+        // public CollisionFilter Filter;
     }
     
 }

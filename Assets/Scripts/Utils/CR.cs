@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace SparFlame.UI.General
+namespace SparFlame.Utils
 {
     /// <summary>
     /// Custom Resource Loader, provide simple helper functions
@@ -178,8 +178,5 @@ namespace SparFlame.UI.General
     }
 
 
-    public abstract class CustomResourceManager : MonoBehaviour
-    {
-        public abstract bool IsResourceLoaded();
-    }
+  
 }
