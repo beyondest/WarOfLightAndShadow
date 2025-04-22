@@ -36,12 +36,11 @@ namespace SparFlame.UI.GamePlay
 
         [SerializeField] private TMP_Text buildingStateText;
 
-        [Header("Garrison Panel")]
-        [SerializeField]
+        [Header("Garrison Panel")] [SerializeField]
         private GameObject garrisonInfoPanel;
 
         [SerializeField] private TMP_Text garrisonCountText;
-        
+
         [Header("Generate panel")] [SerializeField]
         private GameObject generatePanel;
 
@@ -49,23 +48,25 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private TMP_Text generateTypeText;
         [SerializeField] private TMP_Text generateSpeedText;
         [SerializeField] private TMP_Text generateMinRequireUnitsText;
-        
+
         [Header("Conjure panel")] [SerializeField]
         private GameObject conjurePanel;
 
         [SerializeField] private Image conjureButtonIcon;
         [SerializeField] private TMP_Text conjureTypeNameText;
 
-        [Header("Dwelling panel")]
-        [SerializeField]
+        [Header("Dwelling panel")] [SerializeField]
         private GameObject dwellingPanel;
+
         [SerializeField] private TMP_Text dwellingCountText;
         [SerializeField] private Image dwellingResourceIcon;
-        [Header("Ornament panel")]
-        [SerializeField] private GameObject ornamentPanel;
+
+        [Header("Ornament panel")] [SerializeField]
+        private GameObject ornamentPanel;
+
         [SerializeField] private Image ornamentBuffImage;
         [SerializeField] private TMP_Text ornamentBuffDescriptionText;
-        
+
         // Interface
         public static BuildingDetailWindow Instance;
         public Action<Entity> EcsGhostShowTarget;
@@ -108,7 +109,8 @@ namespace SparFlame.UI.GamePlay
         {
             if (Em.HasComponent<OocTag>(_targetEntity) ||
                 Em.HasComponent<ConstructingTag>(_targetEntity)
-                ||_hasGarrisonUnits)
+                || _hasGarrisonUnits
+                || _buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal })
             {
                 // TODO : Hints pop support
                 Debug.Log(" not allow to relocate, this should pop up hints");
@@ -136,8 +138,8 @@ namespace SparFlame.UI.GamePlay
         // Internal Data
         private Entity _targetEntity = Entity.Null;
         private bool _hasGarrisonUnits;
-        
-        
+
+
         // Cache
         private GameObject _costSlotPrefab;
         private BuildingAttr _buildingAttr;
@@ -164,12 +166,12 @@ namespace SparFlame.UI.GamePlay
             {
                 SetInitialized();
             }
+
             generatePanel.SetActive(false);
             dwellingPanel.SetActive(false);
             ornamentPanel.SetActive(false);
             conjurePanel.SetActive(false);
             interactAbilityTriangle.enabled = false;
-            
         }
 
         protected override void OnDisable()
@@ -217,21 +219,21 @@ namespace SparFlame.UI.GamePlay
                 .GetInfo(_buildingAttr.Type, generalAttr.ID).Sprite;
             if (showCostSlots)
                 VisualizeCostSlots();
-            
-            
+
+
             interactAbilityTriangle.enabled = false; // fortification panel
             generatePanel.SetActive(false);
             conjurePanel.SetActive(false);
             dwellingPanel.SetActive(false);
             ornamentPanel.SetActive(false);
-            
+
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
             {
                 var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
                 garrisonInfoPanel.SetActive(true);
                 if (!isMainInfoSingleton) garrisonCountText.text = $"{garrisonAttr.MaxGarrisonCount}";
             }
-            
+
             switch (_buildingAttr.Type)
             {
                 case BuildingType.Generators:
@@ -263,21 +265,21 @@ namespace SparFlame.UI.GamePlay
                     dwellingCountText.text = dwellingAttr.Amount.ToString();
                     dwellingResourceIcon.sprite =
                         BasicResourceManager.Instance.ResourceSprites[dwellingAttr.ResourceType];
-                    
+
                     break;
                 case BuildingType.Ornaments:
-                    if(Em.HasComponent<AttackAbility>(_targetEntity)
-                       || Em.HasComponent<HealAbility>(_targetEntity)
-                       || Em.HasComponent<HarvestAbility>(_targetEntity))
+                    if (Em.HasComponent<AttackAbility>(_targetEntity)
+                        || Em.HasComponent<HealAbility>(_targetEntity)
+                        || Em.HasComponent<HarvestAbility>(_targetEntity))
                         interactAbilityTriangle.enabled = true;
                     if (Em.HasComponent<StaticBuffAttr>(_targetEntity))
                     {
-                        var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity); 
+                        var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity);
                         ornamentPanel.SetActive(true);
                         ornamentBuffImage.sprite = BasicResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
                         ornamentBuffDescriptionText.text = "Not implemented";
                     }
-                    
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -292,7 +294,7 @@ namespace SparFlame.UI.GamePlay
         {
             if (GarrisonInfoWindow.Instance.TrySwitchTarget(_targetEntity))
             {
-                if( !GarrisonInfoWindow.Instance.IsOpened())
+                if (!GarrisonInfoWindow.Instance.IsOpened())
                     GarrisonInfoWindow.Instance.Show();
             }
             else GarrisonInfoWindow.Instance.Hide();
@@ -300,7 +302,7 @@ namespace SparFlame.UI.GamePlay
             if (ConjureQueueWindow.Instance.TrySwitchTarget(_targetEntity)
                )
             {
-                if(!ConjureQueueWindow.Instance.IsOpened())
+                if (!ConjureQueueWindow.Instance.IsOpened())
                     ConjureQueueWindow.Instance.Show();
             }
             else
@@ -309,7 +311,7 @@ namespace SparFlame.UI.GamePlay
             if (MiniConjureWindow.Instance.TrySwitchTarget(_targetEntity)
                )
             {
-                if(!MiniConjureWindow.Instance.IsOpened())
+                if (!MiniConjureWindow.Instance.IsOpened())
                     MiniConjureWindow.Instance.Show();
             }
             else MiniConjureWindow.Instance.Hide();
@@ -327,7 +329,7 @@ namespace SparFlame.UI.GamePlay
             buildingStateIcon.sprite =
                 BuildingWindowResourceManager.Instance.BuildingStateSprites[currentState];
             buildingStateText.text = currentState.ToString();
-            
+
             // Check garrison data
             _hasGarrisonUnits = false;
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
@@ -337,7 +339,7 @@ namespace SparFlame.UI.GamePlay
                 garrisonCountText.text = $"{entities.Length} / {garrisonAttr.MaxGarrisonCount}";
                 if (entities.Length > 0) _hasGarrisonUnits = true;
             }
-            
+
             switch (_buildingAttr.Type)
             {
                 case BuildingType.Generators:

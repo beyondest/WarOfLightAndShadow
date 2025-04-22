@@ -15,6 +15,7 @@ namespace SparFlame.GamePlaySystem.Command
 {
     // [UpdateBefore(typeof(MovementSystem))]
     [UpdateAfter(typeof(CursorManageSystem))]
+    [UpdateBefore(typeof(MovementSystem))]
     public partial struct PlayerCommandSystem : ISystem
     {
         [BurstCompile]

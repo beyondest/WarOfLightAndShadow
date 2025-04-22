@@ -11,6 +11,7 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -20,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Building
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct ConstructSystem : ISystem
     {
-        private ComponentLookup<Constructable> _constructableLookup;
+        private ComponentLookup<OccupiedTag> _constructableLookup;
 
         private BufferLookup<CostList> _costLookup;
 
@@ -36,7 +37,7 @@ namespace SparFlame.GamePlaySystem.Building
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<ConstructSystemConfig>();
 
-            _constructableLookup = state.GetComponentLookup<Constructable>(true);
+            _constructableLookup = state.GetComponentLookup<OccupiedTag>(true);
             _costLookup = state.GetBufferLookup<CostList>(true);
 
             _entityQuery = SystemAPI.QueryBuilder().WithAllRW<ConstructCommandData>().Build();
@@ -46,6 +47,7 @@ namespace SparFlame.GamePlaySystem.Building
         public void OnUpdate(ref SystemState state)
         {
             // TODO : Add construction time and animation support
+            // TODO : Change construction only use for one team, turn command data to singleton
             _constructableLookup.Update(ref state);
 
             _costLookup.Update(ref state);
@@ -58,18 +60,35 @@ namespace SparFlame.GamePlaySystem.Building
             var enemyResourceData =
                 SystemAPI.GetBuffer<ResourceData>(SystemAPI.GetSingletonEntity<EnemyResourceDataTag>());
 
-
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
             var entities = _entityQuery.ToEntityArray(Allocator.Temp);
             var datas = _entityQuery.ToComponentDataArray<ConstructCommandData>(Allocator.Temp);
+            CheckConstructionCommand(ref state, entities, datas, allyResourceData, enemyResourceData, config, customInputData, ecb);
+            entities.Dispose();
+            datas.Dispose();
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
+        }
+
+        private void CheckConstructionCommand(ref SystemState state, NativeArray<Entity> entities, NativeArray<ConstructCommandData> datas,
+            DynamicBuffer<ResourceData> allyResourceData, DynamicBuffer<ResourceData> enemyResourceData, ConstructSystemConfig config,
+            InputMouseData customInputData, EntityCommandBuffer ecb)
+        {
             for (var i = 0; i < entities.Length; ++i)
             {
                 var data = datas[i];
                 var entity = entities[i];
                 var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
+                var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
+                var isCrystal = buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
+                
                 switch (data.CommandType)
                 {
+                    
+                        
                     case ConstructCommandType.Drag:
                         var valid = true;
+                        
                         // Check if resource is available
                         if (!data.IsMovementShow)
                         {
@@ -91,9 +110,11 @@ namespace SparFlame.GamePlaySystem.Building
                             valid = false;
                         }
 
-                        // Check if mouse hit on constructable area
+                        // Check if mouse hit on constructable area; crystal can turn neutral area to cur faction
                         if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
-                            constructable.Faction != data.Faction)
+                            ( !isCrystal && constructable.Faction != data.Faction)
+                            ||(isCrystal && constructable.Faction == ~data.Faction)
+                           )
                         {
                             SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in config,
                                 false);
@@ -160,8 +181,20 @@ namespace SparFlame.GamePlaySystem.Building
 
                     case ConstructCommandType.Build when data.State == PlacementStateType.Valid:
                         var newTransform = SystemAPI.GetComponent<LocalTransform>(data.GhostModelEntity);
+                        
                         if (!data.IsMovementShow)
                         {
+                            // Check if crystal, then turn this plane to cur faction
+                            if (isCrystal)
+                            {
+                                var request = ecb.CreateEntity();
+                                ecb.AddComponent(request, new ChangeOccupiedTagRequest
+                                {
+                                    CrystalFaction = data.Faction,
+                                    DestroyedCrystalPos = customInputData.HitPosition,
+                                    IsDestroyed = false
+                                });
+                            }
                             // Reduce resources
                             foreach (var cost in _costLookup[data.TargetBuilding])
                             {
@@ -190,6 +223,7 @@ namespace SparFlame.GamePlaySystem.Building
                 }
             }
         }
+
 
         private void DestroyPriorGhost(ref SystemState state, ref ConstructCommandData data)
         {

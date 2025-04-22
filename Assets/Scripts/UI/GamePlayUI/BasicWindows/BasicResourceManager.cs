@@ -19,6 +19,8 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] [CanBeNull] private string tierSpriteSuffix;
         [SerializeField] [CanBeNull] private string factionHpSpriteSuffix;
         [SerializeField] [CanBeNull] private string factionGameOverSpriteSuffix;
+        [SerializeField] [CanBeNull] private string factionHpFillSpriteSuffix;
+        [SerializeField] [CanBeNull] private string factionHpBlankSpriteSuffix;
         public static BasicResourceManager Instance;
 
 
@@ -29,7 +31,8 @@ namespace SparFlame.UI.GamePlay
         public readonly Dictionary<FactionTag, Sprite> FactionHpSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionGameOverSprites = new();
         public readonly Dictionary<CursorType, Sprite> CursorSprites = new();
-
+        public readonly Dictionary<FactionTag, Sprite> FactionHpFillSprites = new();
+        public readonly Dictionary<FactionTag, Sprite> FactionHpBlankSprites = new();
         private readonly AddressableResourceGroup _group = new();
 
         public bool IsResourceLoaded()
@@ -73,6 +76,11 @@ namespace SparFlame.UI.GamePlay
             _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionGameOverSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, FactionGameOverSprites)
                 ));
+            _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionHpFillSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, FactionHpFillSprites)));
+            _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionHpBlankSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, FactionHpBlankSprites)));
+            
             
             // TODO : only enter game mode when all resource loaded; before that, show loading screen. So don't need to check resource loaded
         }
@@ -83,8 +91,11 @@ namespace SparFlame.UI.GamePlay
             ResourceSprites.Clear();
             BuffSprites.Clear();
             FactionHpSprites.Clear();
+            FactionHpFillSprites.Clear();
+            FactionHpBlankSprites.Clear();
             CursorSprites.Clear();
             TierSprites.Clear();
+            
         }
     }
 }

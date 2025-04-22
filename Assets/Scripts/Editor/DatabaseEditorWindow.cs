@@ -1,6 +1,7 @@
 ﻿using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using SparFlame.Database;
+using SparFlame.Database.Database.DatabaseDefinition;
 using SparFlame.GamePlaySystem.Building;
 using UnityEditor;
 using UnityEngine;
@@ -18,6 +19,9 @@ namespace Editor
         [Unity.Collections.ReadOnly, LabelText("Resource Database"), ShowInInspector]
         public ResourceDatabaseSo resourceDatabase;
 
+        [Unity.Collections.ReadOnly, LabelText("Resource Database"), ShowInInspector]
+        public ResourceSpawnDatabaseSo resourceSpawnDatabase;        
+        
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -25,6 +29,7 @@ namespace Editor
             buildingDatabase = FindUniqueAsset<BuildingDatabaseSo>("Building Database");
             unitDatabase = FindUniqueAsset<UnitDatabaseSo>("Unit Database");
             resourceDatabase = FindUniqueAsset<ResourceDatabaseSo>("Resource Database");
+            resourceSpawnDatabase = FindUniqueAsset<ResourceSpawnDatabaseSo>("Resource Spawn Database");
         }
 
         private T FindUniqueAsset<T>(string label) where T : ScriptableObject

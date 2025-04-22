@@ -21,12 +21,16 @@ namespace SparFlame.UI.GamePlay
 
         protected override void OnUpdate()
         {
+            var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (!_isInitialized && UnitMulti2DWindow.Instance != null)
             {
                 UnitMulti2DWindow.Instance.GetTargetEntityByIndex += index =>
                 {
+                    var data = SystemAPI.GetSingleton<UnitSelectionData>();
+                    UpdateSelectedUnitInfos(data);
                     var targetEntity = index < _unitInfos.Length ? _unitInfos[index].Entity : Entity.Null;
-                    UnitMulti2DWindow.Instance.GetUnitData(_unitInfos.Length, targetEntity);
+                    UnitMulti2DWindow.Instance.GetUnitData(_unitInfos.Length, targetEntity
+                        );
                 };
                 _unitInfos = new NativeList<UnitRealTimeInfo>(Allocator.Persistent);
                 _isInitialized = true;
@@ -34,6 +38,11 @@ namespace SparFlame.UI.GamePlay
 
             if (!_isInitialized) return;
             if (!UnitMulti2DWindow.Instance.IsOpened()) return;
+            UpdateSelectedUnitInfos(unitSelectionData);
+        }
+
+        private void UpdateSelectedUnitInfos(UnitSelectionData unitSelectionData)
+        {
             _unitInfos.Clear();
             foreach (var (unitAttr, statData,expData, entity) in SystemAPI
                          .Query<RefRO<UnitAttr>, RefRO<StatData>, RefRO<ExpData>>()
@@ -42,12 +51,12 @@ namespace SparFlame.UI.GamePlay
                 _unitInfos.Add(new UnitRealTimeInfo
                 {
                     Entity = entity,
-                    HpRatio = (float)statData.ValueRO.CurValue / statData.ValueRO.MaxValue,
+                    HpRatio = statData.ValueRO.CurValue / statData.ValueRO.MaxValue,
                     UnitType = unitAttr.ValueRO.Type,
                     Tier = expData.ValueRO.CurTier
                 });
             }
-            UnitMulti2DWindow.Instance.UpdateSelectedUnitView(_unitInfos);
+            UnitMulti2DWindow.Instance.UpdateSelectedUnitView(_unitInfos, unitSelectionData.CurrentSelectFaction);
         }
 
 

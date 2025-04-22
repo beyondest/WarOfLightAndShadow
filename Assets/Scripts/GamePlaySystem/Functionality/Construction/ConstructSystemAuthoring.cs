@@ -98,4 +98,6 @@ namespace SparFlame.GamePlaySystem.Building
         // Internal data
         public LocalTransform OriTransform;
     }
+
+
 }

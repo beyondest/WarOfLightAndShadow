@@ -14,22 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: GamePlayUI
   m_GUID: 1a0891b1fa76ef94bad09a964e90d557
-  m_SerializeEntries:
-  - m_GUID: 1aecffad0b5015e4c9efb1d09bf197df
-    m_Address: AllyGameOver
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 56ded4c5e7f77ac43aa9251de8aad786
-    m_Address: NeutralGameOver
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b93a355b7beeacb4fb6c1d0927abef81
-    m_Address: EnemyGameOver
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
   m_SchemaSet:

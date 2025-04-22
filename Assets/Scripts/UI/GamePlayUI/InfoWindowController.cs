@@ -46,7 +46,10 @@ namespace SparFlame.UI.GamePlay
         public void UpdateCloseUpTarget(Entity target)
         {
             _closeUpTarget = target;
-            CloseUpWindow.Instance.TrySwitchTarget(_closeUpTarget);
+            if(CloseUpWindow.Instance.TrySwitchTarget(_closeUpTarget))
+            {
+                if(!CloseUpWindow.Instance.IsOpened())CloseUpWindow.Instance.Show();
+            }
             if (UnitDetailWindow.Instance.IsOpened())
             {
                 if(!UnitDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))

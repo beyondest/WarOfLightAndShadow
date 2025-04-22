@@ -1529,14 +1529,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 193618646}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -25.45, y: 0, z: 0.63}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 44.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3456690346095046008}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &200300121
 GameObject:
   m_ObjectHideFlags: 0
@@ -1602,8 +1602,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 694116252}
+  m_Children: []
   m_Father: {fileID: 1838035151}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -3006,7 +3005,7 @@ Transform:
   m_GameObject: {fileID: 468950525}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 45, y: 0, z: 45}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5057,7 +5056,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &602204216
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5608,7 +5607,7 @@ GameObject:
   - component: {fileID: 694116254}
   - component: {fileID: 694116253}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: ConjureQueuePanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5628,12 +5627,12 @@ RectTransform:
   m_Children:
   - {fileID: 1027609798}
   - {fileID: 1309935918}
-  m_Father: {fileID: 204790941}
+  m_Father: {fileID: 1779034341}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 608, y: -286.3101}
-  m_SizeDelta: {x: 1243.3674, y: 572.7354}
+  m_AnchoredPosition: {x: 619, y: -3.4161072}
+  m_SizeDelta: {x: -683.20264, y: 6.435486}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &694116253
 MonoBehaviour:
@@ -7040,6 +7039,8 @@ MonoBehaviour:
   button: {fileID: 1051281844}
   hpFilled: {fileID: 1201904482}
   tierImage: {fileID: 748597786}
+  hpBlank: {fileID: 0}
+  tierBg: {fileID: 0}
 --- !u!1 &808718493
 GameObject:
   m_ObjectHideFlags: 0
@@ -9813,7 +9814,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1036011807
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10031,7 +10032,7 @@ GameObject:
   - component: {fileID: 1042319857}
   - component: {fileID: 1042319856}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: GarrisonWindowPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12860,6 +12861,8 @@ MonoBehaviour:
   button: {fileID: 1751438462}
   hpFilled: {fileID: 698866509}
   tierImage: {fileID: 934985299}
+  hpBlank: {fileID: 0}
+  tierBg: {fileID: 0}
 --- !u!1 &1288624255
 GameObject:
   m_ObjectHideFlags: 0
@@ -13217,8 +13220,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1382745747}
+  m_Children: []
   m_Father: {fileID: 1838035151}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -13539,7 +13541,7 @@ GameObject:
   - component: {fileID: 1382745749}
   - component: {fileID: 1382745748}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: MiniConjureWindowPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13558,12 +13560,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1968607069}
-  m_Father: {fileID: 1319651868}
+  m_Father: {fileID: 1779034341}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -161, y: -356}
-  m_SizeDelta: {x: 1510.8228, y: 367.3713}
+  m_AnchoredPosition: {x: -150.00006, y: -73.10608}
+  m_SizeDelta: {x: -415.7473, y: -198.92862}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1382745748
 MonoBehaviour:
@@ -14719,7 +14721,19 @@ PrefabInstance:
     - target: {fileID: 4158237504339587315, guid: 62cdfedb97501164e984cb7b7d250b14, type: 3}
       propertyPath: m_NavMeshData
       value: 
-      objectReference: {fileID: 23800000, guid: de52c42c6204c774d9a912e19c4acb2f, type: 2}
+      objectReference: {fileID: 23800000, guid: b2199f4cbb9dc6245abbc1b7bfc11bda, type: 2}
+    - target: {fileID: 4563322012305207155, guid: 62cdfedb97501164e984cb7b7d250b14, type: 3}
+      propertyPath: m_Size.x
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 4563322012305207155, guid: 62cdfedb97501164e984cb7b7d250b14, type: 3}
+      propertyPath: m_Size.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4563322012305207155, guid: 62cdfedb97501164e984cb7b7d250b14, type: 3}
+      propertyPath: m_Size.z
+      value: 120
+      objectReference: {fileID: 0}
     - target: {fileID: 5638315845615238031, guid: 62cdfedb97501164e984cb7b7d250b14, type: 3}
       propertyPath: m_Name
       value: NavSurfaceAlly
@@ -17648,6 +17662,7 @@ RectTransform:
   - {fileID: 978701990}
   - {fileID: 226442091}
   - {fileID: 485849401}
+  - {fileID: 694116252}
   - {fileID: 291032077}
   - {fileID: 857605122}
   - {fileID: 200300122}
@@ -17656,6 +17671,7 @@ RectTransform:
   - {fileID: 938133879}
   - {fileID: 1602366648}
   - {fileID: 1262065041}
+  - {fileID: 1382745747}
   - {fileID: 1042319855}
   m_Father: {fileID: 695523241}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -18230,8 +18246,8 @@ RectTransform:
   - {fileID: 985357301}
   - {fileID: 1805472668}
   - {fileID: 57836326}
-  - {fileID: 204790941}
   - {fileID: 1319651868}
+  - {fileID: 204790941}
   - {fileID: 695523241}
   - {fileID: 1848581357}
   - {fileID: 1675743076}
@@ -19941,10 +19957,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 362219305}
     m_Modifications:
+    - target: {fileID: 798603715992830761, guid: 9e3d0014362669a448481fc3c928836c, type: 3}
+      propertyPath: m_Size.x
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 798603715992830761, guid: 9e3d0014362669a448481fc3c928836c, type: 3}
+      propertyPath: m_Size.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 798603715992830761, guid: 9e3d0014362669a448481fc3c928836c, type: 3}
+      propertyPath: m_Size.z
+      value: 120
+      objectReference: {fileID: 0}
     - target: {fileID: 1005461683545398441, guid: 9e3d0014362669a448481fc3c928836c, type: 3}
       propertyPath: m_NavMeshData
       value: 
-      objectReference: {fileID: 23800000, guid: 31f6c8f12efb4d2439c94bf76989206e, type: 2}
+      objectReference: {fileID: 23800000, guid: eecd328f4f743184f9d25252acc6fcaa, type: 2}
     - target: {fileID: 1977236605815936363, guid: 9e3d0014362669a448481fc3c928836c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

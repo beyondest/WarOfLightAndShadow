@@ -12,7 +12,7 @@ namespace SparFlame.BootStrapper
         // [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
         [SerializeField] private string mainMenuGroupName = "MainMenuGroup";
         [SerializeField] private string gamingGroupName = "GamingGroup";
-        
+        [SerializeField] private bool enablePause;
         
         
         public event Action OnPause;
@@ -73,7 +73,8 @@ namespace SparFlame.BootStrapper
             // Check Player Pause Action
             if(!_isGaming)return;
             
-            CheckPlayerPauseAction();
+            if(enablePause)
+                CheckPlayerPauseAction();
             if (!_isCrystalDetected)
             {
                 if(_allyTag.IsEmpty || _enemyTag.IsEmpty)return;
@@ -132,6 +133,7 @@ namespace SparFlame.BootStrapper
             _isReadyForPlayer = false;
             SceneController.Instance.UnloadSceneGroup(gamingGroupName);
             _isGaming = false;
+            _isCrystalDetected = false;
         }
 
         public void ExitGame()

@@ -9,8 +9,8 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct InteractUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsTargetValid(in GeneralAttr targetgeneralAttr, in FactionTag selfFactionTag, in StatData targetStatData,
-            bool canHeal, bool canHarvest,bool resourceAvailable)
+        public static bool IsTargetValid(in GeneralAttr targetGeneralAttr, in FactionTag selfFactionTag, in StatData targetStatData,
+            bool canHeal, bool canHarvest,bool canAttack, bool resourceAvailable)
         {
             // Target is dead or not valid
             if (targetStatData.CurValue <= 0)
@@ -18,18 +18,19 @@ namespace SparFlame.GamePlaySystem.Interact
                 return false;
             }
             // Healing state but target stat is already full. If it is in healing state, target should be ally unit, this logic is determined by Auto Choose System
-            if (targetgeneralAttr.FactionTag == selfFactionTag)
+            if (targetGeneralAttr.FactionTag == selfFactionTag)
             {
                 if (!canHeal) return false;
                 return targetStatData.CurValue < targetStatData.MaxValue;
             }
             // Harvest target
-            if (targetgeneralAttr.BaseTag == BaseTag.Resources)
+            if (targetGeneralAttr.BaseTag == BaseTag.Resources)
             {
                 return canHarvest && resourceAvailable;
             }
+            
             // Faction tag not same, and base tag not resource, and hp > 0, must be valid target
-            return true;
+            return canAttack;
         }
 
         public static bool NoDupAdd(ref DynamicBuffer<InsightTarget> targets, InsightTarget insightTarget)

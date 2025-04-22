@@ -4,6 +4,7 @@ using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -106,6 +107,23 @@ namespace SparFlame.GamePlaySystem.State
         }
 
 
-  
+        public static void GarrisonMoveBack(in InGarrison garrison, 
+            ref BasicStateData stateData,
+            ref MovableData movableData, 
+            in float3 buildingPos,
+            in float3 buildingColliderSize,
+            float garrisonRadiusSq,
+            bool focus,
+            Entity entity,int index,
+            EntityCommandBuffer.ParallelWriter ecb)
+        {
+            MovementUtils.SetMoveTarget(ref movableData, buildingPos, buildingColliderSize,
+                MovementCommandType.Interactive, garrisonRadiusSq);
+            stateData.TargetState = InteractState.Moving;
+            SwitchState(ref stateData, ecb, entity, index);
+            stateData.TargetEntity = garrison.BuildingEntity;
+            stateData.TargetState = InteractState.Garrison;
+            stateData.Focus = focus;
+        }
     }
 }

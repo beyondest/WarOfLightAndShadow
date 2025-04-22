@@ -36,9 +36,13 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             var inputUnitSelectionData = SystemAPI.GetSingleton<InputUnitControlData>();
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-   
+
             if (inputUnitSelectionData.ChangeFaction)
+            {
+                DeselectAll(ref state, ref ecb,ref unitSelectionData,unitSelectionConfig);
                 unitSelectionData.ValueRW.CurrentSelectFaction = ~unitSelectionData.ValueRW.CurrentSelectFaction;
+                unitSelectionData.ValueRW.CurrentSelectCount = 0;
+            }
 
 
             // Left Click Start
@@ -90,6 +94,8 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 else
                 {
                     unitSelectionData.ValueRW.CurrentSelectCount -= 1;
+                    if(unitSelectionData.ValueRW.CurrentSelectCount < 0)
+                        unitSelectionData.ValueRW.CurrentSelectCount = 0;
                 }
                 ecb.DestroyEntity(entity);
             }

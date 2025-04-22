@@ -155,10 +155,14 @@ namespace SparFlame.UI.GamePlay
             if (_notPauseTag.IsEmpty) return;
             if (!IsOpened()) return;
             if (!BasicResourceManager.Instance.IsResourceLoaded()) return;
-            if (_targetEntity == Entity.Null) return;
+            if (_targetEntity == Entity.Null)
+            {
+                Hide();
+            }
             if (!_em.HasComponent<StatData>(_targetEntity))
             {
                 _targetEntity = Entity.Null;
+                Hide();
                 return;
             }
 
@@ -169,14 +173,14 @@ namespace SparFlame.UI.GamePlay
         {
             // Update Hp
             var statData = _em.GetComponentData<StatData>(_targetEntity);
-            _statFilled.fillAmount = (float)statData.CurValue / statData.MaxValue;
-            statValueText.text = statData.CurValue + " / " + statData.MaxValue;
+            _statFilled.fillAmount = statData.CurValue / statData.MaxValue;
+            statValueText.text = (int)statData.CurValue + " / " + statData.MaxValue;
             // Update Exp
             if (_targetHasExp)
             {
                 var expData = _em.GetComponentData<ExpData>(_targetEntity);
-                _expFilled.fillAmount = (float)expData.CurValue / expData.MaxValue;
-                expValueText.text = expData.CurValue + "/" + expData.MaxValue;
+                _expFilled.fillAmount = expData.CurValue / expData.MaxValue;
+                expValueText.text = (int)expData.CurValue + "/" + expData.MaxValue;
             }
 
             // Update camera close up show

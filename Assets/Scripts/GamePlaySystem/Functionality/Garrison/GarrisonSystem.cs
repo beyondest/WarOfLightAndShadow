@@ -9,11 +9,11 @@ using Unity.Transforms;
 namespace SparFlame.GamePlaySystem.Garrison
 {
     [BurstCompile]
+    [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct GarrisonSystem : ISystem
     {
         private NativeHashSet<Entity> _alreadyTagged;
         private ComponentLookup<GarrisonAttr> _garrisonAttrLookup;
-        private ComponentLookup<GarrisonStateTag> _garrisonStateTagLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -22,7 +22,6 @@ namespace SparFlame.GamePlaySystem.Garrison
             state.RequireForUpdate<NotPauseTag>();
             state.RequireForUpdate<GarrisonSystemConfig>();
             _garrisonAttrLookup = state.GetComponentLookup<GarrisonAttr>(true);
-            _garrisonStateTagLookup = state.GetComponentLookup<GarrisonStateTag>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
 
             _alreadyTagged = new NativeHashSet<Entity>(16,Allocator.Persistent);
@@ -43,14 +42,12 @@ namespace SparFlame.GamePlaySystem.Garrison
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
             _garrisonAttrLookup.Update(ref state);
-            _garrisonStateTagLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
             new GarrisonGetOutJob
             {
                 Config = config,
                 ECB = ecbP,
                 GarrisonAttrLookup = _garrisonAttrLookup,
-                GarrisonStateTagLookup = _garrisonStateTagLookup,
                 LocalTransformLookup = _localTransformLookup,
             }.ScheduleParallel();
         }
@@ -296,7 +293,6 @@ namespace SparFlame.GamePlaySystem.Garrison
         {
             
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
-            [ReadOnly] public ComponentLookup<GarrisonStateTag> GarrisonStateTagLookup;
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -306,11 +302,13 @@ namespace SparFlame.GamePlaySystem.Garrison
             {
                 ref var transform = ref LocalTransformLookup.GetRefRW(selfEntity).ValueRW;
                 var buildingTransform = LocalTransformLookup[inGarrison.BuildingEntity];
-                if (GarrisonStateTagLookup.IsComponentEnabled(selfEntity))
+                if (inGarrison.InBuilding)
                 {
                     GarrisonUtils.PosGetOut(ref inGarrison, ref transform, buildingTransform,
                         GarrisonAttrLookup[inGarrison.BuildingEntity], ref mass, Config, false);
                 }
+                // ECB.SetComponent(index,selfEntity,transform);
+                // ECB.SetComponent(index, selfEntity, mass);
                 ECB.SetComponentEnabled<GarrisonStateTag>(index, selfEntity, false);
                 ECB.SetComponentEnabled<IdleStateTag>(index, selfEntity, true);
                 ECB.RemoveComponent<InGarrison>(index, selfEntity);

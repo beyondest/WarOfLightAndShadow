@@ -22,7 +22,9 @@
         "GUID:cf5a4ae1991a2ff4da18195e0cdd8c41",
         "GUID:8a3cc244f8ae98743a6c9b074a976837",
         "SparFlame.GamePlaySystem.Ooc",
-        "GUID:ae6f7a3bb06b5304098ba32b29efd00c"
+        "GUID:ae6f7a3bb06b5304098ba32b29efd00c",
+        "GUID:c11451c167f103e4fabf1fac89ffda36",
+        "GUID:97033921d263d294f96116cdf21ea352"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

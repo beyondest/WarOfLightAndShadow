@@ -2,20 +2,16 @@
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
-using SparFlame.Test;
 using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.Database
 {
-    public class DatabaseManagerAuthoring : MonoBehaviour
+    public class GeneralDatabaseAuthoring : MonoBehaviour
     {
-
-        public TestDatabaseSo so;
-
-        private class DatabaseManagerAuthoringBaker : Baker<DatabaseManagerAuthoring>
+        private class DatabaseManagerAuthoringBaker : Baker<GeneralDatabaseAuthoring>
         {
-            public override void Bake(DatabaseManagerAuthoring authoring)
+            public override void Bake(GeneralDatabaseAuthoring authoring)
             {
                 var entity1 = GetEntity(TransformUsageFlags.None);
                 var buffer = AddBuffer<BuildingEntityPrefabData>(entity1);
@@ -27,11 +23,7 @@ namespace SparFlame.Database
                         Prefab = GetEntity(buildingData.prefab, TransformUsageFlags.Dynamic)
                     });
                 }
-                var b =AddBuffer<TestBuildingPrefab>(entity1);
-                b.Add(new TestBuildingPrefab
-                {
-                    Prefab = GetEntity(authoring.so.prefab, TransformUsageFlags.Dynamic),
-                });
+          
                 var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
                 var buffer2 = AddBuffer<UnitEntityPrefabData>(entity2);
                 foreach (var unitData in DatabaseManager.UnitDatabaseSo.Items)
@@ -58,10 +50,7 @@ namespace SparFlame.Database
     }
 
 
-    public struct TestBuildingPrefab : IBufferElementData
-    {
-        public Entity Prefab;
-    }
+
     public interface IEntityPrefabData<T> : IBufferElementData where T : Enum 
     {
         public Entity Prefab { get; set; }
@@ -81,7 +70,7 @@ namespace SparFlame.Database
         public UnitType Type { get; set; }
     }
     
-    public struct ResourceEntityPrefabData : IBufferElementData,IEntityPrefabData<ResourceType>
+    public struct ResourceEntityPrefabData : IEntityPrefabData<ResourceType>
     {
         public Entity Prefab { get; set; }
         public ResourceType Type { get; set; }

@@ -43,7 +43,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 SingleSelect = customInputActions.UnitControl.SingleSelect.WasPerformedThisFrame() && !isOverUi,
                 ChangeFaction = customInputActions.UnitControl.ChangeFaction.WasPerformedThisFrame(),
                 Focus = customInputActions.UnitControl.Focus.ReadValue<float>() > 0,
-                Command = _commandCounter > 0,
+                Command = customInputActions.UnitControl.Command.WasPerformedThisFrame() && !isOverUi,
                 MoveOutSameIdUnits = customInputActions.UnitControl.MoveOutSameIdUnits.ReadValue<float>() >0,
             });
         }

@@ -43,7 +43,8 @@ namespace SparFlame.GamePlaySystem.CameraControl
             var cam = Camera.main;
             _config = SystemAPI.GetSingleton<NormalCameraControlConfig>();
             _inputData = SystemAPI.GetSingleton<InputCameraNormalData>();
-            if (!_inputData.Enabled)
+            var flyModeData = SystemAPI.GetSingleton<InputCameraFlyData>();
+            if (flyModeData.Enabled)
             {
                 _preFlyMode = true;
                 return;
@@ -68,7 +69,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
         {
             if (preFlyMode)
             {
-                _rigTransform = cam.transform.GetChild(0);
+                _rigTransform = cam.transform.GetChild(1);
                 _rigTransform.SetParent(null);
                 cam.transform.SetParent(_rigTransform);
                 var rigNewPos = _rigTransform.position;

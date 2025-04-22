@@ -6,15 +6,15 @@ using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Resource
 {
-    public class ResourceSystemAuthoring : MonoBehaviour
+    public class ResourceManageSystemAuthoring : MonoBehaviour
     {
 
-        private class ResourceSystemAuthoringBaker : Unity.Entities.Baker<ResourceSystemAuthoring>
+        private class ResourceSystemAuthoringBaker : Baker<ResourceManageSystemAuthoring>
         {
-            public override void Bake(ResourceSystemAuthoring authoring)
+            public override void Bake(ResourceManageSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new ResourceSystemConfig
+                AddComponent(entity, new ResourceManageSystemConfig
                 {
                     
                 });
@@ -63,7 +63,7 @@ namespace SparFlame.GamePlaySystem.Resource
     
 
 
-    public struct ResourceSystemConfig : IComponentData
+    public struct ResourceManageSystemConfig : IComponentData
     {
         
     }

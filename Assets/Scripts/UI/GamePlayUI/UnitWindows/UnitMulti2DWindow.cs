@@ -49,10 +49,12 @@ namespace SparFlame.UI.GamePlay
         {
             _currentSelectCounts = curSelectCount;
             _targetEntity = target;
+            
         }
 
-        public void UpdateSelectedUnitView(NativeList<UnitRealTimeInfo> unitInfos)
+        public void UpdateSelectedUnitView(NativeList<UnitRealTimeInfo> unitInfos, FactionTag faction)
         {
+            _currentSelectFaction = faction;
             if (!UnitWindowResourceManager.Instance.IsResourceLoaded() || !SlotPrefabHandle.IsDone) return;
             var startIdx = _currentPage * _slotsMaxCountPerPage;
             var count = Mathf.Min(_slotsMaxCountPerPage, unitInfos.Length - startIdx);
@@ -64,11 +66,14 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var unitShowSlot = SlotComponents[i];
                     var unitInfo = unitInfos[startIdx + i];
-                    unitShowSlot.button.image.sprite =
-                        UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitInfo.UnitType];
-                    unitShowSlot.hpFilled.fillAmount = unitInfo.HpRatio;
-                    var tier = (int)unitInfo.Tier - 2;
-                    unitShowSlot.tierImage.fillAmount = tier / _maxTierF;
+                    unitShowSlot.SetTarget(unitInfo, _currentSelectFaction,
+                        _maxTierF
+                        );
+                    // unitShowSlot.button.image.sprite =
+                    //     UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitInfo.UnitType];
+                    // unitShowSlot.hpFilled.fillAmount = unitInfo.HpRatio;
+                    // var tier = (int)unitInfo.Tier - 2;
+                    // unitShowSlot.tierImage.fillAmount = tier / _maxTierF;
                 }
                 else
                 {
@@ -104,7 +109,7 @@ namespace SparFlame.UI.GamePlay
         private int _currentSelectIndex = -1;
         private int _currentSelectCounts;
         private float _maxTierF;
-        
+        private FactionTag _currentSelectFaction;
         private Entity _targetEntity;
         
         #region EventFunction

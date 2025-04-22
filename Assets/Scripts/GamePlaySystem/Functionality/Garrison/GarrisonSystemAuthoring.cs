@@ -10,7 +10,6 @@ namespace SparFlame.GamePlaySystem.Garrison
         public int minCountToTriggerDefenceBuff;
         public float3 hidePositionBias;
         public float garrisonRadius;
-        public float maxTargetDistance;
         private class GarrisonSystemAuthoringBaker : Baker<GarrisonSystemAuthoring>
         {
             public override void Bake(GarrisonSystemAuthoring authoring)
@@ -21,7 +20,6 @@ namespace SparFlame.GamePlaySystem.Garrison
                     MinCountToTriggerDefenceBuff = authoring.minCountToTriggerDefenceBuff,
                     HidePositionBias = authoring.hidePositionBias,
                     GarrisonRadiusSq = authoring.garrisonRadius * authoring.garrisonRadius,
-                    MaxTargetDistanceSq = authoring.maxTargetDistance * authoring.maxTargetDistance,
                 });
             }
         }
@@ -33,7 +31,6 @@ namespace SparFlame.GamePlaySystem.Garrison
         public int MinCountToTriggerDefenceBuff;
         public float3 HidePositionBias;
         public float GarrisonRadiusSq;
-        public float MaxTargetDistanceSq;
     }
 
     /// <summary>
@@ -92,4 +89,9 @@ namespace SparFlame.GamePlaySystem.Garrison
     {
         
     }
+
+    // public struct GarrisonAiHpRegeneratingTag : IComponentData
+    // {
+    //     
+    // }
 }

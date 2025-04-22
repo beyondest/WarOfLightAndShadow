@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8011672770438034358}
   - component: {fileID: 5501144689435126000}
-  - component: {fileID: 5303171849700557173}
   m_Layer: 0
   m_Name: WalkablePlane
   m_TagString: Untagged
@@ -177,18 +176,6 @@ MonoBehaviour:
         Tag07: 0
     m_SerializedVersion: 1
   m_SerializedVersion: 1
---- !u!114 &5303171849700557173
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3657929343389968094}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fdedb456a39b468eb6c20f72aeb15f2c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &8017293254913030530
 PrefabInstance:
   m_ObjectHideFlags: 0

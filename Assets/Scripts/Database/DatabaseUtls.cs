@@ -19,8 +19,6 @@ namespace SparFlame.Database
 
         protected abstract class GeneralDataItemBaker<T> : Baker<T> where T : GeneralDataItemAuthoring
         {
-            
-
             protected void BakeGeneralDataItem(Entity entity, GeneralDataItem item)
             {
                 // General
@@ -116,6 +114,7 @@ namespace SparFlame.Database
                         InteractType = InteractType.Heal
                     });
                 }
+
                 if (item.IsHarvestable())
                 {
                     AddComponent<HarvestStateTag>(entity);
@@ -130,21 +129,21 @@ namespace SparFlame.Database
                     });
                 }
             }
-            
+
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
             {
                 float volumeRadius;
                 AreaType areaType;
-                if (item.IsAttackable())
-                {
-                    volumeRadius = item.attackRange;
-                    areaType = (AreaType)((int)item.curTier + 10);
-                }
-                else
-                {
-                    volumeRadius = 0f;
-                    areaType = (AreaType)item.curTier;
-                }
+                // if (item.IsAttackable())
+                // {
+                //     volumeRadius = item.attackRange;
+                //     areaType = (AreaType)((int)item.curTier + 10);
+                // }
+                // else
+                // {
+                volumeRadius = 0f;
+                areaType = (AreaType)item.curTier;
+                // }
                 var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();
                 AddComponent<VolumeObstacleTag>(entity);
                 AddComponent(entity, new VolumeObstacleSpawnRequest

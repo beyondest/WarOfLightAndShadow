@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Garrison;
+﻿using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Movement;
@@ -108,6 +109,18 @@ namespace SparFlame.GamePlaySystem.Interact
                 FromFaction = interacteeAttr.FactionTag,
                 RequestType = ResourceRequestType.Release,
                 Type = ResourceType.Population
+            });
+        }
+        
+        public static void GenerateChangeOccupiedTagRequest(in GeneralAttr interacteeAttr,  float3 crystalPos,
+            EntityCommandBuffer.ParallelWriter ecb,int index)
+        {
+            var request = ecb.CreateEntity(index);
+            ecb.AddComponent(index,request, new ChangeOccupiedTagRequest
+            {
+                CrystalFaction = interacteeAttr.FactionTag,
+                DestroyedCrystalPos = crystalPos,
+                IsDestroyed = true
             });
         }
 

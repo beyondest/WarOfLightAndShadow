@@ -13,8 +13,6 @@ using Unity.Physics.Systems;
 namespace SparFlame.GamePlaySystem.Movement
 {
     [BurstCompile]
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    [UpdateBefore(typeof(PhysicsSystemGroup))]
     public partial struct MovementSystem : ISystem
     {
 
@@ -99,12 +97,13 @@ namespace SparFlame.GamePlaySystem.Movement
                     {
                         // Enable Calculation
                         navAgent.EnableCalculation = true;
-                        // First time command come
+                        // First time command come, begin calculation and wait until next frame to read caculation result
                         if (movableData.ForceCalculate)
                         {
                             navAgent.ForceCalculate = true;
                             movableData.ForceCalculate = false;
                             MovementUtils.ResetSurroundings(ref surroundings);
+                            return;
                         }
 
                         // Calculation Complete
@@ -168,12 +167,13 @@ namespace SparFlame.GamePlaySystem.Movement
                     {
                         // Enable Calculation
                         navAgent.EnableCalculation = true;
-                        // If this is the first time command arrives, then force update path
+                        // If this is the first time command arrives, then force update path, wait until next frame to read result
                         if (movableData.ForceCalculate)
                         {
                             navAgent.ForceCalculate = true;
                             movableData.ForceCalculate = false;
                             MovementUtils.ResetSurroundings(ref surroundings);
+                            return;
                         }
 
                         // Calculation complete

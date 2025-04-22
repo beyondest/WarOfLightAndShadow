@@ -1,17 +1,16 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Resource
 {
     [UpdateBefore(typeof(TransformSystemGroup))]
-    public partial struct ResourceSystem : ISystem
+    public partial struct ResourceManageSystem : ISystem
     {
         private NativeHashMap<int, ResourceData> _globalResourceDataCenter;
+        private NativeHashSet<int> _renewableResources;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -20,7 +19,7 @@ namespace SparFlame.GamePlaySystem.Resource
             state.RequireForUpdate<EnemyResourceDataTag>();
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<ResourceSystemConfig>();
+            state.RequireForUpdate<ResourceManageSystemConfig>();
         }
 
         [BurstCompile]
@@ -33,9 +32,9 @@ namespace SparFlame.GamePlaySystem.Resource
             // var config = SystemAPI.GetSingleton<ResourceSystemConfig>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             DealResourceChangeRequest(ref state, ecb);
-            
+
             UpdateGlobalResourceDataCenter(ref state);
-            
+
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
@@ -49,18 +48,19 @@ namespace SparFlame.GamePlaySystem.Resource
                 var request = requestRO.ValueRO;
                 var resourceKey = (int)request.Type;
                 var amount = request.Amount;
-                
-                // If from harvest, then reduce global data center resource
-                if (request.RequestType == ResourceRequestType.Harvest)
+
+                // If from harvest not reneable resources, then reduce global data center resource
+                if (request.RequestType == ResourceRequestType.Harvest
+                    && !_renewableResources.Contains(resourceKey))
                 {
                     var v = _globalResourceDataCenter[resourceKey];
                     v.Amount -= amount;
                     _globalResourceDataCenter[resourceKey] = v;
                 }
-                
+
                 var targetCenter = request.FromFaction == FactionTag.Ally ? allyDataCenter : enemyDataCenter;
                 var buffer = SystemAPI.GetBuffer<ResourceData>(targetCenter);
-                
+
                 // Except for population release, others will change total amount. 
                 // NOTICE : Population total amount accounts for available value, true total value = available + occupied
                 if (request.RequestType != ResourceRequestType.Release)
@@ -71,21 +71,21 @@ namespace SparFlame.GamePlaySystem.Resource
                 }
                 // Population consume and release must be handled separately, for correct showing : current occupied/total value
 
-                if (request is { Type: ResourceType.Population, RequestType: ResourceRequestType.Consume } 
+                if (request is { Type: ResourceType.Population, RequestType: ResourceRequestType.Consume }
                     or { Type: ResourceType.Population, RequestType: ResourceRequestType.Release })
                 {
-                    var pData= SystemAPI.GetComponent<PopulationOccupiedData>(targetCenter);
+                    var pData = SystemAPI.GetComponent<PopulationOccupiedData>(targetCenter);
                     SystemAPI.SetComponent(targetCenter, new PopulationOccupiedData
                     {
-                        Value = pData.Value - amount // Consume population : amount should be negative, but recording should add;
-                                                     // Release population : amount should be positive, but recording should minus
+                        Value = pData.Value -
+                                amount // Consume population : amount should be negative, but recording should add;
+                        // Release population : amount should be positive, but recording should minus
                     });
                 }
-                
+
                 ecb.DestroyEntity(entity);
             }
         }
-
 
 
         private void UpdateGlobalResourceDataCenter(ref SystemState state)
@@ -104,12 +104,17 @@ namespace SparFlame.GamePlaySystem.Resource
         {
             if (_globalResourceDataCenter.IsCreated)
                 _globalResourceDataCenter.Dispose();
+            if (_renewableResources.IsCreated)
+                _renewableResources.Dispose();
         }
 
         private void InitGlobalResourceDataCenter(ref SystemState state)
         {
             var buffer = SystemAPI.GetBuffer<ResourceData>(SystemAPI.GetSingletonEntity<GlobalResourceDataTag>());
+            var buffer2 = SystemAPI.GetSingletonBuffer<RenewableResourceType>();
+
             _globalResourceDataCenter = new NativeHashMap<int, ResourceData>(buffer.Length, Allocator.Persistent);
+            _renewableResources = new NativeHashSet<int>(buffer2.Length, Allocator.Persistent);
             for (var i = 0; i < buffer.Length; i++)
             {
                 var data = new ResourceData
@@ -118,6 +123,11 @@ namespace SparFlame.GamePlaySystem.Resource
                     Amount = buffer[i].Amount
                 };
                 _globalResourceDataCenter[i] = data;
+            }
+
+            foreach (var type in buffer2)
+            {
+                _renewableResources.Add((int)type.ResourceType);
             }
         }
     }

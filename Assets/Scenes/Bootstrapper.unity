@@ -426,7 +426,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &168125796
 Transform:
   m_ObjectHideFlags: 0
@@ -1816,6 +1816,8 @@ MonoBehaviour:
   tierSpriteSuffix: 
   factionHpSpriteSuffix: Hp
   factionGameOverSpriteSuffix: GameOver
+  factionHpFillSpriteSuffix: HpFill
+  factionHpBlankSpriteSuffix: HpBlank
 --- !u!224 &1475335619 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1627728990436650913, guid: 2adf7284849e3c94e891c9ebafb5e74b, type: 3}

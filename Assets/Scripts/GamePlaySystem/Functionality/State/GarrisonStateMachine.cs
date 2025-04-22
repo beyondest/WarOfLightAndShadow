@@ -175,10 +175,14 @@ namespace SparFlame.GamePlaySystem.State
                     // Garrison into original building
                     if (stateData.CurState == InteractState.Idle)
                     {
-                        GarrisonMoveBack(index, inGarrison, ref stateData, ref movableData, selfEntity);
+                        StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
+                            TransformLookup[inGarrison.BuildingEntity].Position,
+                            GeneralAttrLookup[inGarrison.BuildingEntity].BoxColliderSize,
+                            Config.GarrisonRadiusSq,false,
+                            selfEntity,index, ECB);
                     }
-
                     // Already in garrison state, do nothing
+                    
                     return;
                 }
 
@@ -199,7 +203,12 @@ namespace SparFlame.GamePlaySystem.State
                     }
                     case (true, false):
                     {
-                        GarrisonMoveBack(index, inGarrison, ref stateData, ref movableData, selfEntity);
+                        // This should happen when self is healer and target is wounded
+                        StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
+                            TransformLookup[inGarrison.BuildingEntity].Position,
+                            GeneralAttrLookup[inGarrison.BuildingEntity].BoxColliderSize,
+                            Config.GarrisonRadiusSq,false,
+                            selfEntity,index, ECB);
                         return;
                     }
                     case (false, true):
@@ -220,19 +229,7 @@ namespace SparFlame.GamePlaySystem.State
                 }
             }
 
-            private void GarrisonMoveBack(int index, InGarrison garrison, ref BasicStateData stateData,
-                ref MovableData movableData, Entity entity)
-            {
-                var tarPos = TransformLookup[garrison.BuildingEntity].Position;
-                var targetGeneralAttr = GeneralAttrLookup[garrison.BuildingEntity];
-                MovementUtils.SetMoveTarget(ref movableData, tarPos, targetGeneralAttr.BoxColliderSize,
-                    MovementCommandType.Interactive, Config.GarrisonRadiusSq);
-                stateData.TargetState = InteractState.Moving;
-                StateUtils.SwitchState(ref stateData, ECB, entity, index);
-                stateData.TargetEntity = garrison.BuildingEntity;
-                stateData.TargetState = InteractState.Garrison;
-                stateData.Focus = false;
-            }
+           
         }
 
         [BurstCompile]

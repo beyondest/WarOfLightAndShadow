@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.Garrison;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
@@ -6,14 +7,15 @@ using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 // ReSharper disable ReplaceWithSingleAssignment.False
 
 namespace SparFlame.GamePlaySystem.State
 {
     [BurstCompile]
+    [UpdateAfter(typeof(MovementSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
     [UpdateAfter(typeof(BuffSystem))]
     // [UpdateBefore(typeof(AutoGiveWaySystem))]
@@ -30,26 +32,30 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<HarvestAbility> _harvestabilityLookup;
         private ComponentLookup<RegeneratingTag> _regeneratingTag;
         private ComponentLookup<StatData> _statLookup;
-
+        private ComponentLookup<AITag> _aiTagLookup;
+        private ComponentLookup<InGarrison> _inGarrisonLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GarrisonSystemConfig>();
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MovingStateMachineConfig>();
             state.RequireForUpdate<NotPauseTag>();
             _interactableLookup = state.GetComponentLookup<GeneralAttr>(true);
             _selectedLookup = state.GetComponentLookup<Selected>(true);
+            _aiTagLookup = state.GetComponentLookup<AITag>(true);
+            _statLookup = state.GetComponentLookup<StatData>(true);
+            _attackabilityLookup = state.GetComponentLookup<AttackAbility>(true);
+            _healabilityLookup = state.GetComponentLookup<HealAbility>(true);
+            _harvestabilityLookup = state.GetComponentLookup<HarvestAbility>(true);
+            _regeneratingTag = state.GetComponentLookup<RegeneratingTag>(true);
+            _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
 
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _movableLookup = state.GetComponentLookup<MovableData>();
             _unitBasicStateLookup = state.GetComponentLookup<BasicStateData>();
-            _attackabilityLookup = state.GetComponentLookup<AttackAbility>();
-            _healabilityLookup = state.GetComponentLookup<HealAbility>();
-            _harvestabilityLookup = state.GetComponentLookup<HarvestAbility>();
-            _regeneratingTag = state.GetComponentLookup<RegeneratingTag>();
-            _statLookup = state.GetComponentLookup<StatData>();
         }
 
         [BurstCompile]
@@ -57,6 +63,7 @@ namespace SparFlame.GamePlaySystem.State
         {
             var config = SystemAPI.GetSingleton<MovingStateMachineConfig>();
             var sightConfig = SystemAPI.GetSingleton<SightSystemConfig>();
+            var garrisonSystemConfig = SystemAPI.GetSingleton<GarrisonSystemConfig>();
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             _harvestabilityLookup.Update(ref state);
             _healabilityLookup.Update(ref state);
@@ -71,12 +78,14 @@ namespace SparFlame.GamePlaySystem.State
             _harvestabilityLookup.Update(ref state);
             _statLookup.Update(ref state);
             _regeneratingTag.Update(ref state);
+            _aiTagLookup.Update(ref state);
+            _inGarrisonLookup.Update(ref state);
             // _squeezeLookup.Update(ref state);
             // _autoGiveWayLookup.Update(ref state);
             new CheckMovingState
             {
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                InteractLookUp = _interactableLookup,
+                GeneralLookup = _interactableLookup,
                 Selected = _selectedLookup,
                 TransLookup = _localTransformLookup,
                 MovableLookup = _movableLookup,
@@ -85,29 +94,34 @@ namespace SparFlame.GamePlaySystem.State
                 HealLookup = _healabilityLookup,
                 HarvestLookup = _harvestabilityLookup,
                 StatLookup = _statLookup,
+                AITagLookup = _aiTagLookup,
+                InGarrisonLookup = _inGarrisonLookup,
                 Config = config,
                 RegeneratingTagLookup = _regeneratingTag,
-                SightSystemConfig = sightConfig
+                SightSystemConfig = sightConfig,
+                GarrisonSystemConfig = garrisonSystemConfig
             }.ScheduleParallel();
         }
 
 
+        // TODO : Split ai movement state machine and player unit movement state machine
         [BurstCompile]
         [WithAll(typeof(MovingStateTag))]
         public partial struct CheckMovingState : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<GeneralAttr> InteractLookUp;
-
+            [ReadOnly] public ComponentLookup<GeneralAttr> GeneralLookup;
             [ReadOnly] public ComponentLookup<Selected> Selected;
-
-
             [ReadOnly] public ComponentLookup<AttackAbility> AttackLookup;
             [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup;
             [ReadOnly] public ComponentLookup<StatData> StatLookup;
             [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
+            [ReadOnly] public ComponentLookup<AITag> AITagLookup;
+            [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
 
+            
+            
             // Resolve self stuck will modify transform and lookup random transform for squeeze direction
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransLookup;
 
@@ -120,167 +134,241 @@ namespace SparFlame.GamePlaySystem.State
             // [ReadOnly] public float DeltaTime;
 
             [ReadOnly] public MovingStateMachineConfig Config;
-
+            [ReadOnly] public GarrisonSystemConfig GarrisonSystemConfig;
             [ReadOnly] public SightSystemConfig SightSystemConfig;
 
             private void Execute([ChunkIndexInQuery] int index, ref Surroundings surroundings,
                 ref DynamicBuffer<InsightTarget> targets,
-                Entity entity)
+                Entity selfEntity)
             {
-                ref var stateData = ref StateLookup.GetRefRW(entity).ValueRW;
-                ref var movableData = ref MovableLookup.GetRefRW(entity).ValueRW;
-                ref var transform = ref TransLookup.GetRefRW(entity).ValueRW;
-                var selfFaction = InteractLookUp[entity].FactionTag;
+                ref var stateData = ref StateLookup.GetRefRW(selfEntity).ValueRW;
+                ref var movableData = ref MovableLookup.GetRefRW(selfEntity).ValueRW;
+                ref var transform = ref TransLookup.GetRefRW(selfEntity).ValueRW;
+                var selfFaction = GeneralLookup[selfEntity].FactionTag;
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (stateData.CurState != InteractState.Moving) return;
 
-                if (CheckTaunted(ref surroundings, ref movableData, ref stateData,
-                        ref targets, entity, index))
-                    return;
+                // if (CheckTaunted(ref surroundings, ref movableData, ref stateData,
+                //         ref targets, selfEntity, index))
+                //     return;
                 // Check if reached the last waypoint
-                if (CheckIfCompleteMoving(ref surroundings, ref movableData, ref stateData, entity, index))
+                if (CheckIfCompleteMoving(ref surroundings, ref movableData, ref stateData, selfEntity, index))
                     return;
 
                 // Not complete the moving. If stuck, should try resolve stuck first. If not stuck or stuck resolved , return true
-                var ifStuckResolved = TryResolveStuck(ref surroundings, ref targets, in movableData, ref stateData,
+                var ifResolveStuckByChangeState = TryResolveStuck(ref surroundings, ref targets, in movableData, ref stateData,
                     ref transform,
-                    entity, index);
+                    selfEntity, index);
+                if(ifResolveStuckByChangeState)return;
 
+                // Not complete the moving. May change target if some other things happen
+                if(CheckShouldChangeTarget(ref stateData, ref movableData,
+                    ref targets, in selfFaction, transform,
+                    selfEntity, index))return;
+                
+                CheckUpdateTargetPos(ref stateData,ref movableData);
+            }
 
-                // Not complete the moving. May change target if stuck is not resolved or some other things happen
-                CheckShouldChangeTarget(ref stateData, ref movableData,
-                    in targets, in ifStuckResolved, in selfFaction,
-                    entity, index);
+            private bool CheckUpdateTargetPos(ref BasicStateData stateData, ref MovableData movableData)
+            {
+                if(stateData.TargetEntity == Entity.Null)return false;
+                var targetPos = TransLookup[stateData.TargetEntity].Position;
+                movableData.TargetCenterPos = targetPos;
+                return true;
             }
 
 
-            private void CheckShouldChangeTarget(ref BasicStateData stateData,
+            private bool CheckShouldChangeTarget(ref BasicStateData stateData,
                 ref MovableData movableData,
-                in DynamicBuffer<InsightTarget> targets,
-                in bool ifStuckResolved,
+                ref DynamicBuffer<InsightTarget> targets,
                 in FactionTag selfFactionTag,
-                Entity entity,
+                in LocalTransform selfTransform,
+                Entity selfEntity,
                 int index
             )
             {
                 var shouldChangeTarget = false;
-                GeneralAttr targetgeneralAttr;
-                // Not focus march, see target, should choose target
-                if (
-                    !stateData.Focus
+                var isAi = AITagLookup.HasComponent(selfEntity);
+
+                GeneralAttr targetGeneralAttr;
+                // March move check, only work for AI debug, actually AI will not march?
+                if (isAi&& !stateData.Focus
                     && movableData.MovementCommandType == MovementCommandType.March
                     && !targets.IsEmpty)
                 {
                     shouldChangeTarget = true;
                 }
 
-                // Interactive move, check current target valid
+                // Interactive move check
                 if (movableData.MovementCommandType == MovementCommandType.Interactive)
                 {
-                    // If current target valid, do nothing
-                    if (InteractLookUp.TryGetComponent(stateData.TargetEntity, out targetgeneralAttr))
+                    // Check target not destroy
+                    if (GeneralLookup.TryGetComponent(stateData.TargetEntity, out targetGeneralAttr))
                     {
                         var targetStat = StatLookup[stateData.TargetEntity];
-                        // If current target is to garrison into building, do not check if valid
+                        // Garrison is valid if building hp > 0
                         if (stateData.TargetState == InteractState.Garrison && targetStat.CurValue > 0)
                         {
-                            return;
+                            return false;
                         }
-                        if (InteractUtils.IsTargetValid(in targetgeneralAttr, in selfFactionTag, in targetStat,
-                                HealLookup.HasComponent(entity), HarvestLookup.HasComponent(entity),
+
+                        var garrisonUnitOutOfDefendRange = InGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison)
+                                                           && TransLookup.TryGetComponent(inGarrison.BuildingEntity,
+                                                               out var buildingTrans)
+                                                           && Config.MaxDisSqUnitToBuildingForGarrison <
+                                                           math.distancesq(selfTransform.Position, buildingTrans.Position);
+                        // Normal check
+                        if (InteractUtils.IsTargetValid(in targetGeneralAttr, in selfFactionTag, in targetStat,
+                                HealLookup.HasComponent(selfEntity), HarvestLookup.HasComponent(selfEntity),
+                                AttackLookup.HasComponent(selfEntity),
                                 !RegeneratingTagLookup.HasComponent(stateData.TargetEntity)))
                         {
-                            return;
+                            // Ai follow drop aggro check
+                            var tarPos = TransLookup[stateData.TargetEntity].Position;
+                            var targetFromSelfDisSq = math.distancesq(tarPos, selfTransform.Position);
+                            var aiTagShouldNotFollow = isAi
+                                                            &&!stateData.Focus // This is for the time enemy need to attack very far away building and debugging need
+                                                            && Config.MaxDistanceSqFollowForAITag < targetFromSelfDisSq;
+                            // AI should not follow so remove target 
+                            if (aiTagShouldNotFollow)
+                            {
+                                int i;
+                                for ( i = 0; i < targets.Length; i++)
+                                {
+                                    var target = targets[i];
+                                    if(target.Entity == stateData.TargetEntity)break;
+                                }
+                                if (i < targets.Length)
+                                {
+                                    targets.RemoveAt(i);
+                                }
+                            }
+                            if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange)
+                                return false;
+                        }
+          
+                        
+                        // Garrison unit Drop aggro， if Ai, should focus go back and regenerating hp
+                        if (garrisonUnitOutOfDefendRange)
+                        {
+                            StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
+                                TransLookup[inGarrison.BuildingEntity].Position,
+                                GeneralLookup[inGarrison.BuildingEntity].BoxColliderSize,
+                                GarrisonSystemConfig.GarrisonRadiusSq,isAi,
+                                selfEntity,index, ECB);
+                            return true;
+                            // if(isAi)
+                            //     ECB.AddComponent<GarrisonAiHpRegeneratingTag>(index, selfEntity);
                         }
                     }
-
+                    
                     // Current target invalid, check if turn to idle
                     if (targets.IsEmpty)
                     {
                         MovementUtils.ResetMovableData(ref movableData);
                         stateData.TargetState = InteractState.Idle;
-                        StateUtils.SwitchState(ref stateData, ECB, entity, index);
-                        return;
+                        StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                        return true;
                     }
 
                     shouldChangeTarget = true;
                 }
 
-                if (!shouldChangeTarget) return;
-
+                if (!shouldChangeTarget) return false;
                 // Interact move to target. Because it is in moving state already, so don't need to switch state;
                 // Because moving state machine Update after update target list system, choose target should always be valid
                 stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
-                targetgeneralAttr = InteractLookUp[stateData.TargetEntity];
+                targetGeneralAttr = GeneralLookup[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
-                var targetColliderSize = targetgeneralAttr.BoxColliderSize;
+                var targetColliderSize = targetGeneralAttr.BoxColliderSize;
                 float rangSq;
-                if (targetgeneralAttr.FactionTag == selfFactionTag)
+                if (targetGeneralAttr.FactionTag == selfFactionTag)
                 {
                     stateData.TargetState = InteractState.Healing;
-                    rangSq = HealLookup[entity].RangeSq;
+                    rangSq = HealLookup[selfEntity].RangeSq;
                 }
-                else if (targetgeneralAttr.BaseTag == BaseTag.Resources)
+                else if (targetGeneralAttr.BaseTag == BaseTag.Resources)
                 {
                     stateData.TargetState = InteractState.Harvesting;
-                    rangSq = HarvestLookup[entity].RangeSq;
+                    rangSq = HarvestLookup[selfEntity].RangeSq;
                 }
                 else
                 {
                     stateData.TargetState = InteractState.Attacking;
-                    rangSq = AttackLookup[entity].RangeSq;
+                    rangSq = AttackLookup[selfEntity].RangeSq;
                 }
 
                 MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderSize,
                     MovementCommandType.Interactive, rangSq);
+                return true;
             }
 
 
+            /// <summary>
+            /// Will return true when stuck is resolved by changing state
+            /// </summary>
+            /// <param name="surroundings"></param>
+            /// <param name="targets"></param>
+            /// <param name="movableData"></param>
+            /// <param name="stateData"></param>
+            /// <param name="transform"></param>
+            /// <param name="selfEntity"></param>
+            /// <param name="index"></param>
+            /// <returns></returns>
             private bool TryResolveStuck(ref Surroundings surroundings, ref DynamicBuffer<InsightTarget> targets,
                 in MovableData movableData,
-                ref BasicStateData stateData, ref LocalTransform transform, Entity entity, int index)
+                ref BasicStateData stateData, ref LocalTransform transform, Entity selfEntity, int index)
             {
                 if (movableData.DetailInfo == DetailInfo.CalculationNotComplete)
                 {
                     // Calculation not complete and not stuck too many times, wait for calculation
-                    if(surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck)
+                    if (surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck)
                         return false;
                     // Calculation not complete for too many times, consider wrong target
                     else
-                    { 
+                    {
                         stateData.TargetState = InteractState.Idle;
-                        StateUtils.SwitchState(ref stateData, ECB, entity, index);
+                        StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                         return true;
+                        // Debug.Log("Calculation not complete, stuck for too many times");
+                        // return true;
                     }
                 }
-                
+
                 // Stuck times too much
                 if (surroundings.MoveSuccess
                     || surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck) return false;
 
-
+                var selfCanAttack = AttackLookup.HasComponent(selfEntity);
                 // If stuck by enemy building, remove it
-                if (InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iDataFront)
-                    && iDataFront is { BaseTag: BaseTag.Buildings, FactionTag: FactionTag.Enemy })
+                if (GeneralLookup.TryGetComponent(surroundings.FrontEntity, out var generalAttr)
+                    && generalAttr is { BaseTag: BaseTag.Buildings, FactionTag: FactionTag.Enemy })
                 {
+                    // No attack ability unit cannot remove enemy building forward, and should turn to idle
+                    if (!selfCanAttack)
+                    {
+                        stateData.TargetState = InteractState.Idle;
+                        StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                        return true;
+                    }
                     InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
                         SightSystemConfig.MemoryTargetAfterStuckByBuilding);
                     stateData.TargetEntity = surroundings.FrontEntity;
                     stateData.TargetState = InteractState.Attacking;
                     stateData.Focus = true;
-                    StateUtils.SwitchState(ref stateData, ECB, entity, index);
+                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                     return true;
                 }
 
                 // Focus unit cannot auto switch target even get stuck, unless it stuck by building
-                if (stateData.Focus) return false;
+                if (stateData.Focus || !selfCanAttack) return false;
 
                 // If front is not enemy building and get stuck and left or right is enemy unit, attack it. Front cannot be enemy unit or it will get taunted
                 var leftIsEnemy = surroundings.LeftEntity != Entity.Null
-                                  && InteractLookUp.TryGetComponent(surroundings.LeftEntity, out var iDataLeft)
+                                  && GeneralLookup.TryGetComponent(surroundings.LeftEntity, out var iDataLeft)
                                   && iDataLeft is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Enemy };
                 var rightIsEnemy = surroundings.RightEntity != Entity.Null
-                                   && InteractLookUp.TryGetComponent(surroundings.RightEntity, out var iDataRight)
+                                   && GeneralLookup.TryGetComponent(surroundings.RightEntity, out var iDataRight)
                                    && iDataRight is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Enemy };
                 if (leftIsEnemy || rightIsEnemy)
                 {
@@ -288,7 +376,7 @@ namespace SparFlame.GamePlaySystem.State
                         ? surroundings.LeftEntity
                         : surroundings.RightEntity;
                     stateData.TargetState = InteractState.Attacking;
-                    StateUtils.SwitchState(ref stateData, ECB, entity, index);
+                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                     return true;
                 }
 
@@ -299,7 +387,8 @@ namespace SparFlame.GamePlaySystem.State
             private bool CheckIfCompleteMoving(ref Surroundings surroundings, ref MovableData movableData,
                 ref BasicStateData stateData, Entity entity, int index)
             {
-                if (movableData.ForceCalculate) return false; // This is the first time command, do not affected by units surrounded
+                // if (movableData.ForceCalculate)
+                //     return false; // This is the first time command, do not affected by units surrounded
                 // If itself moving job is completed
                 if (movableData.MovementState is MovementState.MovementComplete
                     or MovementState.MovementPartialComplete)
@@ -314,7 +403,7 @@ namespace SparFlame.GamePlaySystem.State
                 // Check if surrounded ally unit reached. This only work when target state is idle and surrounded unit is in
                 // same selection state of this one
                 var isSelected = Selected.IsComponentEnabled(entity);
-                if (isSelected) return false;
+                // if (isSelected) return false;
                 if (CheckIfSurroundReach(ref surroundings, isSelected) && stateData.TargetState == InteractState.Idle)
                 {
                     stateData.TargetState = InteractState.Idle;
@@ -333,7 +422,7 @@ namespace SparFlame.GamePlaySystem.State
                 var result = IsObstacleSelectedAllyIdle(surroundings.FrontEntity, selected)
                              || IsObstacleSelectedAllyIdle(surroundings.LeftEntity, selected)
                              || IsObstacleSelectedAllyIdle(surroundings.RightEntity, selected);
-  
+
                 return result;
             }
 
@@ -341,7 +430,7 @@ namespace SparFlame.GamePlaySystem.State
             {
                 return
                     entity != Entity.Null
-                    && InteractLookUp.TryGetComponent(entity, out var iData)
+                    && GeneralLookup.TryGetComponent(entity, out var iData)
                     && Selected.HasComponent(entity)
                     && Selected.IsComponentEnabled(entity) == selected
                     && iData is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
@@ -349,12 +438,22 @@ namespace SparFlame.GamePlaySystem.State
                     && stateData.CurState == InteractState.Idle;
             }
 
+            /// <summary>
+            /// This function has bugs, cleric has no attack state, so cleric should never be taunted
+            /// </summary>
+            /// <param name="surroundings"></param>
+            /// <param name="movableData"></param>
+            /// <param name="stateData"></param>
+            /// <param name="targets"></param>
+            /// <param name="entity"></param>
+            /// <param name="index"></param>
+            /// <returns></returns>
             private bool CheckTaunted(ref Surroundings surroundings, ref MovableData movableData,
                 ref BasicStateData stateData, ref DynamicBuffer<InsightTarget> targets, Entity entity, int index)
             {
                 if (surroundings.MoveSuccess) return false;
-                if (!InteractLookUp.TryGetComponent(surroundings.FrontEntity, out var iData)) return false;
-                if (iData is not { FactionTag: FactionTag.Enemy, BaseTag: BaseTag.Units }) return false;
+                if (!GeneralLookup.TryGetComponent(surroundings.FrontEntity, out var generalAttr)) return false;
+                if (generalAttr is not { FactionTag: FactionTag.Enemy, BaseTag: BaseTag.Units }) return false;
                 if (stateData.Focus)
                 {
                     InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,

@@ -1,5 +1,6 @@
 ﻿using System;
 using GamePlaySystem.Database;
+using SparFlame.Database.Database.DatabaseDefinition;
 using SparFlame.GamePlaySystem.Building;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace SparFlame.Database
         private static BuildingDatabaseSo _buildingDatabaseSo;
         private static UnitDatabaseSo _unitDatabaseSo;
         private static ResourceDatabaseSo _resourceDatabaseSo;
-        
+        private static ResourceSpawnDatabaseSo _resourceSpawnDatabaseSo;
         public static BuildingDatabaseSo BuildingDatabaseSo =>
             _buildingDatabaseSo ??=
                 Resources.Load<BuildingDatabaseSo>("Database/BuildingDatabase");
@@ -19,6 +20,9 @@ namespace SparFlame.Database
         public static ResourceDatabaseSo ResourceDatabaseSo =>
             _resourceDatabaseSo ??= Resources.Load<ResourceDatabaseSo>("Database/ResourceDatabase");
 
+        public static ResourceSpawnDatabaseSo ResourceSpawnDatabaseSo =>
+            _resourceSpawnDatabaseSo ??= Resources.Load<ResourceSpawnDatabaseSo>("Database/ResourceSpawnDatabase");
+        
         public static GeneralDatabase<TData> GetDatabaseSo<TData>() where TData : GeneralDataItem
         {
             if (typeof(TData) == typeof(BuildingDataItem))

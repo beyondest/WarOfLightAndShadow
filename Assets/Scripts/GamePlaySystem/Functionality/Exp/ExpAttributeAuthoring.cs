@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.Exp
         public Tier MaxTier;
         public Tier CurTier;
         public int MaxValue;
-        public int CurValue;
+        public float CurValue;
         public Entity NextTierPrefab;
     }
 

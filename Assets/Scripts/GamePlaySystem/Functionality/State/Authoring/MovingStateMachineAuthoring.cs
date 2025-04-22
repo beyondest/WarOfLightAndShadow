@@ -10,8 +10,11 @@ namespace SparFlame.GamePlaySystem.State
         [Tooltip("When compromise times > this, will try solve stuck; If compromise times > 2*this, will detect surrounding enemy")]
         public int maxAllowedCompromiseTimesForStuck = 20;
 
-
-
+        [Tooltip("This dis must be bigger than sight")]
+        public float maxDistanceFollowForAITag = 20;
+        public float maxDistanceUnitToBuildingForGarrison = 20;
+        
+        
         private class MovingStateMachineAuthoringBaker : Baker<MovingStateMachineAuthoring>
         {
             public override void Bake(MovingStateMachineAuthoring authoring)
@@ -20,6 +23,8 @@ namespace SparFlame.GamePlaySystem.State
                 AddComponent(entity, new MovingStateMachineConfig
                 {
                     MaxAllowedCompromiseTimesForStuck = authoring.maxAllowedCompromiseTimesForStuck,
+                    MaxDistanceSqFollowForAITag = authoring.maxDistanceFollowForAITag * authoring.maxDistanceFollowForAITag,
+                    MaxDisSqUnitToBuildingForGarrison =  authoring.maxDistanceUnitToBuildingForGarrison * authoring.maxDistanceUnitToBuildingForGarrison,
                 });
             }
         }
@@ -28,7 +33,8 @@ namespace SparFlame.GamePlaySystem.State
     public struct MovingStateMachineConfig : IComponentData
     {
         public int MaxAllowedCompromiseTimesForStuck;
-
+        public float MaxDistanceSqFollowForAITag;
+        public float MaxDisSqUnitToBuildingForGarrison;
     }
     
 }

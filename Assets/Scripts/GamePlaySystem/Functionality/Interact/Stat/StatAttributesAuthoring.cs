@@ -23,7 +23,7 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct StatData : IComponentData
     {
         public int MaxValue;
-        public int CurValue;
+        public float CurValue;
         
     }
         

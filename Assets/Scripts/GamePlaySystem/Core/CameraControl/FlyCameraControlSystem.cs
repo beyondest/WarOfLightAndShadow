@@ -34,8 +34,9 @@ namespace SparFlame.GamePlaySystem.CameraControl
             if(Camera.main == null) return;
             var cam = Camera.main;
             var inputData = SystemAPI.GetSingleton<InputCameraFlyData>();
+            var inputNormalData = SystemAPI.GetSingleton<InputCameraNormalData>();
             var config = SystemAPI.GetSingleton<FlyCameraControlConfig>();
-            if (!inputData.Enabled)
+            if (inputNormalData.Enabled)
             {
                 _preNormalMode = true;
                 return;

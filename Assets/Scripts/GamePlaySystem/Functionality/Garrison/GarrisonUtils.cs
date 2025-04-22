@@ -1,6 +1,7 @@
 ﻿using Unity.Entities;
 using Unity.Physics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Garrison
 {
@@ -23,8 +24,10 @@ namespace SparFlame.GamePlaySystem.Garrison
             }
             else
             {
+
                 var buildingTransformCopied = buildingTransform;
                 selfTransform.Position = buildingTransformCopied.TransformPoint(garrisonAttr.MoveOutPositionBias);
+
                 // selfTransform.Position = garrisonAttr.MoveOutPositionBias +
                 //                      buildingTransform.Position;
             }
