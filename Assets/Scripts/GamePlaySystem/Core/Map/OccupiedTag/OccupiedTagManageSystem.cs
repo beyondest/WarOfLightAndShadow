@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
 using Unity.Burst;
 using Unity.Collections;
@@ -7,21 +6,21 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
-using UnityEngine;
 using EntityCommandBuffer = Unity.Entities.EntityCommandBuffer;
 
 namespace SparFlame.GamePlaySystem.Resource
 {
+    [BurstCompile]
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct OccupiedTagManageSystem : ISystem
     {
-        private ComponentLookup<MaterialMeshInfo> _materialLookup;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<OccupiedManageSystemConfig>();
             state.RequireForUpdate<ChangeOccupiedTagRequest>();
-            _materialLookup = state.GetComponentLookup<MaterialMeshInfo>();
+            state.RequireForUpdate<GamingTag>();
         }
 
         [BurstCompile]
@@ -29,18 +28,18 @@ namespace SparFlame.GamePlaySystem.Resource
         {
             var config = SystemAPI.GetSingleton<OccupiedManageSystemConfig>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            _materialLookup.Update(ref state);
+            var ecbSingleton = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>();
             foreach (var (request, entity) in SystemAPI.Query<RefRO<ChangeOccupiedTagRequest>>().WithEntityAccess())
             {
-                Debug.Log($"{request.ValueRO.CrystalFaction},{request.ValueRO.DestroyedCrystalPos}");
-                new ChangeOccupiedTagJob
+                var job = new ChangeOccupiedTagJob
                 {
-                    MaterialLookup = _materialLookup,
                     Config = config,
                     ChangeIntoFaction =
                         request.ValueRO.IsDestroyed ? FactionTag.Neutral : request.ValueRO.CrystalFaction,
-                    Position = request.ValueRO.DestroyedCrystalPos
-                }.ScheduleParallel();
+                    CrystalPos = request.ValueRO.CrystalPos,
+                    ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
+                }.ScheduleParallel(state.Dependency);
+                job.Complete();
                 ecb.DestroyEntity(entity);
             }
 
@@ -53,30 +52,89 @@ namespace SparFlame.GamePlaySystem.Resource
         private partial struct ChangeOccupiedTagJob : IJobEntity
         {
             [ReadOnly] public FactionTag ChangeIntoFaction;
-            [ReadOnly] public float3 Position;
+            [ReadOnly] public float3 CrystalPos;
             [ReadOnly] public OccupiedManageSystemConfig Config;
-            [NativeDisableParallelForRestriction] public ComponentLookup<MaterialMeshInfo> MaterialLookup;
+            [ReadOnly] public MapInfo Info;
+            [ReadOnly] public float TileSize;
+            public EntityCommandBuffer.ParallelWriter ECB;
 
-            private void Execute(ref DynamicBuffer<LinkedEntityGroup> group, ref OccupiedTag tag,
-                in LocalTransform transform)
+            private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<LinkedEntityGroup> group,
+                ref OccupiedTag tag,
+                in LocalTransform transform, ref CrystalPosVector4Override pos1,ref CrystalPos2Vector4Override pos2,
+                ref CrystalPos3Vector4Override pos3, ref CrystalPos4Vector4Override pos4,ref CrystalRecordData data)
             {
-                if(!MapUtils.IsInsideGrid(transform.Position,Config.TileSize,Position))return;
-                tag.Faction = ChangeIntoFaction;
+                // By limiting the player crystal build position and enemy crystal build position, dark and light crystal impact on same tile will never happen
+                if (!MapUtils.IsTileInCrystalRadius(transform.Position, CrystalPos, Config.CrystalChangeRadiusSq,
+                        TileSize
+                    )) return;
+
                 var meshChild = group[1].Value;
-                PlayChangeOccupiedTagAnimation(tag.Faction, ref MaterialLookup.GetRefRW(meshChild).ValueRW);
-            }
-
-            private void PlayChangeOccupiedTagAnimation(FactionTag faction, ref MaterialMeshInfo materialInfo)
-            {
-                Debug.Log($"{materialInfo.Material}{faction}");
-                materialInfo.Material = faction switch
+                var isLight = ChangeIntoFaction == FactionTag.Ally ? 1f : 0f;
+                var shouldResetToNeg = ChangeIntoFaction == FactionTag.Neutral;
+                ECB.SetComponent(index, meshChild, new CrystalRadiusFloatOverride
                 {
-                    FactionTag.Neutral => MaterialLookup[Config.NeutralOccupiedRef].Material,
-                    FactionTag.Ally => MaterialLookup[Config.AllyOccupiedRef].Material,
-                    FactionTag.Enemy => MaterialLookup[Config.EnemyOccupiedRef].Material,
-                    _ => throw new ArgumentOutOfRangeException(nameof(faction), faction, null)
-                };
-                Debug.Log($"{materialInfo.Material}");
+                    Value = Config.CrystalChangeRadiusSq
+                });
+                ECB.SetComponent(index, meshChild, new IsLightFloatOverride
+                {
+                    Value = isLight
+                });
+                if (shouldResetToNeg)
+                {
+                    
+                    if (math.distancesq(CrystalPos, pos1.Value.xyz) <= 0.5f)
+                    {
+                        pos1.Value.y = -1f;
+                    }
+                    else if (math.distancesq(CrystalPos, pos2.Value.xyz) <= 0.5f)
+                    {
+                        pos2.Value.y = -1f;
+                    }
+                    else if (math.distancesq(CrystalPos, pos3.Value.xyz) <= 0.5f)
+                    {
+                        pos3.Value.y = -1f;
+                    }
+                    else if (math.distancesq(CrystalPos, pos4.Value.xyz) <= 0.5f)
+                    {
+                        pos4.Value.y = -1f;
+                    }
+                    else
+                    {
+                        // When this destroyed crystal is not recorded, it should not affect this tile 
+                        data.RecordCount++;
+                    }
+                    data.RecordCount--;
+                    if(data.RecordCount == 0)
+                        tag.Faction = FactionTag.Neutral;
+                    return;
+                }
+
+                var recordPos = new float4(CrystalPos.x, CrystalPos.y, CrystalPos.z, 0f);
+                if (pos1.Value.y < 0f)
+                {
+                    pos1.Value = recordPos;
+                }
+                else if (pos2.Value.y < 0f)
+                {
+                    pos2.Value = recordPos;
+                }
+                else if (pos3.Value.y < 0f)
+                {
+                    pos3.Value = recordPos;
+                }
+                else if (pos4.Value.y < 0f)
+                {
+                    pos4.Value = recordPos;
+                }
+                else
+                {
+                    // When no record slot left, this built crystal do not affect the tile 
+                    data.RecordCount--;
+                }
+
+                data.RecordCount++;
+                if (data.RecordCount == 1)
+                    tag.Faction = ChangeIntoFaction;
             }
         }
     }

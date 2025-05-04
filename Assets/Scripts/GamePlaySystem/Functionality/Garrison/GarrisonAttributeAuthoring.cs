@@ -53,4 +53,5 @@ namespace SparFlame.GamePlaySystem.Garrison
         public Entity Value;
         public int Id; // For fast filter
     }
+    
 }

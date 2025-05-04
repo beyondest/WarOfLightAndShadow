@@ -7,6 +7,11 @@ namespace SparFlame.GamePlaySystem.CameraControl
 {
     public class CameraDataAuthoring : MonoBehaviour
     {
+
+        [Tooltip("This value is crucial important for both performance and" +
+                "gameplay. This extend determines which entity is going to be calculated in many systems," +
+                "The larger the extend, the cost is more, the gameplay is better")]
+        public float2 cameraViewExtend = new(30, 30);
         
         class Baker : Baker<CameraDataAuthoring>
         {
@@ -25,6 +30,11 @@ namespace SparFlame.GamePlaySystem.CameraControl
                     IsDragging = false,
                     ZState = CameraZoomState.Nothing,
                 });
+                AddComponent(entity,new CameraViewExtend
+                {
+                    Value = authoring.cameraViewExtend
+                });
+                
             }
         }
     }
@@ -49,6 +59,26 @@ namespace SparFlame.GamePlaySystem.CameraControl
         Nothing
     }
 
+    public struct CameraViewExtend : IComponentData
+    {
+        public float2 Value;
+    }
+    
+    public struct ScreenPos : IComponentData
+    {
+        public float2 ScreenPosition;
+    }
+
+    
+    public struct InCameraExtendView : IComponentData, IEnableableComponent
+    {
+        
+    }
+    
+    public struct InCameraView : IComponentData,IEnableableComponent
+    {
+        
+    }
 
     public struct CameraData : IComponentData
     {

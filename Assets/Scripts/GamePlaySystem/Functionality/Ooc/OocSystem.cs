@@ -9,7 +9,7 @@ namespace SparFlame.GamePlaySystem.Ooc
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<OocSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }

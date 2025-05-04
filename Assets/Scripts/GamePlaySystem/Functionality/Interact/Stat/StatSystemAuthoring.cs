@@ -52,14 +52,17 @@ namespace SparFlame.GamePlaySystem.Interact
     
     /// <summary>
     /// This request is handled by stat system,TODO pop number system
+    /// AbsAmount is always positive
     /// </summary>
     public struct StatChangeRequest : IComponentData
     {
         public Entity Interactor;
         public Entity Interactee;
-        public int Amount;
+        public int AbsAmount;
         public InteractType InteractType;
+        public bool KillByUnNormal;
     }
+    
     
     
 

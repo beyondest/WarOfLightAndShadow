@@ -8,28 +8,32 @@ namespace SparFlame.GamePlaySystem.CameraControl
     [UpdateAfter(typeof(NormalCameraControlSystem))]
     public partial class CameraInfoUpdateSystem : SystemBase
     {
+        private Camera _mainCamera;
+        private bool _initialized;
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<CameraData>();
         }
 
+        protected override void OnStartRunning()
+        {
+            _mainCamera = Camera.main;
+        }
         protected override void OnUpdate()
         {
-            if(Camera.main == null)return;
-            var camera = Camera.main;
             var cameraData = SystemAPI.GetSingletonRW<CameraData>();
-            UpdateCameraData(ref cameraData.ValueRW, camera);
+            UpdateCameraData(ref cameraData.ValueRW);
         }
-        private void UpdateCameraData(ref CameraData cameraData, Camera cam)
+        private void UpdateCameraData(ref CameraData cameraData)
         {
-            cameraData.ViewMatrix = cam.worldToCameraMatrix;
-            cameraData.ProjectionMatrix = cam.projectionMatrix;
+            cameraData.ViewMatrix = _mainCamera.worldToCameraMatrix;
+            cameraData.ProjectionMatrix = _mainCamera.projectionMatrix;
             cameraData.ScreenSize = new float2(Screen.width, Screen.height);
-            cameraData.CameraRight = cam.transform.right;
-            cameraData.CameraForward = cam.transform.forward;
-            cameraData.CameraUp = cam.transform.up;
-            cameraData.CameraPosition = cam.transform.position;
+            cameraData.CameraRight = _mainCamera.transform.right;
+            cameraData.CameraForward = _mainCamera.transform.forward;
+            cameraData.CameraUp = _mainCamera.transform.up;
+            cameraData.CameraPosition = _mainCamera.transform.position;
         }
     }
 }

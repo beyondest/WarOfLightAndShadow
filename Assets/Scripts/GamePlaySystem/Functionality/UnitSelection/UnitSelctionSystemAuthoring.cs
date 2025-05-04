@@ -10,7 +10,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
     public class UnitSelectionSystemAuthoring : MonoBehaviour
     {
         public float dragMinDistance = 0.01f;
-
+        public bool enableDebugSwitch;
         [Tooltip("When a game object use 2 physics shape, the second one will be placed in child list first, " +
                  "so if indicator is the first child in hierarchy, actually it is the second child in entity linked group")]
         public int selectedIndicatorIndex = 2;
@@ -30,7 +30,8 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 AddComponent(entity, new UnitSelectionConfig
                 {
                     DragMinDistanceSq = authoring.dragMinDistance * authoring.dragMinDistance,
-                    SelectedIndicatorIndex = authoring.selectedIndicatorIndex
+                    SelectedIndicatorIndex = authoring.selectedIndicatorIndex,
+                    EnableDebugSwitch = authoring.enableDebugSwitch
                 });
             }
         }
@@ -40,6 +41,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
     {
         public float DragMinDistanceSq;
         public int SelectedIndicatorIndex;
+        public bool EnableDebugSwitch;
     }
 
 

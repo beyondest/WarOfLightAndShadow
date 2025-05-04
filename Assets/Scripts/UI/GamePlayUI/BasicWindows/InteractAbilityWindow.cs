@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
 using Unity.Entities;
 using UnityEngine;
 using SparFlame.UI.General;
@@ -13,10 +12,8 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class InteractAbilityWindow : MonoBehaviour, UIUtils.ISingleTargetWindow
+    public class InteractAbilityWindow : MonoBehaviour, MultiSlotWindowUtils.ISingleTargetWindow
     {
-        // public static InteractAbilityWindow Instance;
-
         [Header("Custom Config")] [SerializeField]
         private float colorSwitchDuration = 1.0f;
         [Tooltip("This list must in sequence of interact type : Attack, Heal, Harvest ")]
@@ -63,10 +60,10 @@ namespace SparFlame.UI.GamePlay
 
         public bool TrySwitchTarget(Entity target)
         {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            var attackable = _em.HasComponent<AttackAbility>(target);
-            var healable = _em.HasComponent<HealAbility>(target);
-            var harvestable = _em.HasComponent<HarvestAbility>(target);
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var attackable = Em.HasComponent<AttackAbility>(target);
+            var healable = Em.HasComponent<HealAbility>(target);
+            var harvestable = Em.HasComponent<HarvestAbility>(target);
 
             if (!attackable && !healable && !harvestable) return false;
 
@@ -92,7 +89,7 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickAttackBar()
         {
-            var ability = _em.GetComponentData<AttackAbility>(_targetEntity);
+            var ability = Em.GetComponentData<AttackAbility>(_targetEntity);
             UpdateInteractAbilityInfo(ability);
             _currentBar = InteractType.Attack;
             ChangeColorGradually();
@@ -100,7 +97,7 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickHealBar()
         {
-            var ability = _em.GetComponentData<HealAbility>(_targetEntity);
+            var ability = Em.GetComponentData<HealAbility>(_targetEntity);
             UpdateInteractAbilityInfo(ability);
             _currentBar = InteractType.Heal;
             ChangeColorGradually();
@@ -108,7 +105,7 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickHarvestBar()
         {
-            var ability = _em.GetComponentData<HarvestAbility>(_targetEntity);
+            var ability = Em.GetComponentData<HarvestAbility>(_targetEntity);
             UpdateInteractAbilityInfo(ability);
             _currentBar = InteractType.Harvest;
             ChangeColorGradually();
@@ -121,8 +118,8 @@ namespace SparFlame.UI.GamePlay
         private AsyncOperationHandle<GameObject> _slotHandle;
 
         private Entity _targetEntity;
-        protected EntityManager _em;
-        private EntityQuery _notPauseTag;
+        protected EntityManager Em;
+        private EntityQuery _gamingTag;
 
         protected virtual void Awake()
         {
@@ -130,13 +127,12 @@ namespace SparFlame.UI.GamePlay
                 Instance = this;
             else
                 Destroy(gameObject);
-            
         }
         
         protected virtual void Start()
         {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _gamingTag = Em.CreateEntityQuery(typeof(GamingTag));
             for (var i = 0; i < interactTypeColorPairs.Count; i++)
             {
                 var pair = interactTypeColorPairs[i];
@@ -150,11 +146,10 @@ namespace SparFlame.UI.GamePlay
 
         protected virtual void Update()
         {
-            if (_notPauseTag.IsEmpty) return;
-            if (!BasicResourceManager.Instance.IsResourceLoaded()) return;
+            if (_gamingTag.IsEmpty) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
-            if (!_em.HasComponent<GeneralAttr>(_targetEntity))
+            if (!Em.HasComponent<GeneralAttr>(_targetEntity))
             {
                 _targetEntity = Entity.Null;
                 return;
@@ -163,13 +158,13 @@ namespace SparFlame.UI.GamePlay
             switch (_currentBar)
             {
                 case InteractType.Attack:
-                    UpdateInteractAbilityInfo(_em.GetComponentData<AttackAbility>(_targetEntity));
+                    UpdateInteractAbilityInfo(Em.GetComponentData<AttackAbility>(_targetEntity));
                     break;
                 case InteractType.Heal:
-                    UpdateInteractAbilityInfo(_em.GetComponentData<HealAbility>(_targetEntity));
+                    UpdateInteractAbilityInfo(Em.GetComponentData<HealAbility>(_targetEntity));
                     break;
                 case InteractType.Harvest:
-                    UpdateInteractAbilityInfo(_em.GetComponentData<HarvestAbility>(_targetEntity));
+                    UpdateInteractAbilityInfo(Em.GetComponentData<HarvestAbility>(_targetEntity));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -185,7 +180,7 @@ namespace SparFlame.UI.GamePlay
                 InteractType.Harvest => "Harvest",
                 _ => throw new ArgumentOutOfRangeException()
             };
-            amountLabelText.text = prefix + " Amount";
+            amountLabelText.text = prefix + " AbsAmount";
             amountValueText.text = interactAbility.Amount.ToString();
             rangeLabelText.text = prefix + " Range";
             rangeValueText.text = math.sqrt(interactAbility.RangeSq).ToString("F2");

@@ -12,8 +12,8 @@ namespace SparFlame.UI.GamePlay
 
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
-            RequireForUpdate<ResourceData>();
+            RequireForUpdate<GamingTag>();
+            RequireForUpdate<ResourceAvailableData>();
             RequireForUpdate<UnitSelectionData>();
         }
 
@@ -24,9 +24,6 @@ namespace SparFlame.UI.GamePlay
 
         protected override void OnUpdate()
         {
-            if (ResourceInfoWindow.Instance == null || !ResourceInfoWindow.Instance.IsResourceLoaded()
-                                                    || BasicResourceManager.Instance == null
-                                                    || !BasicResourceManager.Instance.IsResourceLoaded()) return;
             var selectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             var curFaction = selectionData.CurrentSelectFaction;
             var entity = curFaction switch
@@ -38,16 +35,14 @@ namespace SparFlame.UI.GamePlay
                 FactionTag.Neutral => default,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            var datas = SystemAPI.GetBuffer<ResourceData>(entity);
+            var datas = SystemAPI.GetBuffer<ResourceAvailableData>(entity);
             if (_faction != curFaction)
             {
                 ResourceInfoWindow.Instance.UpdateStaticData(datas);
                 _faction = curFaction;
             }
-
             ResourceInfoWindow.Instance.occupiedPopulationValue =
                 SystemAPI.GetComponent<PopulationOccupiedData>(entity).Value;
-
             ResourceInfoWindow.Instance.UpdateDynamicData(datas);
         }
     }

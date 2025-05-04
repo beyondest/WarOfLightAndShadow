@@ -11,32 +11,34 @@ namespace SparFlame.UI.GamePlay
     public partial class UnitMulti2DWindowSystem : SystemBase
     {
         private NativeList<UnitRealTimeInfo> _unitInfos;
-        private bool _isInitialized;
+        private bool _initEvents;
 
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
+            _unitInfos = new NativeList<UnitRealTimeInfo>(Allocator.Persistent);
         }
 
-
-        protected override void OnUpdate()
+        protected override void OnStartRunning()
         {
-            var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
-            if (!_isInitialized && UnitMulti2DWindow.Instance != null)
+            if (!_initEvents)
             {
+                _initEvents = true;
                 UnitMulti2DWindow.Instance.GetTargetEntityByIndex += index =>
                 {
                     var data = SystemAPI.GetSingleton<UnitSelectionData>();
                     UpdateSelectedUnitInfos(data);
                     var targetEntity = index < _unitInfos.Length ? _unitInfos[index].Entity : Entity.Null;
                     UnitMulti2DWindow.Instance.GetUnitData(_unitInfos.Length, targetEntity
-                        );
+                    );
                 };
-                _unitInfos = new NativeList<UnitRealTimeInfo>(Allocator.Persistent);
-                _isInitialized = true;
             }
+        }
 
-            if (!_isInitialized) return;
+        protected override void OnUpdate()
+        {
+            var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
+            if (!_initEvents) return;
             if (!UnitMulti2DWindow.Instance.IsOpened()) return;
             UpdateSelectedUnitInfos(unitSelectionData);
         }

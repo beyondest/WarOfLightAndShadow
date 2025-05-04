@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Resource;
+﻿using SparFlame.BootStrapper;
+using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
 
 namespace SparFlame.UI.GamePlay
@@ -12,15 +13,12 @@ namespace SparFlame.UI.GamePlay
         {
         }
 
-        protected override void OnEnable()
+        public override void LoadResources()
         {
-            base.OnEnable();
+            base.LoadResources();
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
-
-        protected override void Start()
-        {
-        }
+        
 
         protected override void Update()
         {
@@ -40,7 +38,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var cost = costList[i];
                     var costSlot = SlotComponents[i];
-                    costSlot.icon.sprite = BasicResourceManager.Instance.ResourceSprites[cost.Type];
+                    costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = $"x{cost.Amount * (_currentConjureCount == 0 ? 1 : _currentConjureCount)}";
                 }

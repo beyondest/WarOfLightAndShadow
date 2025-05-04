@@ -18,7 +18,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class CloseUpWindow : UIUtils.MultiSlotsWindow<BuffSlot>, UIUtils.ISingleTargetWindow
+    public class CloseUpWindow : MultiSlotWindowUtils.MultiSlotsWindow<BuffSlot>, MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Config
         [Header("Custom Config")] [SerializeField]
@@ -77,7 +77,7 @@ namespace SparFlame.UI.GamePlay
 
         public bool TrySwitchTarget(Entity target)
         {
-            if (!BasicResourceManager.Instance.IsResourceLoaded()) return false;
+            if (!BasicUIResourceManager.Instance.IsResourceLoaded()) return false;
             // reset the last target layer
             SetLayerRecursively(_targetEntity, _oriLayer);
 
@@ -121,7 +121,7 @@ namespace SparFlame.UI.GamePlay
 
         // ECS
         private EntityManager _em;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
 
 
         private void Awake()
@@ -133,10 +133,11 @@ namespace SparFlame.UI.GamePlay
         }
 
 
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
             var rt = new RenderTexture(
                 (int)closeUpRawImage.rectTransform.rect.width,
                 (int)closeUpRawImage.rectTransform.rect.height,
@@ -152,9 +153,9 @@ namespace SparFlame.UI.GamePlay
         private void Update()
         {
             _cameraBias = camBias;
-            if (_notPauseTag.IsEmpty) return;
+            if (_gamingTag.IsEmpty) return;
             if (!IsOpened()) return;
-            if (!BasicResourceManager.Instance.IsResourceLoaded()) return;
+            // if (!BasicUIResourceManager.Instance.IsResourceLoaded()) return;
             if (_targetEntity == Entity.Null)
             {
                 Hide();
@@ -165,7 +166,6 @@ namespace SparFlame.UI.GamePlay
                 Hide();
                 return;
             }
-
             UpdateDynamicData();
         }
 
@@ -202,7 +202,7 @@ namespace SparFlame.UI.GamePlay
                     {
                         Slots[i].SetActive(true);
                         var buff = SlotComponents[i];
-                        buff.button.image.sprite = BasicResourceManager.Instance.BuffSprites[buffData[i].Type];
+                        buff.button.image.sprite = BasicUIResourceManager.Instance.BuffSprites[buffData[i].Type];
                     }
                     else
                     {
@@ -227,7 +227,7 @@ namespace SparFlame.UI.GamePlay
             if (_em.HasComponent<ExpData>(_targetEntity))
             {
                 var tier = _em.GetComponentData<ExpData>(_targetEntity).CurTier;
-                tierIcon.sprite = BasicResourceManager.Instance.TierSprites[tier];
+                tierIcon.sprite = BasicUIResourceManager.Instance.TierSprites[tier];
             }
             else
             {

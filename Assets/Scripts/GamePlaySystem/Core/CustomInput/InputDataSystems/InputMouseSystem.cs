@@ -7,7 +7,6 @@ using UnityEngine.EventSystems;
 
 namespace SparFlame.GamePlaySystem.CustomInput
 {
-    [UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class InputMouseSystem : SystemBase
     {
         private Camera _camera;
@@ -19,23 +18,24 @@ namespace SparFlame.GamePlaySystem.CustomInput
 
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GameStatusData>();
             RequireForUpdate<InputMouseData>();
-            
         }
 
         protected override void OnStartRunning()
         {
-            _camera = Camera.main;
             _config = SystemAPI.GetSingleton<CustomMouseSystemConfig>();
             _mouseKeyMapping = SystemAPI.GetSingleton<CustomMouseKeyMapping>();
-           
         }
 
         protected override void OnUpdate()
         {
-            _camera = Camera.main;
-            if (_camera == null) return;
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if (gameStatusData.Value == GameStatus.Init)
+            {
+                _camera = Camera.main;
+            }
+            if(gameStatusData.Value != GameStatus.Gaming)return;
             CheckMouseEventAndRaycastHit();
             
         }

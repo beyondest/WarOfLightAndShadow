@@ -20,7 +20,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
         {
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<PopNumberConfig>();
             state.RequireForUpdate<PopNumberColorConfig>();
             state.RequireForUpdate<PopNumberRequest>();
@@ -31,11 +31,11 @@ namespace SparFlame.GamePlaySystem.PopNumber
             _colorConfig.Dispose();
         }
 
-        [RequiredMember]
-        public void OnStartRunning(ref SystemState state)
-        {
-            Debug.Log("OnStartRunning");
-        }
+        // [RequiredMember]
+        // public void OnStartRunning(ref SystemState state)
+        // {
+        //     Debug.Log("OnStartRunning");
+        // }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)

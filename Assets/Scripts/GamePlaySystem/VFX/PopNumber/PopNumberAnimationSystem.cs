@@ -17,7 +17,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
         {
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<PopNumberConfig>();
         }
 

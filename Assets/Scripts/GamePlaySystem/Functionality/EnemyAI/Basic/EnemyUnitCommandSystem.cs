@@ -1,0 +1,132 @@
+﻿using SparFlame.GamePlaySystem.Garrison;
+using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.Movement;
+using SparFlame.GamePlaySystem.State;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace SparFlame.GamePlaySystem.EnemyAI
+{
+    [UpdateAfter(typeof(EnemyTeamStateMachine))]
+    public partial struct EnemyUnitCommandSystem : ISystem
+    {
+        private ComponentLookup<GeneralAttr> _generalAttr;
+        private ComponentLookup<AttackAbility> _attackability;
+        
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<GarrisonSystemConfig>();
+            state.RequireForUpdate<EnemyUnitCommandUpdate>();
+            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<EnemyUnitCommandSystemConfig>();
+            state.RequireForUpdate<EnemyUnitCommandUpdate>();
+            _generalAttr = state.GetComponentLookup<GeneralAttr>(true);
+            _attackability = state.GetComponentLookup<AttackAbility>(true);
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            _generalAttr.Update(ref state);
+            _attackability.Update(ref state);
+            new EnemyUnitCommandJob
+            {
+                GeneralAttrLookUp = _generalAttr,
+                AttackAbilityLookUp = _attackability,
+                GarrisonRangeSq = SystemAPI.GetSingleton<GarrisonSystemConfig>().GarrisonRadiusSq,
+                ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+            }.ScheduleParallel();
+        }
+
+
+        [BurstCompile]
+        [WithAll(typeof(EnemyUnitCommandUpdate))]
+        private partial struct EnemyUnitCommandJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter ECB;
+            [ReadOnly] public ComponentLookup<AttackAbility> AttackAbilityLookUp;
+            [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookUp;
+            [ReadOnly] public float GarrisonRangeSq;
+            private void Execute([ChunkIndexInQuery] int index, ref EnemyUnitCommandData commandData,
+                ref BasicStateData basicStateData, ref MovableData movableData,
+                ref DynamicBuffer<InsightTarget> targets,
+                Entity entity)
+            {
+                ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, entity, false);
+                var targetEntity = commandData.TargetEntity;
+                var focus = commandData.Focus;
+                var targetPos = commandData.TargetPos;
+                var targetColliderShape = GeneralAttrLookUp[commandData.TargetEntity].BoxColliderSize;
+                
+                switch (commandData.CommandType)
+                {
+                    case EnemyCommandType.None:
+                        break;
+                    case EnemyCommandType.March:
+                        MovementUtils.SetMoveTarget(ref movableData, targetPos, float3.zero,
+                            MovementCommandType.March, 0f);
+                        basicStateData.TargetState = InteractState.Moving;
+                        StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+                        // Remove target so that player commandData it to move than it will move
+                        if (basicStateData.TargetEntity != Entity.Null)
+                        {
+                            InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
+                        }
+                        basicStateData.TargetEntity = Entity.Null;
+                        basicStateData.TargetState = InteractState.Idle;
+                        basicStateData.Focus = focus;
+                        break;
+                    case EnemyCommandType.Garrison:
+                        MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderShape,
+                            MovementCommandType.Interactive, GarrisonRangeSq);
+                        basicStateData.TargetState = InteractState.Moving;
+                        StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+                        basicStateData.TargetEntity = targetEntity;
+                        basicStateData.Focus = focus;
+                        basicStateData.TargetState = InteractState.Garrison;
+                        break;
+                    case EnemyCommandType.Attack:
+                        if (AttackAbilityLookUp.TryGetComponent(entity, out var attackAbility))
+                        {
+                            MovementUtils.SetMoveTarget(ref movableData, targetPos,
+                                targetColliderShape,
+                                MovementCommandType.Interactive, attackAbility.RangeSq);
+                            basicStateData.TargetState = InteractState.Moving;
+                            StateUtils.SwitchState(ref basicStateData, ECB, commandData.TargetEntity, index);
+                            basicStateData.Focus = commandData.Focus;
+                            basicStateData.TargetState = InteractState.Attacking;
+                            basicStateData.TargetEntity = targetEntity;
+                            InteractUtils.NoDupAdd(ref targets, new InsightTarget
+                            {
+                                Entity = basicStateData.TargetEntity
+                            });
+                        }
+                        else // Cleric in troop
+                        {
+                            MovementUtils.SetMoveTarget(ref movableData, targetPos, float3.zero,
+                                MovementCommandType.March, 0f);
+                            basicStateData.TargetState = InteractState.Moving;
+                            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+                            // Remove target so that player commandData it to move than it will move
+                            if (basicStateData.TargetEntity != Entity.Null)
+                            {
+                                InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
+                            }
+                            basicStateData.TargetEntity = Entity.Null;
+                            basicStateData.TargetState = InteractState.Idle;
+                            basicStateData.Focus = focus;
+                        }
+                        break;
+                }
+                
+                EnemyAIUtils.ResetPendingCommand(ref commandData);
+            }
+        }
+    }
+}

@@ -19,11 +19,10 @@ namespace SparFlame.GamePlaySystem.Garrison
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<GarrisonSystemConfig>();
             _garrisonAttrLookup = state.GetComponentLookup<GarrisonAttr>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
-
             _alreadyTagged = new NativeHashSet<Entity>(16,Allocator.Persistent);
         }
         

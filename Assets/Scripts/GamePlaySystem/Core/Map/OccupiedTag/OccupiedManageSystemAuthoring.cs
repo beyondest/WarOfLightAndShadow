@@ -9,11 +9,11 @@ namespace SparFlame.GamePlaySystem.Resource
 {
     public class OccupiedManageSystemAuthoring : MonoBehaviour
     {
-        public float3 tileSize;
 
         public GameObject allyOccupiedRef;
         public GameObject enemyOccupiedRef;
         public GameObject neutralOccupiedRef;
+        public float crystalChangeRadius;
         private class OccupiedManageSystemAuthoringBaker : Baker<OccupiedManageSystemAuthoring>
         {
             public override void Bake(OccupiedManageSystemAuthoring authoring)
@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Resource
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new OccupiedManageSystemConfig
                 {
-                    TileSize = authoring.tileSize,
+                    CrystalChangeRadiusSq = authoring.crystalChangeRadius * authoring.crystalChangeRadius,
                     AllyOccupiedRef = GetEntity(authoring.allyOccupiedRef, TransformUsageFlags.None),
                     EnemyOccupiedRef = GetEntity(authoring.enemyOccupiedRef, TransformUsageFlags.None),
                     NeutralOccupiedRef = GetEntity(authoring.neutralOccupiedRef, TransformUsageFlags.None),
@@ -30,10 +30,12 @@ namespace SparFlame.GamePlaySystem.Resource
         }
     }
 
+
+    
     
     public struct OccupiedManageSystemConfig : IComponentData
     {
-        public float3 TileSize;
+        public float CrystalChangeRadiusSq;
         public Entity AllyOccupiedRef;
         public Entity EnemyOccupiedRef;
         public Entity NeutralOccupiedRef;

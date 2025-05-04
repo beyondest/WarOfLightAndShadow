@@ -11,16 +11,14 @@ namespace SparFlame.GamePlaySystem.Interact
 {
     public partial struct SightControlSystem : ISystem
     {
-        private ComponentLookup<PhysicsCollider> _colliderLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             _transformLookup = state.GetComponentLookup<LocalTransform>();
-            _colliderLookup = state.GetComponentLookup<PhysicsCollider>();
         }
 
         [BurstCompile]
@@ -29,7 +27,6 @@ namespace SparFlame.GamePlaySystem.Interact
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             _transformLookup.Update(ref state);
-            _colliderLookup.Update(ref state);
             new GenerateSightJob
             {
                 ECB = ecb,
@@ -46,7 +43,6 @@ namespace SparFlame.GamePlaySystem.Interact
         public partial struct GenerateSightJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-
             private void Execute([ChunkIndexInQuery] int index, ref GenerateSightRequest request, Entity requestEntity,
                 in LocalTransform localTransform)
             {
@@ -57,32 +53,6 @@ namespace SparFlame.GamePlaySystem.Interact
                 });
                 ECB.SetComponent(index, sight, localTransform);
                 ECB.RemoveComponent<GenerateSightRequest>(index, requestEntity);
-                
-
-            }
-        }
-
-        [BurstCompile]
-        public partial struct ChangeSightRangeJob : IJobEntity
-        {
-            [NativeDisableParallelForRestriction]
-            public ComponentLookup<PhysicsCollider> ColliderLookup;
-            [ReadOnly]
-            public EntityCommandBuffer.ParallelWriter ECB;
-            private void Execute([ChunkIndexInQuery] int index,Entity entity, in DeferredColliderUpdate update)
-            {
-                ref var collider = ref ColliderLookup.GetRefRW(entity).ValueRW;
-                unsafe
-                {
-                    var old = (CylinderCollider*)collider.ColliderPtr;
-                    var geo = old->Geometry;
-                    var material = old->Material;
-                    geo.Radius = update.NewRadius;
-                  
-                    var newValue = CylinderCollider.Create(geo, update.Filter,material);
-                    collider.Value = newValue;
-                }
-                ECB.RemoveComponent<DeferredColliderUpdate>(index,entity);
             }
         }
         
@@ -100,18 +70,13 @@ namespace SparFlame.GamePlaySystem.Interact
                     ECB.DestroyEntity(index, entity);
                     return;
                 }
-
                 ref var transform = ref LocalTransformLookup.GetRefRW(entity).ValueRW;
                 transform.Position = localTransform.Position;
                 transform.Rotation = localTransform.Rotation;
             }
         }
         
-        public struct DeferredColliderUpdate : IComponentData
-        {
-            public float NewRadius;
-            public CollisionFilter Filter;
-        }
+
 
     }
 }

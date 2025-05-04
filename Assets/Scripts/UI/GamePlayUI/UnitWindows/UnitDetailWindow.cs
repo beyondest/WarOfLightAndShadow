@@ -13,12 +13,10 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>, UIUtils.ISingleTargetWindow
+    public class UnitDetailWindow : MultiSlotWindowUtils.MultiSlotsWindow<AttributeSlot>, MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Config
         [Header("General")] 
-        [SerializeField]
-        private bool showCostSlots;
         [SerializeField] private TMP_Text generalTypeText;
         [SerializeField] private Image generalTypeIcon;
         [SerializeField] private TMP_Text description;
@@ -62,7 +60,7 @@ namespace SparFlame.UI.GamePlay
 
         // ECS
         protected EntityManager Em;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
 
         #region EventFunction
 
@@ -74,33 +72,20 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
-        {
-            if(showCostSlots)
-                base.OnEnable();
-        }
 
-        protected override void OnDisable()
+        public override void LoadResources()
         {
-            if(showCostSlots)
-                base.OnDisable();
-        }
-
-        protected virtual void Start()
-        {
+            base.LoadResources();
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = Em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = Em.CreateEntityQuery(typeof(GamingTag));
             panel.SetActive(false);
         }
 
+
         protected virtual void Update()
         {
-            if (_notPauseTag.IsEmpty) return;
+            if (_gamingTag.IsEmpty) return;
             if (!IsOpened()) return;
-
-            if (!UnitWindowResourceManager.Instance.IsResourceLoaded()
-                || !BasicResourceManager.Instance.IsResourceLoaded()
-                || !IsResourceLoaded()) return;
             if (TargetEntity == Entity.Null) return;
             if (!Em.HasComponent<GeneralAttr>(TargetEntity))
             {
@@ -120,7 +105,7 @@ namespace SparFlame.UI.GamePlay
             description.text = DatabaseManager.UnitDatabaseSo.GetItemById(generalAttr.ID).description;
             generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.Type];
             generalTypeText.text = unitAttr.Type.ToString();
-            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfo(unitAttr.Type, generalAttr.ID).Sprite;
+            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, generalAttr.ID).Sprite;
             UpdateCostSlots();
         }
         public virtual void UpdateCostSlots()
@@ -133,7 +118,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var cost = costList[i];
                     var costSlot = SlotComponents[i];
-                    costSlot.icon.sprite = BasicResourceManager.Instance.ResourceSprites[cost.Type];
+                    costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = $"x{cost.Amount}";
                 }

@@ -42,7 +42,9 @@ namespace SparFlame.Database
                     buffer3.Add(new ResourceEntityPrefabData
                     {
                         Type = resourceData.type,
-                        Prefab = GetEntity(resourceData.prefab, TransformUsageFlags.Dynamic)
+                        Prefab = GetEntity(resourceData.prefab, TransformUsageFlags.Dynamic),
+                        Probability = resourceData.prob,
+                        AmountRange = resourceData.amountRange
                     });
                 }
             }
@@ -51,28 +53,8 @@ namespace SparFlame.Database
 
 
 
-    public interface IEntityPrefabData<T> : IBufferElementData where T : Enum 
-    {
-        public Entity Prefab { get; set; }
-        public T Type { get; set; }
-    }
+
 
   
-    public struct BuildingEntityPrefabData : IEntityPrefabData<BuildingType>
-    {
-        public Entity Prefab { get; set; }
-        public BuildingType Type { get; set; }
-    }
 
-    public struct UnitEntityPrefabData : IEntityPrefabData<UnitType>
-    {
-        public Entity Prefab { get; set; }
-        public UnitType Type { get; set; }
-    }
-    
-    public struct ResourceEntityPrefabData : IEntityPrefabData<ResourceType>
-    {
-        public Entity Prefab { get; set; }
-        public ResourceType Type { get; set; }
-    }
 }

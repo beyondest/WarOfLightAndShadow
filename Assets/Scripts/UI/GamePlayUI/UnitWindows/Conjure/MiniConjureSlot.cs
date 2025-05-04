@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
@@ -17,7 +16,7 @@ namespace SparFlame.UI.GamePlay
         private EntityManager _em;
         private FactionTag _faction;
         private Entity _targetEntity = Entity.Null;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
         private int _maxConjureCount;
         public int GetMaxConjureCount() => _maxConjureCount;
         public void SetTarget(in SpriteEntityInfo info)
@@ -32,12 +31,12 @@ namespace SparFlame.UI.GamePlay
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
         }
 
         private void Update()
         {
-            if(_notPauseTag.IsEmpty)return;
+            if(_gamingTag.IsEmpty)return;
             if(_targetEntity == Entity.Null)return;
             CalculateMaxConjureCount();
         }
@@ -47,7 +46,7 @@ namespace SparFlame.UI.GamePlay
             _maxConjureCount =GameplayUIUtils.CalMaxCountForConjureOrConstruct(_faction,
                 _em, _targetEntity);
             button!.image.color = _maxConjureCount == 0 ? cannotConjureColor : Color.white;
-            conjureMaxCountText.text = ((int)_maxConjureCount).ToString();
+            conjureMaxCountText.text = _maxConjureCount.ToString();
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Entities;
 using UnityEngine;
@@ -12,7 +11,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<InputCameraNormalData>();
         }
 

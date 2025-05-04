@@ -5,10 +5,8 @@ using Unity.Entities;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConjureQueueWindow : UIUtils.MultiSlotsWindow<ConjureQueueSlot>,UIUtils.ISingleTargetWindow
+    public class ConjureQueueWindow : MultiSlotWindowUtils.MultiSlotsWindow<ConjureQueueSlot>,MultiSlotWindowUtils.ISingleTargetWindow
     {
-  
-        
         public static ConjureQueueWindow Instance;
         
         public bool TrySwitchTarget(Entity target)
@@ -31,13 +29,11 @@ namespace SparFlame.UI.GamePlay
         {
             // TODO : Cut the conjuring queue
         }
-
-
         // Internal Data
         
         private EntityManager _em;
         private Entity _targetEntity;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
 
         private void Awake()
         {
@@ -47,17 +43,18 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
             Hide();
         }
 
         private void Update()
         {
+            if (_gamingTag.IsEmpty) return;
             if(!IsOpened())return;
-            if (_notPauseTag.IsEmpty) return;
             if(_targetEntity == Entity.Null) return;
             if (!_em.HasComponent<GeneralAttr>(_targetEntity))
             {
@@ -85,7 +82,7 @@ namespace SparFlame.UI.GamePlay
                     var slotComponent = SlotComponents[i];
                     var conjureData = conjuringDatas[i];
                     var generalAttr = _em.GetComponentData<GeneralAttr>(conjureData.ConjuringEntity);
-                    var info = UnitWindowResourceManager.Instance.GetInfo(conjureAttribute.ConjuringType,
+                    var info = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(conjureAttribute.ConjuringType,
                         generalAttr.ID);
                     slotComponent.unitNameText.text = info.GameplayName;
                     slotComponent.button!.image.sprite = info.Sprite;

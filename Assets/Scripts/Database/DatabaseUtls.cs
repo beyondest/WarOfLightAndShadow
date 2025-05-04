@@ -1,15 +1,17 @@
 ﻿using GamePlaySystem.Database;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.State;
 using Unity.Entities;
-using Unity.Physics;
+using Unity.Mathematics;
 using Unity.Physics.Authoring;
+using Unity.Rendering;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace SparFlame.Database
 {
@@ -36,6 +38,17 @@ namespace SparFlame.Database
                     MaxValue = item.stat,
                     CurValue = item.stat
                 });
+
+                // Screen Pos, both building, resource, unit can hide in fog of war, so this is needed;
+                // Unit selection needs the screen pos too.
+                AddComponent(entity, new ScreenPos
+                {
+                    ScreenPosition = float2.zero
+                });
+                AddComponent<InCameraView>(entity);
+                AddComponent<InCameraExtendView>(entity);
+                SetComponentEnabled<InCameraView>(entity, false);
+                SetComponentEnabled<InCameraExtendView>(entity,false);
 
                 // Exp
                 if (item.upgradable)
@@ -128,12 +141,36 @@ namespace SparFlame.Database
                         InteractType = InteractType.Harvest
                     });
                 }
+
+                // Fog of War VFX
+                var fowAgentData = new FowAgentData
+                {
+                    ContributeToFOV = item.factionTag == FactionTag.Ally,
+                    DisappearInFow =  item.factionTag != FactionTag.Ally,
+                    SightRange = item.fogSightRange,
+                    SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
+                    DisappearAlphaThreshold = item.disappearAlphaThreshold,
+                    IsInsight = item.factionTag == FactionTag.Ally, 
+                };
+                AddComponent(entity, fowAgentData);
+                if (fowAgentData.ContributeToFOV)
+                {
+                    AddComponent<ContributeSightTag>(entity);
+                    
+                }
+
+                if (fowAgentData.DisappearInFow)
+                {
+                    AddComponent<DisappearInFowTag>(entity);
+                    AddComponent(entity, new HideFowAgentRequest
+                    {
+                        Hide = true
+                    });
+                }
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
             {
-                float volumeRadius;
-                AreaType areaType;
                 // if (item.IsAttackable())
                 // {
                 //     volumeRadius = item.attackRange;
@@ -141,8 +178,8 @@ namespace SparFlame.Database
                 // }
                 // else
                 // {
-                volumeRadius = 0f;
-                areaType = (AreaType)item.curTier;
+                const float volumeRadius = 0f;
+                var areaType = (AreaType)item.curTier;
                 // }
                 var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();
                 AddComponent<VolumeObstacleTag>(entity);
@@ -155,10 +192,11 @@ namespace SparFlame.Database
                     RequestFromFaction = item.factionTag,
                 });
             }
+           
         }
     }
 
-    public struct RuntimeTag : IComponentData
-    {
-    }
+
+    
+   
 }

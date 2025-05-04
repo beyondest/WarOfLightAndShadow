@@ -1,4 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -30,7 +31,7 @@ namespace SparFlame.GamePlaySystem.Resource
     }
     public struct ChangeOccupiedTagRequest : IComponentData
     {
-        public float3 DestroyedCrystalPos;
+        public float3 CrystalPos;
         public FactionTag CrystalFaction;
         public bool IsDestroyed;
     }

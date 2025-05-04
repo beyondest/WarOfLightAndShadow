@@ -17,13 +17,11 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class BuildingDetailWindow : UIUtils.MultiSlotsWindow<AttributeSlot>, UIUtils.ISingleTargetWindow
+    public class BuildingDetailWindow : MultiSlotWindowUtils.MultiSlotsWindow<AttributeSlot>, MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Config
         [Header("General Information")] [SerializeField]
-        private bool showCostSlots;
-
-        [SerializeField] private bool isMainInfoSingleton;
+        private bool isMainInfoSingleton;
 
         [SerializeField] private TMP_Text generalTypeText;
         [SerializeField] private Image generalTypeIcon;
@@ -70,9 +68,6 @@ namespace SparFlame.UI.GamePlay
         // Interface
         public static BuildingDetailWindow Instance;
         public Action<Entity> EcsGhostShowTarget;
-
-        [NonSerialized] public bool InitConstructEvents = false;
-
 
         public override void Hide()
         {
@@ -146,7 +141,7 @@ namespace SparFlame.UI.GamePlay
 
         // ECS
         protected EntityManager Em;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
 
         #region EventFunction
 
@@ -158,15 +153,9 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
+        public override void LoadResources()
         {
-            if (showCostSlots)
-                base.OnEnable();
-            else
-            {
-                SetInitialized();
-            }
-
+            base.LoadResources();
             generatePanel.SetActive(false);
             dwellingPanel.SetActive(false);
             ornamentPanel.SetActive(false);
@@ -174,23 +163,16 @@ namespace SparFlame.UI.GamePlay
             interactAbilityTriangle.enabled = false;
         }
 
-        protected override void OnDisable()
+        protected override void Start()
         {
-            if (showCostSlots)
-                base.OnDisable();
-        }
-
-        protected virtual void Start()
-        {
+            base.Start();
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = Em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = Em.CreateEntityQuery(typeof(GamingTag));
         }
 
         protected virtual void Update()
         {
-            if (_notPauseTag.IsEmpty) return;
-            if (!BuildingWindowResourceManager.Instance.IsResourceLoaded()
-                || !BasicResourceManager.Instance.IsResourceLoaded()) return;
+            if (_gamingTag.IsEmpty) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
             if (!Em.HasComponent<GeneralAttr>(_targetEntity))
@@ -216,8 +198,8 @@ namespace SparFlame.UI.GamePlay
             generalTypeIcon.sprite =
                 BuildingWindowResourceManager.Instance.BuildingGeneralTypeSprites[_buildingAttr.Type];
             idSingleIcon.sprite = BuildingWindowResourceManager.Instance
-                .GetInfo(_buildingAttr.Type, generalAttr.ID).Sprite;
-            if (showCostSlots)
+                .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.ID).Sprite;
+            if (multiSlotEnabled)
                 VisualizeCostSlots();
 
 
@@ -240,7 +222,7 @@ namespace SparFlame.UI.GamePlay
                     generatePanel.SetActive(true);
                     var generateAttribute = Em.GetComponentData<GenerateAttr>(_targetEntity);
                     generateResourceIcon.sprite =
-                        BasicResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
+                        BasicUIResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
                     generateTypeText.text = generateAttribute.GenerateResourceType.ToString();
                     generateMinRequireUnitsText.text = generateAttribute.MinCultivatorsRequireToGenerate.ToString();
                     if (!isMainInfoSingleton)
@@ -264,7 +246,7 @@ namespace SparFlame.UI.GamePlay
                     var dwellingAttr = Em.GetComponentData<DwellingAttr>(_targetEntity);
                     dwellingCountText.text = dwellingAttr.Amount.ToString();
                     dwellingResourceIcon.sprite =
-                        BasicResourceManager.Instance.ResourceSprites[dwellingAttr.ResourceType];
+                        BasicUIResourceManager.Instance.ResourceSprites[dwellingAttr.ResourceType];
 
                     break;
                 case BuildingType.Ornaments:
@@ -276,7 +258,7 @@ namespace SparFlame.UI.GamePlay
                     {
                         var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity);
                         ornamentPanel.SetActive(true);
-                        ornamentBuffImage.sprite = BasicResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
+                        ornamentBuffImage.sprite = BasicUIResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
                         ornamentBuffDescriptionText.text = "Not implemented";
                     }
 
@@ -370,7 +352,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var cost = costList[i];
                     var costSlot = SlotComponents[i];
-                    costSlot.icon.sprite = BasicResourceManager.Instance.ResourceSprites[cost.Type];
+                    costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
                     costSlot.label.text = cost.Type.ToString();
                     costSlot.value.text = $"x{cost.Amount}";
                 }

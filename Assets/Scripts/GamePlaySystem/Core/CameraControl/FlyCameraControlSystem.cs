@@ -1,5 +1,4 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.CustomInput;
+﻿using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -15,24 +14,24 @@ namespace SparFlame.GamePlaySystem.CameraControl
         private float _pitch;
         private Transform _camTransform;
         private Transform _rigTransform;
+        private Camera _camera;
         private bool _preNormalMode;
         
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputCameraFlyData>();
             RequireForUpdate<FlyCameraControlConfig>();
         }
 
-       
+        protected override void OnStartRunning()
+        {
+            _camera = Camera.main;
+        }
 
-        
-    
         protected override void OnUpdate()
         {
             var deltaTime = SystemAPI.Time.DeltaTime;
-            if(Camera.main == null) return;
-            var cam = Camera.main;
             var inputData = SystemAPI.GetSingleton<InputCameraFlyData>();
             var inputNormalData = SystemAPI.GetSingleton<InputCameraNormalData>();
             var config = SystemAPI.GetSingleton<FlyCameraControlConfig>();
@@ -44,13 +43,13 @@ namespace SparFlame.GamePlaySystem.CameraControl
             if (_preNormalMode)
             {
                 // Switch parent
-                _rigTransform = cam.transform.parent;
-                cam.transform.SetParent(null);
-                _rigTransform.SetParent(cam.transform);
+                _rigTransform = _camera.transform.parent;
+                _camera.transform.SetParent(null);
+                _rigTransform.SetParent(_camera.transform);
                 _preNormalMode = false;
             }
             
-            _camTransform = cam.transform;
+            _camTransform = _camera.transform;
             
             // Look
             _yaw += inputData.LookDelta.x * config.LookSpeedH *deltaTime;

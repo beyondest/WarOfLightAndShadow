@@ -88,6 +88,7 @@ namespace SparFlame.GamePlaySystem.General
         InteractType InteractType { get; set; }
     }
 
+    [Serializable]
     public struct AttackAbility : IComponentData,IInteractAbility
     {
         public float Speed { get; set; }
@@ -97,7 +98,7 @@ namespace SparFlame.GamePlaySystem.General
         public InteractType InteractType { get; set; }
     }
     
-    
+    [Serializable]
     public struct HealAbility : IComponentData,IInteractAbility
     {
         public float Speed { get; set; }
@@ -106,6 +107,8 @@ namespace SparFlame.GamePlaySystem.General
         public int Amount { get; set; }
         public InteractType InteractType { get; set; }
     }
+    
+    [Serializable]
     public struct HarvestAbility : IComponentData,IInteractAbility
     {
         public float Speed { get; set; }

@@ -1,6 +1,4 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.General;
-using Unity.Burst;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
 
@@ -12,7 +10,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private CustomInputActions _customInputActions;
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputCameraNormalData>();
         }
         protected override void OnStartRunning()

@@ -43,7 +43,7 @@ namespace SparFlame.GamePlaySystem.State
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<InteractStateMachineConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
 
 
             _attackEntityQuery = SystemAPI.QueryBuilder().WithAllRW<AttackAbility>().WithAllRW<BasicStateData>()
@@ -310,7 +310,7 @@ namespace SparFlame.GamePlaySystem.State
                 if (++selfStateData.InteractCounter > (int)counter)
                 {
                     selfStateData.InteractCounter = 0;
-                    // Calculate True Interact Amount
+                    // Calculate True Interact AbsAmount
                     SendStatChangeRequest(selfStateData.TargetEntity, ability.Amount, index, selfEntity,
                         ability.InteractType);
                 }
@@ -357,7 +357,7 @@ namespace SparFlame.GamePlaySystem.State
                 {
                     Interactor = entity,
                     Interactee = targetEntity,
-                    Amount = amount,
+                    AbsAmount = amount,
                     InteractType = interactType
                 });
             }

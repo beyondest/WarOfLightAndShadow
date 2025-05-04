@@ -10,13 +10,14 @@ using SparFlame.GamePlaySystem.CustomInput;
 
 namespace SparFlame.GamePlaySystem.Command
 {
+    [BurstCompile]
     [UpdateAfter(typeof(UnitSelectionPlusSystem))]
     public partial struct CursorManageSystem : ISystem
     {
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<CursorData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();

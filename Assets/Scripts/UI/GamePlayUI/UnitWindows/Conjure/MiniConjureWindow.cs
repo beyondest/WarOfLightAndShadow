@@ -9,12 +9,11 @@ using Unity.Entities;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class MiniConjureWindow : UIUtils.MultiSlotsWindow<MiniConjureSlot>, UIUtils.ISingleTargetWindow
+    public class MiniConjureWindow : MultiSlotWindowUtils.MultiSlotsWindow<MiniConjureSlot>, MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Public interface
         public static MiniConjureWindow Instance;
 
-        [NonSerialized] public bool InitWindowEvents;
 
         // Unit, Building, ConjureCount
         public Action<Entity, Entity, int> EcsConjureUnit;
@@ -74,8 +73,9 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             Hide();
         }

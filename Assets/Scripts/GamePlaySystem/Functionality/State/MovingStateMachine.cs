@@ -42,7 +42,7 @@ namespace SparFlame.GamePlaySystem.State
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MovingStateMachineConfig>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             _interactableLookup = state.GetComponentLookup<GeneralAttr>(true);
             _selectedLookup = state.GetComponentLookup<Selected>(true);
             _aiTagLookup = state.GetComponentLookup<AITag>(true);
@@ -120,8 +120,7 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public ComponentLookup<AITag> AITagLookup;
             [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
 
-            
-            
+
             // Resolve self stuck will modify transform and lookup random transform for squeeze direction
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransLookup;
 
@@ -156,22 +155,23 @@ namespace SparFlame.GamePlaySystem.State
                     return;
 
                 // Not complete the moving. If stuck, should try resolve stuck first. If not stuck or stuck resolved , return true
-                var ifResolveStuckByChangeState = TryResolveStuck(ref surroundings, ref targets, in movableData, ref stateData,
+                var ifResolveStuckByChangeState = TryResolveStuck(ref surroundings, ref targets, in movableData,
+                    ref stateData,
                     ref transform,
                     selfEntity, index);
-                if(ifResolveStuckByChangeState)return;
+                if (ifResolveStuckByChangeState) return;
 
                 // Not complete the moving. May change target if some other things happen
-                if(CheckShouldChangeTarget(ref stateData, ref movableData,
-                    ref targets, in selfFaction, transform,
-                    selfEntity, index))return;
-                
-                CheckUpdateTargetPos(ref stateData,ref movableData);
+                if (CheckShouldChangeTarget(ref stateData, ref movableData,
+                        ref targets, in selfFaction, transform,
+                        selfEntity, index)) return;
+
+                CheckUpdateTargetPos(ref stateData, ref movableData);
             }
 
             private bool CheckUpdateTargetPos(ref BasicStateData stateData, ref MovableData movableData)
             {
-                if(stateData.TargetEntity == Entity.Null)return false;
+                if (stateData.TargetEntity == Entity.Null) return false;
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
                 movableData.TargetCenterPos = targetPos;
                 return true;
@@ -192,9 +192,9 @@ namespace SparFlame.GamePlaySystem.State
 
                 GeneralAttr targetGeneralAttr;
                 // March move check, only work for AI debug, actually AI will not march?
-                if (isAi&& !stateData.Focus
-                    && movableData.MovementCommandType == MovementCommandType.March
-                    && !targets.IsEmpty)
+                if (isAi && !stateData.Focus
+                         && movableData.MovementCommandType == MovementCommandType.March
+                         && !targets.IsEmpty)
                 {
                     shouldChangeTarget = true;
                 }
@@ -212,56 +212,81 @@ namespace SparFlame.GamePlaySystem.State
                             return false;
                         }
 
-                        var garrisonUnitOutOfDefendRange = InGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison)
-                                                           && TransLookup.TryGetComponent(inGarrison.BuildingEntity,
-                                                               out var buildingTrans)
-                                                           && Config.MaxDisSqUnitToBuildingForGarrison <
-                                                           math.distancesq(selfTransform.Position, buildingTrans.Position);
+                        var garrisonUnitOutOfDefendRange =
+                            InGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison)
+                            && TransLookup.TryGetComponent(inGarrison.BuildingEntity,
+                                out var buildingTrans)
+                            && Config.MaxDisSqUnitToBuildingForGarrison <
+                            math.distancesq(selfTransform.Position, buildingTrans.Position);
+                        var canHeal = HealLookup.HasComponent(selfEntity);
+                        var canHarvest = HarvestLookup.HasComponent(selfEntity);
+                        var canAttack = AttackLookup.HasComponent(selfEntity);
                         // Normal check
                         if (InteractUtils.IsTargetValid(in targetGeneralAttr, in selfFactionTag, in targetStat,
-                                HealLookup.HasComponent(selfEntity), HarvestLookup.HasComponent(selfEntity),
-                                AttackLookup.HasComponent(selfEntity),
+                                canHeal, canHarvest, canAttack
+                                ,
                                 !RegeneratingTagLookup.HasComponent(stateData.TargetEntity)))
                         {
                             // Ai follow drop aggro check
                             var tarPos = TransLookup[stateData.TargetEntity].Position;
                             var targetFromSelfDisSq = math.distancesq(tarPos, selfTransform.Position);
                             var aiTagShouldNotFollow = isAi
-                                                            &&!stateData.Focus // This is for the time enemy need to attack very far away building and debugging need
-                                                            && Config.MaxDistanceSqFollowForAITag < targetFromSelfDisSq;
+                                                       && !stateData
+                                                           .Focus // This is for the time enemy need to attack very far away building and debugging need
+                                                       && Config.MaxDistanceSqFollowForAITag < targetFromSelfDisSq;
                             // AI should not follow so remove target 
                             if (aiTagShouldNotFollow)
                             {
                                 int i;
-                                for ( i = 0; i < targets.Length; i++)
+                                for (i = 0; i < targets.Length; i++)
                                 {
                                     var target = targets[i];
-                                    if(target.Entity == stateData.TargetEntity)break;
+                                    if (target.Entity == stateData.TargetEntity) break;
                                 }
+
                                 if (i < targets.Length)
                                 {
                                     targets.RemoveAt(i);
                                 }
                             }
+
                             if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange)
                                 return false;
                         }
-          
-                        
+
+                        // This may happen when command a cleric to attack someone or to heal someone with full hp . Then cleric should march to that position rather then attack someone
+                        /*if (!canAttack)
+                        {
+                            MovementUtils.SetMoveTarget(ref movableData, TransLookup[stateData.TargetEntity].Position,
+                                float3.zero,
+                                MovementCommandType.March, 0f);
+                            stateData.TargetState = InteractState.Moving;
+                            StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                            // Remove target so that player command it to move than it will move
+                            if (stateData.TargetEntity != Entity.Null)
+                            {
+                                InteractUtils.Remove(ref targets, stateData.TargetEntity);
+                            }
+                            stateData.TargetEntity = Entity.Null;
+                            stateData.TargetState = InteractState.Idle;
+                            stateData.Focus = false;
+                            return true;
+                        }*/
+
                         // Garrison unit Drop aggro， if Ai, should focus go back and regenerating hp
                         if (garrisonUnitOutOfDefendRange)
                         {
-                            StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
+                            StateUtils.GarrisonMoveBack(inGarrison, ref stateData, ref movableData,
                                 TransLookup[inGarrison.BuildingEntity].Position,
                                 GeneralLookup[inGarrison.BuildingEntity].BoxColliderSize,
-                                GarrisonSystemConfig.GarrisonRadiusSq,isAi,
-                                selfEntity,index, ECB);
+                                GarrisonSystemConfig.GarrisonRadiusSq, isAi,
+                                selfEntity, index, ECB);
                             return true;
                             // if(isAi)
                             //     ECB.AddComponent<GarrisonAiHpRegeneratingTag>(index, selfEntity);
                         }
                     }
-                    
+
                     // Current target invalid, check if turn to idle
                     if (targets.IsEmpty)
                     {
@@ -351,6 +376,7 @@ namespace SparFlame.GamePlaySystem.State
                         StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                         return true;
                     }
+
                     InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
                         SightSystemConfig.MemoryTargetAfterStuckByBuilding);
                     stateData.TargetEntity = surroundings.FrontEntity;

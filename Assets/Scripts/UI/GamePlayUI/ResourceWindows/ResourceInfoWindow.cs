@@ -1,17 +1,16 @@
 ﻿using SparFlame.GamePlaySystem.Resource;
 using SparFlame.UI.General;
 using Unity.Entities;
+using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ResourceInfoWindow : UIUtils.MultiSlotsWindow<AttributeSlot>
+    public class ResourceInfoWindow : MultiSlotWindowUtils.MultiSlotsWindow<AttributeSlot>
     {
-
-
         public static ResourceInfoWindow Instance;
         public int occupiedPopulationValue;
         
-        public void UpdateStaticData(DynamicBuffer<ResourceData> datas)
+        public void UpdateStaticData(DynamicBuffer<ResourceAvailableData> datas)
         {
             var count = datas.Length;
             for (var i = 0; i < Slots.Count; i++)
@@ -20,7 +19,7 @@ namespace SparFlame.UI.GamePlay
                 {
                     Slots[i].SetActive(true);
                     var slot = SlotComponents[i];
-                    slot.icon.sprite = BasicResourceManager.Instance.ResourceSprites[datas[i].ResourceType];
+                    slot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[datas[i].ResourceType];
                     slot.label.text = datas[i].ResourceType.ToString();
                 }
                 else
@@ -30,7 +29,7 @@ namespace SparFlame.UI.GamePlay
             }
         }
         
-        public void UpdateDynamicData(DynamicBuffer<ResourceData> datas)
+        public void UpdateDynamicData(DynamicBuffer<ResourceAvailableData> datas)
         {
             var count = datas.Length;
             for (var i = 0; i < Slots.Count; i++)
@@ -47,7 +46,14 @@ namespace SparFlame.UI.GamePlay
                     else
                     {   
                         // Population resource amount accounts for available value, not total value
-                        slot.value.text = $"{occupiedPopulationValue}/{data.Amount + occupiedPopulationValue}";
+                        var totalPopulation = data.Amount + occupiedPopulationValue;
+                        slot.value.text = $"{occupiedPopulationValue}/{totalPopulation}";
+                        if(occupiedPopulationValue > totalPopulation)
+                            slot.value.color = Color.red;
+                        else
+                        {
+                            slot.value.color = Color.white;
+                        }
                     }
                 }
                 else
@@ -56,7 +62,7 @@ namespace SparFlame.UI.GamePlay
                 }
             }
         }
-        
+
         private void Awake()
         {
             if(Instance == null)
@@ -65,9 +71,6 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-        }
+  
     }
 }

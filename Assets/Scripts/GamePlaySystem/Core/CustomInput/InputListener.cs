@@ -1,8 +1,7 @@
-﻿using System;
-using SparFlame.GamePlaySystem.CustomInput;
+﻿using SparFlame.Utils;
 using UnityEngine;
 
-namespace SparFlame.BootStrapper
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     public class InputListener : MonoBehaviour
     {
@@ -13,7 +12,7 @@ namespace SparFlame.BootStrapper
         {
             return _customInputActions;
         }
-        
+
         #region MapSwitch Methods
 
         public void ToggleConstructMap()
@@ -41,10 +40,9 @@ namespace SparFlame.BootStrapper
             _customInputActions.Conjure.Disable();
             _customInputActions.CameraFlyMode.Disable();
             _customInputActions.CameraNormalMode.Disable();
-            
         }
 
-        public void EnableNessesaryMaps()
+        public void EnableNecessaryMaps()
         {
             _customInputActions.UnitControl.Enable();
             _customInputActions.CameraNormalMode.Enable();
@@ -52,6 +50,7 @@ namespace SparFlame.BootStrapper
             _customInputActions.InfoWindow.Enable();
             _customInputActions.Conjure.Enable();
         }
+
         #endregion
 
 
@@ -65,11 +64,8 @@ namespace SparFlame.BootStrapper
                 Destroy(gameObject);
             _customInputActions = new CustomInputActions();
         }
-
-        // private void OnEnable()
-        // {
-        //     EnableNessesaryMaps();
-        // }
         
+
+
     }
 }

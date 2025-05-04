@@ -16,8 +16,8 @@ namespace SparFlame.UI.GamePlay
             float maxTierF)
         {
             button!.image.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[info.UnitType];
-            hpFilled.sprite = BasicResourceManager.Instance.FactionHpFillSprites[currentSelectFaction];
-            hpBlank.sprite = BasicResourceManager.Instance.FactionHpBlankSprites[currentSelectFaction];
+            hpFilled.sprite = BasicUIResourceManager.Instance.FactionHpFillSprites[currentSelectFaction];
+            hpBlank.sprite = BasicUIResourceManager.Instance.FactionHpBlankSprites[currentSelectFaction];
             hpFilled.fillAmount = info.HpRatio;
             var tier = (int)info.Tier - 2;
             tierImage.fillAmount = tier / maxTierF;

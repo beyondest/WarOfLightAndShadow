@@ -1,3 +1,4 @@
+using SparFlame.GamePlaySystem.EnemyAI;
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Mathematics;
@@ -14,21 +15,24 @@ namespace SparFlame.GamePlaySystem.Spawn
     public partial struct ConjureSystem : ISystem
     {
         private ComponentLookup<UnitAttr> _unitAttrLookup;
+        private ComponentLookup<EnemyConjureShrineData> _enemyConjuringDataLookUp;
         private NativeHashSet<Entity> _alreadyTagged;
+        
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<ConjureSystemConfig>();
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
-            _alreadyTagged = new NativeHashSet<Entity>(16,Allocator.Persistent);
+            _enemyConjuringDataLookUp = state.GetComponentLookup<EnemyConjureShrineData>();
+            _alreadyTagged = new NativeHashSet<Entity>(16, Allocator.Persistent);
         }
 
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            if(_alreadyTagged.IsCreated)
+            if (_alreadyTagged.IsCreated)
                 _alreadyTagged.Dispose();
         }
 
@@ -39,16 +43,18 @@ namespace SparFlame.GamePlaySystem.Spawn
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             // var config = SystemAPI.GetSingleton<ConjureSystemConfig>();
-            
+
             CheckConjureUnitsRequest(ref state, ecb);
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
+            _enemyConjuringDataLookUp.Update(ref state);
             _unitAttrLookup.Update(ref state);
             new ConjureJob
             {
                 ECB = ecbP,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 UnitAttrLookup = _unitAttrLookup,
+                EnemyConjuringLookUp = _enemyConjuringDataLookUp
             }.ScheduleParallel();
         }
 
@@ -80,6 +86,7 @@ namespace SparFlame.GamePlaySystem.Spawn
                         break;
                     }
                 }
+
                 if (i == buffer.Length)
                 {
                     buffer.Add(new ConjuringData
@@ -103,7 +110,6 @@ namespace SparFlame.GamePlaySystem.Spawn
             }
         }
 
-
         [BurstCompile]
         [WithNone(typeof(OocTag))]
         [WithAll(typeof(ConjuringTag))]
@@ -112,6 +118,7 @@ namespace SparFlame.GamePlaySystem.Spawn
             public EntityCommandBuffer.ParallelWriter ECB;
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
+            [NativeDisableParallelForRestriction] public ComponentLookup<EnemyConjureShrineData> EnemyConjuringLookUp;
 
             private void Execute([ChunkIndexInQuery] int index, in ConjureAttr conjureAttr,
                 ref DynamicBuffer<ConjuringData> conjuringData,
@@ -123,6 +130,7 @@ namespace SparFlame.GamePlaySystem.Spawn
                     ECB.RemoveComponent<ConjuringTag>(index, entity);
                     return;
                 }
+
                 var data = conjuringData[0];
                 var speed = 1 / UnitAttrLookup[data.ConjuringEntity].ConjureSpeedSecondPerUnit;
                 data.Counter += DeltaTime * speed;
@@ -151,8 +159,16 @@ namespace SparFlame.GamePlaySystem.Spawn
                     {
                         conjuringData[0] = data;
                     }
+                    
+                    // Add Enemy Base Data for ai system
+                    if (EnemyConjuringLookUp.TryGetComponent(entity, out var enemyConjureShrineData))
+                    {
+                        ECB.AddComponent(index,unit,new EnemyUnitBelongsTo
+                        {
+                            Base = enemyConjureShrineData.Base
+                        });
+                    }
                 }
-                
             }
         }
     }

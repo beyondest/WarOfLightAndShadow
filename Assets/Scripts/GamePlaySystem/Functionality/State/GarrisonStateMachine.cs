@@ -39,7 +39,7 @@ namespace SparFlame.GamePlaySystem.State
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<GarrisonStateMachineConfig>();
             state.RequireForUpdate<GarrisonSystemConfig>();
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();

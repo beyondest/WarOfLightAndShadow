@@ -159,6 +159,19 @@ namespace GamePlaySystem.Database
 
         [VerticalGroup("Additional")] public bool enableAdditionalConfig;
 
+        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
+         HorizontalGroup("Additional/FogOfWar/0")]
+        public float fogSightRange = 30;
+        
+        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
+         HorizontalGroup("Additional/FogOfWar/1")]
+        public float fogSightAngle = 360;
+        
+        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
+         HorizontalGroup("Additional/FogOfWar/2")]
+        public float disappearAlphaThreshold = 0.1f;
+        
+        
         #endregion
 
         #region Public Interface
@@ -209,7 +222,6 @@ namespace GamePlaySystem.Database
             collideBelongsTo = authoring.BelongsTo;
             collideWith = authoring.CollidesWith;
         }
-        
 
         private void OnSightPrefabChanged()
         {
@@ -227,18 +239,12 @@ namespace GamePlaySystem.Database
 
     }
 
-
     public abstract class GeneralDatabase<TDataItem> : ScriptableObject where TDataItem : GeneralDataItem
     {
-        public int maxCount;
         public int idStart;
 
 
 
-        [ShowIf(nameof(_shouldCheckExp)), InfoBox("Press the button below to check exp", InfoMessageType.Warning)]
-        public string msg2 = "Need check exp";
-
-        [OnValueChanged(nameof(ShouldReassignId))]
         public abstract List<TDataItem> Items { get; }
 
         public TDataItem GetItemById(int id)
@@ -255,19 +261,13 @@ namespace GamePlaySystem.Database
         private bool _shouldCheckExp;
         private int _preLength;
 
-        private void ShouldReassignId()
-        {
-            if (Items.Count != _preLength)
-            {
-                _shouldCheckExp = true;
-            }
-        }
+
 
         [Button("Reassign all id and ReBake")]
         private void ReassignAllIDs()
         {
-            if (Items.Count > maxCount)
-                throw new ArgumentException($"Max count is {maxCount}, item count is {Items.Count}.");
+            if (Items.Count > 30)
+                throw new ArgumentException($"Max count is 30, item count is {Items.Count}, please split the database.");
 
             for (int i = 0; i < Items.Count; i++)
             {
@@ -295,25 +295,6 @@ namespace GamePlaySystem.Database
 #endif
             }
         }
-        // [Button("Reassign all id by items location")]
-        // private void ReassignAllIDs()
-        // {
-        //     if (Items.Count > maxCount)
-        //         throw new ArgumentException($"Max count is {maxCount}, item count is {Items.Count} .");
-        //     for (int i = 0; i < Items.Count; i++)
-        //     {
-        //         Items[i].id = idStart + i;
-        //         if(Items[i] is UnitDataItem)
-        //             Items[i].prefab.GetComponent<GeneralUnitAttributesAuthoring>().globalIdx = Items[i].id;
-        //         if(Items[i] is BuildingDataItem)
-        //             Items[i].prefab.GetComponent<GeneralBuildingAttributesAuthoring>().globalIdx = Items[i].id;
-        //         if(Items[i] is ResourceDataItem)
-        //             Items[i].prefab.GetComponent<GeneralResourceAttributesAuthoring>().globalIdx = Items[i].id;
-        //     }
-        //     
-        //     _shouldReassignId = false;
-        //     if(_shouldReassignId)return;
-        // }
 
 
         [Button("Check Exp settings Valid")]
@@ -330,12 +311,14 @@ namespace GamePlaySystem.Database
                     continue;
                 }
                 var j = i;
-                var preGo = Items[i].nextTierPrefab;
+                var preGo = Items[i].prefab;
                 while (Items[j].nextTierPrefab != null)
                 {
                     if ((int)Items[j].curTier != 3 + j - i || Items[j].prefab != preGo)
                     {
-                        Debug.LogError("Database Upgrade settings wrong, all tier prefabs of same object should in sequence in database");
+                        Debug.LogError("Database Upgrade settings wrong, all tier prefabs of same object should in sequence in database\n" +
+                                       $"{Items[j].gameplayName}/{Items[j].id} is in wrong position\n"
+                                       );
                         return;
                     }
                     preGo = Items[j].nextTierPrefab;

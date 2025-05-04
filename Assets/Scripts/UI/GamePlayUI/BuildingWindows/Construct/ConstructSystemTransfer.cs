@@ -8,7 +8,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Construction
 {
@@ -18,7 +17,8 @@ namespace SparFlame.GamePlaySystem.Construction
         private FactionTag _playerCurrentFaction = FactionTag.Ally; // Only work for player command
         private bool _inGhostShow;
         private ConstructSystemConfig2 _config2;
-        
+
+        private bool _initEvent;
         // Cache
         // private NativeHashMap<int, NativeList<Entity>> _buildingDatabase; // (int)BuildingType to building entity prefab list
         private InputConstructData _inputData;
@@ -26,40 +26,35 @@ namespace SparFlame.GamePlaySystem.Construction
         private Entity _commandEntity = Entity.Null;
 
 
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
         private EntityQuery _commandDataEntityQuery;
 
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<ConstructSystemConfig2>();
             _commandDataEntityQuery = SystemAPI.QueryBuilder().WithAllRW<ConstructCommandData>().Build();
         }
+        
 
         protected override void OnStartRunning()
         {
-             _config2 = SystemAPI.GetSingleton<ConstructSystemConfig2>();
-        }
-
-        protected override void OnUpdate()
-        {
-            if (ConstructWindow.Instance == null || BuildingDetailWindow.Instance == null) return;
-            if (!ConstructWindow.Instance.InitConstructEvents)
+            // When gameStatus is gaming, instance can never be null
+            if (!_initEvent)
             {
+                _config2 = SystemAPI.GetSingleton<ConstructSystemConfig2>();
+                _initEvent = true;
                 ConstructWindow.Instance.EcsGhostShowTargetByTypeIndex += entity =>
                 {
                     GhostShowTargetBuilding(entity);
                 };
                 ConstructWindow.Instance.EcsExitGhostShow += ExitGhostShow;
-                ConstructWindow.Instance.InitConstructEvents = true;
-            }
-
-            if (!BuildingDetailWindow.Instance.InitConstructEvents)
-            {
                 BuildingDetailWindow.Instance.EcsGhostShowTarget += MovementGhostShowTargetBuilding;
-                BuildingDetailWindow.Instance.InitConstructEvents = true;
             }
-            
+        }
+
+        protected override void OnUpdate()
+        {
             // Update data
             var selectData = SystemAPI.GetSingleton<UnitSelectionData>();
             _inputData = SystemAPI.GetSingleton<InputConstructData>();

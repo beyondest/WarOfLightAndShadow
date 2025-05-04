@@ -29,7 +29,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 return canHarvest && resourceAvailable;
             }
             
-            // Faction tag not same, and base tag not resource, and hp > 0, must be valid target
+            // Faction tag not same, and base tag not resource, and hp > 0, must be valid target unless self cannot attack
             return canAttack;
         }
 

@@ -20,7 +20,7 @@
 //             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
 //             state.RequireForUpdate<MovementConfig>();
 //             state.RequireForUpdate<PhysicsWorldSingleton>();
-//             state.RequireForUpdate<NotPauseTag>();
+//             state.RequireForUpdate<GameBasicStatus>();
 //             state.RequireForUpdate<AutoGiveWaySystemConfig>();
 //             state.RequireForUpdate<SqueezeSystemConfig>();
 //             _generalAttrLookup = state.GetComponentLookup<InteractableAttr>(true);

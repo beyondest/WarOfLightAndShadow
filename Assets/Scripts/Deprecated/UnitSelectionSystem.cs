@@ -17,7 +17,7 @@
 //         public void OnCreate(ref SystemState state)
 //         {
 //             state.RequireForUpdate<InputUnitControlData>();
-//             state.RequireForUpdate<NotPauseTag>();
+//             state.RequireForUpdate<GameBasicStatus>();
 //             state.RequireForUpdate<InputMouseData>();
 //             state.RequireForUpdate<UnitSelectionData>();
 //             state.RequireForUpdate<UnitSelectionConfig>();

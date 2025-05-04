@@ -9,7 +9,8 @@ namespace SparFlame.GamePlaySystem.CameraControl
     {
         [Header("General")] 
         public bool edgeMoveEnabled;
-        
+
+        public float limitPosBias;
 
         [Header("Horizontal Translation")] 
         [SerializeField]
@@ -43,6 +44,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
         
         
         
+        
         private class CameraControlPlusSystemAuthoringBaker : Baker<NormalCameraControlSystemAuthoring>
         {
             public override void Bake(NormalCameraControlSystemAuthoring authoring)
@@ -64,7 +66,9 @@ namespace SparFlame.GamePlaySystem.CameraControl
                     ZoomDamping = authoring.zoomDampening,
                     EdgeMovementBaseSpeed = authoring.edgeMovementBaseSpeed,
                     SpeedUpFactor = authoring.speedUpFactor,
+                    LimitPosBias = authoring.limitPosBias
                 });
+                AddComponent<MiniMapControlData>(entity);
             }
         }
     }
@@ -78,6 +82,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
     public struct NormalCameraControlConfig : IComponentData
     {
         public bool EdgeMoveEnabled;
+        public float LimitPosBias;
         public float TranslationSpeed;
         public float TranslationMaxSpeed;
         public float TranslationAcceleration;
@@ -91,6 +96,13 @@ namespace SparFlame.GamePlaySystem.CameraControl
         public float EdgeTolerance;
         public float EdgeMovementBaseSpeed;
         public float SpeedUpFactor;
+    }
+
+    public struct MiniMapControlData : IComponentData
+    {
+        public bool IsDragging;
+        public float3 RigPos;
+        public float3 TargetPos;
     }
 
 

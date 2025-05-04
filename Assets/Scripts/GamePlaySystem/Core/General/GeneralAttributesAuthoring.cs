@@ -11,7 +11,6 @@ namespace SparFlame.GamePlaySystem.General
     {
         public BaseTag baseTag;
         public FactionTag factionTag;
-        public string gameplayName;
 
         class Baker : Baker<GeneralAttributesAuthoring>
         {
@@ -48,8 +47,6 @@ namespace SparFlame.GamePlaySystem.General
         Enemy = ~1,
     }
 
-
-
     
     public struct GeneralAttr : IComponentData
     {
@@ -58,4 +55,20 @@ namespace SparFlame.GamePlaySystem.General
         public float3 BoxColliderSize;
         public int ID;
     }
+    
+    public struct AITag : IComponentData
+    {
+        
+    }
+
+    public struct PlayerTag : IComponentData
+    {
+        
+    }
+    // TODO : move this tag to correct place
+    public struct InTeamTag : IComponentData
+    {
+        public Entity BelongsToTeam;
+    }
+    
 }

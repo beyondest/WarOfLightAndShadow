@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using SparFlame.GamePlaySystem.CameraControl;
+using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
 using SparFlame.GamePlaySystem.General;
@@ -17,11 +18,12 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<UnitSelectionConfig>();
+            state.RequireForUpdate<PlayerFactionData>();
             _linkedGroupLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
         }
 
@@ -37,14 +39,13 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            if (inputUnitSelectionData.ChangeFaction)
-            {
-                DeselectAll(ref state, ref ecb,ref unitSelectionData,unitSelectionConfig);
-                unitSelectionData.ValueRW.CurrentSelectFaction = ~unitSelectionData.ValueRW.CurrentSelectFaction;
-                unitSelectionData.ValueRW.CurrentSelectCount = 0;
-            }
-
-
+            // if (unitSelectionConfig.EnableDebugSwitch && inputUnitSelectionData.ChangeFaction)
+            // {
+            //     DeselectAll(ref state, ref ecb,ref unitSelectionData,unitSelectionConfig);
+            //     unitSelectionData.ValueRW.CurrentSelectFaction = ~unitSelectionData.ValueRW.CurrentSelectFaction;
+            //     unitSelectionData.ValueRW.CurrentSelectCount = 0;
+            // }
+            unitSelectionData.ValueRW.CurrentSelectFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             // Left Click Start
             if (inputUnitSelectionData.SingleSelect)
             {
@@ -55,6 +56,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 {
                     DeselectAll(ref state, ref ecb, ref unitSelectionData, unitSelectionConfig);
                 }
+
                 if (selectable)
                     ToggleOne(ref state, ref ecb, ref unitSelectionData, inputMouseData.HitEntity,
                         unitSelectionConfig);
@@ -62,12 +64,13 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
             if (inputUnitSelectionData.DragSelectStart)
             {
-                if(inputUnitSelectionData.AddUnit)
+                if (inputUnitSelectionData.AddUnit)
                     LockSelected(ref state, ref ecb, true);
                 else
                 {
                     DeselectAll(ref state, ref ecb, ref unitSelectionData, unitSelectionConfig);
                 }
+
                 StartSelectionBox(ref unitSelectionData, inputMouseData);
             }
 
@@ -89,17 +92,19 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             {
                 if (!request.ValueRO.IsDead)
                 {
-                    SelectOne(ref state, ref ecb, ref unitSelectionData, request.ValueRO.SelectedEntity, unitSelectionConfig, false);
+                    SelectOne(ref state, ref ecb, ref unitSelectionData, request.ValueRO.SelectedEntity,
+                        unitSelectionConfig, false);
                 }
                 else
                 {
                     unitSelectionData.ValueRW.CurrentSelectCount -= 1;
-                    if(unitSelectionData.ValueRW.CurrentSelectCount < 0)
+                    if (unitSelectionData.ValueRW.CurrentSelectCount < 0)
                         unitSelectionData.ValueRW.CurrentSelectCount = 0;
                 }
+
                 ecb.DestroyEntity(entity);
             }
-            
+
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -154,13 +159,12 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             CalculateMinMax(unitSelectionData.ValueRW.SelectionBoxStartPos,
                 unitSelectionData.ValueRW.SelectionBoxEndPos, out float2 min, out float2 max);
 
-            foreach (var (screenPos, basicAttr, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<GeneralAttr>>()
-                         .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess().WithNone<InGarrison>())
+            foreach (var (screenPos, entity) in SystemAPI.Query<RefRO<ScreenPos>>().WithAll<InCameraView>()
+                         .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess().WithNone<InGarrison>()
+                         .WithAll<PlayerTag>())
             {
                 // Inside selection box
-
-                if (basicAttr.ValueRO.FactionTag == unitSelectionData.ValueRO.CurrentSelectFaction &&
-                    IsInsideBox(screenPos.ValueRO.ScreenPosition, min, max))
+                if (IsInsideBox(screenPos.ValueRO.ScreenPosition, min, max))
                 {
                     SelectOne(ref state, ref ecb, ref unitSelectionData, entity, unitSelectionConfig,
                         true);
@@ -266,6 +270,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             {
                 return;
             }
+
             ecb.SetEnabled(linkedEntities[unitSelectionConfig.SelectedIndicatorIndex].Value, isEnable);
         }
 

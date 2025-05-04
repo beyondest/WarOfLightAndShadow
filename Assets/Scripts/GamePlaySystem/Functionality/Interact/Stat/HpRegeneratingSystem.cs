@@ -16,7 +16,7 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<StatSystemConfig>();
             state.RequireForUpdate<OocSystemConfig>();
             _aiTagLookup = state.GetComponentLookup<AITag>();

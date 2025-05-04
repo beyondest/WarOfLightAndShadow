@@ -13,7 +13,7 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Command
 {
-    // [UpdateBefore(typeof(MovementSystem))]
+    [BurstCompile]
     [UpdateAfter(typeof(CursorManageSystem))]
     [UpdateBefore(typeof(MovementSystem))]
     public partial struct PlayerCommandSystem : ISystem
@@ -22,7 +22,7 @@ namespace SparFlame.GamePlaySystem.Command
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<CommandConfig>();
             state.RequireForUpdate<InputUnitControlData>();
             state.RequireForUpdate<CursorData>();
@@ -51,15 +51,21 @@ namespace SparFlame.GamePlaySystem.Command
             {
                 case CursorType.Attack:
                 {
+                    var targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                     new MovementAttackJob
                     {
                         ECB = ecb,
-                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
+                        TargetPos = targetPos ,
                         TargetColliderShape = SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
-
+                    new MovementHealerMarchJob
+                    {
+                        ECB = ecb,
+                        TargetPos = targetPos,
+                        Focus = inputUnitControlData.Focus
+                    }.ScheduleParallel();
                     break;
                 }
 
@@ -260,6 +266,35 @@ namespace SparFlame.GamePlaySystem.Command
             basicStateData.TargetEntity = TargetEntity;
             basicStateData.Focus = Focus;
             basicStateData.TargetState = InteractState.Garrison;
+        }
+    }
+    
+    // When player commands unattackable unit to attack, call this job for them to make them follow the troop
+    [BurstCompile]
+    [WithAll(typeof(Selected))]
+    [WithNone(typeof(AttackStateTag))]
+    public partial struct MovementHealerMarchJob : IJobEntity
+    {
+        public EntityCommandBuffer.ParallelWriter ECB;
+        [ReadOnly] public float3 TargetPos;
+        [ReadOnly] public bool Focus;
+
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref BasicStateData basicStateData,ref DynamicBuffer<InsightTarget> targets,
+            Entity entity)
+        {
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
+                MovementCommandType.March, 0f);
+            basicStateData.TargetState = InteractState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            // Remove target so that player command it to move than it will move
+            if (basicStateData.TargetEntity != Entity.Null)
+            {
+                InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
+            }
+            basicStateData.TargetEntity = Entity.Null;
+            basicStateData.TargetState = InteractState.Idle;
+            basicStateData.Focus = Focus;
         }
     }
 

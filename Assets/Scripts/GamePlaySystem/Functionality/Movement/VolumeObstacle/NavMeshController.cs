@@ -19,30 +19,28 @@ namespace SparFlame.GamePlaySystem.Movement
         private float _nextUpdateTime;
         private bool _isUpdatingAlly;
         private bool _isUpdatingEnemy;
-        // private bool _needUpdateAlly;
-        // private bool _needUpdateEnemy;
 
         // ECS
         private EntityManager _em;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
         private EntityQuery _updateNavMeshRequest;
 
         private void OnEnable()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
             _updateNavMeshRequest = _em.CreateEntityQuery(typeof(UpdateNavMeshRequest));
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Return))
-            {
-                StartCoroutine(UpdateNavMesh(FactionTag.Ally));
-            }
+            // if (Input.GetKeyDown(KeyCode.Return))
+            // {
+            //     StartCoroutine(UpdateNavMesh(FactionTag.Ally));
+            // }
 
             // If game pause, do nothing
-            if (_notPauseTag.IsEmpty) return;
+            if (_gamingTag.IsEmpty) return;
             var ifUpdateAlly = false;
             var ifUpdateEnemy = false;
 

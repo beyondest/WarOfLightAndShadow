@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -16,7 +16,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConstructWindow : UIUtils.MultiSlotsWindow<ConstructBuildingSlot>
+    public class ConstructWindow : MultiSlotWindowUtils.MultiSlotsWindow<ConstructBuildingSlot>
     {
         [Header("Custom config")] [SerializeField]
         private Tier maxTier;
@@ -30,7 +30,6 @@ namespace SparFlame.UI.GamePlay
 
         // Interface
         public static ConstructWindow Instance;
-        [NonSerialized] public bool InitConstructEvents = false;
         public Action<Entity> EcsGhostShowTargetByTypeIndex;
         public Action EcsExitGhostShow;
 
@@ -82,7 +81,7 @@ namespace SparFlame.UI.GamePlay
                 tierFilterIcon.color = Color.white;
                 _shouldFilterTier = true;
                 _currentTier = _currentTier == maxTier ? Tier.Tier1 : (Tier)((int)_currentTier + 1);
-                tierFilterIcon.sprite = BasicResourceManager.Instance.TierSprites[_currentTier];
+                tierFilterIcon.sprite = BasicUIResourceManager.Instance.TierSprites[_currentTier];
             }
 
             UpdateCandidates();
@@ -116,7 +115,7 @@ namespace SparFlame.UI.GamePlay
         // Internal Data
 
 
-        private int _currentSubType = 0;
+        private int _currentSubType;
         private bool _shouldFilterSubType;
         private Tier _currentTier = Tier.Tier1;
         private bool _shouldFilterTier;
@@ -139,24 +138,25 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
+        public override void LoadResources()
         {
-            base.OnEnable();
+            base.LoadResources();
             constructExitButton.SetActive(false);
             constructEnterButton.SetActive(true);
             constructEnterButton.GetComponent<Button>().onClick.AddListener(OnClickConstructEnter);
             constructExitButton.GetComponent<Button>().onClick.AddListener(OnClickConstructExit);
         }
 
-        protected override void OnDisable()
+        public override void UnloadResources()
         {
-            base.OnDisable();
+            base.UnloadResources();
             constructEnterButton.GetComponent<Button>().onClick.RemoveAllListeners();
             constructExitButton.GetComponent<Button>().onClick.RemoveAllListeners();
         }
 
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             _shouldFilterTier = false;
             _shouldFilterSubType = false;
             _currentTier = maxTier;

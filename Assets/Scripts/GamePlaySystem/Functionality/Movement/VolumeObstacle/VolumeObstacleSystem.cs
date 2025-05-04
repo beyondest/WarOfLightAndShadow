@@ -25,7 +25,7 @@ namespace SparFlame.GamePlaySystem.Movement
         protected override void OnCreate()
         {
             base.OnCreate();
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<VolumeObstacleSystemConfig>();
         }
 

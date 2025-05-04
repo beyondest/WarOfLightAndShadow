@@ -7,12 +7,11 @@ using Unity.Entities;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class GarrisonInfoWindow : UIUtils.MultiSlotsWindow<GarrisonInfoSlot>, UIUtils.ISingleTargetWindow
+    public class GarrisonInfoWindow : MultiSlotWindowUtils.MultiSlotsWindow<GarrisonInfoSlot>, MultiSlotWindowUtils.ISingleTargetWindow
     {
         public static GarrisonInfoWindow Instance;
         public Action<int, Entity> EcsMoveOutGarrisonUnits;
         public Action<Entity> EcsMoveOutAllGarrisonUnits;
-        [NonSerialized] public bool InitGarrisonEvents;
 
         public bool TrySwitchTarget(Entity target)
         {
@@ -45,7 +44,7 @@ namespace SparFlame.UI.GamePlay
 
         private Entity _targetEntity = Entity.Null;
         private EntityManager _em;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
 
         private void Awake()
         {
@@ -55,26 +54,33 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
+        public override void LoadResources()
         {
-            base.OnEnable();
+            base.LoadResources();
             for (var i = 0; i < config.rows * config.cols; i++)
             {
                 _garrisonUnitsIds.Add(0);
             }
         }
 
-        private void Start()
+        public override void UnloadResources()
         {
+            base.UnloadResources();
+            _garrisonUnitsIds.Clear();
+        }
+
+        protected override void Start()
+        {
+            base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
             Hide();
         }
 
         private void Update()
         {
+            if (_gamingTag.IsEmpty) return;
             if (!IsOpened()) return;
-            if (_notPauseTag.IsEmpty) return;
             if (_targetEntity == Entity.Null) return;
             if (!_em.HasComponent<GeneralAttr>(_targetEntity))
             {
@@ -95,7 +101,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var slotComponent = SlotComponents[i];
                     var data = garrisonData[i];
-                    var info = UnitWindowResourceManager.Instance.GetInfo(data.UnitType,
+                    var info = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(data.UnitType,
                         data.ID);
                     _garrisonUnitsIds[i] = data.ID;
                     slotComponent.garrisonUnitName.text = info.GameplayName;

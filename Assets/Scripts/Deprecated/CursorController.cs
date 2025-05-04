@@ -26,7 +26,7 @@
 //
 //         
 //         private EntityManager _em;
-//         private EntityQuery _notPauseTag;
+//         private EntityQuery _gamingTag;
 //         private EntityQuery _cursorData;
 //     
 //         
@@ -39,7 +39,7 @@
 //         private void Start()
 //         {
 //             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-//             _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+//             _gamingTag = _em.CreateEntityQuery(typeof(GameBasicStatus));
 //             _cursorData = _em.CreateEntityQuery(typeof(CursorData));
 //             _cursorLeftRectTransform = cursorLeftImage.rectTransform;
 //             _cursorRightRectTransform = cursorRightImage.rectTransform;
@@ -56,7 +56,7 @@
 //             _cursorLeftRectTransform.rotation = _cursorLeftRotation;
 //             _cursorRightRectTransform.rotation = _cursorRightRotation;
 //             // When game paused, set default cursor
-//             if (_notPauseTag.IsEmpty)
+//             if (_gamingTag.IsEmpty)
 //             {
 //                 SetDefaultCursor();
 //                 return;

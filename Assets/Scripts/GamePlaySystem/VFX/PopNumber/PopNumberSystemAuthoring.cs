@@ -83,7 +83,8 @@ namespace SparFlame.GamePlaySystem.PopNumber
         AllyHealed = 2,
         EnemyHealed = 3,
         AllyHarvest= 4,
-        EnemyHarvest = 5
+        EnemyHarvest = 5,
+        UnNormalKill = 6
     }
     
     public struct PopNumberConfig : IComponentData

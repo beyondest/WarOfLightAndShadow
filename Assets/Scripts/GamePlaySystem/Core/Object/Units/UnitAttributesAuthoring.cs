@@ -26,6 +26,11 @@ namespace SparFlame.GamePlaySystem.Units
         }
     }
 
+    public struct EnemyUnitBelongsTo : IComponentData
+    {
+        public Entity Base;
+    }
+    
 
     public struct UnitAttr : IComponentData
     {
@@ -93,5 +98,13 @@ namespace SparFlame.GamePlaySystem.Units
         Harvester = 0, // gatherer, prospector, harvester
         Attuner = 1, // Cultivator, botanist, druid
     }
+    
+    
+    public struct UnitEntityPrefabData : IEntityPrefabData<UnitType>
+    {
+        public Entity Prefab { get; set; }
+        public UnitType Type { get; set; }
+    }
+    
     
 }

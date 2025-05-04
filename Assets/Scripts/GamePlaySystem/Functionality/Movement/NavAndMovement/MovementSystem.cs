@@ -5,7 +5,6 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using Unity.Physics;
 using SparFlame.GamePlaySystem.General;
-using Unity.Physics.Systems;
 
 // ReSharper disable UseIndexFromEndExpression
 
@@ -20,9 +19,9 @@ namespace SparFlame.GamePlaySystem.Movement
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PhysicsWorldSingleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<MovableData>();
             state.RequireForUpdate<MovementConfig>();
-            // _waypointLookup = state.GetBufferLookup<WaypointBuffer>(true);
         }
 
         [BurstCompile]
@@ -30,15 +29,12 @@ namespace SparFlame.GamePlaySystem.Movement
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
-            // _waypointLookup.Update(ref state);
-            // PathCalculated is set to true only if calculation is done successfully
             new MoveJob
             {
                 PhysicsWorld = physicsWorld,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                 Config = config
-                
             }.ScheduleParallel();
         }
     }

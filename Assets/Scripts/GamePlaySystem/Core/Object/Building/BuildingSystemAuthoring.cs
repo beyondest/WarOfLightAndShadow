@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using SparFlame.GamePlaySystem.General;
+using UnityEngine;
 using Unity.Entities;
 
 namespace SparFlame.GamePlaySystem.Building
@@ -92,7 +93,11 @@ namespace SparFlame.GamePlaySystem.Building
         Cost14 = 17,
         Cost15 = 18,
     }
-
+    public struct BuildingEntityPrefabData : IEntityPrefabData<BuildingType>
+    {
+        public Entity Prefab { get; set; }
+        public BuildingType Type { get; set; }
+    }
 
 
 }

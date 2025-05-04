@@ -8,7 +8,6 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SparFlame.Database
 {
@@ -82,6 +81,10 @@ namespace SparFlame.Database
         [FoldoutGroup("Gameplay/Cost"), HorizontalGroup("Gameplay/Cost/2")]
         public float conjureSpeedSecondPerUnit;
 
+        // [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
+        //  HorizontalGroup("Additional/FogOfWar/1")]
+ 
+        
         public override int GetGeneralTypeIndex()
         {
             return (int)type;

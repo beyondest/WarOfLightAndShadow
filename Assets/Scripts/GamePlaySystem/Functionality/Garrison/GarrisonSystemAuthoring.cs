@@ -66,8 +66,7 @@ namespace SparFlame.GamePlaySystem.Garrison
 
     /// <summary>
     /// The only way to Garrison count--
-    /// This command is for player control move out from building detail window
-    /// And when garrison units die, report to building to remove it 
+    /// This command is for player control move out from building detail window, and for ai move out unit when base is under attack
     /// </summary>
     public struct GarrisonMoveOutCommand : IComponentData
     {

@@ -15,19 +15,30 @@ namespace SparFlame.Database
                 var db = DatabaseManager.ResourceSpawnDatabaseSo;
                 var buffer = AddBuffer<ResourceSpawnData>(entity);
                 
-                foreach (var pair in db.timePoints)
+                foreach (var pair in db.items)
                 {
-                    foreach (var pair2 in pair.Value)
+                    foreach (var pair2 in pair.pairs)
                     {
                         buffer.Add(new ResourceSpawnData
                         {
-                            TimePoints = pair.Key,
-                            ResourceType = pair2.Key,
-                            Amount = pair2.Value
+                            TimePoints = pair.timePoint,
+                            ResourceType = pair2.resourceType,
+                            Amount = pair2.amount
                         });
                     }
                 }
 
+                var timePointsBuffer = AddBuffer<ResourcePointData>(entity);
+                
+                foreach (var pair in db.items)
+                {
+                    timePointsBuffer.Add(new ResourcePointData
+                    {
+                        Points = pair.timePoint
+                    });
+                }
+
+                // Bake renewable resource info list
                 var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
                 var buffer2 = AddBuffer<RenewableResourceType>(entity2);
                 var set = new HashSet<ResourceType>();
@@ -37,7 +48,6 @@ namespace SparFlame.Database
                     if (!item.renewable) continue;
                     if (!set.Add(item.type))
                     {
-                        Debug.LogError("Renewable resource type duplicated in resource database");
                         continue;
                     }
                     buffer2.Add(new RenewableResourceType

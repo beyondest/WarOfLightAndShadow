@@ -11,6 +11,5 @@ namespace SparFlame.UI.General
         [CanBeNull] public Button button;
 
         
-  
     }
 }

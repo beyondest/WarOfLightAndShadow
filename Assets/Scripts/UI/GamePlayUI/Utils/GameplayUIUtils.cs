@@ -25,7 +25,7 @@ namespace SparFlame.UI.GamePlay
                     throw new ArgumentOutOfRangeException();
             }
             var resourceEntity = query.GetSingletonEntity();
-            var resourceData = em.GetBuffer<ResourceData>(resourceEntity);
+            var resourceData = em.GetBuffer<ResourceAvailableData>(resourceEntity);
             var costData = em.GetBuffer<CostList>(targetEntity);
             var minCount = int.MaxValue;
             foreach (var cost in costData)

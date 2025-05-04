@@ -17,11 +17,11 @@ namespace SparFlame.UI.General
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                UIMathMethods.AnimateFloatOverCurve(() => targetValue, v => targetValue = v,spaceDuration,curve );
+                UIMathMethods.AnimateFloatOverCurveAsyc(() => targetValue, v => targetValue = v,spaceDuration,curve );
             }
             if (Input.GetKeyDown(KeyCode.Return))
             {
-                UIMathMethods.AnimateFloatOverCurve(() => targetValue, v => targetValue = v,returnDuration,curve,to );
+                UIMathMethods.AnimateFloatOverCurveAsyc(() => targetValue, v => targetValue = v,returnDuration,curve,to );
             }
             var pos = transform.position;
             pos.y = targetValue;

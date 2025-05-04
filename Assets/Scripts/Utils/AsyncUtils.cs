@@ -13,7 +13,7 @@ namespace SparFlame.Utils
             private readonly float _denominator;
             public LoadingProgress(float denominator = 1f)
             {
-                this._denominator = denominator;
+                _denominator = denominator;
             }
             
             public void Report(float value)

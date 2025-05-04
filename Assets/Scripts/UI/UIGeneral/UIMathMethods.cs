@@ -40,7 +40,7 @@ namespace SparFlame.UI.General
         /// <param name="curve"></param>
         /// <param name="to">If null, then use the curve value to set target value,
         /// else use the curve value between 0 and 1 to lerp target value</param>
-        public static async void AnimateFloatOverCurve(Func<float> getter, Action<float> setter, 
+        public static async void AnimateFloatOverCurveAsyc(Func<float> getter, Action<float> setter, 
             float duration, AnimationCurve curve,float? to = null)
         {
             if (to != null && !Mathf.Approximately(duration, 1f))

@@ -5,7 +5,6 @@ using Unity.Entities;
 using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Physics.Systems;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
@@ -13,31 +12,24 @@ namespace SparFlame.GamePlaySystem.Interact
     [UpdateAfter(typeof(StatefulTriggerEventBufferSystem))]
     public partial struct SightTriggerSystem : ISystem
     {
-        private ComponentLookup<SightPriority> _priorityLookup;
         private BufferLookup<InsightTarget> _targetLookup;
         
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<SimulationSingleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<SightSystemConfig>();
-            // _interactableLookup = state.GetComponentLookup<GeneralAttr>(true);
-            _priorityLookup = state.GetComponentLookup<SightPriority>(true);
+            state.RequireForUpdate<SightData>();
             _targetLookup = state.GetBufferLookup<InsightTarget>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _priorityLookup.Update(ref state);
             _targetLookup.Update(ref state);
-            // _interactableLookup.Update(ref state);
-            // Calculate disValue and check trigger events
             new SightTriggerJob
             {
-                // InteractableAttrLookup = _interactableLookup,
-                // PriorityLookup = _priorityLookup,
                 TargetLookup = _targetLookup
             }.ScheduleParallel();
         }
@@ -55,7 +47,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 // This may happen when belongs to entity is dead but the sight not been removed by sight system yet
                 if(!TargetLookup.TryGetBuffer(data.BelongsTo, out var targets))return;
                 
-                // var selfFaction = InteractableAttrLookup[entity].FactionTag;
+                // var selfFaction = GeneralAttrLookup[entity].FactionTag;
                 // Add insight target, remove out sight target
                 foreach (var triggerEvent in events)
                 {

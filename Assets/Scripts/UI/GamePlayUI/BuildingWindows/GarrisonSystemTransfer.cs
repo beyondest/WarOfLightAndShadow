@@ -10,22 +10,26 @@ namespace SparFlame.UI.GamePlay
     public partial class GarrisonSystemTransfer : SystemBase
     {
         private InputUnitControlData _inputData;
+        private bool _initEvents;
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<GarrisonSystemConfig>();
             RequireForUpdate<InputUnitControlData>();
         }
 
-        protected override void OnUpdate()
+        protected override void OnStartRunning()
         {
-            if(GarrisonInfoWindow.Instance == null)return;
-            if (!GarrisonInfoWindow.Instance.InitGarrisonEvents)
+            if (!_initEvents)
             {
+                _initEvents = true;
                 GarrisonInfoWindow.Instance.EcsMoveOutGarrisonUnits += GarrisonMoveOutOne;
                 GarrisonInfoWindow.Instance.EcsMoveOutAllGarrisonUnits += GarrisonMoveOutAll;
-                GarrisonInfoWindow.Instance.InitGarrisonEvents = true;
             }
+        }
+
+        protected override void OnUpdate()
+        {
             _inputData = SystemAPI.GetSingleton<InputUnitControlData>();
         }
 

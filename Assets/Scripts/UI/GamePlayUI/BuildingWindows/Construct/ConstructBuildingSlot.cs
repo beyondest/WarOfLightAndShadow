@@ -1,17 +1,18 @@
 ﻿using System;
-using SparFlame.Database;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.UI.GamePlay.UI.GamePlayUI.BuildingWindows.Construct;
 using SparFlame.UI.General;
+using SparFlame.Utils;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConstructBuildingSlot : MultiShowSlot
+    public class ConstructBuildingSlot : MultiShowSlot,CustomDs.IResourceManager
     {
         [Header("General Settings")] [SerializeField]
         private Image tierIcon;
@@ -23,7 +24,7 @@ namespace SparFlame.UI.GamePlay
         [Header("VFX")] [SerializeField] private Color cannotColor = Color.gray;
         [SerializeField] private Image cannotColorChangeImage;
 
-        [Header("Sub slots")] [SerializeField] private ConstructDetailInfoSlot detailInfoSlot;
+        [FormerlySerializedAs("detailInfoSlot")] [Header("Sub slots")] [SerializeField] private ConstructDetailInfoPartWindow detailInfoPartWindow;
         [SerializeField] private InteractAbilitySlot interactAbilitySlot;
 
         public void SetTarget(in SpriteEntityInfo info)
@@ -31,45 +32,39 @@ namespace SparFlame.UI.GamePlay
             //  Update basic ui info
             _targetEntity = info.EntityPrefab;
             gameplayNameText.text = info.GameplayName;
-            tierIcon.sprite = BasicResourceManager.Instance.TierSprites[info.Tier];
+            tierIcon.sprite = BasicUIResourceManager.Instance.TierSprites[info.Tier];
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _faction = _em.GetComponentData<GeneralAttr>(info.EntityPrefab).FactionTag;
             tierIcon.color = _faction == FactionTag.Ally ? Color.white : Color.black;
             hpText.text = _em.GetComponentData<StatData>(_targetEntity).MaxValue.ToString();
-            hpImage.sprite = BasicResourceManager.Instance.FactionHpSprites[_faction];
+            hpImage.sprite = BasicUIResourceManager.Instance.FactionHpSprites[_faction];
             // Update detail panel and interact ability panel
-            detailInfoSlot.Show();
-            detailInfoSlot.TrySwitchTarget(info.EntityPrefab);
+            detailInfoPartWindow.Show();
+            detailInfoPartWindow.TrySwitchTarget(info.EntityPrefab);
             if (interactAbilitySlot.TrySwitchTarget(info.EntityPrefab))
                 interactAbilitySlot.Show();
             else interactAbilitySlot.Hide();
         }
 
         private bool _preEnabled;
-
         private FactionTag _faction;
         private Entity _targetEntity = Entity.Null;
         private EntityManager _em;
-        private EntityQuery _notPauseTag;
-
-        private void OnEnable()
-        {
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
-        }
+        private EntityQuery _gamingTag;
 
         private void OnDisable()
         {
             _preEnabled = false;
         }
-
+        
 
         private void Update()
         {
-            if (_notPauseTag.IsEmpty) return;
+            if (_gamingTag.IsEmpty) return;
             if (_targetEntity == Entity.Null) return;
             UpdateDynamicData();
         }
+        
 
         private void UpdateDynamicData()
         {
@@ -89,13 +84,25 @@ namespace SparFlame.UI.GamePlay
 
                 return;
             }
-
             if (!_preEnabled)
             {
                 UIMathMethods.AnimateColorAsync(cannotColorChangeImage, cannotColorChangeImage.color,
                     Color.white, 1f);
                 button!.enabled = true;
             }
+        }
+        
+        public bool IsInitialized => detailInfoPartWindow.IsInitialized;
+        public float InitProgress => detailInfoPartWindow.InitProgress;
+        public void LoadResources()
+        {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
+            detailInfoPartWindow.LoadResources();
+        }
+        public void UnloadResources()
+        {
+            detailInfoPartWindow.UnloadResources();
         }
     }
 }

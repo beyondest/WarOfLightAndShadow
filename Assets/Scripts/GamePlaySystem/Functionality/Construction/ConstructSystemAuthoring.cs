@@ -51,11 +51,6 @@ namespace SparFlame.GamePlaySystem.Building
         NotConstructable,
     }
 
-    
-
-    
-
-
     public struct ConstructSystemConfig : IComponentData
     {
 

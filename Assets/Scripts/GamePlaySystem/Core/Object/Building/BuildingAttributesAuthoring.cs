@@ -1,4 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -39,6 +40,7 @@ namespace SparFlame.GamePlaySystem.Building
         
     }
     
+    
     public struct BuildingAttr : IComponentData
     {
         public BuildingType Type;
@@ -46,6 +48,7 @@ namespace SparFlame.GamePlaySystem.Building
         public int SubTypeIndex;
         // public float BuildingStateCount;
     }
+
 
 
 }

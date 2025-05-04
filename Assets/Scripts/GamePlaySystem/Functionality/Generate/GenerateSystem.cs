@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Generate
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<BuildingGenerateSystemConfig>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             _generatingTagLookup = state.GetComponentLookup<GeneratingTag>();
             _attunerAttrLookup = state.GetComponentLookup<AttunerAttr>();
         }
@@ -91,7 +91,7 @@ namespace SparFlame.GamePlaySystem.Generate
                     {
                         Type = generateAttr.GenerateResourceType,
                         FromFaction = generalAttr.FactionTag,
-                        Amount = (int)generateAttr.CurGenerateSpeed,
+                        AbsAmount = math.abs((int)generateAttr.CurGenerateSpeed),
                         RequestType = ResourceRequestType.Generate
                     });
                 }

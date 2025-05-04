@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.CameraControl;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
@@ -93,14 +94,6 @@ namespace SparFlame.Database
                 SetComponentEnabled<Selected>(entity, false);
                 AddComponent<LockSelectedWorkForDrag>(entity);
                 SetComponentEnabled<LockSelectedWorkForDrag>(entity, false);
-                AddComponent(entity, new ScreenPos
-                {
-                    ScreenPosition = float2.zero
-                });
-                if (item.factionTag == FactionTag.Enemy)
-                {
-                    AddComponent<AITag>(entity);
-                }
             }
 
             private void BakeAttunerAttr( UnitDataItem item,Entity entity)

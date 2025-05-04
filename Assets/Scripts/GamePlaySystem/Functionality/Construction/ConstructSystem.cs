@@ -33,7 +33,7 @@ namespace SparFlame.GamePlaySystem.Building
             state.RequireForUpdate<EnemyResourceDataTag>();
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<ConstructSystemConfig>();
 
@@ -48,30 +48,33 @@ namespace SparFlame.GamePlaySystem.Building
         {
             // TODO : Add construction time and animation support
             // TODO : Change construction only use for one team, turn command data to singleton
+            // TODO : All player buildings can only be built in sight, not in fow
             _constructableLookup.Update(ref state);
-
             _costLookup.Update(ref state);
 
             if (_entityQuery.IsEmpty) return;
             var config = SystemAPI.GetSingleton<ConstructSystemConfig>();
             var customInputData = SystemAPI.GetSingleton<InputMouseData>();
             var allyResourceData =
-                SystemAPI.GetBuffer<ResourceData>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
+                SystemAPI.GetBuffer<ResourceAvailableData>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
             var enemyResourceData =
-                SystemAPI.GetBuffer<ResourceData>(SystemAPI.GetSingletonEntity<EnemyResourceDataTag>());
+                SystemAPI.GetBuffer<ResourceAvailableData>(SystemAPI.GetSingletonEntity<EnemyResourceDataTag>());
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var entities = _entityQuery.ToEntityArray(Allocator.Temp);
             var datas = _entityQuery.ToComponentDataArray<ConstructCommandData>(Allocator.Temp);
-            CheckConstructionCommand(ref state, entities, datas, allyResourceData, enemyResourceData, config, customInputData, ecb);
+            CheckConstructionCommand(ref state, entities, datas, allyResourceData, enemyResourceData, config,
+                customInputData, ecb);
             entities.Dispose();
             datas.Dispose();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
-        private void CheckConstructionCommand(ref SystemState state, NativeArray<Entity> entities, NativeArray<ConstructCommandData> datas,
-            DynamicBuffer<ResourceData> allyResourceData, DynamicBuffer<ResourceData> enemyResourceData, ConstructSystemConfig config,
+        private void CheckConstructionCommand(ref SystemState state, NativeArray<Entity> entities,
+            NativeArray<ConstructCommandData> datas,
+            DynamicBuffer<ResourceAvailableData> allyResourceData, DynamicBuffer<ResourceAvailableData> enemyResourceData,
+            ConstructSystemConfig config,
             InputMouseData customInputData, EntityCommandBuffer ecb)
         {
             for (var i = 0; i < entities.Length; ++i)
@@ -80,15 +83,14 @@ namespace SparFlame.GamePlaySystem.Building
                 var entity = entities[i];
                 var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
                 var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
-                var isCrystal = buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
+                var isCrystal = buildingAttr is
+                    { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
                 
                 switch (data.CommandType)
                 {
-                    
-                        
                     case ConstructCommandType.Drag:
                         var valid = true;
-                        
+
                         // Check if resource is available
                         if (!data.IsMovementShow)
                         {
@@ -102,6 +104,7 @@ namespace SparFlame.GamePlaySystem.Building
                                 }
                             }
                         }
+
                         // Check if overlap with other colliders
                         var events = SystemAPI.GetBuffer<StatefulTriggerEvent>(data.GhostTriggerEntity);
                         if (events.Length > 0)
@@ -112,8 +115,8 @@ namespace SparFlame.GamePlaySystem.Building
 
                         // Check if mouse hit on constructable area; crystal can turn neutral area to cur faction
                         if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
-                            ( !isCrystal && constructable.Faction != data.Faction)
-                            ||(isCrystal && constructable.Faction == ~data.Faction)
+                            (!isCrystal && constructable.Faction != data.Faction)
+                            || (isCrystal && constructable.Faction == ~data.Faction)
                            )
                         {
                             SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in config,
@@ -181,7 +184,7 @@ namespace SparFlame.GamePlaySystem.Building
 
                     case ConstructCommandType.Build when data.State == PlacementStateType.Valid:
                         var newTransform = SystemAPI.GetComponent<LocalTransform>(data.GhostModelEntity);
-                        
+
                         if (!data.IsMovementShow)
                         {
                             // Check if crystal, then turn this plane to cur faction
@@ -191,10 +194,11 @@ namespace SparFlame.GamePlaySystem.Building
                                 ecb.AddComponent(request, new ChangeOccupiedTagRequest
                                 {
                                     CrystalFaction = data.Faction,
-                                    DestroyedCrystalPos = customInputData.HitPosition,
+                                    CrystalPos = customInputData.HitPosition,
                                     IsDestroyed = false
                                 });
                             }
+
                             // Reduce resources
                             foreach (var cost in _costLookup[data.TargetBuilding])
                             {
@@ -251,19 +255,27 @@ namespace SparFlame.GamePlaySystem.Building
                     .GetComponent<MaterialMeshInfo>(config.NotConstructablePreset).Material,
                 _ => throw new ArgumentOutOfRangeException(nameof(targetState), targetState, null)
             };
-            var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(data.GhostModelEntity);
-            for (int i = 1; i < buffer.Length; i++)
-            {
-                ChangeMaterial(ref state, buffer[i].Value, targetMaterial);
-            }
+            // for (int i = 1; i < buffer.Length; i++)
+            // {
+            ChangeMaterialRecursively(ref state, data.GhostModelEntity, targetMaterial);
+            // }
         }
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ChangeMaterial(ref SystemState state, Entity entity, int newMaterial)
+        private void ChangeMaterialRecursively(ref SystemState state, Entity entity, int newMaterial)
         {
-            var material = SystemAPI.GetComponentRW<MaterialMeshInfo>(entity);
-            material.ValueRW.Material = newMaterial;
+            if (SystemAPI.HasComponent<MaterialMeshInfo>(entity))
+            {
+                var material = SystemAPI.GetComponentRW<MaterialMeshInfo>(entity);
+                material.ValueRW.Material = newMaterial;
+            }
+
+            if (!SystemAPI.HasBuffer<LinkedEntityGroup>(entity)) return;
+            var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
+            for (int i = 1; i < buffer.Length; i++)
+            {
+                ChangeMaterialRecursively(ref state, buffer[i].Value, newMaterial);
+            }
         }
 
         private void AlignTriggerBoxCollider(ref SystemState state, in ConstructCommandData data)
@@ -281,6 +293,74 @@ namespace SparFlame.GamePlaySystem.Building
 
 
         private Entity InstantiateChildrenWithNewParent(ref SystemState state, Entity oriParentEntity)
+        {
+            if (!SystemAPI.HasBuffer<LinkedEntityGroup>(oriParentEntity))
+                return Entity.Null;
+
+            var linkedEntities = SystemAPI.GetBuffer<LinkedEntityGroup>(oriParentEntity);
+            if (linkedEntities.Length <= 1)
+                return Entity.Null;
+
+            using var originalChildren = new NativeList<Entity>(linkedEntities.Length - 1, Allocator.Temp);
+
+            for (var i = 1; i < linkedEntities.Length; i++)
+            {
+                originalChildren.Add(linkedEntities[i].Value);
+            }
+
+            // Create new parent
+            var newParentEntity = state.EntityManager.CreateEntity();
+            state.EntityManager.AddComponent<LocalTransform>(newParentEntity);
+            state.EntityManager.AddComponent<LocalToWorld>(newParentEntity);
+            var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(newParentEntity);
+            buffer.Add(newParentEntity);
+
+            // Get original parent world transform
+            var bLtw = state.EntityManager.GetComponentData<LocalToWorld>(oriParentEntity);
+            var bLtwInverse = math.inverse(bLtw.Value);
+
+            foreach (var originalChild in originalChildren)
+            {
+                var newChild = state.EntityManager.Instantiate(originalChild);
+                var childLtw = state.EntityManager.GetComponentData<LocalToWorld>(originalChild);
+                var relativeToB = math.mul(bLtwInverse, childLtw.Value);
+
+                // extract position
+                float3 position = relativeToB.c3.xyz;
+
+                // extract scale
+                float3 scale;
+                scale.x = math.length(relativeToB.c0.xyz);
+                scale.y = math.length(relativeToB.c1.xyz);
+                scale.z = math.length(relativeToB.c2.xyz);
+
+                // normalize basis vectors to remove scale from rotation
+                float3x3 rotationMatrix = new float3x3(
+                    relativeToB.c0.xyz / scale.x,
+                    relativeToB.c1.xyz / scale.y,
+                    relativeToB.c2.xyz / scale.z
+                );
+                quaternion rotation = new quaternion(rotationMatrix);
+
+                // Calculate new transform
+                var newLocalTransform = new LocalTransform
+                {
+                    Position = position,
+                    Rotation = rotation,
+                    Scale = math.cmax(scale) 
+                };
+
+                state.EntityManager.SetComponentData(newChild, newLocalTransform);
+                state.EntityManager.SetComponentData(newChild, new Parent { Value = newParentEntity });
+                var newLinkedEntities = state.EntityManager.GetBuffer<LinkedEntityGroup>(newParentEntity);
+                newLinkedEntities.Add(new LinkedEntityGroup { Value = newChild });
+            }
+
+            return newParentEntity;
+        }
+
+
+        /*private Entity InstantiateChildrenWithNewParent(ref SystemState state, Entity oriParentEntity)
         {
             if (!SystemAPI.HasBuffer<LinkedEntityGroup>(oriParentEntity))
                 return Entity.Null;
@@ -325,6 +405,6 @@ namespace SparFlame.GamePlaySystem.Building
             }
 
             return newParentEntity;
-        }
+        }*/
     }
 }

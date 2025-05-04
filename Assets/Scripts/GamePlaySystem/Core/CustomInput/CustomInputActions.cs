@@ -2064,6 +2064,15 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""CloseWindow"",
+                    ""type"": ""Button"",
+                    ""id"": ""488a5faa-f392-49ce-812c-24a8a0b9aef5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -2075,6 +2084,17 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""CheckInfo"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""544f9f6d-f174-4592-8248-e5b00dadfe41"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""CloseWindow"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -2351,6 +2371,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
             // InfoWindow
             m_InfoWindow = asset.FindActionMap("InfoWindow", throwIfNotFound: true);
             m_InfoWindow_CheckInfo = m_InfoWindow.FindAction("CheckInfo", throwIfNotFound: true);
+            m_InfoWindow_CloseWindow = m_InfoWindow.FindAction("CloseWindow", throwIfNotFound: true);
             // Conjure
             m_Conjure = asset.FindActionMap("Conjure", throwIfNotFound: true);
             m_Conjure_FullConjure = m_Conjure.FindAction("FullConjure", throwIfNotFound: true);
@@ -3128,11 +3149,13 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private readonly InputActionMap m_InfoWindow;
         private List<IInfoWindowActions> m_InfoWindowActionsCallbackInterfaces = new List<IInfoWindowActions>();
         private readonly InputAction m_InfoWindow_CheckInfo;
+        private readonly InputAction m_InfoWindow_CloseWindow;
         public struct InfoWindowActions
         {
             private @CustomInputActions m_Wrapper;
             public InfoWindowActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
             public InputAction @CheckInfo => m_Wrapper.m_InfoWindow_CheckInfo;
+            public InputAction @CloseWindow => m_Wrapper.m_InfoWindow_CloseWindow;
             public InputActionMap Get() { return m_Wrapper.m_InfoWindow; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -3145,6 +3168,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @CheckInfo.started += instance.OnCheckInfo;
                 @CheckInfo.performed += instance.OnCheckInfo;
                 @CheckInfo.canceled += instance.OnCheckInfo;
+                @CloseWindow.started += instance.OnCloseWindow;
+                @CloseWindow.performed += instance.OnCloseWindow;
+                @CloseWindow.canceled += instance.OnCloseWindow;
             }
 
             private void UnregisterCallbacks(IInfoWindowActions instance)
@@ -3152,6 +3178,9 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 @CheckInfo.started -= instance.OnCheckInfo;
                 @CheckInfo.performed -= instance.OnCheckInfo;
                 @CheckInfo.canceled -= instance.OnCheckInfo;
+                @CloseWindow.started -= instance.OnCloseWindow;
+                @CloseWindow.performed -= instance.OnCloseWindow;
+                @CloseWindow.canceled -= instance.OnCloseWindow;
             }
 
             public void RemoveCallbacks(IInfoWindowActions instance)
@@ -3346,6 +3375,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
         public interface IInfoWindowActions
         {
             void OnCheckInfo(InputAction.CallbackContext context);
+            void OnCloseWindow(InputAction.CallbackContext context);
         }
         public interface IConjureActions
         {

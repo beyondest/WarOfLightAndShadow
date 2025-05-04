@@ -13,7 +13,6 @@ using UnityEngine.Experimental.AI;
 
 namespace SparFlame.GamePlaySystem.Movement
 {
-    // [UpdateAfter(typeof(MovementSystem))]
     [BurstCompile]
     [Obsolete("Obsolete")]
     public partial struct NavAgentSystem : ISystem
@@ -27,7 +26,7 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<NavAgentSystemConfig>();
             _entityQuery = SystemAPI.QueryBuilder()
                 .WithAllRW<NavAgentComponent>()
@@ -86,12 +85,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 };
                 jobHandles[i] = calculatePathJob.Schedule();
             }
-
-            // if (entities.Length < _navMeshQueries.Length)
-            // {
-            //     DisposeRedundantNavMeshQueries(_navMeshQueries.Length - _navMeshQueries.Length, in config);
-            // }
-
+            
             JobHandle.CompleteAll(jobHandles);
             for (var i = 0; i < entities.Length; i++)
             {
@@ -217,7 +211,6 @@ namespace SparFlame.GamePlaySystem.Movement
                 vertexSide.Dispose();
             }
         }
-
 
         #region NavMeshQueriesPool
 

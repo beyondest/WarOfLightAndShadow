@@ -1,3 +1,4 @@
+using SparFlame.GamePlaySystem.CameraControl;
 using UnityEngine;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -33,14 +34,8 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         
     }
 
-    public struct ScreenPos : IComponentData
-    {
-        public float2 ScreenPosition;
-    }
 
 
-    public struct AITag : IComponentData
-    {
-        
-    }
+
+  
 }

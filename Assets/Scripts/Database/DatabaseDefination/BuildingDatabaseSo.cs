@@ -10,7 +10,6 @@ using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 // ReSharper disable RedundantJumpStatement
 
@@ -20,13 +19,9 @@ namespace SparFlame.GamePlaySystem.Building
     public class BuildingDatabaseSo : GeneralDatabase<BuildingDataItem>
     {
         
-        [ TableList(ShowIndexLabels = true),TableColumnWidth(50, Resizable = true),
-         SerializeReference, HideLabel,ListDrawerSettings(DraggableItems = true),OnValueChanged(nameof(ShouldCheckValid)) ]
+        [ TableList(ShowIndexLabels = true,AlwaysExpanded = false),TableColumnWidth(50, Resizable = true),
+         SerializeReference, HideLabel,ListDrawerSettings(DraggableItems = true) ]
         private List<BuildingDataItem> items;
-
-        [ShowIf(nameof(_shouldCheckValid)),
-         InfoBox("Press the button below to check building config valid", InfoMessageType.Warning)]
-        public string needCheckBuildingConfigValid = "need check building config valid";
 
         [SerializeField, ValueDropdown(nameof(GetTypeOptions))]
         private string selectedTypeName;
@@ -63,7 +58,6 @@ namespace SparFlame.GamePlaySystem.Building
         
         
         public override List<BuildingDataItem> Items => items;
-
 
         private bool _shouldCheckValid;
 
@@ -119,13 +113,11 @@ namespace SparFlame.GamePlaySystem.Building
         
         [ShowIf(nameof(IsGarrisonEnable)),FoldoutGroup("Gameplay/Garrison"),HorizontalGroup("Gameplay/Garrison/3") ,ListDrawerSettings(DraggableItems = true)]
         public List<GarrisonUnitData> garrisonUnits;
-
-
+        
         public override int GetGeneralTypeIndex()
         {
             return (int)type;
         }
-
 
         protected override void InitDefaults()
         {
@@ -156,10 +148,6 @@ namespace SparFlame.GamePlaySystem.Building
             public UnitType unitType;
             public int subTypeIndex;
         }
-        
-        
-        
-        
     }
 
     [Serializable]
@@ -185,15 +173,18 @@ namespace SparFlame.GamePlaySystem.Building
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("generator type")]
         public GeneratorType generatorType;
 
-        [FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/0"),HideLabel, Tooltip("generate resource type")] 
+        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/0"),HideLabel, Tooltip("generate resource type")] 
         public ResourceType generateResourceType;
-        [FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/1")] 
+        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/1")] 
         public int minCultivatorCounts;
-        [FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/2"),Tooltip("All the cultivator generate speed bonus multiply this initial speed to " +
+        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/2"),Tooltip("All the cultivator generate speed bonus multiply this initial speed to " +
              "calculate the cur speed, not the cur speed")] 
         public float initGenerateSpeed;
-        [FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/3")] 
+        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/3")] 
         public float maxGenerateSpeed;
+
+        [ShowIf(nameof(IsConvertor)), FoldoutGroup("Gameplay/Convertor"), HorizontalGroup("Gameplay/Convertor/0")]
+        public ResourceType convertToType;
         public override int GetSubtypeIndex() => (int)generatorType;
         protected override void InitDefaults()
         {
@@ -201,6 +192,9 @@ namespace SparFlame.GamePlaySystem.Building
             if (type == default)
                 type = BuildingType.Generators;
         }
+
+        private bool IsBloom() => generatorType == GeneratorType.BloomSpire;
+        private bool IsConvertor() => generatorType == GeneratorType.Converter;
     }
 
     [Serializable]

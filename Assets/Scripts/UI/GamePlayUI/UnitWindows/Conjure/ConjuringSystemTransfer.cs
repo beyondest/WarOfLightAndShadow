@@ -2,40 +2,38 @@
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Spawn;
-using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.UI.GamePlay
 {
     public partial class ConjuringSystemTransfer : SystemBase
     {
         private InputConjureData _inputConjureData;
+        private bool _initEvents;
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputConjureData>();
             RequireForUpdate<ConjureSystemConfig>();
         }
-        
 
-        protected override void OnUpdate()
+        protected override void OnStartRunning()
         {
-            
-            if(ConjureWindow.Instance == null || MiniConjureWindow.Instance == null) return;
-            if (!ConjureWindow.Instance.InitWindowEvents)
+            if (!_initEvents)
             {
-                ConjureWindow.Instance.InitWindowEvents = true;
+                _initEvents = true;
                 ConjureWindow.Instance.EcsConjureUnits += ConjureUnits;
-            }
-            if (!MiniConjureWindow.Instance.InitWindowEvents)
-            {
-                MiniConjureWindow.Instance.InitWindowEvents = true;
                 MiniConjureWindow.Instance.EcsConjureUnit += (unit, building,maxConjureCount) =>
                 {
                     ConjureUnits(unit, 1,building, maxConjureCount);
                 };
             }
+        }
+
+        protected override void OnUpdate()
+        {
             if(!MiniConjureWindow.Instance.IsOpened())return;
             _inputConjureData = SystemAPI.GetSingleton<InputConjureData>();
             CheckHotkeyConjure();
@@ -72,7 +70,7 @@ namespace SparFlame.UI.GamePlay
                 var costRequest = ecb.CreateEntity();
                 ecb.AddComponent(costRequest, new ResourceChangeRequest
                 {
-                    Amount = -cost.Amount * actualConjureCount,
+                    AbsAmount = math.abs(cost.Amount * actualConjureCount),
                     FromFaction = SystemAPI.GetComponent<GeneralAttr>(buildingEntity).FactionTag,
                     Type = cost.Type,
                     RequestType = ResourceRequestType.Consume

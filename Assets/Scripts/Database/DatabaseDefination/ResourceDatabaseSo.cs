@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
+using NUnit.Framework;
 using Sirenix.OdinInspector;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.Utils;
+using UnityEditor.PackageManager.UI;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SparFlame.Database
 {
     [CreateAssetMenu(fileName = "ResourceDatabase", menuName = "GameData/ResourceDatabase", order = 0)]
     public class ResourceDatabaseSo :GeneralDatabase<ResourceDataItem>
     {
+        
+        public override List<ResourceDataItem> Items => items;
+
         [SerializeReference, TableList(ShowIndexLabels = true), HideLabel,ListDrawerSettings(DraggableItems = true)]
         private List<ResourceDataItem> items;
         
@@ -52,7 +58,27 @@ namespace SparFlame.Database
                 items.Add(instance);
             }
         }
-        public override List<ResourceDataItem> Items => items;
+
+        [Button("Check Probability Config Valid")]
+        private void CheckResourceConfigValid()
+        {
+            foreach (ResourceType type in Enum.GetValues(typeof(ResourceType)))
+            {
+                var sameTypes = Items.Where(dataItem => dataItem.type == type).ToList();
+                var totalProb = sameTypes.Sum(item => item.prob);
+                
+
+                if (!Mathf.Approximately(totalProb, 1f))
+                {
+                    foreach (var item in sameTypes)
+                    {
+                        Debug.Log($"{item.id} {item.prob}");
+                    }
+                    throw new ArgumentException($"Resource {type} total probabilities is not 1f, {totalProb}");
+                }
+            }
+        }
+        
     }
 
 
@@ -65,6 +91,10 @@ namespace SparFlame.Database
         [FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/0"), Tooltip("resource amount range, " +
              "this is used for system automatically regenerate resource")]
         public CustomDs.Range amountRange;
+        
+        [FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/1"), Tooltip("resource amount range, " +
+                                                                                            "this is used for system automatically regenerate resource")]
+        public float prob;
         
         [FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/1")]
         public bool renewable;

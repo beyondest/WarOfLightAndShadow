@@ -13,7 +13,7 @@ namespace SparFlame.UI.GamePlay
         private void OnEnable()
         {
             Show();
-            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
 
         protected override void Start()

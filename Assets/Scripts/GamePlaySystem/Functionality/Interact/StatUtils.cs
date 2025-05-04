@@ -32,12 +32,11 @@ namespace SparFlame.GamePlaySystem.Interact
             ecb.AddComponent(index, entity, new ResourceChangeRequest
             {
                 Type = resourceAttr.Type,
-                Amount = math.abs(request.Amount),
+                AbsAmount = math.abs(request.AbsAmount),
                 FromFaction = interactorAttr.FactionTag,
                 RequestType = ResourceRequestType.Harvest
             });
         }
-
 
         public static void GeneratePopNumberRequest(ref ComponentLookup<LocalTransform> transformLookup,
             in StatChangeRequest request,
@@ -45,18 +44,25 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             var popNumberType = PopNumberType.DamageDealt;
             var interactorFaction = generalAttr.FactionTag;
-            popNumberType = (request.InteractType, interactorFaction) switch
+            if (!request.KillByUnNormal)
             {
-                (InteractType.Heal, FactionTag.Ally) => PopNumberType.AllyHealed,
-                (InteractType.Attack, FactionTag.Ally) => PopNumberType.DamageDealt,
-                (InteractType.Heal, FactionTag.Enemy) => PopNumberType.EnemyHealed,
-                (InteractType.Attack, FactionTag.Enemy) => PopNumberType.DamageTaken,
-                (InteractType.Harvest, FactionTag.Ally) => PopNumberType.AllyHarvest,
-                (InteractType.Harvest, FactionTag.Enemy) => PopNumberType.EnemyHarvest,
-                _ => popNumberType
-            };
+                popNumberType = (request.InteractType, interactorFaction) switch
+                {
+                    (InteractType.Heal, FactionTag.Ally) => PopNumberType.AllyHealed,
+                    (InteractType.Attack, FactionTag.Ally) => PopNumberType.DamageDealt,
+                    (InteractType.Heal, FactionTag.Enemy) => PopNumberType.EnemyHealed,
+                    (InteractType.Attack, FactionTag.Enemy) => PopNumberType.DamageTaken,
+                    (InteractType.Harvest, FactionTag.Ally) => PopNumberType.AllyHarvest,
+                    (InteractType.Harvest, FactionTag.Enemy) => PopNumberType.EnemyHarvest,
+                    _ => popNumberType
+                };
+            }
+            else
+            {
+                popNumberType =  PopNumberType.UnNormalKill;
+            }
+           
             var interacteePos = transformLookup[request.Interactee].Position;
-
             // Spawn Pop Number VFX
             var popNumberRequest = ecb.CreateEntity(index);
             ecb.AddComponent(index, popNumberRequest, new PopNumberRequest
@@ -64,7 +70,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 ColorId = (int)popNumberType,
                 Position = interacteePos,
                 Scale = 1f,
-                Value = request.Amount
+                Value = request.AbsAmount
             });
         }
 
@@ -105,7 +111,7 @@ namespace SparFlame.GamePlaySystem.Interact
             }
             ecb.AddComponent(index, releasePopulationRequest, new ResourceChangeRequest
             {
-                Amount = amount,
+                AbsAmount = math.abs(amount),
                 FromFaction = interacteeAttr.FactionTag,
                 RequestType = ResourceRequestType.Release,
                 Type = ResourceType.Population
@@ -119,8 +125,22 @@ namespace SparFlame.GamePlaySystem.Interact
             ecb.AddComponent(index,request, new ChangeOccupiedTagRequest
             {
                 CrystalFaction = interacteeAttr.FactionTag,
-                DestroyedCrystalPos = crystalPos,
+                CrystalPos = crystalPos,
                 IsDestroyed = true
+            });
+        }
+        
+        
+        public static void GenerateDwellingDestroyResourceChangeRequest(Entity interacteeEntity, int index,
+            in GeneralAttr interacteeAttr,in DwellingAttr dwellingAttr, EntityCommandBuffer.ParallelWriter ecb)
+        {
+            var request = ecb.CreateEntity(index);
+            ecb.AddComponent(index, request, new ResourceChangeRequest
+            {
+                Type = dwellingAttr.ResourceType,
+                AbsAmount = math.abs(dwellingAttr.Amount),
+                FromFaction = interacteeAttr.FactionTag,
+                RequestType = ResourceRequestType.DwellingDestroyConsume
             });
         }
 

@@ -46,9 +46,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 691d3ff887a540da8580e4f0c0fe5387, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalMouseTexture: {fileID: 2800000, guid: 500ed3492e97b304fb6adfd298657de5, type: 3}
-  clickedCursorTexture: {fileID: 2800000, guid: 78dd0a1280598d641a1bcebc57f874b9, type: 3}
-  cursorScale: 1
+  normalMouseTexture: {fileID: 2800000, guid: 78dd0a1280598d641a1bcebc57f874b9, type: 3}
+  clickedCursorTexture: {fileID: 2800000, guid: 500ed3492e97b304fb6adfd298657de5, type: 3}
   useSoftwareCursor: 0
   cursorLeftImage: {fileID: 2677930787145931786}
   cursorLeftOffset: {x: 0, y: 0, z: 0}

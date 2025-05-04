@@ -11,7 +11,7 @@ namespace SparFlame.GamePlaySystem.Resource
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<RegeneratingSystemConfig>();
         }
 
@@ -27,12 +27,7 @@ namespace SparFlame.GamePlaySystem.Resource
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-
-        }
+        
 
         [BurstCompile]
         [WithAll(typeof(RegeneratingTag))]

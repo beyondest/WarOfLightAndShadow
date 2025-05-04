@@ -14,14 +14,13 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ConjureWindow : UIUtils.MultiSlotsWindow<ConjureSlot>,UIUtils.ISingleTargetWindow
+    public class ConjureWindow : MultiSlotWindowUtils.MultiSlotsWindow<ConjureSlot>,MultiSlotWindowUtils.ISingleTargetWindow
     {
         [SerializeField] private GameObject conjureWindowPanel;
         [SerializeField] private Tier maxTier = Tier.Tier3;
         [SerializeField] private Image tierFilterIcon;
         // Interface
         public static ConjureWindow Instance;
-        [NonSerialized] public bool InitWindowEvents = false;
         // Unit, count, building, maxCount
         public Action<Entity, int,Entity,int> EcsConjureUnits;
 
@@ -87,7 +86,7 @@ namespace SparFlame.UI.GamePlay
                 tierFilterIcon.color = Color.white;
                 _shouldFilterTier = true;
                 _currentTier = _currentTier == maxTier ? Tier.Tier1 : (Tier)((int)_currentTier + 1);
-                tierFilterIcon.sprite = BasicResourceManager.Instance.TierSprites[_currentTier];
+                tierFilterIcon.sprite = BasicUIResourceManager.Instance.TierSprites[_currentTier];
             }
             UpdateCandidates();
         }
@@ -115,8 +114,6 @@ namespace SparFlame.UI.GamePlay
 
         #region EventFunctions
 
-        
-
         private void Awake()
         {
             if (Instance == null)
@@ -124,17 +121,16 @@ namespace SparFlame.UI.GamePlay
             else
                 Destroy(gameObject);
         }
-
-
-        private void Start()
+        
+        protected override void Start()
         {
+            base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             Hide();
             _shouldFilterTier = false;
             _shouldFilterSubType = false;
             _currentTier = maxTier;
             tierFilterIcon.color = Color.gray;
-            
         }
         #endregion
 

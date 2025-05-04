@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitMulti2DWindow : UIUtils.MultiSlotsWindow<Unit2DSlot>
+    public class UnitMulti2DWindow : MultiSlotWindowUtils.MultiSlotsWindow<Unit2DSlot>
     {
         // Config
         [Header("Custom Config")] [SerializeField]
@@ -89,7 +89,6 @@ namespace SparFlame.UI.GamePlay
 
 
         #region ButtonMethods
-
         public void OnPageRightClicked()
         {
             _currentPage++;
@@ -122,9 +121,9 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
+        public override void LoadResources()
         {
-            base.OnEnable();
+            base.LoadResources();
             _slotsMaxCountPerPage = config.rows * config.cols;
             _currentSelectIndex = -1;
              _maxTierF = (int)maxTier - 2;

@@ -31,7 +31,9 @@
         "GUID:55dcd9ff6f109f04eaa2ca6567b71f4f",
         "GUID:8a3cc244f8ae98743a6c9b074a976837",
         "SparFlame.GamePlaySystem.Ooc",
-        "GUID:940699de328d2994f8709c8afe265272"
+        "GUID:940699de328d2994f8709c8afe265272",
+        "GUID:3cd155b9c0fe306478d54889905e00b4",
+        "GUID:97033921d263d294f96116cdf21ea352"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

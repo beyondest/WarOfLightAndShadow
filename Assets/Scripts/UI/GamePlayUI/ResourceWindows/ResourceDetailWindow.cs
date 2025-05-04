@@ -5,12 +5,11 @@ using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class ResourceDetailWindow : MonoBehaviour, UIUtils.ISingleTargetWindow
+    public class ResourceDetailWindow : MonoBehaviour, MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Config
         [Header("Config")] [SerializeField] private GameObject resourceDetailPanel;
@@ -62,7 +61,7 @@ namespace SparFlame.UI.GamePlay
 
         // ECS
         private EntityManager _em;
-        private EntityQuery _notPauseTag;
+        private EntityQuery _gamingTag;
 
         private void Awake()
         {
@@ -75,13 +74,13 @@ namespace SparFlame.UI.GamePlay
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _notPauseTag = _em.CreateEntityQuery(typeof(NotPauseTag));
+            _gamingTag = _em.CreateEntityQuery(typeof(GamingTag));
             Hide();
         }
 
         private void Update()
         {
-            if (_notPauseTag.IsEmpty) return;
+            if (_gamingTag.IsEmpty) return;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
             if (!_em.HasComponent<GeneralAttr>(_targetEntity))
@@ -97,7 +96,7 @@ namespace SparFlame.UI.GamePlay
         {
             var generalAttr = _em.GetComponentData<GeneralAttr>(_targetEntity);
             var resourceAttr = _em.GetComponentData<ResourceAttr>(_targetEntity);
-            resourceTypeIcon.sprite = BasicResourceManager.Instance.ResourceSprites[resourceAttr.Type];
+            resourceTypeIcon.sprite = BasicUIResourceManager.Instance.ResourceSprites[resourceAttr.Type];
             resourceTypeText.text = resourceAttr.Type.ToString();
             resourceAmountText.text = resourceAttr.AmountRange.lower + " - " + resourceAttr.AmountRange.upper;
             descriptionText.text = DatabaseManager.ResourceDatabaseSo.GetItemById(generalAttr.ID).description;
