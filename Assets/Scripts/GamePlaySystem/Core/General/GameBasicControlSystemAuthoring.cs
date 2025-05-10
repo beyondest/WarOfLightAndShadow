@@ -1,9 +1,6 @@
 using System;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
-using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.GamePlaySystem.General
 {
@@ -17,10 +14,7 @@ namespace SparFlame.GamePlaySystem.General
             {
                 var notDestroyEntity = GetEntity(TransformUsageFlags.None);
                 AddComponent(notDestroyEntity, authoring.config);
-                AddComponent(notDestroyEntity, new GameStatusData
-                {
-                    Value = GameStatus.NotStarted
-                });
+                
             }
         }
     }
@@ -30,6 +24,8 @@ namespace SparFlame.GamePlaySystem.General
     {
         public bool enablePause;
         public int targetFrameRate;
+        [Tooltip("Default should be 1/60")]
+        public float basicFixStep;
     }
     public enum GameStatus
     {
@@ -46,10 +42,7 @@ namespace SparFlame.GamePlaySystem.General
     {
         public FactionTag Value;
     }
-    public struct GameStartTime : IComponentData
-    {
-        public float Value;
-    }
+ 
 
     // For systems that do not need game status data, require for update this one only
     public struct GamingTag : IComponentData
@@ -62,7 +55,16 @@ namespace SparFlame.GamePlaySystem.General
         public GameStatus Value;
     }
 
-    
+    public struct GameTimeData : IComponentData
+    {
+        public float DeltaTime;
+        public float ElapsedTime;
+    }
+
+    public struct GameTimeScale : IComponentData
+    {
+        public float Value;
+    }
 
 
 }

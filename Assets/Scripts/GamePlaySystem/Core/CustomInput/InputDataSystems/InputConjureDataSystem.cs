@@ -5,6 +5,7 @@ using UnityEngine.InputSystem.Controls;
 
 namespace SparFlame.GamePlaySystem.CustomInput
 {
+    [UpdateAfter(typeof(InputMouseSystem))]
     public partial struct InputConjureDataSystem : ISystem
     {
         [BurstCompile]

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -39,6 +37,18 @@ namespace SparFlame.GamePlaySystem.Building
                     NotEnoughResourcesPreset = GetEntity(authoring.notEnoughResourceRef, TransformUsageFlags.None),
                     NotConstructablePreset = GetEntity(authoring.notConstructableRef, TransformUsageFlags.None),
                 });
+                AddComponent(entity, new ConstructCommandData
+                {
+                    CommandType = ConstructCommandType.None,
+                    Faction =  FactionTag.Neutral,
+                    GhostModelEntity = Entity.Null,
+                    GhostTriggerEntity = Entity.Null,
+                    IsMovementShow = false,
+                    OriTransform = default,
+                    RotationAngle = 0,
+                    State = PlacementStateType.NotConstructable,
+                    TargetBuilding = Entity.Null
+                });
             }
         }
     }
@@ -53,7 +63,6 @@ namespace SparFlame.GamePlaySystem.Building
 
     public struct ConstructSystemConfig : IComponentData
     {
-
         public Entity GhostTriggerPrefab;
 
         // Material preset
@@ -70,28 +79,31 @@ namespace SparFlame.GamePlaySystem.Building
 
     public enum ConstructCommandType
     {
-        Drag,
-        Start,
-        End,
-        Build
+        None = 0,
+        Drag = 1,
+        Start = 2,
+        End = 3,
+        Build = 4
     }
 
     public struct ConstructCommandData : IComponentData
     {
         // Command side
         public ConstructCommandType CommandType;
-        public FactionTag Faction;
         public float RotationAngle;
         public Entity TargetBuilding;
         public bool IsMovementShow;
 
         // Feedback
-        public Entity GhostModelEntity; // Only the model of target building
-        public Entity GhostTriggerEntity;
         public PlacementStateType State;
         
         // Internal data
+        public FactionTag Faction;
         public LocalTransform OriTransform;
+        public Entity GhostModelEntity; // Only the model of target building
+        public Entity GhostTriggerEntity;
+        public Entity SightRangeEntity;
+
     }
 
 

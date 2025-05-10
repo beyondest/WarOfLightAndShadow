@@ -7,9 +7,9 @@ namespace SparFlame.GamePlaySystem.Resource
 {
     public partial struct ResourceManageSystem : ISystem
     {
-        private NativeHashMap<int, ResourceAvailableData> _globalResourceDataCenter;
+        private NativeHashMap<int, ResourceTypeToAvailableAmount> _globalResourceDataCenter;
         private NativeHashSet<int> _renewableResources;
-
+        private NativeHashSet<int> _populationResources;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -19,8 +19,9 @@ namespace SparFlame.GamePlaySystem.Resource
             state.RequireForUpdate<ResourceManageSystemConfig>();
             state.RequireForUpdate<GameStatusData>();
             _globalResourceDataCenter =
-                new NativeHashMap<int, ResourceAvailableData>(5, Allocator.Persistent);
+                new NativeHashMap<int, ResourceTypeToAvailableAmount>(5, Allocator.Persistent);
             _renewableResources = new NativeHashSet<int>(5, Allocator.Persistent);
+            _populationResources = new NativeHashSet<int>(3, Allocator.Persistent);
         }
 
         [BurstCompile]
@@ -54,8 +55,8 @@ namespace SparFlame.GamePlaySystem.Resource
                          .WithAll<DwellingGeneratePopulationTag>().WithEntityAccess())
             {
                 var datas = generalAttr.ValueRO.FactionTag == FactionTag.Ally
-                    ? SystemAPI.GetBuffer<ResourceAvailableData>(allyDataCenter)
-                    : SystemAPI.GetBuffer<ResourceAvailableData>(enemyDataCenter);
+                    ? SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(allyDataCenter)
+                    : SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyDataCenter);
                 var data = datas[(int)dwellingAttr.ValueRO.ResourceType];
                 data.Amount += dwellingAttr.ValueRO.Amount;
                 datas[(int)dwellingAttr.ValueRO.ResourceType] = data;
@@ -82,7 +83,7 @@ namespace SparFlame.GamePlaySystem.Resource
                 }
 
                 var targetCenter = request.FromFaction == FactionTag.Ally ? allyDataCenter : enemyDataCenter;
-                var availableDatas = SystemAPI.GetBuffer<ResourceAvailableData>(targetCenter);
+                var availableDatas = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(targetCenter);
 
                 // Consume will minus abs amount to current data center available amount
                 if (request.RequestType is ResourceRequestType.Consume or ResourceRequestType.DwellingDestroyConsume)
@@ -103,8 +104,8 @@ namespace SparFlame.GamePlaySystem.Resource
                 }
 
                 // Population consume and release must be handled separately, for correct showing : current occupied/total value
-                if (request is { Type: ResourceType.Population, RequestType: ResourceRequestType.Consume }
-                    or { Type: ResourceType.Population, RequestType: ResourceRequestType.Release })
+                if (request.RequestType is ResourceRequestType.Consume or ResourceRequestType.Release
+                    && _populationResources.Contains((int)request.Type))
                 {
                     var pData = SystemAPI.GetComponent<PopulationOccupiedData>(targetCenter);
                     SystemAPI.SetComponent(targetCenter, new PopulationOccupiedData
@@ -127,7 +128,7 @@ namespace SparFlame.GamePlaySystem.Resource
             foreach (var pair in _globalResourceDataCenter)
             {
                 var buffer =
-                    SystemAPI.GetBuffer<ResourceAvailableData>(SystemAPI.GetSingletonEntity<GlobalResourceDataTag>());
+                    SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<GlobalResourceDataTag>());
                 var data = buffer[pair.Key];
                 data.Amount = pair.Value.Amount;
                 buffer[pair.Key] = data;
@@ -141,6 +142,8 @@ namespace SparFlame.GamePlaySystem.Resource
                 _globalResourceDataCenter.Dispose();
             if (_renewableResources.IsCreated)
                 _renewableResources.Dispose();
+            if(_populationResources.IsCreated)
+                _populationResources.Dispose();
         }
 
         private void InitDataCenter(ref SystemState state)
@@ -148,13 +151,14 @@ namespace SparFlame.GamePlaySystem.Resource
             // Init global data center
             _globalResourceDataCenter.Clear();
             _renewableResources.Clear();
-
+            _populationResources.Clear();
             var globalInitBuffer =
-                SystemAPI.GetBuffer<InitResourceData>(SystemAPI.GetSingletonEntity<GlobalResourceDataTag>());
+                SystemAPI.GetBuffer<ResourceTypeToInitAmount>(SystemAPI.GetSingletonEntity<GlobalResourceDataTag>());
             var buffer2 = SystemAPI.GetSingletonBuffer<RenewableResourceType>();
+            var config = SystemAPI.GetSingleton<ResourceManageSystemConfig>();
             for (var i = 0; i < globalInitBuffer.Length; i++)
             {
-                var data = new ResourceAvailableData
+                var data = new ResourceTypeToAvailableAmount
                 {
                     ResourceType = (ResourceType)i,
                     Amount = 0 // Global resource data should be zeror
@@ -166,16 +170,20 @@ namespace SparFlame.GamePlaySystem.Resource
             {
                 _renewableResources.Add((int)type.ResourceType);
             }
+            foreach (var type in config.PopulationResourceTypes)
+            {
+                _populationResources.Add((int)type);
+            }
 
             var allyDataCenter = SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
             var enemyDataCenter = SystemAPI.GetSingletonEntity<EnemyResourceDataTag>();
-            var allyInitBuffer = SystemAPI.GetBuffer<InitResourceData>(allyDataCenter);
-            var enemyInitBuffer = SystemAPI.GetBuffer<InitResourceData>(enemyDataCenter);
-            var allyAvailableBuffer = SystemAPI.GetBuffer<ResourceAvailableData>(allyDataCenter);
-            var enemyAvailableBuffer = SystemAPI.GetBuffer<ResourceAvailableData>(enemyDataCenter);
+            var allyInitBuffer = SystemAPI.GetBuffer<ResourceTypeToInitAmount>(allyDataCenter);
+            var enemyInitBuffer = SystemAPI.GetBuffer<ResourceTypeToInitAmount>(enemyDataCenter);
+            var allyAvailableBuffer = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(allyDataCenter);
+            var enemyAvailableBuffer = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyDataCenter);
             for (int i = 0; i < allyInitBuffer.Length; i++)
             {
-                allyAvailableBuffer[i] = new ResourceAvailableData
+                allyAvailableBuffer[i] = new ResourceTypeToAvailableAmount
                 {
                     ResourceType = allyInitBuffer[i].ResourceType,
                     Amount = allyInitBuffer[i].Amount
@@ -183,7 +191,7 @@ namespace SparFlame.GamePlaySystem.Resource
             }
             for (int i = 0; i < enemyInitBuffer.Length; i++)
             {
-                enemyAvailableBuffer[i] = new ResourceAvailableData
+                enemyAvailableBuffer[i] = new ResourceTypeToAvailableAmount
                 {
                     ResourceType = enemyInitBuffer[i].ResourceType,
                     Amount = enemyInitBuffer[i].Amount

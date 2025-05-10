@@ -23,6 +23,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _surroundingLookup.Update(ref state);
             new SurroundingMonitorTriggerJob
             {
                 SurroundingDataLookup = _surroundingLookup

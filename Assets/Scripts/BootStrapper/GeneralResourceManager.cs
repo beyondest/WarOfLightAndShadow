@@ -15,7 +15,7 @@ namespace SparFlame.BootStrapper
 
         public static GeneralResourceManager Instance;
         public event Action OnLoadAllResources;
-        public event Action<float> OnAllResourceLoaded;
+        public event Action OnAllResourceLoaded;
         public event Action<float> OnInitProgress;
         public event Action OnReleaseAllResources;
 
@@ -60,23 +60,24 @@ namespace SparFlame.BootStrapper
 
         private void Start()
         {
-            GameController.Instance.OnPlayerChooseFaction += _ => OnLoadAllResources?.Invoke();
-            GameController.Instance.OnBackToMainMenu += () => OnReleaseAllResources?.Invoke();
+            GameController.Instance.OnPlayerChooseFaction += _ =>StartLoadResources();
+            GameController.Instance.OnBackToMainMenu += ReleaseAllResources;
         }
 
         private IEnumerator CheckAllResourceLoadingCoroutine()
         {
             while (true)
             {
-                yield return new WaitForSeconds(checkInitInterval);
-
+                
                 var allReady = _providers.All(p => p.IsInitialized);
                 if (allReady)
                     break;
                 var avgProgress = _providers.Average(p => p.InitProgress);
                 OnInitProgress?.Invoke(avgProgress);
+                yield return new WaitForSeconds(checkInitInterval);
             }
-            OnAllResourceLoaded?.Invoke(Time.time);
+            Debug.Log("All resources loaded");
+            OnAllResourceLoaded?.Invoke();
         }
     }
 }

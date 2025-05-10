@@ -5,8 +5,6 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.State
 {
@@ -15,6 +13,7 @@ namespace SparFlame.GamePlaySystem.State
         public static void SwitchState(ref BasicStateData stateData, EntityCommandBuffer.ParallelWriter ecb,
             Entity entity, int index)
         {
+            
             if (stateData.TargetState == stateData.CurState) return;
             switch (stateData.TargetState)
             {

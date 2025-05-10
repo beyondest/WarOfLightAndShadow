@@ -100,9 +100,9 @@ namespace SparFlame.GamePlaySystem.Fow
             }
             if(gameStatusData.Value != GameStatus.Gaming)return;
             var config = SystemAPI.GetSingleton<FowConfig>();
-            var curTime = SystemAPI.Time.ElapsedTime;
+            var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             if (curTime <= _updateTime) return;
-            _updateTime = (float)curTime + config.UpdateInterval;
+            _updateTime = curTime + config.UpdateInterval;
             UpdateContributorSight(config);
             if (_needAgentVisibilityUpdate)
                 UpdateDisappearer(
@@ -296,7 +296,7 @@ namespace SparFlame.GamePlaySystem.Fow
 
             var
                 alphaSamples =
-                    request.GetData<float>().ToArray(); // Sampling result of the FOW at the locations of agents
+                    request.GetData<float>().ToArray(); // Sampling results of the FOW at the locations of agents
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             // Set visibility
@@ -305,7 +305,7 @@ namespace SparFlame.GamePlaySystem.Fow
                 var entity = _visibilityTargetAgents[i];
                 var agent = EntityManager.GetAspect<FowAgent>(entity);
                 var isInSight = alphaSamples[i] <= agent.DisappearAlphaThreshold;
-                agent.SetUnderFow(isInSight, ecb, EntityManager);
+                agent.SetUnderFow(isInSight, ecb);
             }
 
             _needAgentVisibilityUpdate = true;

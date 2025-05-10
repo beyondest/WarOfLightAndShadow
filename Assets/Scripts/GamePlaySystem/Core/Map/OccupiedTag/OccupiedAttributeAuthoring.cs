@@ -1,5 +1,4 @@
 ﻿using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

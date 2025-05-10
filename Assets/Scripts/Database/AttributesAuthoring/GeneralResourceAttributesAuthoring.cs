@@ -1,6 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SparFlame.Database
 {

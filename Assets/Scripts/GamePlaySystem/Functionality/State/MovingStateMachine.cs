@@ -18,8 +18,6 @@ namespace SparFlame.GamePlaySystem.State
     [UpdateAfter(typeof(MovementSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
     [UpdateAfter(typeof(BuffSystem))]
-    // [UpdateBefore(typeof(AutoGiveWaySystem))]
-    [UpdateBefore(typeof(StatSystem))]
     public partial struct MovingStateMachine : ISystem
     {
         private ComponentLookup<GeneralAttr> _interactableLookup;

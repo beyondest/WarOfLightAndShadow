@@ -6,8 +6,6 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 using SparFlame.GamePlaySystem.General;
-using UnityEngine;
-using UnityEngine.Scripting;
 
 namespace SparFlame.GamePlaySystem.PopNumber
 {
@@ -48,7 +46,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
             }
 
             var config = SystemAPI.GetSingleton<PopNumberConfig>();
-            var elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+            var elapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             var ecbSingleton = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>();
             var cameraData = SystemAPI.GetSingleton<CameraData>();
 
@@ -87,6 +85,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
                     var digit = number % 10;
                     number /= 10;
                     var glyph = Ecb.Instantiate(chunkIndex, Config.GlyphPrefab);
+                    Ecb.AddComponent<GameplayEntityTag>(chunkIndex, glyph);
                     // quaternion.LookRotationSafe(glyphPosition - CameraData.WorldPosition, math.up());
                     Ecb.SetComponent(chunkIndex, glyph, new LocalTransform
                     {

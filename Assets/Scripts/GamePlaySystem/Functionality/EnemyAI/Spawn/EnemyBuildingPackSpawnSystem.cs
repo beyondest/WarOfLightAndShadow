@@ -1,5 +1,4 @@
 ﻿using SparFlame.GamePlaySystem.RandomSpawn;
-using SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.RandomSpawn;
 using SparFlame.GamePlaySystem.Waves;
 using Unity.Burst;
 using Unity.Entities;

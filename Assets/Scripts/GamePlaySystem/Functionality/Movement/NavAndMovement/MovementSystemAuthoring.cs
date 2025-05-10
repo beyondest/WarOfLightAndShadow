@@ -1,4 +1,6 @@
-﻿using Unity.Entities;
+﻿using Sirenix.OdinInspector;
+using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics.Authoring;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -17,8 +19,10 @@ namespace SparFlame.GamePlaySystem.Movement
                  "If too small, then any target may not be in interact range even movement complete")]
         public float interactRangeSqBias = 0.3f;
         
-        [Tooltip("This is the extent float for the march movement, considering march movement as the target position is void")]
-        public float marchExtent = 0.5f;
+        [InfoBox("This is the extent float for the march movement, considering march movement as the target position is void")]
+        public float3 playerMarchExtent =new(1f,1f,1f);
+        public float3 aiMarchExtent = new(10f, 1f, 10f);
+        
         public float rotationSpeed = 5f;
         
         
@@ -30,6 +34,8 @@ namespace SparFlame.GamePlaySystem.Movement
 
         public float detectLengthRatio = 0.1f;
         public float detectFrontBiasRatio = 0.6f;
+      
+        
         private class MovementSystemAuthoringBaker : Baker<MovementSystemAuthoring>
         {
             public override void Bake(MovementSystemAuthoring authoring)
@@ -38,7 +44,8 @@ namespace SparFlame.GamePlaySystem.Movement
                 AddComponent(entity, new MovementConfig
                 {
                     WayPointDistanceSq = authoring.waypointDistanceThreshold * authoring.waypointDistanceThreshold,
-                    MarchExtent = authoring.marchExtent,
+                    PlayerMarchExtent = authoring.playerMarchExtent,
+                    AIMarchExtent = authoring.aiMarchExtent,
                     InteractRangeSqBias = authoring.interactRangeSqBias,
                     RotationSpeed = authoring.rotationSpeed,
                     ObstacleLayerMask = authoring.obstacleLayerMask.Value,
@@ -54,7 +61,8 @@ namespace SparFlame.GamePlaySystem.Movement
     public struct MovementConfig : IComponentData
     {
         public float WayPointDistanceSq;
-        public float MarchExtent;
+        public float3 PlayerMarchExtent;
+        public float3 AIMarchExtent;
         public float InteractRangeSqBias;
         public float RotationSpeed;
         public uint ObstacleLayerMask;

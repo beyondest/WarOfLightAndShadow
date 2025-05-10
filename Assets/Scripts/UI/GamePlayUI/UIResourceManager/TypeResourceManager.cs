@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using GamePlaySystem.Database;
 using SparFlame.BootStrapper;
@@ -11,10 +12,10 @@ using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    // Here store the sprites resource and entity, with info used to filter entity
+    // Here store the sprite resource and entity, with info used to filter entity
     public struct SpriteEntityInfo
     {
-        // For Visualize info of building for construct window
+        // For Visualize info of building for a construct window
         public string GameplayName;
         public Sprite Sprite;
 
@@ -33,6 +34,7 @@ namespace SparFlame.UI.GamePlay
         where TEntityPrefabData : unmanaged, IEntityPrefabData<TEnum>
     {
 
+        public float loadResourceTimeOutSeconds = 10f;
         // Interface
         public virtual bool IsResourceLoaded()
         {
@@ -77,8 +79,7 @@ namespace SparFlame.UI.GamePlay
 
         public virtual void LoadResources()
         {
-            // StartCoroutine(LoadSpriteEntityInfo());
-            LoadSpriteEntityInfo();
+            StartCoroutine(LoadSpriteEntityInfo());
         }
 
         public virtual void UnloadResources()
@@ -109,19 +110,20 @@ namespace SparFlame.UI.GamePlay
             return entities;
         }
 
-        private void LoadSpriteEntityInfo()
+        // Wait until subscene loaded
+        private IEnumerator LoadSpriteEntityInfo()
         {
-            /*while (World.DefaultGameObjectInjectionWorld == null)
+            while (World.DefaultGameObjectInjectionWorld == null)
             {
                 _elapsedTime += Time.deltaTime;
                 if (_elapsedTime >= loadResourceTimeOutSeconds)
                     throw new ArgumentException(
                         $"Resource Manager : {nameof(TData)} wait for entity world time out of {loadResourceTimeOutSeconds} seconds.)");
                 yield return null;
-            }*/
+            }
 
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            /*while (true)
+            while (true)
             {
                 var query = _em.CreateEntityQuery(typeof(TEntityPrefabData));
                 if (!query.IsEmptyIgnoreFilter)
@@ -131,7 +133,7 @@ namespace SparFlame.UI.GamePlay
                     throw new ArgumentException(
                         $"Resource manager : {nameof(TData)} wait for entity query time out of {loadResourceTimeOutSeconds} seconds.)");
                 yield return null;
-            }*/
+            }
 
             var databaseSo = DatabaseManager.GetDatabaseSo<TData>();
             var dict = InitEntities();

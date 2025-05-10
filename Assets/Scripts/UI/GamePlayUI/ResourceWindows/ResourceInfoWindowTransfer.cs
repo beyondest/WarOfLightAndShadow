@@ -13,7 +13,7 @@ namespace SparFlame.UI.GamePlay
         protected override void OnCreate()
         {
             RequireForUpdate<GamingTag>();
-            RequireForUpdate<ResourceAvailableData>();
+            RequireForUpdate<ResourceTypeToAvailableAmount>();
             RequireForUpdate<UnitSelectionData>();
         }
 
@@ -35,7 +35,7 @@ namespace SparFlame.UI.GamePlay
                 FactionTag.Neutral => default,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            var datas = SystemAPI.GetBuffer<ResourceAvailableData>(entity);
+            var datas = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(entity);
             if (_faction != curFaction)
             {
                 ResourceInfoWindow.Instance.UpdateStaticData(datas);

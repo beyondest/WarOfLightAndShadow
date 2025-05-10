@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.Spawn
+namespace SparFlame.GamePlaySystem.Conjure
 {
     public class ConjureSystemAuthoring : MonoBehaviour
     {

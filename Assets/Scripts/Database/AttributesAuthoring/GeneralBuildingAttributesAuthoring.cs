@@ -1,12 +1,11 @@
 ﻿using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.Garrison;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Generate;
 using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Spawn;
 using Unity.Entities;
-using Unity.Physics.Authoring;
 
 namespace SparFlame.Database
 {
@@ -110,13 +109,22 @@ namespace SparFlame.Database
             private void BakeOrnamentAttr(BuildingDataItem item, Entity entity)
             {
                 if(item is not OrnamentData ornamentData) return;
-                if(!ornamentData.hasBuff)return;
-                AddComponent(entity, new StaticBuffAttr
+                if (ornamentData.hasBuff)
                 {
-                    Type = ornamentData.ornamentBuffType,
-                    RangeSq = ornamentData.buffRange * ornamentData.buffRange,
-                    LastSeconds = ornamentData.buffLastTimeSeconds
-                });
+                    AddComponent(entity, new StaticBuffAttr
+                    {
+                        Type = ornamentData.ornamentBuffType,
+                        RangeSq = ornamentData.buffRange * ornamentData.buffRange,
+                        LastSeconds = ornamentData.buffLastTimeSeconds
+                    });
+                }
+                if (ornamentData.GetSubtypeIndex() == (int)OrnamentType.Crystal)
+                {
+                    AddComponent(entity, new CoreCrystalTag
+                    {
+                        Faction = item.factionTag
+                    });
+                }
             }
         }
     }

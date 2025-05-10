@@ -27,26 +27,28 @@ namespace SparFlame.UI.Menu.Out
         // Internal Data
         private FactionTag _playerFaction;
 
-        #region ButtonMethods
-
-        public void ButtonPauseClicked()
+        // Interface
+        public static MenuOutController Instance;
+        
+        public void ShowPauseMenu()
         {
             pauseMenu.SetActive(true);
-            GameController.Instance.PauseGame();
         }
+        #region ButtonMethods
 
-        public void ButtonResumeClicked()
+
+        public void OnClickResume()
         {
             pauseMenu.SetActive(false);
             GameController.Instance.ResumeGame();
         }
 
-        public void ButtonExitClicked()
+        public void OnClickExit()
         {
             GameController.Instance.ExitGame();
         }
 
-        public void ButtonGoToMainMenuClicked()
+        public void OnClickGoToMainMenu()
         {
             pauseMenu.SetActive(false);
             mainMenu.SetActive(true);
@@ -55,7 +57,7 @@ namespace SparFlame.UI.Menu.Out
             GameController.Instance.EndGameToMainMenu();
         }
 
-        public void ButtonPlayClicked()
+        public void OnClickPlay()
         {
             mainMenu.SetActive(false);
             selectMenu.SetActive(true);
@@ -77,7 +79,7 @@ namespace SparFlame.UI.Menu.Out
             GameController.Instance.PlayerChooseFaction(FactionTag.Enemy);
         }
 
-        public void ButtonContinueClicked()
+        public void OnClickContinue()
         {
             Debug.LogWarning("Continue to last saving is not implemented yet");
         }
@@ -85,9 +87,23 @@ namespace SparFlame.UI.Menu.Out
         #endregion
 
 
+        private void Awake()
+        {
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
+
         private void Start()
         {
-            GameController.Instance.OnPause += () => pauseMenu.SetActive(true);
+            GameController.Instance.OnPause += () =>
+            {
+                if (!gameOverMenu.activeSelf)
+                {
+                    pauseMenu.SetActive(true);
+                }
+            };
             GameController.Instance.OnResume += () => pauseMenu.SetActive(false);
             GameController.Instance.OnGameOver += OnGameOver;
             GameController.Instance.OnGameStart += OnGameStart;

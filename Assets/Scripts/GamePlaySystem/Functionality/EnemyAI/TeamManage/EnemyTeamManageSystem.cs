@@ -15,12 +15,15 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         private NativeHashMap<int, NativeHashMap<int, TeamSpecialData>>
             _wavePoint2TeamType2MemberCountEntriesLimit;
 
+        private NativeHashMap<int, NativeHashMap<int, int>> _wavePoint2TeamType2MaxSpecialUnitCount;
         private NativeList<int> _wavePoints;
+        
+        
         private ComponentLookup<TeamData> _teamDataLookup;
         private ComponentLookup<GeneralAttr> _generalAttributeLookup;
         private ComponentLookup<UnitAttr> _unitAttributeLookup;
         private ComponentLookup<GarrisonAttr> _garrisonAttributeLookup;
-        private BufferLookup<GarrisonEntity>    _garrisonEntityLookup;
+        private BufferLookup<GarrisonEntity> _garrisonEntityLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -34,26 +37,28 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             _unitAttributeLookup = state.GetComponentLookup<UnitAttr>(true);
             _garrisonAttributeLookup = state.GetComponentLookup<GarrisonAttr>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
+            
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if(!_wavePoints.IsCreated)
+            if (!_wavePoints.IsCreated)
                 Initialize();
             var config = SystemAPI.GetSingleton<EnemyTeamManageSystemConfig>();
 
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-           
+
             var curWavePoint = GeneralUtils.GetPoint(SystemAPI.GetSingleton<GameWaveData>().CurWaveIndex, _wavePoints);
-            
+
             DealtRemoveUnitFromTeamRequest(ref state, curWavePoint);
-            
+
             _generalAttributeLookup.Update(ref state);
             _teamDataLookup.Update(ref state);
             _unitAttributeLookup.Update(ref state);
             _garrisonAttributeLookup.Update(ref state);
-            
+            _garrisonEntityLookup.Update(ref state);
+
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             // Check outside teams to turn to wait teams. Use ecb append to base buffer, so it can parallel
@@ -63,7 +68,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 GeneralAttributeLookup = _generalAttributeLookup,
                 UnitAttributeLookup = _unitAttributeLookup,
                 TeamType2SpecialData = _wavePoint2TeamType2MemberCountEntriesLimit[curWavePoint],
-                ECB =ecbP
+                ECB = ecbP
             }.ScheduleParallel(state.Dependency);
 
             // Check base to change wait team to outside team
@@ -73,6 +78,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 TeamDataLookup = _teamDataLookup,
                 GarrisonAttrLookup = _garrisonAttributeLookup,
                 GarrisonEntityLookup = _garrisonEntityLookup,
+                TeamType2MaxSpecialUnitCount = _wavePoint2TeamType2MaxSpecialUnitCount[curWavePoint],
             }.ScheduleParallel(state.Dependency);
         }
 
@@ -117,9 +123,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             }
                         }
                     }
+
                     ecb0.DestroyEntity(request.BelongsToTeam);
                 }
-                
+
                 var teamSpecialData = _wavePoint2TeamType2MemberCountEntriesLimit[curWavePoint][(int)teamData.TeamType];
                 // This dead unit is special unit in its team, then reduce the special count
                 if (teamSpecialData.specialUnitType == request.UnitAttr.Type
@@ -128,32 +135,50 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     teamData.SpecialUnitCount--;
                 }
+
                 ecb0.DestroyEntity(entity);
             }
+
             ecb0.Playback(state.EntityManager);
             ecb0.Dispose();
         }
 
-        
+
         private void Initialize()
         {
             var buffer3 = SystemAPI.GetSingletonBuffer<WaveTeamSpecialData>();
             _wavePoint2TeamType2MemberCountEntriesLimit =
                 new NativeHashMap<int, NativeHashMap<int, TeamSpecialData>>(5, Allocator.Persistent);
             _wavePoints = new NativeList<int>(5, Allocator.Persistent);
-   
-
+            _wavePoint2TeamType2MaxSpecialUnitCount = new NativeHashMap<int, NativeHashMap<int, int>>(5, Allocator.Persistent);
             // Init wave to team member consist
             foreach (var data in buffer3)
             {
                 if (!_wavePoint2TeamType2MemberCountEntriesLimit.ContainsKey(data.WavePoint))
                     _wavePoint2TeamType2MemberCountEntriesLimit.Add(data.WavePoint,
-                        new NativeHashMap<int, TeamSpecialData>(5, Allocator.Persistent));
+                        new NativeHashMap<int, TeamSpecialData>(4, Allocator.Persistent));
+                if(!_wavePoint2TeamType2MaxSpecialUnitCount.ContainsKey(data.WavePoint))
+                    _wavePoint2TeamType2MaxSpecialUnitCount.Add(data.WavePoint, new NativeHashMap<int, int>(4, Allocator.Persistent));
                 var teamSpecialData = _wavePoint2TeamType2MemberCountEntriesLimit[data.WavePoint];
                 teamSpecialData.Add((int)data.TeamSpecialData.teamType, data.TeamSpecialData);
+                
+                // Calculate the max special unit count for each team type
+                var count = 0;
+                foreach (var entry in data.TeamSpecialData.maxMemberCountEntries)
+                {
+                    if (data.TeamSpecialData.specialUnitType == entry.unitType
+                        && (data.TeamSpecialData.specialUnitSubIndex == -1 ||
+                            data.TeamSpecialData.specialUnitSubIndex == entry.subTypeIndex))
+                    {
+                        count += entry.availableCount;
+                    }
+                }
+                var maxCount = _wavePoint2TeamType2MaxSpecialUnitCount[data.WavePoint];
+                maxCount.Add((int)data.TeamSpecialData.teamType, count);
+                _wavePoints.Add(data.WavePoint);
             }
         }
-        
+
         public void OnDestroy(ref SystemState state)
         {
             if (_wavePoint2TeamType2MemberCountEntriesLimit.IsCreated)
@@ -162,7 +187,16 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     pair.Value.Dispose();
                 }
+
                 _wavePoint2TeamType2MemberCountEntriesLimit.Dispose();
+            }
+
+            if (_wavePoint2TeamType2MaxSpecialUnitCount.IsCreated)
+            {
+                foreach (var pair in _wavePoint2TeamType2MaxSpecialUnitCount)
+                {
+                    pair.Value.Dispose();
+                }
             }
 
             if (_wavePoints.IsCreated)

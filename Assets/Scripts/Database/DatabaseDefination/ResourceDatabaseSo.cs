@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
-using NUnit.Framework;
 using Sirenix.OdinInspector;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.Utils;
-using UnityEditor.PackageManager.UI;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SparFlame.Database
 {
@@ -59,15 +56,18 @@ namespace SparFlame.Database
             }
         }
 
-        [Button("Check Probability Config Valid")]
-        private void CheckResourceConfigValid()
+        [Button("Check Config Valid")]
+        private void CheckConfigValid()
         {
-            foreach (ResourceType type in Enum.GetValues(typeof(ResourceType)))
+            var types = new HashSet<ResourceType>();
+            foreach (var data in items)
+            {
+                types.Add(data.type);
+            }
+            foreach (ResourceType type in types)
             {
                 var sameTypes = Items.Where(dataItem => dataItem.type == type).ToList();
                 var totalProb = sameTypes.Sum(item => item.prob);
-                
-
                 if (!Mathf.Approximately(totalProb, 1f))
                 {
                     foreach (var item in sameTypes)

@@ -1,5 +1,6 @@
 ﻿using SparFlame.GamePlaySystem.EnemyAI;
 using SparFlame.GamePlaySystem.General;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -63,10 +64,24 @@ namespace SparFlame.Database
                     // What is the consist of each type of team in current wave
                     foreach (var entry in item.teamSpecialDatas)
                     {
+                        var fix = new FixedList128Bytes<MemberCountEntry>();
+                        foreach (var m in entry.maxMemberCountEntries)
+                        {
+                            fix.Add(m);
+                        }
                         buffer5.Add(new WaveTeamSpecialData
                         {
                             WavePoint = item.wavePoint,
-                            TeamSpecialData = entry
+                            TeamSpecialData = new TeamSpecialData
+                            {
+                                teamType = entry.teamType,
+                                maxMemberCountEntries = fix,
+                                specialUnitType = entry.specialUnitType,
+                                specialUnitMinCount = entry.specialUnitMinCount,
+                                specialUnitSubIndex = entry.specialUnitSubIndex,
+                                teamsMaxCount = entry.teamsMaxCount,
+                                unitMaxCount = entry.unitMaxCount,
+                            }
                         });
                     }
                     // TODO : Back Building Pack Data

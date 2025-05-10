@@ -10,12 +10,12 @@ using Unity.Mathematics;
 
 namespace SparFlame.GamePlaySystem.EnemyAI
 {
-    [UpdateAfter(typeof(EnemyTeamStateMachine))]
+    [UpdateBefore(typeof(MovementSystem))]
     public partial struct EnemyUnitCommandSystem : ISystem
     {
         private ComponentLookup<GeneralAttr> _generalAttr;
         private ComponentLookup<AttackAbility> _attackability;
-        
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -35,6 +35,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             _generalAttr.Update(ref state);
             _attackability.Update(ref state);
+            var config = SystemAPI.GetSingleton<EnemyUnitCommandSystemConfig>();
             new EnemyUnitCommandJob
             {
                 GeneralAttrLookUp = _generalAttr,
@@ -53,6 +54,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             [ReadOnly] public ComponentLookup<AttackAbility> AttackAbilityLookUp;
             [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookUp;
             [ReadOnly] public float GarrisonRangeSq;
+            [ReadOnly] public EnemyUnitCommandSystemConfig Config;
+
             private void Execute([ChunkIndexInQuery] int index, ref EnemyUnitCommandData commandData,
                 ref BasicStateData basicStateData, ref MovableData movableData,
                 ref DynamicBuffer<InsightTarget> targets,
@@ -62,14 +65,18 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 var targetEntity = commandData.TargetEntity;
                 var focus = commandData.Focus;
                 var targetPos = commandData.TargetPos;
-                var targetColliderShape = GeneralAttrLookUp[commandData.TargetEntity].BoxColliderSize;
-                
+                var targetColliderShape = float3.zero;
+                if (GeneralAttrLookUp.TryGetComponent(commandData.TargetEntity, out var generalAttr))
+                {
+                    targetColliderShape = generalAttr.BoxColliderSize;
+                }
                 switch (commandData.CommandType)
                 {
                     case EnemyCommandType.None:
                         break;
                     case EnemyCommandType.March:
-                        MovementUtils.SetMoveTarget(ref movableData, targetPos, float3.zero,
+                        targetColliderShape = new float3(Config.aiMarchExtent, 1f, Config.aiMarchExtent);
+                        MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderShape,
                             MovementCommandType.March, 0f);
                         basicStateData.TargetState = InteractState.Moving;
                         StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
@@ -78,6 +85,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         {
                             InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
                         }
+
                         basicStateData.TargetEntity = Entity.Null;
                         basicStateData.TargetState = InteractState.Idle;
                         basicStateData.Focus = focus;
@@ -109,7 +117,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         }
                         else // Cleric in troop
                         {
-                            MovementUtils.SetMoveTarget(ref movableData, targetPos, float3.zero,
+                            targetColliderShape = new float3(Config.aiMarchExtent, 1f, Config.aiMarchExtent);
+                            MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderShape,
                                 MovementCommandType.March, 0f);
                             basicStateData.TargetState = InteractState.Moving;
                             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
@@ -118,13 +127,15 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             {
                                 InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
                             }
+
                             basicStateData.TargetEntity = Entity.Null;
                             basicStateData.TargetState = InteractState.Idle;
                             basicStateData.Focus = focus;
                         }
+
                         break;
                 }
-                
+
                 EnemyAIUtils.ResetPendingCommand(ref commandData);
             }
         }

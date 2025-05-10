@@ -15,23 +15,63 @@ MonoBehaviour:
   m_GroupName: Resource
   m_GUID: 77ccd14f23f0adc4485655cde4843a23
   m_SerializeEntries:
-  - m_GUID: 3cc555e104461b84dbc03a4c631c9a17
+  - m_GUID: 0556f264dd2434445b248072df15d2e7
+    m_Address: StarLight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0783914d7d742d84d91a5735d15d3626
     m_Address: Essence
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3d261c37bcec3ef4b94b0a48db81d165
-    m_Address: Obsidian
+  - m_GUID: 093938c094caa1446a88fdd7cac3fad5
+    m_Address: SoulMist
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6e3c26144b6b7b641b6f3bdc3172f2e4
+  - m_GUID: 0a268288c7325d141ac4b4c79293a130
+    m_Address: Aetherium
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1e064c47e2590c44d98b196e9e2af773
     m_Address: Luminite
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 72c0ff0e838768f4d8c4ebb569a4da21
-    m_Address: Population
+  - m_GUID: 2ad12052803015746b2513e9f89e5fe7
+    m_Address: OathOfLight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 42507b6754dc0ad4a8578e3aff9b8c39
+    m_Address: ChaosShard
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 42b0f6f3d86ad3046ac894dcace4b97c
+    m_Address: ArcaneEnergy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b090ba560d869e40b8b317bf17c18c3
+    m_Address: BloodCrystal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 565bd8a01621a024ca39590a7f26b1e4
+    m_Address: SoulPact
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c52275055769c7409f8f3e6e4429762
+    m_Address: Obsidian
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 910f5239c55f062418569243b9c291d1
+    m_Address: ShadowCovenant
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -40,8 +80,18 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a70f33ae92435bc4d84aedfb453c581a
+    m_Address: RelicFragments
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ad646dce0b413f94e84162b7a6dad8c2
     m_Address: DarkEnergy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b9db66640cd4cc74dbf093ac79b5bf12
+    m_Address: NetherFlame
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

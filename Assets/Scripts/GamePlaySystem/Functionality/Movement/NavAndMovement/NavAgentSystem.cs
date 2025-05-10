@@ -78,7 +78,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
-                    ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
+                    ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                     Iterations = config.MaxIterations,
                     MaxPathSize = config.MaxPathSize,
                     ExtentsOffset = config.ExtentsOffset

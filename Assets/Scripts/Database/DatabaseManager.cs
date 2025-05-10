@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
-using SparFlame.Database.DatabaseDefinition;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Resource;
 using UnityEngine;
 using UnityEditor;
 
@@ -18,10 +18,11 @@ namespace SparFlame.Database
         private static BuildingDatabaseSo _buildingDatabaseSo;
         private static UnitDatabaseSo _unitDatabaseSo;
         private static ResourceDatabaseSo _resourceDatabaseSo;
-        private static ResourceSpawnDatabaseSo _resourceSpawnDatabaseSo;
-        private static EnvSpawnDatabaseSo _envSpawnDatabaseSo;
+        private static ResourceWaveSpawnDatabaseSo _resourceWaveSpawnDatabaseSo;
+        private static EnvDatabaseSo _envDatabaseSo;
+        private static EnvTypeSpawnDatabaseSo _envTypeSpawnDatabaseSo;
         private static EnemyAIDatabaseSo _enemyAIDatabaseSo;
-        
+        private static ResourceTypeSpawnDatabaseSo _resourceTypeSpawnDatabaseSo;
         
         public static BuildingDatabaseSo BuildingDatabaseSo =>
             _buildingDatabaseSo ??= LoadAndMergeDatabase<BuildingDatabaseSo, BuildingDataItem>("items");
@@ -32,12 +33,24 @@ namespace SparFlame.Database
         public static ResourceDatabaseSo ResourceDatabaseSo =>
             _resourceDatabaseSo ??= LoadAndMergeDatabase<ResourceDatabaseSo, ResourceDataItem>("items");
 
-        public static ResourceSpawnDatabaseSo ResourceSpawnDatabaseSo =>
-            _resourceSpawnDatabaseSo ??= LoadAndMergeDatabase<ResourceSpawnDatabaseSo, ResourceSpawnDataItem>("items");
+        public static ResourceWaveSpawnDatabaseSo ResourceWaveSpawnDatabaseSo =>
+            _resourceWaveSpawnDatabaseSo ??= LoadAndMergeDatabase<ResourceWaveSpawnDatabaseSo, ResourceWaveSpawnDataItem>("items");
 
-        public static EnvSpawnDatabaseSo EnvSpawnDatabaseSo =>
-            _envSpawnDatabaseSo ??= LoadAndMergeDatabase<EnvSpawnDatabaseSo, EnvSpawnDataItem>("items");
+        public static EnvDatabaseSo EnvDatabaseSo =>
+            _envDatabaseSo ??= LoadAndMergeDatabase<EnvDatabaseSo, EnvDataItem>("items");
 
+        public static EnvTypeSpawnDatabaseSo EnvTypeSpawnDatabaseSo =>
+            _envTypeSpawnDatabaseSo ??= LoadAndMergeDatabase<EnvTypeSpawnDatabaseSo, EnvDatabaseItem>("items");
+        
+        public static ResourceTypeSpawnDatabaseSo ResourceTypeSpawnDatabaseSo =>
+            _resourceTypeSpawnDatabaseSo ??= LoadAndMergeDatabase<ResourceTypeSpawnDatabaseSo, ResourceTypeSpawnDatabaseItem>("items");
+        
+        public static EnemyAIDatabaseSo EnemyAIDatabaseSo =>
+            _enemyAIDatabaseSo ??= LoadAndMergeDatabase<EnemyAIDatabaseSo, EnemyAIWaveDataItem>("items");
+
+        
+        
+        // This method only works for general databases
         public static GeneralDatabase<TData> GetDatabaseSo<TData>() where TData : GeneralDataItem
         {
             if (typeof(TData) == typeof(BuildingDataItem))
@@ -52,9 +65,7 @@ namespace SparFlame.Database
             throw new NotImplementedException();
         }
 
-        public static EnemyAIDatabaseSo EnemyAIDatabaseSo =>
-            _enemyAIDatabaseSo ??= LoadAndMergeDatabase<EnemyAIDatabaseSo, EnemyAIWaveDataItem>("items");
-        
+    
         
         private static TDatabase LoadAndMergeDatabase<TDatabase, TItem>(string itemFieldName)
             where TDatabase : ScriptableObject, new()
@@ -81,7 +92,7 @@ namespace SparFlame.Database
                 return null;
             }
 
-            // 按 idStart 排序
+            // 有id的按照idStart排序，没id的，后来的排前面
             databases = databases.OrderBy(GetIdStartValue).ToList();
 
             // 生成新的 database 实例
@@ -158,15 +169,21 @@ namespace SparFlame.Database
             _buildingDatabaseSo = null;
             _unitDatabaseSo = null;
             _resourceDatabaseSo = null;
-            _resourceSpawnDatabaseSo = null;
-            _envSpawnDatabaseSo = null;
+            _resourceWaveSpawnDatabaseSo = null;
+            _envDatabaseSo = null;
+            _enemyAIDatabaseSo = null;
+            _envTypeSpawnDatabaseSo = null;
+            _resourceTypeSpawnDatabaseSo = null;
 
             // 强制重新加载（可选）
             _ = BuildingDatabaseSo;
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
-            _ = ResourceSpawnDatabaseSo;
-            _ = EnvSpawnDatabaseSo;
+            _ = ResourceWaveSpawnDatabaseSo;
+            _ = EnvDatabaseSo;
+            _ = EnemyAIDatabaseSo;
+            _ = EnvTypeSpawnDatabaseSo;
+            _ = ResourceTypeSpawnDatabaseSo;
 
             Debug.Log(" All Databases reloaded successfully!");
         }

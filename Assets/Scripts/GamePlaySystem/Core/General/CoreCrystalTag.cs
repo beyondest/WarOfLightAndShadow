@@ -1,8 +1,10 @@
 ﻿using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.General
 {
+    /*
     public class CoreCrystalAuthoring : MonoBehaviour
     {
         public FactionTag allyOrEnemy;
@@ -18,10 +20,17 @@ namespace SparFlame.GamePlaySystem.General
             }
         }
     }
+    */
 
     public struct CoreCrystalTag : IComponentData
     {
         public FactionTag Faction;
+    }
+
+    public struct PlayerFirstBasePos : IComponentData
+    {
+        public float3 Value;
+
     }
     
     // public struct AllyCoreCrystalTag : IComponentData

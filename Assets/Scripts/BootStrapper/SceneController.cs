@@ -2,6 +2,9 @@
 using System.Linq;
 using UnityEngine;
 using SparFlame.Utils;
+using Unity.Entities;
+using Unity.Scenes;
+
 namespace SparFlame.BootStrapper
 {
     public class SceneController : MonoBehaviour, CustomDs.IResourceManager
@@ -11,9 +14,22 @@ namespace SparFlame.BootStrapper
         [SerializeField] private string gamingGroupName = "GamingGroup";
         [SerializeField] private SceneGroup[] sceneGroups;
         
+        
+        
         // Interface
-        public bool IsInitialized { get; private set; }
-        public float InitProgress { get; private set; }
+        public static SceneController Instance;
+        public Action EcsStartLoadScene;
+        public bool IsInitialized => _normalSceneLoaded && _subsceneLoaded;
+        public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) /2f;
+        public void SetSubsceneLoadingProgress(float progress)
+        {
+            _subsceneLoadProgress = progress;
+            if (progress > 0.99f)
+            {
+                _subsceneLoaded = true;
+            }
+        }
+
         public void LoadResources()
         {
             LoadSceneGroup(gamingGroupName,_loading);
@@ -22,22 +38,36 @@ namespace SparFlame.BootStrapper
         public void UnloadResources()
         {
             UnloadSceneGroup(gamingGroupName);
-            IsInitialized = false;
-            InitProgress = 0f;
+            _subsceneLoaded = false;
+            _normalSceneLoaded = false;
+            _normalSceneLoadProgress = 0f;
+            _subsceneLoadProgress = 0f;
         }
+        
+        private bool _normalSceneLoaded;
+        private float _normalSceneLoadProgress;
+        private bool _subsceneLoaded;
+        private float _subsceneLoadProgress;
+
+      
 
         public event Action<SceneGroup> OnSceneGroupLoaded;
         public event Action<SceneGroup> OnSceneGroupUnloaded;
         
         // Internal data
-        private readonly SceneGroupManager _sceneGroupManager = new();
+        private readonly NormalSceneLoader _normalSceneLoader = new();
         private readonly LoadingProgress _loading = new();
 
         private void Awake()
         {
-            _loading.ProgressChanged += (f => InitProgress = f);
-            OnSceneGroupLoaded += _ => IsInitialized = true;
-            OnSceneGroupUnloaded += _ => IsInitialized = false;
+            if(Instance == null)
+                Instance = this;
+            else
+                Destroy(this);
+            _loading.ProgressChanged += (f => _normalSceneLoadProgress = f);
+            OnSceneGroupLoaded += _ => _normalSceneLoaded = true;
+            OnSceneGroupUnloaded += _ => _normalSceneLoaded = false;
+            
         }
 
         private void Start()
@@ -53,7 +83,12 @@ namespace SparFlame.BootStrapper
                 Debug.LogWarning("Scene group not found: " + sceneGroupName);
                 return;
             }
-            StartCoroutine(_sceneGroupManager.LoadSceneGroupAsync(sceneGroup, progress,false, OnSceneGroupLoaded));
+            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, progress,false, OnSceneGroupLoaded));
+            EcsStartLoadScene?.Invoke();
+            foreach (var subsceneData in sceneGroup.subscenes)
+            {
+                SceneSystem.LoadSceneAsync(World.DefaultGameObjectInjectionWorld.Unmanaged, subsceneData.sceneRef.SceneGUID);
+            }
         }
 
         public void UnloadSceneGroup(string sceneGroupName)
@@ -64,8 +99,13 @@ namespace SparFlame.BootStrapper
                 Debug.LogWarning("Scene group not found: " + sceneGroupName);
                 return;
             }
-            StartCoroutine(_sceneGroupManager.UnloadSceneGroupAsync(sceneGroup, OnSceneGroupUnloaded));
+            StartCoroutine(_normalSceneLoader.UnloadSceneGroupAsync(sceneGroup, OnSceneGroupUnloaded));
+            foreach (var subsceneData in sceneGroup.subscenes)
+            {
+                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged, subsceneData.sceneRef.SceneGUID);
+            }
         }
-
     }
+
+    
 }

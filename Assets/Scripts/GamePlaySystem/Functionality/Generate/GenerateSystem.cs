@@ -40,7 +40,7 @@ namespace SparFlame.GamePlaySystem.Generate
                 GeneratingTagLookup = _generatingTagLookup,
                 AttunerAttrLookup = _attunerAttrLookup,
                 Config = config,
-                ElapsedTime = (float)SystemAPI.Time.ElapsedTime
+                ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
             }.ScheduleParallel();
         }
 
@@ -87,6 +87,8 @@ namespace SparFlame.GamePlaySystem.Generate
                 {
                     data.GenerateTime = ElapsedTime + Config.GenerateIntervalSeconds;
                     var request = ECB.CreateEntity(index);
+                    ECB.AddComponent<GameplayEntityTag>(index, request);
+
                     ECB.AddComponent(index,request, new ResourceChangeRequest
                     {
                         Type = generateAttr.GenerateResourceType,

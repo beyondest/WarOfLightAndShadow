@@ -1,43 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
-using SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.RandomSpawn;
+using SparFlame.GamePlaySystem.RandomSpawn;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 namespace SparFlame.GamePlaySystem.Resource
 {
     public class ResourceSpawnSystemAuthoring : MonoBehaviour
     {
-
-        public List<ResourceTileTypeSpecialData> resourceTileTypeSpawnDatas;
+        public ResourceSpawnSystemConfig config;
         private class ResourceSpawnSystemBaker : Baker<ResourceSpawnSystemAuthoring>
         {
             public override void Bake(ResourceSpawnSystemAuthoring authoring)
             {
+                
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new ResourceSpawnSystemConfig
-                {
-                });
-                var buffer = AddBuffer<ResourceTileTypeSpecialData>(entity);
-                for (var i = 0; i < authoring.resourceTileTypeSpawnDatas.Count; i++)
-                {
-                    var data = authoring.resourceTileTypeSpawnDatas[i];
-                    if ((int)data.type != i)
-                        throw new ArgumentException(
-                            "Resource spawn config authoring init error, resource tile special datas list must " +
-                            "follow the enum type sequence");
-                    
-                    buffer.Add(data);
-                }
-
+                AddComponent(entity, authoring.config);
                 AddComponent(entity, new ResourceSpawnState
                 {
                     LastTimePoint = -1
                 });
-                
                 
             }
         }
@@ -50,8 +34,10 @@ namespace SparFlame.GamePlaySystem.Resource
         public int Value { get => Points; set => Points = value; }
     }
 
+    [Serializable]
     public struct ResourceSpawnSystemConfig : IComponentData
     {
+        public float debugAmountScale;
     }
     
     public struct ResourceSpawnData : IBufferElementData
@@ -67,11 +53,20 @@ namespace SparFlame.GamePlaySystem.Resource
     }
     
     
-    [Serializable]
     public struct ResourceTileTypeSpecialData : IBufferElementData
     {
+        public ResourceType Type;
+        public FixedList128Bytes<TileTypeToSpawnWeight> SpawnableTiles;
+    }
+    [Serializable]
+    public class ResourceTypeSpawnDatabaseItem 
+    {
+        [HideLabel]
+        [TableColumnWidth(100,false)]
+        [VerticalGroup("Resource")]
         public ResourceType type;
-        public FixedList32Bytes<TileTypeToSpawnWeight> spawnableTiles;
+        [TableList]
+        public List<TileTypeToSpawnWeight> spawnableTiles;
     }
     
 

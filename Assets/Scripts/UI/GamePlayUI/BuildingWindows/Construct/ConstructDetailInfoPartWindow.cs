@@ -1,7 +1,7 @@
 ﻿using SparFlame.BootStrapper;
 using Unity.Entities;
 
-namespace SparFlame.UI.GamePlay.UI.GamePlayUI.BuildingWindows.Construct
+namespace SparFlame.UI.GamePlay
 {
     public class ConstructDetailInfoPartWindow : BuildingDetailWindow
     {

@@ -12,7 +12,7 @@ namespace SparFlame.Database
             public override void Bake(ResourceSpawnDatabaseAuthoring databaseAuthoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                var db = DatabaseManager.ResourceSpawnDatabaseSo;
+                var db = DatabaseManager.ResourceWaveSpawnDatabaseSo;
                 var buffer = AddBuffer<ResourceSpawnData>(entity);
                 
                 foreach (var pair in db.items)
@@ -54,7 +54,6 @@ namespace SparFlame.Database
                     {
                         ResourceType = item.type
                     });
-
                 }
             }
         }

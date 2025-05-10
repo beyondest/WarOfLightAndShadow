@@ -1,69 +1,71 @@
 ﻿using System;
-using System.Collections.Generic;
-using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
+using SparFlame.GamePlaySystem.Map;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.RandomSpawn
+namespace SparFlame.GamePlaySystem.RandomSpawn
 {
     public class EnvSpawnSystemAuthoring : MonoBehaviour
     {
-        public List<EnvSpawnTypeTotalAmount> envSpawnTypeTotalAmount;
-        public List<EnvTileTypeSpecialData> envSpawnTypeSpecialDatas;
+        public EnvSpawnSystemConfig config;
         private class EnvSpawnSystemAuthoringBaker : Baker<EnvSpawnSystemAuthoring>
         {
             public override void Bake(EnvSpawnSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                var buffer = AddBuffer<EnvSpawnTypeTotalAmount>(entity);
-                for (var i = 0; i < authoring.envSpawnTypeTotalAmount.Count; i++)
-                {
-                    var data = authoring.envSpawnTypeTotalAmount[i];
-                    if ((int)data.type != i)
-                        throw new ArgumentException(
-                            "Env Spawn Config wrong, env spawn data must follow the enum type sequence");
-                    buffer.Add(new EnvSpawnTypeTotalAmount
-                    {
-                        amount = data.amount,
-                        type = data.type
-                    });
-                }
-
-                var buffer2 = AddBuffer<EnvTileTypeSpecialData>(entity);
-                for (var i = 0; i < authoring.envSpawnTypeSpecialDatas.Count; i++)
-                {
-                    var data = authoring.envSpawnTypeSpecialDatas[i];
-                    if ((int)data.type != i)
-                        throw new ArgumentException(
-                            "Env Spawn Config wrong, env special data must follow the enum type sequence");
-                    buffer2.Add(data);
-                }
+                AddComponent(entity, authoring.config);
             }
         }
     }
 
     public enum EnvType
     {
-        Rock = 0,
-        Grass = 1,
-        Mountains = 2,
-    }
+        // Grass types
+        GrayGrass = 0,
+        BlueGrass = 1,
+        PurpleGrass = 2,
+        YellowGrass = 3,
+        RedGrass = 4,
 
-    public struct EnvSpawnSystemConfig : IComponentData
-    {
+        // Water types
+        BlueWater = 5,
+        Lava = 6,
+
+        // Rock types
+        GrayRock = 7,
+        BlueRock = 8,
+        PurpleRock = 9,
+        YellowRock = 10,
+        RedMagma = 11,
+        GreenMagma = 12,
+
+        // Tree types, only spawn in elder grove
+        Bark = 13,
+        Root = 14,
+        Bloom = 15,
+        Vine = 16,
+
+        // Flame types
+        ObsidianFlame = 17,
+        RiftFlame = 18,
         
+        // Extension
+        StoneWood = 19
     }
-    
 
     [Serializable]
+    public struct EnvSpawnSystemConfig : IComponentData
+    {
+    }
+
+
     public struct EnvSpawnTypeTotalAmount : IBufferElementData
     {
-        public EnvType type;
-        public int amount;
+        public EnvType Type;
+        public int Amount;
     }
-    
+
     public struct EnvSpawnPrefabData : IBufferElementData
     {
         public EnvType Type;
@@ -76,17 +78,14 @@ namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.Rand
     public struct EnvTileTypeSpecialData : IBufferElementData
     {
         public EnvType type;
-        public FixedList32Bytes<TileTypeToSpawnWeight> spawnableTiles;
+        public FixedList128Bytes<TileTypeToSpawnWeight> spawnableTiles;
     }
-    
+
+
     [Serializable]
     public struct TileTypeToSpawnWeight
     {
         public TileType tileType;
         public float weight;
     }
-    
-    
-    
-    
 }

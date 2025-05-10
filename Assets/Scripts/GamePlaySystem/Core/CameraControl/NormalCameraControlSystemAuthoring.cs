@@ -10,6 +10,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
         [Header("General")] 
         public bool edgeMoveEnabled;
 
+        [Tooltip("-tilesize/2 - limit pos bias = min camera rig pos x")]
         public float limitPosBias;
 
         [Header("Horizontal Translation")] 
@@ -69,6 +70,8 @@ namespace SparFlame.GamePlaySystem.CameraControl
                     LimitPosBias = authoring.limitPosBias
                 });
                 AddComponent<MiniMapControlData>(entity);
+                AddComponent<DraggingTag>(entity);
+                SetComponentEnabled<DraggingTag>(entity,false);
             }
         }
     }
@@ -100,10 +103,16 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
     public struct MiniMapControlData : IComponentData
     {
-        public bool IsDragging;
-        public float3 RigPos;
-        public float3 TargetPos;
+        public float3 CameraRigWorldPos;
+        public float Angle;
+        public float3 MiniMapRequestPos;
     }
+
+    public struct DraggingTag : IComponentData,IEnableableComponent
+    {
+        
+    }
+    
 
 
 }

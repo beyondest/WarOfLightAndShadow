@@ -3,13 +3,13 @@ using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Ooc
 {
-    public class NewBakerScript : MonoBehaviour
+    public class OocSystemAuthoring : MonoBehaviour
     {
         public float buildingOocSeconds = 10f;
         public float unitOocSeconds = 10f;
-        class NewBakerScriptBaker : Baker<NewBakerScript>
+        class Baker : Baker<OocSystemAuthoring>
         {
-            public override void Bake(NewBakerScript authoring)
+            public override void Bake(OocSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new OocSystemConfig

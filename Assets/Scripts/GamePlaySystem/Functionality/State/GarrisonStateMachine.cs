@@ -323,6 +323,7 @@ namespace SparFlame.GamePlaySystem.State
                         IsDead = false,
                         SelectedEntity = selfEntity
                     });
+                    ECB.AddComponent<GameplayEntityTag>(index,reduceSelectedUnitRequest);
                 }
 
                 var request = ECB.CreateEntity(index);
@@ -333,6 +334,8 @@ namespace SparFlame.GamePlaySystem.State
                     UnitType = unitAttr.Type,
                     UnitEntity = selfEntity
                 });
+                ECB.AddComponent<GameplayEntityTag>(index,request);
+
                 stateData.TargetEntity = Entity.Null;
             }
         }

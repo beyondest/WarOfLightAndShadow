@@ -8,7 +8,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 {
     public class EnemyUnitAssignSystemAuthoring : MonoBehaviour
     {
-        public float totalCountShortHandRatio = 0.5f;
 
         private class EnemyTeamManageSystemAuthoringBaker : Baker<EnemyUnitAssignSystemAuthoring>
         {
@@ -17,7 +16,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new EnemyUnitAssignSystemConfig
                 {
-                    TotalCountShortHandRatio = authoring.totalCountShortHandRatio
 
                 });
             }
@@ -26,7 +24,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
     public struct EnemyUnitAssignSystemConfig : IComponentData
     {
-        public float TotalCountShortHandRatio;
 
     }
     

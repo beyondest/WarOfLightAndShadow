@@ -19,23 +19,21 @@ namespace SparFlame.GamePlaySystem.Construction
         private ConstructSystemConfig2 _config2;
 
         private bool _initEvent;
+
         // Cache
         // private NativeHashMap<int, NativeList<Entity>> _buildingDatabase; // (int)BuildingType to building entity prefab list
         private InputConstructData _inputData;
-        private ConstructCommandData _commandData;
-        private Entity _commandEntity = Entity.Null;
 
 
         private EntityQuery _gamingTag;
-        private EntityQuery _commandDataEntityQuery;
 
         protected override void OnCreate()
         {
             RequireForUpdate<GamingTag>();
             RequireForUpdate<ConstructSystemConfig2>();
-            _commandDataEntityQuery = SystemAPI.QueryBuilder().WithAllRW<ConstructCommandData>().Build();
+            RequireForUpdate<ConstructCommandData>();
         }
-        
+
 
         protected override void OnStartRunning()
         {
@@ -63,53 +61,38 @@ namespace SparFlame.GamePlaySystem.Construction
             CheckEnterByButton();
             // Not in construct mode, do nothing
             if (!ConstructWindow.Instance.IsOpened()) return;
-            
+
             // Check if exit construct mode or exit ghost show
-            if(CheckExit())return;
-            if(CheckCancel())return;
-            if (_commandDataEntityQuery.IsEmpty) return;
-            // Cache the command data
-            var entities = _commandDataEntityQuery.ToEntityArray(Allocator.Temp);
-            var datas = _commandDataEntityQuery.ToComponentDataArray<ConstructCommandData>(Allocator.Temp);
-            var commandValid = false;
-            for (var i = 0; i < datas.Length; i++)
-            {
-                if (datas[i].Faction != _playerCurrentFaction)
-                    continue;
-                _commandData = datas[i];
-                _commandEntity = entities[i];
-                commandValid = true;
-            }
-            if (!commandValid) return;
+            if (CheckExit()) return;
+            if (CheckCancel()) return;
+            ref var commandData = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
+            if (commandData.CommandType == ConstructCommandType.None) return;
             // Check construct input
-            CheckBuild();
-            CheckRotate();
+            CheckBuild(ref commandData);
+            CheckRotate(ref commandData);
             CheckSnap();
-            EntityManager.SetComponentData(_commandEntity, _commandData);
         }
-
-
 
 
         #region CheckInputMethods
 
-        private void  CheckEnterByButton()
+        private void CheckEnterByButton()
         {
             // Check whether already enter or no enter command
-            if(!_inputData.Enter)return;
-            if(ConstructWindow.Instance.IsOpened())return;
+            if (!_inputData.Enter) return;
+            if (ConstructWindow.Instance.IsOpened()) return;
             ConstructWindow.Instance.Show();
         }
-        
+
         private bool CheckExit()
         {
-            if(!_inputData.Exit)return false;
+            if (!_inputData.Exit) return false;
             ExitGhostShow();
-            if(ConstructWindow.Instance.IsOpened())
+            if (ConstructWindow.Instance.IsOpened())
                 ConstructWindow.Instance.Hide();
             return true;
         }
-        
+
         private bool CheckCancel()
         {
             if (!_inputData.Cancel) return false;
@@ -122,17 +105,18 @@ namespace SparFlame.GamePlaySystem.Construction
                 if (ConstructWindow.Instance.IsOpened())
                     ConstructWindow.Instance.Hide();
             }
+
             return true;
         }
 
-        private void CheckBuild()
+        private void CheckBuild(ref ConstructCommandData data)
         {
             if (!_inputData.Build) return;
-            switch (_commandData.State)
+            switch (data.State)
             {
                 case PlacementStateType.Valid:
-                    _commandData.CommandType = ConstructCommandType.Build;
-                    if (_commandData.IsMovementShow)
+                    data.CommandType = ConstructCommandType.Build;
+                    if (data.IsMovementShow)
                         _inGhostShow = false; // If this is movement show mode, exit after build target
                     break;
                 case PlacementStateType.Overlapping:
@@ -146,10 +130,9 @@ namespace SparFlame.GamePlaySystem.Construction
             }
         }
 
-        private void CheckRotate()
+        private void CheckRotate(ref ConstructCommandData data)
         {
             float angle;
-
             if (_inputData.FineAdjustment)
             {
                 if (_inputData.LeftRotate)
@@ -158,17 +141,18 @@ namespace SparFlame.GamePlaySystem.Construction
                     angle = 15;
                 else
                     angle = 0;
-                _commandData.RotationAngle = angle;
+                data.RotationAngle = angle;
                 return;
             }
 
             if (math.abs(_inputData.Rotate) < 0.1f)
             {
-                _commandData.RotationAngle = 0f;
+                data.RotationAngle = 0f;
                 return;
             }
+
             angle = _inputData.Rotate * _config2.RotateSpeed;
-            _commandData.RotationAngle = angle;
+            data.RotationAngle = angle;
         }
 
         private void CheckSnap()
@@ -179,19 +163,16 @@ namespace SparFlame.GamePlaySystem.Construction
         #endregion
 
 
-
-
         #region GhostShow
 
-        private void GhostShowTargetBuilding(Entity target, bool movementShow = false,
+        private void GhostShowTargetBuilding(Entity target,  bool movementShow = false,
             LocalTransform oriTransform = default)
         {
             // First time enter building mode, need to create command data
+            ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
             if (!_inGhostShow)
             {
-                var entity = EntityManager.CreateEntity();
-                EntityManager.AddComponent<ConstructCommandData>(entity);
-                var data = new ConstructCommandData
+                data = new ConstructCommandData
                 {
                     TargetBuilding = target,
                     CommandType = ConstructCommandType.Start,
@@ -203,25 +184,14 @@ namespace SparFlame.GamePlaySystem.Construction
                     IsMovementShow = movementShow,
                     OriTransform = oriTransform
                 };
-                EntityManager.SetComponentData(entity, data);
                 _inGhostShow = true;
                 return;
             }
-
-            var entities = _commandDataEntityQuery.ToEntityArray(Allocator.Temp);
-            var datas = _commandDataEntityQuery.ToComponentDataArray<ConstructCommandData>(Allocator.Temp);
-            for (var i = 0; i < datas.Length; i++)
-            {
-                if (datas[i].Faction != _playerCurrentFaction)
-                    continue;
-                var data = datas[i];
-                data.TargetBuilding = target;
-                data.CommandType = ConstructCommandType.Start;
-                EntityManager.SetComponentData(entities[i], data);
-            }
+            data.TargetBuilding = target;
+            data.CommandType = ConstructCommandType.Start;
         }
 
-        private void MovementGhostShowTargetBuilding( Entity entity)
+        private void MovementGhostShowTargetBuilding(Entity entity)
         {
             // Hide this entity for now, just move it to invisible place
             var transform = EntityManager.GetComponentData<LocalTransform>(entity);
@@ -234,17 +204,9 @@ namespace SparFlame.GamePlaySystem.Construction
 
         private void ExitGhostShow()
         {
-            var entities = _commandDataEntityQuery.ToEntityArray(Allocator.Temp);
-            var datas = _commandDataEntityQuery.ToComponentDataArray<ConstructCommandData>(Allocator.Temp);
-            for (var i = 0; i < datas.Length; i++)
-            {
-                if (datas[i].Faction != _playerCurrentFaction)
-                    continue;
-                var data = datas[i];
-                data.CommandType = ConstructCommandType.End;
-                EntityManager.SetComponentData(entities[i], data);
-                _inGhostShow = false;
-            }
+            ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
+            data.CommandType = ConstructCommandType.End;
+            _inGhostShow = false;
         }
 
         #endregion

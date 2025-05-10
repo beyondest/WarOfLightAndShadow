@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using Sirenix.OdinInspector;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.Waves
 {
     public class WaveSystemAuthoring : MonoBehaviour
     {
-        [Header("Wave Point Interval Config")]
-        public List<WavePointToIntervalData> pairs;
+        [Header("Wave Point Interval Config"),TableList]
+        public List<WavePointIntervalDataInspector> pairs;
         private class WaveSystemAuthoringBaker : Baker<WaveSystemAuthoring>
         {
             public override void Bake(WaveSystemAuthoring authoring)
@@ -22,19 +21,33 @@ namespace SparFlame.GamePlaySystem.Waves
                 {
                     buffer.Add(new WavePointToIntervalData
                     {
-                        Points = pair.Points,
-                        Value = pair.Value
+                        Points = pair.waveCount,
+                        Value = pair.intervalSeconds
                     });
                 }
+                AddComponent(entity, new GameWaveData
+                {
+                    CurWaveIndex = -1,
+                    IfWaveUpdateThisFrame = false,
+                    NeedUpdateWaveTime = -1
+                });
             }
         }
     }
 
+
     [Serializable]
+    public struct WavePointIntervalDataInspector
+    {
+        public int waveCount;
+        public int intervalSeconds;
+    }
+    
     public struct WavePointToIntervalData : IBufferElementData,IPointsData<int>
     {
+        // Wave count
         public int Points { get; set; }
-        // Value is interval
+        // Value is interval seconds
         public int Value {get;set;}
     }
     

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -8,38 +9,27 @@ namespace SparFlame.GamePlaySystem.Resource
 {
     public class ResourceManageSystemAuthoring : MonoBehaviour
     {
-
+        public List<ResourceType> populationResourceTypes = new();
         private class ResourceSystemAuthoringBaker : Baker<ResourceManageSystemAuthoring>
         {
             public override void Bake(ResourceManageSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
+                var popTypes = new FixedList64Bytes<ResourceType>();
+                foreach (var type in authoring.populationResourceTypes)
+                {
+                    popTypes.Add(type);
+                }
                 AddComponent(entity, new ResourceManageSystemConfig
                 {
-                    
+                    PopulationResourceTypes = popTypes
                 });
             }
         }
     }
 
 
-    public enum ResourceType
-    {
-        // Total
-        Essence = 0, 
-        
-        // Summon
-        LightEnergy = 1, 
-        DarkEnergy = 2,
-        
-        // Building
-        Luminite = 3,
-        Obsidian = 4,
-        
-        // Population
-        Population = 5,
-    }
-
+  
     public enum ResourceRequestType
     {
         Harvest = 0,
@@ -64,9 +54,10 @@ namespace SparFlame.GamePlaySystem.Resource
     
 
 
+    
     public struct ResourceManageSystemConfig : IComponentData
     {
-        
+        public FixedList64Bytes<ResourceType> PopulationResourceTypes;
     }
 
 

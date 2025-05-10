@@ -16,7 +16,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         public EntityCommandBuffer.ParallelWriter ECB;
         [NativeDisableParallelForRestriction] public ComponentLookup<TeamData> TeamDataLookup;
         [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
-        [ReadOnly] public BufferLookup<GarrisonEntity> GarrisonEntityLookup; 
+        [ReadOnly] public BufferLookup<GarrisonEntity> GarrisonEntityLookup;
+        [ReadOnly] public NativeHashMap<int, int> TeamType2MaxSpecialUnitCount;
         private void Execute([ChunkIndexInQuery] int index,
             ref DynamicBuffer<EnemyBaseTeamAvailableData> teamAvailableDatas,
             ref DynamicBuffer<EnemyBaseTeamGeneralData> teamGeneralDatas,
@@ -40,6 +41,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     teamAvailableDatas.RemoveAt(i);
                     ref var teamData = ref TeamDataLookup.GetRefRW(data.TeamEntity).ValueRW;
                     teamData.ShortHanded = false;
+                    teamData.SpecialUnitCount = TeamType2MaxSpecialUnitCount[(int)teamData.TeamType];
                     // teamData.Idle = true;
                     ECB.RemoveComponent<TeamWaitTag>(index, data.TeamEntity);
                 }

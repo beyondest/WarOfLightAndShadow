@@ -51,7 +51,33 @@ namespace SparFlame.Database
                 items.Add(instance);
             }
         }
+        // 要统一设置的目标成本列表（你可以在 Inspector 中直接配置）
+        [BoxGroup("Tools"), LabelText("Target cost"),SerializeField]
+        private List<CostResourceTypeAmountPair> targetCosts;
+
+        [BoxGroup("Tools"), Button("Change all units cost")]
+        private void ApplyCostsToAllUnits()
+        {
+            if (targetCosts == null)
+            {
+                Debug.LogWarning("Target cost is null, please set change to target first！");
+                return;
+            }
+
+            foreach (var item in items)
+            {
+                // 创建一个新列表副本，防止多个引用共享一个列表实例
+                item.costs = new List<CostResourceTypeAmountPair>(targetCosts);
+            }
+
+            // 标记为已更改（以便在编辑器中保存）
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("All unit costs changed");
+        }
+        
+        
         public override List<UnitDataItem> Items => items;
+
     }
 
 

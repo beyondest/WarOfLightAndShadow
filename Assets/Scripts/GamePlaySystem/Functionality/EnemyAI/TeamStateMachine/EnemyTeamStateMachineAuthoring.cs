@@ -9,20 +9,16 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 {
     public class EnemyTeamStateMachineAuthoring : MonoBehaviour
     {
-
+        public EnemyTeamStateMachineConfig config;
         private class EnemyTeamStateMachineAuthoringBaker : Baker<EnemyTeamStateMachineAuthoring>
         {
             public override void Bake(EnemyTeamStateMachineAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new EnemyTeamStateMachineConfig
-                {
-                    
-                });
+                AddComponent(entity, authoring.config);
             }
         }
     }
-
 
     // This tag is controlled by team state machine and should always after
     public struct TeamNeedTargetTag : IComponentData, IEnableableComponent

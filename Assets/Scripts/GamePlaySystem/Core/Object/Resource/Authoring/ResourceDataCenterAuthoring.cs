@@ -16,34 +16,43 @@ namespace SparFlame.GamePlaySystem.Resource
         {
             public override void Bake(ResourceDataCenterAuthoring authoring)
             {
-                if (authoring.initResourceAmount.Count != Enum.GetValues(typeof(ResourceType)).Length)
-                {
-                    throw new ArgumentException("Init resource counts must contain all resource types.");
-                }
+                
                 var entity = GetEntity(TransformUsageFlags.None);
-                var initBuffer = AddBuffer<InitResourceData>(entity);
-                var dataBuffer = AddBuffer<ResourceAvailableData>(entity);
-                var count = 0;
+                var initBuffer = AddBuffer<ResourceTypeToInitAmount>(entity);
+                var dataBuffer = AddBuffer<ResourceTypeToAvailableAmount>(entity);
+                var dict = new Dictionary<ResourceType, int>();
                 foreach (var pair in authoring.initResourceAmount)
                 {
-                    if (count != (int)pair.resourceType)
+                    if (!dict.TryAdd(pair.resourceType, pair.amount))
+                        throw new ArgumentException("Init resource data center has duplicated resource types");
+                }
+
+                foreach (ResourceType type in Enum.GetValues(typeof(ResourceType)))
+                {
+                    if (!dict.ContainsKey(type))
                     {
-                        Debug.LogError("Init error, list must obey the sequence of enum");
-                        return;
+                        initBuffer.Add(new ResourceTypeToInitAmount
+                        {
+                            Amount = 0,
+                            ResourceType = type
+                        });
+                        
                     }
-                    count++;
-                    initBuffer.Add(new InitResourceData
+                    else
                     {
-                        ResourceType = pair.resourceType,
-                        Amount = pair.amount
-                    });
-                    dataBuffer.Add(new ResourceAvailableData
+                        initBuffer.Add(new ResourceTypeToInitAmount
+                        {
+                            ResourceType = type,
+                            Amount = dict[type]
+                        });
+                    }
+                    dataBuffer.Add(new ResourceTypeToAvailableAmount
                     {
-                        ResourceType = pair.resourceType,
+                        ResourceType = type,
                         Amount = 0
                     });
                 }
-                
+              
                 switch (authoring.factionTag)
                 {
                     case FactionTag.Neutral:
@@ -70,16 +79,17 @@ namespace SparFlame.GamePlaySystem.Resource
             public int amount;
         }
     }
+    
     /// <summary>
     /// In sequence of (int)resourceType, can get through index
     /// </summary>
-    public struct ResourceAvailableData : IBufferElementData
+    public struct ResourceTypeToAvailableAmount : IBufferElementData
     {
         public ResourceType ResourceType;
         public int Amount;
     }
 
-    public struct InitResourceData : IBufferElementData
+    public struct ResourceTypeToInitAmount : IBufferElementData
     {
         public ResourceType ResourceType;
         public int Amount;

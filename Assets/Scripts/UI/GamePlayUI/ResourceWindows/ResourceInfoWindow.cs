@@ -10,7 +10,7 @@ namespace SparFlame.UI.GamePlay
         public static ResourceInfoWindow Instance;
         public int occupiedPopulationValue;
         
-        public void UpdateStaticData(DynamicBuffer<ResourceAvailableData> datas)
+        public void UpdateStaticData(DynamicBuffer<ResourceTypeToAvailableAmount> datas)
         {
             var count = datas.Length;
             for (var i = 0; i < Slots.Count; i++)
@@ -29,7 +29,7 @@ namespace SparFlame.UI.GamePlay
             }
         }
         
-        public void UpdateDynamicData(DynamicBuffer<ResourceAvailableData> datas)
+        public void UpdateDynamicData(DynamicBuffer<ResourceTypeToAvailableAmount> datas)
         {
             var count = datas.Length;
             for (var i = 0; i < Slots.Count; i++)
@@ -39,7 +39,7 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var slot = SlotComponents[i];
                     var data = datas[i];
-                    if (data.ResourceType != ResourceType.Population)
+                    if (data.ResourceType != ResourceType.SoulPact)
                     {
                         slot.value.text = data.Amount.ToString();
                     }

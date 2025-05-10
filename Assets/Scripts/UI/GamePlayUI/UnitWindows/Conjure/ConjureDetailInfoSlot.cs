@@ -13,12 +13,10 @@ namespace SparFlame.UI.GamePlay
         {
         }
 
-        public override void LoadResources()
+
+        protected override void Start()
         {
-            base.LoadResources();
-            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
         }
-        
 
         protected override void Update()
         {
@@ -30,6 +28,7 @@ namespace SparFlame.UI.GamePlay
 
         public override void UpdateCostSlots()
         {
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
             var costList = Em.GetBuffer<CostList>(TargetEntity);
             for (var i = 0; i < Slots.Count; i++)
             {

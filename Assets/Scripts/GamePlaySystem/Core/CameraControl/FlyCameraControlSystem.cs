@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.CameraControl
 {
-    [UpdateAfter(typeof(InputCameraFlyModeSystem))]
     public partial class FlyCameraControlSystem : SystemBase
     {
         
@@ -31,7 +30,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
         protected override void OnUpdate()
         {
-            var deltaTime = SystemAPI.Time.DeltaTime;
+            var deltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             var inputData = SystemAPI.GetSingleton<InputCameraFlyData>();
             var inputNormalData = SystemAPI.GetSingleton<InputCameraNormalData>();
             var config = SystemAPI.GetSingleton<FlyCameraControlConfig>();

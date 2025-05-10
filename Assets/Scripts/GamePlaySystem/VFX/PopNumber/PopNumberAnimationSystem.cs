@@ -29,7 +29,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
             var cameraData = SystemAPI.GetSingleton<CameraData>();
             new MoveJob
             {
-                ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
+                ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 ECBWriter = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 LifeTime = config.MovementTime,
                 VerticalMovementOffset = config.VerticalMovementOffset,

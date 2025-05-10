@@ -7,15 +7,15 @@ using Unity.Entities;
 namespace SparFlame.GamePlaySystem.Waves
 {
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(GameBasicControlSystem))]
+    [UpdateAfter(typeof(GameTimeSystem))]
     public partial struct WaveSystem : ISystem
     {
         private EntityQuery _requestQuery;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<GameWaveData>();
-            state.RequireForUpdate<GameStartTime>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<GameWaveSystemConfig>();
             _requestQuery = SystemAPI.QueryBuilder().WithAll<NextWaveRequest>().Build();
@@ -37,7 +37,7 @@ namespace SparFlame.GamePlaySystem.Waves
             
             if (gameWaveData.ValueRW.IfWaveUpdateThisFrame)
                 gameWaveData.ValueRW.IfWaveUpdateThisFrame = false;
-            var curTime = SystemAPI.Time.ElapsedTime - SystemAPI.GetSingleton<GameStartTime>().Value;
+            var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             var curInterval = GeneralUtils.GetPointData<WavePointToIntervalData, int>((float)curTime,
                 SystemAPI.GetSingletonBuffer<WavePointToIntervalData>());
             

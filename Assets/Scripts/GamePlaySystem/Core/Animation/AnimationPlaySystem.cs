@@ -1,4 +1,5 @@
 ﻿using Latios.Kinemation;
+using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
@@ -13,6 +14,7 @@ namespace SparFlame.GamePlaySystem.Animation
 
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AnimationPlayData>();
 
@@ -25,7 +27,7 @@ namespace SparFlame.GamePlaySystem.Animation
             var data = SystemAPI.GetSingletonRW<AnimationPlayData>();
             // var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            var curTime = (float)SystemAPI.Time.ElapsedTime;
+            var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             new ExposedJob
                 {
                     ClipLookup = SystemAPI.GetComponentLookup<SingleClip>(true),
@@ -118,7 +120,7 @@ namespace SparFlame.GamePlaySystem.Animation
 //     [BurstCompile]
 //     public void OnUpdate(ref SystemState state)
 //     {
-//         float t = (float)SystemAPI.Time.ElapsedTime;
+//         float t = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
 //
 //         foreach ((var bones, var singleClip) in Query<DynamicBuffer<BoneReference>, RefRO<SingleClip>>())
 //         {

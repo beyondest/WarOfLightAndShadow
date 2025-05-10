@@ -19,9 +19,9 @@ namespace SparFlame.GamePlaySystem.Interact
             var entity = ecb.CreateEntity(index);
             ecb.AddComponent(index, entity, new HintRequest
             {
-                Type = HintType.ResourceTierNotMatch,
                 Position = transformLookup[request.Interactee].Position
             });
+            ecb.AddComponent<GameplayEntityTag>(index,entity);
         }
 
         public static void GenerateHarvestResourceRequest(in StatChangeRequest request,
@@ -36,6 +36,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 FromFaction = interactorAttr.FactionTag,
                 RequestType = ResourceRequestType.Harvest
             });
+            ecb.AddComponent<GameplayEntityTag>(index, entity);
         }
 
         public static void GeneratePopNumberRequest(ref ComponentLookup<LocalTransform> transformLookup,
@@ -72,6 +73,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 Scale = 1f,
                 Value = request.AbsAmount
             });
+            ecb.AddComponent<GameplayEntityTag>(index, popNumberRequest);
+
         }
 
         public static void GenerateDestroyObstacleRequest(Entity interacteeEntity, bool isResource,
@@ -83,6 +86,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 FromEntity = interacteeEntity,
                 RequestFromFaction = isResource? FactionTag.Neutral : FactionTag.Ally   // Ally or enemy is both ok
             });
+            ecb.AddComponent<GameplayEntityTag>(index, destroyObstacleRequest);
+
         }
         
         
@@ -97,6 +102,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 UnitEntity = interacteeEntity,
                 Id = interacteeAttr.ID
             });
+            ecb.AddComponent<GameplayEntityTag>(index, garrisonUnitDieRequest);
+
         }
 
         public static void GenerateReleasePopulationRequest(Entity interacteeEntity, int index,in GeneralAttr interacteeAttr,
@@ -107,15 +114,16 @@ namespace SparFlame.GamePlaySystem.Interact
             var amount = 0;
             foreach (var cost in costList)
             {
-                if (cost.Type == ResourceType.Population) amount = cost.Amount;
+                if (cost.Type == ResourceType.SoulPact) amount = cost.Amount;
             }
             ecb.AddComponent(index, releasePopulationRequest, new ResourceChangeRequest
             {
                 AbsAmount = math.abs(amount),
                 FromFaction = interacteeAttr.FactionTag,
                 RequestType = ResourceRequestType.Release,
-                Type = ResourceType.Population
+                Type = ResourceType.SoulPact
             });
+            ecb.AddComponent<GameplayEntityTag>(index,releasePopulationRequest);
         }
         
         public static void GenerateChangeOccupiedTagRequest(in GeneralAttr interacteeAttr,  float3 crystalPos,
@@ -128,6 +136,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 CrystalPos = crystalPos,
                 IsDestroyed = true
             });
+            ecb.AddComponent<GameplayEntityTag>(index,request);
+
         }
         
         
@@ -142,6 +152,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 FromFaction = interacteeAttr.FactionTag,
                 RequestType = ResourceRequestType.DwellingDestroyConsume
             });
+            ecb.AddComponent<GameplayEntityTag>(index,request);
+
         }
 
     }

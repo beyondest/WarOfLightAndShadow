@@ -1,7 +1,7 @@
 ﻿using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Spawn;
+using SparFlame.GamePlaySystem.Conjure;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -63,6 +63,7 @@ namespace SparFlame.UI.GamePlay
                 Count = actualConjureCount,
                 UnitPrefab = conjureUnit
             });
+            ecb.AddComponent<GameplayEntityTag>(conjureRequest);
             
             var costList = SystemAPI.GetBuffer<CostList>(conjureUnit);
             foreach (var cost in costList)
@@ -75,6 +76,8 @@ namespace SparFlame.UI.GamePlay
                     Type = cost.Type,
                     RequestType = ResourceRequestType.Consume
                 });
+                ecb.AddComponent<GameplayEntityTag>(conjureRequest);
+
             }
             ecb.Playback(EntityManager);
             ecb.Dispose();

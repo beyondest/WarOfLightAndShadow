@@ -48,7 +48,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             _enemyBasePosLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
             _enemyAssembleLocsLookup.Update(ref state);
-            
+
             new EnemyTeamStateMachineJob
             {
                 BasicStateLookup = _basicStateLookup,
@@ -58,11 +58,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 LocalTransformLookup = _localTransformLookup,
                 TeamTypeToAssembleLocLookup = _enemyAssembleLocsLookup,
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                Config = config
             }.ScheduleParallel();
-
         }
 
- 
 
         [BurstCompile]
         private partial struct EnemyTeamStateMachineJob : IJobEntity
@@ -76,7 +75,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             [ReadOnly] public ComponentLookup<EnemyBasePosData> EnemyBasePosDataLookUp;
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public BufferLookup<EnemyBaseAssembleLocs> TeamTypeToAssembleLocLookup;
-
+            [ReadOnly] public EnemyTeamStateMachineConfig Config;
 
             private void Execute([ChunkIndexInQuery] int index, ref TeamData teamData, ref TeamStateData teamStateData,
                 ref DynamicBuffer<TeamEntityData> teamEntities, Entity selfEntity)
@@ -84,11 +83,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 // Check if base is destroyed
                 if (CheckIfBaseIsDestroyed(index, teamData, teamEntities, selfEntity, out var assembleLocs))
                     return;
-                
-                if(teamEntities.Length == 0)return;
-                
-                // Check if base is under attack and this team should fall back
-                if (CheckShouldGoSaveBase(teamEntities, teamData, ref teamStateData, ECB, index)) return;
+
+                if (teamEntities.Length == 0) return;
+
+                // Check if base is under attack and this team should fall back. If so, new command is not acceptible
+                if (CheckShouldGoSaveBase(teamEntities, teamData, ref teamStateData, ECB, index, selfEntity)) return;
 
                 // Check if all units in team is idle. 
                 if (!CheckIfTeamIsIdle(ref teamStateData, index, teamEntities, selfEntity))
@@ -118,7 +117,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
             private bool CheckShouldGoSaveBase(in DynamicBuffer<TeamEntityData> teamEntities, in TeamData teamData,
                 ref TeamStateData teamStateData,
-                EntityCommandBuffer.ParallelWriter ecb, int index)
+                EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity)
             {
                 if (OocTagLookup.HasComponent(teamData.BelongsToBase) &&
                     teamData.TeamType is AITeamType.Harass or AITeamType.Gather or AITeamType.Defense)
@@ -137,10 +136,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                                 BuildingEntity = InGarrisonLookup[teamEntityData.Unit].BuildingEntity,
                                 MoveOutAll = true
                             });
+                            ecb.AddComponent<GameplayEntityTag>(index,moveOutCommand);
                         }
                         else
                         {
-                            // Not attack state unit fall back
+                            // Not attack state unit go back to defend crystal
                             if (unitState.TargetState != InteractState.Attacking &&
                                 unitState.CurState != InteractState.Attacking)
                             {
@@ -155,6 +155,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         }
                     }
 
+                    ECB.SetComponentEnabled<TeamNeedTargetTag>(index, selfEntity, false);
                     return true;
                 }
 
@@ -167,10 +168,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             {
                 if (!teamData.ShortHanded) return false;
 
-                var targetPosition = assembleLocs[(int)teamData.TeamType].TeamAssembleLocationBias;
+                var bias = assembleLocs[(int)teamData.TeamType].TeamAssembleLocationBias;
+                var targetPos = LocalTransformLookup[teamData.BelongsToBase].TransformPoint(bias);
                 teamStateData.CommandType = EnemyCommandType.March;
                 teamStateData.Focus = true;
-                teamStateData.TargetPosition = targetPosition;
+                teamStateData.TargetPosition = targetPos;
                 teamStateData.TargetEntity = Entity.Null;
                 SetTeamUnitsMoveToTarget(index, teamEntities, teamStateData);
                 ECB.SetComponentEnabled<TeamNeedTargetTag>(index, selfEntity, false);
@@ -224,6 +226,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         };
                         var request = ECB.CreateEntity(index);
                         ECB.AddComponent(index, request, statChangeRequest);
+                        ECB.AddComponent<GameplayEntityTag>(index,request);
                     }
 
                     ECB.DestroyEntity(index, selfEntity);
@@ -238,6 +241,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             {
                 foreach (var data in teamEntities)
                 {
+                    var pos = LocalTransformLookup[data.Unit].Position;
+                    if (stateData.CommandType == EnemyCommandType.March &&
+                        math.distancesq(pos, stateData.TargetPosition) < Config.reachTargetToleranceDisSq)
+                        continue;
                     ECB.SetComponent(index, data.Unit, new EnemyUnitCommandData
                     {
                         CommandType = stateData.CommandType,
@@ -245,7 +252,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         Focus = stateData.Focus,
                         TargetPos = stateData.TargetPosition
                     });
-                    ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, data.Unit,true);
+                    ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, data.Unit, true);
                 }
             }
         }

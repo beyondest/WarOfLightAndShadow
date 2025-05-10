@@ -8,7 +8,6 @@ using SparFlame.GamePlaySystem.CameraControl;
 
 namespace SparFlame.GamePlaySystem.UnitSelection
 {
-    [UpdateAfter(typeof(CameraInfoUpdateSystem))]
     public partial struct CalWorldToScreenSystem : ISystem
     {
         [BurstCompile]

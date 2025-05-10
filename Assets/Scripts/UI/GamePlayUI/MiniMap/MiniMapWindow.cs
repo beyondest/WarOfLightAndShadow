@@ -1,7 +1,8 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-namespace SparFlame.UI.GamePlay.UI.GamePlayUI.MiniMap
+namespace SparFlame.UI.GamePlay
 {
     public class MiniMapWindow : MonoBehaviour
     {
@@ -9,7 +10,7 @@ namespace SparFlame.UI.GamePlay.UI.GamePlayUI.MiniMap
         public RectTransform miniMapSquareRect;
 
         public static MiniMapWindow Instance;
-        public event Action EcsOnSquareDrag ;
+        public event Action OnEcsOnSquareDrag ;
         private void Awake()
         {
             if(Instance == null)
@@ -18,11 +19,43 @@ namespace SparFlame.UI.GamePlay.UI.GamePlayUI.MiniMap
             {
                 Destroy(gameObject);
             }
+            
         }
 
-        public void OnSquareDrag()
+        public void OnSquareDrag(BaseEventData data)
         {
-            EcsOnSquareDrag?.Invoke();
+            var ped = (PointerEventData)data;
+
+            // Step 1: 获取屏幕坐标
+            Vector2 screenPos = ped.position;
+
+            // Step 2: 获取 MiniMap Rect 在屏幕中的位置和大小
+            Vector3[] worldCorners = new Vector3[4];
+            miniMapRect.GetWorldCorners(worldCorners);
+            Vector2 miniMapScreenPos = new Vector2(worldCorners[0].x, worldCorners[0].y); // 左下角
+            Vector2 miniMapSize = new Vector2(
+                worldCorners[2].x - worldCorners[0].x,
+                worldCorners[2].y - worldCorners[0].y);
+
+            // Step 3: 计算鼠标在 minimap 中的相对位置（0~1）
+            Vector2 relativePos = (screenPos - miniMapScreenPos);
+            Vector2 normalized = new Vector2(
+                Mathf.Clamp01(relativePos.x / miniMapSize.x),
+                Mathf.Clamp01(relativePos.y / miniMapSize.y));
+
+            // Step 4: 将归一化坐标映射到 miniMapRect 的 anchoredPosition 区域
+            Vector2 anchoredPos = new Vector2(
+                normalized.x * miniMapRect.rect.width,
+                normalized.y * miniMapRect.rect.height);
+
+            // Step 5: 设置 square 的 anchoredPosition
+            miniMapSquareRect.anchoredPosition = anchoredPos;
+
+            // 通知 ECS 等其他系统
+            OnEcsOnSquareDrag?.Invoke();
         }
+
+        
+
     }
 }

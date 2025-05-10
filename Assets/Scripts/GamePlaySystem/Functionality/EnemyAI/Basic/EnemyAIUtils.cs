@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+
 // ReSharper disable UseIndexFromEndExpression
 
 namespace SparFlame.GamePlaySystem.EnemyAI
@@ -57,7 +58,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             if (map.IsEmpty) return false;
             var pick = rnd.NextFloat(0f, 1f);
             var targetValueType = TargetValueType.Good;
-            foreach (var pair in config.proPairs)
+            foreach (var pair in config.ProPairs)
             {
                 if (pick < pair.prob)
                 {
@@ -65,11 +66,13 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     break;
                 }
             }
+
             if (map.ContainsKey((int)targetValueType))
             {
                 valueType = targetValueType;
                 return true;
             }
+
             var find = 0;
             while (find < config.TargetValueTypeCount)
             {
@@ -78,8 +81,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     valueType = (TargetValueType)(find);
                     return true;
                 }
+
                 find++;
             }
+
             return false;
         }
 
@@ -90,10 +95,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         /// <param name="pairs"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TargetLocPair ChooseTargetAndTryRemove(NativeList<TargetLocPair> pairs)
+        public static T ChooseTargetAndTryRemove<T>(NativeList<T> pairs)
+            where T : unmanaged
         {
             var pair = pairs[pairs.Length - 1];
-            if(pairs.Length > 1)
+            if (pairs.Length > 1)
                 pairs.RemoveAt(pairs.Length - 1);
             return pair;
         }

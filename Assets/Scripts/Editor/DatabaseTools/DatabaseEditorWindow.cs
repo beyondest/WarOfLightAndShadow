@@ -1,7 +1,6 @@
 ﻿using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using SparFlame.Database;
-using SparFlame.Database.DatabaseDefinition;
 using SparFlame.GamePlaySystem.Building;
 using UnityEditor;
 using UnityEngine;
@@ -12,17 +11,31 @@ namespace Editor
     public class DatabaseEditorWindow : OdinEditorWindow
     {
         [Unity.Collections.ReadOnly, LabelText("Building Databases"), ShowInInspector]
-        public List<BuildingDatabaseSo> buildingDatabases = new List<BuildingDatabaseSo>();
-
-        [Unity.Collections.ReadOnly, LabelText("Unit Databases"), ShowInInspector]
-        public List<UnitDatabaseSo> unitDatabases = new List<UnitDatabaseSo>();
+        public List<BuildingDatabaseSo> buildingDatabases = new();
+ 
+         [Unity.Collections.ReadOnly, LabelText("Unit Databases"), ShowInInspector]
+        public List<UnitDatabaseSo> unitDatabases = new();
 
         [Unity.Collections.ReadOnly, LabelText("Resource Databases"), ShowInInspector]
-        public List<ResourceDatabaseSo> resourceDatabases = new List<ResourceDatabaseSo>();
+        public List<ResourceDatabaseSo> resourceDatabases = new();
 
-        [Unity.Collections.ReadOnly, LabelText("Resource Spawn Databases"), ShowInInspector]
-        public List<ResourceSpawnDatabaseSo> resourceSpawnDatabases = new List<ResourceSpawnDatabaseSo>();
+        [Unity.Collections.ReadOnly, LabelText("Resource Wave Spawn Databases"), ShowInInspector]
+        public List<ResourceWaveSpawnDatabaseSo> resourceSpawnDatabases = new();
+        
+        [Unity.Collections.ReadOnly, LabelText("Resource Type To Spawn Tiles Databases"), ShowInInspector]
+        public List<ResourceTypeSpawnDatabaseSo> resourceTypeSpawnDatabases = new();
+        
+ 
+        [Unity.Collections.ReadOnly, LabelText("EnemyAI Databases"), ShowInInspector]
+        public List<EnemyAIDatabaseSo> enemyAIDatabases = new();
 
+        [Unity.Collections.ReadOnly, LabelText("Env Databases"), ShowInInspector]
+        public List<EnvDatabaseSo> envDatabases = new();
+
+        
+        [Unity.Collections.ReadOnly, LabelText("Env Type To Spawn Tiles Databases"), ShowInInspector]
+        public List<EnvTypeSpawnDatabaseSo> envTypeSpawnDatabases = new();
+        
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -30,7 +43,12 @@ namespace Editor
             buildingDatabases = FindAllAssets<BuildingDatabaseSo>("Building Database");
             unitDatabases = FindAllAssets<UnitDatabaseSo>("Unit Database");
             resourceDatabases = FindAllAssets<ResourceDatabaseSo>("Resource Database");
-            resourceSpawnDatabases = FindAllAssets<ResourceSpawnDatabaseSo>("Resource Spawn Database");
+            resourceSpawnDatabases = FindAllAssets<ResourceWaveSpawnDatabaseSo>("Resource Wave Spawn Database");
+            resourceTypeSpawnDatabases = FindAllAssets<ResourceTypeSpawnDatabaseSo>("Resource Type Spawn Database");
+            envDatabases = FindAllAssets<EnvDatabaseSo>("Env Database");
+            envTypeSpawnDatabases = FindAllAssets<EnvTypeSpawnDatabaseSo>("Env Type Spawn Database");
+            enemyAIDatabases = FindAllAssets<EnemyAIDatabaseSo>( " EnemyAI Database ");
+            
         }
 
         private List<T> FindAllAssets<T>(string label) where T : ScriptableObject

@@ -231,8 +231,8 @@ namespace SparFlame.GamePlaySystem.Building
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("Dwelling type")]
         public DwellingType dwellingType;
         
-        [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/1"),HideLabel,ReadOnly]
-        public ResourceType dwellingResourceType = ResourceType.Population;
+        [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/1"),HideLabel]
+        public ResourceType dwellingResourceType = ResourceType.SoulPact;
         [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/2")]
         public int dwellingAmount;
         

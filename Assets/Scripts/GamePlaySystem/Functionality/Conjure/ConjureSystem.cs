@@ -1,4 +1,3 @@
-using SparFlame.GamePlaySystem.EnemyAI;
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Mathematics;
@@ -8,7 +7,7 @@ using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
 using Unity.Collections;
 
-namespace SparFlame.GamePlaySystem.Spawn
+namespace SparFlame.GamePlaySystem.Conjure
 {
     [BurstCompile]
     [UpdateBefore(typeof(TransformSystemGroup))]
@@ -21,6 +20,7 @@ namespace SparFlame.GamePlaySystem.Spawn
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<ConjureSystemConfig>();
@@ -52,7 +52,7 @@ namespace SparFlame.GamePlaySystem.Spawn
             new ConjureJob
             {
                 ECB = ecbP,
-                DeltaTime = SystemAPI.Time.DeltaTime,
+                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 UnitAttrLookup = _unitAttrLookup,
                 EnemyConjuringLookUp = _enemyConjuringDataLookUp
             }.ScheduleParallel();
@@ -140,6 +140,7 @@ namespace SparFlame.GamePlaySystem.Spawn
                 if (data.Counter >= 1)
                 {
                     var unit = ECB.Instantiate(index, data.ConjuringEntity);
+                    ECB.AddComponent<GameplayEntityTag>(index, unit);
                     var transformCopy = transform;
                     var pos = transformCopy.TransformPoint(conjureAttr.ConjurePositionBias);
                     // var pos = transform.Position + conjureAttr.ConjurePositionBias;
@@ -160,7 +161,7 @@ namespace SparFlame.GamePlaySystem.Spawn
                         conjuringData[0] = data;
                     }
                     
-                    // Add Enemy Base Data for ai system
+                    // Add Enemy Base Data for AI system
                     if (EnemyConjuringLookUp.TryGetComponent(entity, out var enemyConjureShrineData))
                     {
                         ECB.AddComponent(index,unit,new EnemyUnitBelongsTo

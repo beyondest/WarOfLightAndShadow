@@ -47,6 +47,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 in LocalTransform localTransform)
             {
                 var sight = ECB.Instantiate(index, request.SightPrefab);
+                ECB.AddComponent<GameplayEntityTag>(index,sight);
+
                 ECB.AddComponent(index, sight, new SightData
                 {
                     BelongsTo = requestEntity

@@ -1,5 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
+using SparFlame.GamePlaySystem.Map;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,19 +14,32 @@ namespace SparFlame.GamePlaySystem.Resource
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct OccupiedTagManageSystem : ISystem
     {
+        private ComponentLookup<CrystalPosVector4Override> _crystalPosRecordLookUp;
+        private ComponentLookup<CrystalPos2Vector4Override> _crystalPosRecordLookUp2;
+        private ComponentLookup<CrystalPos3Vector4Override> _crystalPosRecordLookUp3;
+        private ComponentLookup<CrystalPos4Vector4Override> _crystalPosRecordLookUp4;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<OccupiedManageSystemConfig>();
+            state.RequireForUpdate<CrystalAffectRadiusSq>();
             state.RequireForUpdate<ChangeOccupiedTagRequest>();
             state.RequireForUpdate<GamingTag>();
+            _crystalPosRecordLookUp = state.GetComponentLookup<CrystalPosVector4Override>();
+            _crystalPosRecordLookUp2 = state.GetComponentLookup<CrystalPos2Vector4Override>();
+            _crystalPosRecordLookUp3 = state.GetComponentLookup<CrystalPos3Vector4Override>();
+            _crystalPosRecordLookUp4 = state.GetComponentLookup<CrystalPos4Vector4Override>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var config = SystemAPI.GetSingleton<OccupiedManageSystemConfig>();
+            _crystalPosRecordLookUp4.Update(ref state);
+            _crystalPosRecordLookUp3.Update(ref state);
+            _crystalPosRecordLookUp2.Update(ref state);
+            _crystalPosRecordLookUp.Update(ref state);
+            var config = SystemAPI.GetSingleton<CrystalAffectRadiusSq>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var ecbSingleton = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>();
             foreach (var (request, entity) in SystemAPI.Query<RefRO<ChangeOccupiedTagRequest>>().WithEntityAccess())
@@ -37,7 +50,11 @@ namespace SparFlame.GamePlaySystem.Resource
                     ChangeIntoFaction =
                         request.ValueRO.IsDestroyed ? FactionTag.Neutral : request.ValueRO.CrystalFaction,
                     CrystalPos = request.ValueRO.CrystalPos,
-                    ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
+                    ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                    CrystalPosRecord = _crystalPosRecordLookUp,
+                    CrystalPosRecord2 = _crystalPosRecordLookUp2,
+                    CrystalPosRecord3 = _crystalPosRecordLookUp3,
+                    CrystalPosRecord4 = _crystalPosRecordLookUp4,
                 }.ScheduleParallel(state.Dependency);
                 job.Complete();
                 ecb.DestroyEntity(entity);
@@ -53,18 +70,23 @@ namespace SparFlame.GamePlaySystem.Resource
         {
             [ReadOnly] public FactionTag ChangeIntoFaction;
             [ReadOnly] public float3 CrystalPos;
-            [ReadOnly] public OccupiedManageSystemConfig Config;
+            [ReadOnly] public CrystalAffectRadiusSq Config;
             [ReadOnly] public MapInfo Info;
             [ReadOnly] public float TileSize;
+            [NativeDisableParallelForRestriction] public ComponentLookup<CrystalPosVector4Override> CrystalPosRecord;
+            [NativeDisableParallelForRestriction] public ComponentLookup<CrystalPos2Vector4Override> CrystalPosRecord2;
+            [NativeDisableParallelForRestriction] public ComponentLookup<CrystalPos3Vector4Override> CrystalPosRecord3;
+            [NativeDisableParallelForRestriction] public ComponentLookup<CrystalPos4Vector4Override> CrystalPosRecord4;
+
+
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<LinkedEntityGroup> group,
                 ref OccupiedTag tag,
-                in LocalTransform transform, ref CrystalPosVector4Override pos1,ref CrystalPos2Vector4Override pos2,
-                ref CrystalPos3Vector4Override pos3, ref CrystalPos4Vector4Override pos4,ref CrystalRecordData data)
+                in LocalTransform transform, ref CrystalRecordData data, ref DynamicBuffer<EnvEntities> envEntities)
             {
                 // By limiting the player crystal build position and enemy crystal build position, dark and light crystal impact on same tile will never happen
-                if (!MapUtils.IsTileInCrystalRadius(transform.Position, CrystalPos, Config.CrystalChangeRadiusSq,
+                if (!MapUtils.IsTileInCrystalRadius(transform.Position, CrystalPos, Config.Value,
                         TileSize
                     )) return;
 
@@ -73,15 +95,19 @@ namespace SparFlame.GamePlaySystem.Resource
                 var shouldResetToNeg = ChangeIntoFaction == FactionTag.Neutral;
                 ECB.SetComponent(index, meshChild, new CrystalRadiusFloatOverride
                 {
-                    Value = Config.CrystalChangeRadiusSq
+                    Value = Config.Value
                 });
                 ECB.SetComponent(index, meshChild, new IsLightFloatOverride
                 {
                     Value = isLight
                 });
+                ref var pos1 = ref CrystalPosRecord.GetRefRW(meshChild).ValueRW;
+                ref var pos2 = ref CrystalPosRecord2.GetRefRW(meshChild).ValueRW;
+                ref var pos3 = ref CrystalPosRecord3.GetRefRW(meshChild).ValueRW;
+                ref var pos4 = ref CrystalPosRecord4.GetRefRW(meshChild).ValueRW;
+
                 if (shouldResetToNeg)
                 {
-                    
                     if (math.distancesq(CrystalPos, pos1.Value.xyz) <= 0.5f)
                     {
                         pos1.Value.y = -1f;
@@ -103,8 +129,9 @@ namespace SparFlame.GamePlaySystem.Resource
                         // When this destroyed crystal is not recorded, it should not affect this tile 
                         data.RecordCount++;
                     }
+
                     data.RecordCount--;
-                    if(data.RecordCount == 0)
+                    if (data.RecordCount == 0)
                         tag.Faction = FactionTag.Neutral;
                     return;
                 }
@@ -134,7 +161,14 @@ namespace SparFlame.GamePlaySystem.Resource
 
                 data.RecordCount++;
                 if (data.RecordCount == 1)
+                {
                     tag.Faction = ChangeIntoFaction;
+                    foreach (var envEntity in envEntities)
+                    {
+                        ECB.DestroyEntity(index, envEntity.Value);
+                    }
+                    envEntities.Clear();
+                }
             }
         }
     }

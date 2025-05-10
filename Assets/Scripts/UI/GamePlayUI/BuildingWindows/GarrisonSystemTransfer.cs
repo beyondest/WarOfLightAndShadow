@@ -1,9 +1,7 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CustomInput;
+﻿using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -36,6 +34,7 @@ namespace SparFlame.UI.GamePlay
         private void GarrisonMoveOutAll(Entity buildingEntity)
         {
             var entity = EntityManager.CreateEntity();
+            EntityManager.AddComponent<GameplayEntityTag>(entity);
             EntityManager.AddComponent<GarrisonMoveOutCommand>(entity);
             var command = new GarrisonMoveOutCommand
             {
@@ -49,6 +48,8 @@ namespace SparFlame.UI.GamePlay
         private void GarrisonMoveOutOne(int moveOutUnitsId,Entity buildingEntity)
         {
             var entity = EntityManager.CreateEntity();
+            EntityManager.AddComponent<GameplayEntityTag>(entity);
+
             EntityManager.AddComponent<GarrisonMoveOutCommand>(entity);
             var command = new GarrisonMoveOutCommand
             {

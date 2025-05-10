@@ -1,6 +1,6 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.Conjure;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Spawn;
 using SparFlame.GamePlaySystem.Waves;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,12 +18,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EnemyResourceDataTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameWaveData>();
-            state.RequireForUpdate<GameStartTime>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<EnemySpawnSystemConfig>();
             _costListLookup = state.GetBufferLookup<CostList>(true);
@@ -34,16 +34,17 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         {
             if(!_wavePoints.IsCreated)
                 Initialize();
+            var config = SystemAPI.GetSingleton<EnemySpawnSystemConfig>();
             // Only when enemy population not exceeds, will conjure unit
             var curPlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             var enemyResourceDataCenter = curPlayerFaction == FactionTag.Ally ? SystemAPI.GetSingletonEntity<EnemyResourceDataTag>() :
                     SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
-            var enemyResourceData = SystemAPI.GetBuffer<ResourceAvailableData>(enemyResourceDataCenter);
-            if (enemyResourceData[(int)ResourceType.Population].Amount> 0)
+            var enemyResourceData = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyResourceDataCenter);
+            if (enemyResourceData[(int)ResourceType.SoulPact].Amount> 0)
             {
                 _costListLookup.Update(ref state);
                 var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-                var curTime = SystemAPI.Time.ElapsedTime - SystemAPI.GetSingleton<GameStartTime>().Value;
+                var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
                 var curWave = SystemAPI.GetSingleton<GameWaveData>().CurWaveIndex;
                 var curPoint = GeneralUtils.GetPoint(curWave, _wavePoints);
                 var curPointType2Interval = _wavePoint2Type2Interval[curPoint];
@@ -54,7 +55,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     CurTime = (float)curTime,
                     Type2Interval = curPointType2Interval,
                     Type2Entries = curPointType2Entries,
-                    CostListLookup = _costListLookup
+                    CostListLookup = _costListLookup,
+                    Config = config
                 }.ScheduleParallel();
             }
         }
@@ -63,6 +65,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         private partial struct EnemyUnitSpawnJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
+            [ReadOnly] public EnemySpawnSystemConfig Config;
             [ReadOnly] public float CurTime;
             [ReadOnly] public NativeHashMap<int, int> Type2Interval;
             [ReadOnly] public NativeParallelMultiHashMap<int, ProbabilityPrefabEntry> Type2Entries;
@@ -72,11 +75,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             {
                 if (CurTime < data.ConjureTime) return;
                 var interval = Type2Interval[(int)attr.ConjuringType];
-                data.ConjureTime = CurTime + interval;
+                data.ConjureTime = CurTime + interval/Config.GlobalConjureScale;
                 var entry = GeneralUtils.RandomChoosePrefab(ref data.Rnd, Type2Entries,
                     (int)attr.ConjuringType);
                 var conjureCount = data.Rnd.NextInt((int)entry.AmountRange.lower, (int)entry.AmountRange.upper);
                 var conjureRequest = ECB.CreateEntity(index);
+                ECB.AddComponent<GameplayEntityTag>(index, conjureRequest);
                 ECB.AddComponent(index, conjureRequest, new ConjureRequest
                 {
                     UnitPrefab = entry.Prefab,
@@ -94,6 +98,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         Type = cost.Type,
                         RequestType = ResourceRequestType.Consume
                     });
+                    ECB.AddComponent<GameplayEntityTag>(index, selfEntity);
+
                 }
             }
         }

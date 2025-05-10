@@ -1,23 +1,24 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
-namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
+namespace SparFlame.GamePlaySystem.Map
 {
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(GameBasicControlSystem))]
+    [UpdateAfter(typeof(GameTimeSystem))]
     public partial struct MapInitializeSystem : ISystem
     {
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<TileMaterialConfig>();
             state.RequireForUpdate<MapInitInfo>();
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
@@ -45,7 +46,7 @@ namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
                     MapLocTypeToTileTypes = buffer,
                     SeedBias = SystemAPI.GetSingletonRW<GeneralRandom>().ValueRW.Rnd.NextInt(),
                     TileMaterialConfig = SystemAPI.GetSingleton<TileMaterialConfig>(),
-                    ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
+                    ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                     TileTypeToSubTexProbs = SystemAPI.GetSingletonBuffer<TileTypeToSubTexProbs>()
                 }.ScheduleParallel();
             }
@@ -71,7 +72,7 @@ namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
                 var seed = GeneralUtils.GetSeedByIndexTimeBias(index, SeedBias, ElapsedTime);
                 var rnd = new Random(seed);
                 // Calculate material override properties
-                var tiling = rnd.NextFloat(TileMaterialConfig.tilingRange.lower, TileMaterialConfig.tilingRange.upper);
+                var tiling = 0f;
                 var offset = rnd.NextFloat2(TileMaterialConfig.offsetRange.lower, TileMaterialConfig.offsetRange.upper);
                 var rotation = rnd.NextFloat(TileMaterialConfig.rotationRange.lower,
                     TileMaterialConfig.rotationRange.upper);
@@ -89,7 +90,7 @@ namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
                         MapInfoData.InnerSquareSize, MapInfoData.CenterRadius, MapInfoData.TransitionLength,
                         out var locTypeA, out var locTypeB, out var weightA, out _))
                 {
-                    // If this is not in transition area, randomly choose a sub texture to use as noise
+                    // If this is not in a transition area, randomly choose a sub texture to use as noise
                     var locType = MapUtils.GetMapLocTypeByPos(transform.Position, MapInfoData.WorldCenter,
                         MapInfoData.OuterSquareSize, MapInfoData.InnerSquareSize, MapInfoData.CenterRadius);
                     var mapCenterType = MapLocTypeToTileTypes[(int)locType].Type;
@@ -99,10 +100,10 @@ namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
                     var subTexIndex = 0;
                     var prob = 0f;
                     for (var i = 0;
-                         i < TileTypeToSubTexProbs[(int)tileTypeA].subTexProbs.Length;
+                         i < TileTypeToSubTexProbs[(int)tileTypeA].SubTexProbs.Length;
                          i++) // Last one is no sub tex
                     {
-                        prob += TileTypeToSubTexProbs[(int)tileTypeA].subTexProbs[i];
+                        prob += TileTypeToSubTexProbs[(int)tileTypeA].SubTexProbs[i];
                         if (pick < prob)
                         {
                             subTexIndex = i + 1; // 0 is main tex, so add 1
@@ -121,16 +122,20 @@ namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
                 }
                 else
                 {
-                    // This is transition area
+                    // This is a transition area
                     tileTypeA = MapLocTypeToTileTypes[(int)locTypeA].Type;
                     tileTypeB = MapLocTypeToTileTypes[(int)locTypeB].Type;
                     // Only the main texture is A texture, B is used to add noise
-                    aIdx = weightA > 0.5f ? (int)data.TypeA : (int)data.TypeB ;
-                    bIdx = weightA > 0.5f ? (int)data.TypeB : (int)data.TypeA ;
-                    noiseWeight = TileMaterialConfig.transitionNoiseWeightScale *(1 - weightA);
+                    aIdx = weightA > 0.5f ? (int)tileTypeA : (int)tileTypeB ;
+                    bIdx = weightA > 0.5f ? (int)tileTypeB : (int)tileTypeA; ;
+                    aIdx *= TileMaterialConfig.indexGrowStepInTexArray;
+                    bIdx *= TileMaterialConfig.indexGrowStepInTexArray;
+                    var w = weightA > 0.5 ?1- weightA :weightA; 
+                    noiseWeight = TileMaterialConfig.transitionNoiseWeightScale *w;
                     noiseScale = rnd.NextFloat(TileMaterialConfig.transitionNoiseScaleRange.lower, TileMaterialConfig.transitionNoiseScaleRange.upper);
                 }
-
+                var tilingRange = TileTypeToSubTexProbs[(int)tileTypeA].TileTilingRange;
+                tiling = rnd.NextFloat(tilingRange.lower, tilingRange.upper);
 
                 ECB.SetComponent(index, model, new TilingVector4Override
                 {

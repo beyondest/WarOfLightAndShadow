@@ -10,15 +10,18 @@ using Unity.Transforms;
 namespace SparFlame.GamePlaySystem.Fow
 {
     [BurstCompile]
-    [UpdateAfter(typeof(CalWorldToScreenSystem))]
     public partial struct CalAgentInfoSystem : ISystem
     {
+        private ComponentLookup<ContributeSightTag> _contributeSightTagLookup;
+        private ComponentLookup<DisappearInFowTag> _disappearInFowTagLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<FowTag>();
             state.RequireForUpdate<FowConfig>();
             state.RequireForUpdate<GamingTag>();
+            _contributeSightTagLookup = state.GetComponentLookup<ContributeSightTag>(true);
+            _disappearInFowTagLookup = state.GetComponentLookup<DisappearInFowTag>(true);
         }
 
         [BurstCompile]
@@ -28,11 +31,15 @@ namespace SparFlame.GamePlaySystem.Fow
             var fowTag = SystemAPI.GetSingletonEntity<FowTag>();
             var transform = SystemAPI.GetComponent<LocalTransform>(fowTag);
             var localToWorld = SystemAPI.GetComponent<LocalToWorld>(fowTag);
+            _contributeSightTagLookup.Update(ref state);
+            _disappearInFowTagLookup.Update(ref state);
             new CalAgentInfoJob2
             {
                 FogCenter = transform,
                 FogToWorld = localToWorld,
-                FowTextureSize = config.FowTextureSize
+                FowTextureSize = config.FowTextureSize,
+                ContributeSightLookup = _contributeSightTagLookup,
+                DisappearInFowLookup = _disappearInFowTagLookup
             }.ScheduleParallel();
 
         }
@@ -46,21 +53,23 @@ namespace SparFlame.GamePlaySystem.Fow
             [ReadOnly] public LocalTransform FogCenter;
             [ReadOnly] public LocalToWorld FogToWorld;
             [ReadOnly] public float FowTextureSize;
+            [ReadOnly] public ComponentLookup<ContributeSightTag> ContributeSightLookup;
+            [ReadOnly] public ComponentLookup<DisappearInFowTag> DisappearInFowLookup;
         
-            private void Execute(ref FowAgentData agent, ref LocalTransform agentTransform)
+            private void Execute(ref FowAgentData agent, ref LocalTransform agentTransform, Entity selfEntity)
             {
                 var worldPosition = agentTransform.Position;
         
                 var worldToLocal = math.inverse(FogToWorld.Value);
                 var localPos = math.transform(worldToLocal, worldPosition); // same as InverseTransformPoint
         
-                if (agent.DisappearInFow)
+                if (DisappearInFowLookup.HasComponent(selfEntity))
                 {
                     var uv = new float2(localPos.x, localPos.z) * FowTextureSize;
                     agent.UV = new float4(uv.x, uv.y, 0, 0);
                 }
         
-                if (agent.ContributeToFOV)
+                if (ContributeSightLookup.HasComponent(selfEntity))
                 {
                     var relativePos = localPos * FogCenter.Scale; 
                     agent.RelativePosition = relativePos;

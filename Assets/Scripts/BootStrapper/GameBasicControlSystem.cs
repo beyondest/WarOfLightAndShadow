@@ -11,6 +11,7 @@ namespace SparFlame.BootStrapper
     /// This system runs the first of all custom systems
     /// </summary>
     [UpdateInGroup(typeof(InitializationSystemGroup))]
+    [UpdateBefore(typeof(GameTimeSystem))]
     public partial class GameBasicControlSystem : SystemBase
     {
         private bool _initialized;
@@ -19,6 +20,7 @@ namespace SparFlame.BootStrapper
         private EntityQuery _playerCrystalQuery;
         private GameBasicConfig _gameBasicConfig;
         private CustomInputActions _customInputActions;
+        private bool _isPlayerDetected;
 
         protected override void OnCreate()
         {
@@ -27,16 +29,27 @@ namespace SparFlame.BootStrapper
             {
                 Rnd = new Random(seed)
             });
-            RequireForUpdate<GameBasicConfig>();
             _playerCrystalQuery = SystemAPI.QueryBuilder().WithAll<CoreCrystalTag>().WithAll<PlayerTag>().Build();
+            EntityManager.CreateSingleton(new GameStatusData
+            {
+                Value = GameStatus.NotStarted
+            });
+            EntityManager.CreateSingleton(new GameTimeData
+            {
+                DeltaTime = 0f,
+                ElapsedTime = 0f
+            });
+            EntityManager.CreateSingleton(new GameTimeScale
+            {
+                Value = 1f
+            });
         }
 
         protected override void OnStartRunning()
         {
-            if (!_initialized )
+            if (!_initialized)
             {
                 _customInputActions = InputListener.Instance.GetCustomInputActions();
-                _gameBasicConfig = SystemAPI.GetSingleton<GameBasicConfig>();
                 Application.targetFrameRate = _gameBasicConfig.targetFrameRate;
                 _initialized = true;
                 GameController.Instance.OnPause += () => { PauseGame(true); };
@@ -56,28 +69,40 @@ namespace SparFlame.BootStrapper
                 gameBasicState.ValueRW.Value = GameStatus.Init;
                 return;
             }
+
             if (gameBasicState.ValueRW.Value == GameStatus.NotStarted) return;
-            
+
             if (gameBasicState.ValueRW.Value == GameStatus.Init) // This is the time all systems init complete
             {
+                _isPlayerDetected = false;
                 gameBasicState.ValueRW.Value = GameStatus.Gaming;
-                EntityManager.CreateSingleton(new GamingTag());
+                var gaming = EntityManager.CreateEntity();
+                EntityManager.AddComponent<GamingTag>(gaming);
                 InputListener.Instance.EnableNecessaryMaps();
                 GameController.Instance.GameStart();
             }
+
+            _gameBasicConfig = SystemAPI.GetSingleton<GameBasicConfig>();
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
-            if (!_gameBasicConfig.enablePause)
+
+            if (!_isPlayerDetected)
+            {
+                if (!_playerCrystalQuery.IsEmpty)
+                    _isPlayerDetected = true;
+                else
+                {
+                    return;
+                }
+            }
+
+            if (_gameBasicConfig.enablePause)
                 CheckPlayerPauseAction();
-            if (!_playerCrystalQuery.IsEmpty)
+            if (_playerCrystalQuery.IsEmpty)
                 GameController.Instance.GameOver(~playerFaction);
         }
 
-        private void BeginSystemInit(float startGameTime)
+        private void BeginSystemInit()
         {
-            EntityManager.CreateSingleton(new GameStartTime
-            {
-                Value = startGameTime
-            });
             _enterSystemInitState = true;
         }
 
@@ -97,11 +122,6 @@ namespace SparFlame.BootStrapper
                 Value = GameStatus.NotStarted
             });
 
-            if (SystemAPI.HasSingleton<GameStartTime>())
-            {
-                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<GameStartTime>());
-            }
-
             if (SystemAPI.HasSingleton<PlayerFactionData>())
             {
                 EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerFactionData>());
@@ -111,7 +131,9 @@ namespace SparFlame.BootStrapper
             {
                 EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<GamingTag>());
             }
-            
+
+            var clearRequest = EntityManager.CreateEntity();
+            EntityManager.AddComponent<ClearGameplayEntities>(clearRequest);
         }
 
         private void PauseGame(bool isPausing)
@@ -127,7 +149,6 @@ namespace SparFlame.BootStrapper
                 });
                 EntityManager.DestroyEntity(gamingTag);
                 _isPaused = true;
-                
             }
             else
             {

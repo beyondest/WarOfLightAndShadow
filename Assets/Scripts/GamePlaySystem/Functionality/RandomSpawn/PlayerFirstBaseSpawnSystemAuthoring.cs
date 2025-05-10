@@ -3,7 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.RandomSpawn
+namespace SparFlame.GamePlaySystem.RandomSpawn
 {
     public class PlayerFirstBaseSpawnSystemAuthoring : MonoBehaviour
     {
@@ -11,12 +11,13 @@ namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.Rand
         public GameObject darkCrystalPrefab;
         [AssetsOnly]
         public GameObject lightCrystalPrefab;
+
         private class Baker : Baker<PlayerFirstBaseSpawnSystemAuthoring>
         {
             public override void Bake(PlayerFirstBaseSpawnSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new PlayerFirstBaseEntity
+                AddComponent(entity, new PlayerFirstBaseSpawnConfig
                 {
                     DarkPrefab = GetEntity(authoring.darkCrystalPrefab, TransformUsageFlags.Dynamic),
                     LightPrefab = GetEntity(authoring.lightCrystalPrefab, TransformUsageFlags.Dynamic),
@@ -27,7 +28,7 @@ namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.Rand
 
  
 
-    public struct PlayerFirstBaseEntity : IComponentData
+    public struct PlayerFirstBaseSpawnConfig : IComponentData
     {
         public Entity LightPrefab;
         public Entity DarkPrefab;

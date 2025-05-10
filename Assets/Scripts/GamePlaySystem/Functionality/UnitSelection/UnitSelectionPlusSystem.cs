@@ -10,7 +10,6 @@ using Unity.Burst;
 namespace SparFlame.GamePlaySystem.UnitSelection
 {
     [BurstCompile]
-    [UpdateAfter(typeof(CalWorldToScreenSystem))]
     public partial struct UnitSelectionPlusSystem : ISystem
     {
         private BufferLookup<LinkedEntityGroup> _linkedGroupLookup;

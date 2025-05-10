@@ -10,6 +10,7 @@ namespace SparFlame.GamePlaySystem.Resource
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<RegeneratingSystemConfig>();
@@ -24,7 +25,7 @@ namespace SparFlame.GamePlaySystem.Resource
             {
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Config = config,
-                DeltaTime = SystemAPI.Time.DeltaTime,
+                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
             }.ScheduleParallel();
         }
         

@@ -1,7 +1,6 @@
 ﻿using System;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
-using SparFlame.UI.GamePlay.UI.GamePlayUI.BuildingWindows.Construct;
 using SparFlame.UI.General;
 using SparFlame.Utils;
 using TMPro;

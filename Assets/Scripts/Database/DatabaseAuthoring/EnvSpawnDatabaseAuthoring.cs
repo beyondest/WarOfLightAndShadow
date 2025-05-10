@@ -1,4 +1,4 @@
-﻿using SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.RandomSpawn;
+﻿using SparFlame.GamePlaySystem.RandomSpawn;
 using Unity.Entities;
 using UnityEngine;
 
@@ -12,7 +12,7 @@ namespace SparFlame.Database
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 var buffer = AddBuffer<EnvSpawnPrefabData>(entity);
-                var items = DatabaseManager.EnvSpawnDatabaseSo.items;
+                var items = DatabaseManager.EnvDatabaseSo.items;
                 foreach (var item in items)
                 {
                     buffer.Add(new EnvSpawnPrefabData

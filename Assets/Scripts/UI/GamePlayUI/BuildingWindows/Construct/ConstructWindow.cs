@@ -33,6 +33,16 @@ namespace SparFlame.UI.GamePlay
         public Action<Entity> EcsGhostShowTargetByTypeIndex;
         public Action EcsExitGhostShow;
 
+        public void EnterConstruct()
+        {
+            Show();
+        }
+        public void ExitConstruct()
+        {
+            Hide();
+            EcsExitGhostShow?.Invoke();
+        }
+
         #region ButtonMethods
 
         public override void OnClickSlot(int slotIndex)
@@ -44,18 +54,8 @@ namespace SparFlame.UI.GamePlay
             InfoWindowController.Instance.UpdateCloseUpTarget(entity);
         }
 
-        public void OnClickConstructEnter()
-        {
-            // TODO : Hide Construct enter when enter fly mode or any other modes that cannot construct
-            Show();
-        }
 
-        public void OnClickConstructExit()
-        {
-            Hide();
-            EcsExitGhostShow?.Invoke();
-        }
-
+  
         public void OnClickBuildingTypeButton(int type)
         {
             _currentGeneralType = (BuildingType)type;
@@ -143,15 +143,6 @@ namespace SparFlame.UI.GamePlay
             base.LoadResources();
             constructExitButton.SetActive(false);
             constructEnterButton.SetActive(true);
-            constructEnterButton.GetComponent<Button>().onClick.AddListener(OnClickConstructEnter);
-            constructExitButton.GetComponent<Button>().onClick.AddListener(OnClickConstructExit);
-        }
-
-        public override void UnloadResources()
-        {
-            base.UnloadResources();
-            constructEnterButton.GetComponent<Button>().onClick.RemoveAllListeners();
-            constructExitButton.GetComponent<Button>().onClick.RemoveAllListeners();
         }
 
         protected override void Start()

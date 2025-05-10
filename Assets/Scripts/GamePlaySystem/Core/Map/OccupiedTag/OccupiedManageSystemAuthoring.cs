@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Resource
@@ -10,21 +9,15 @@ namespace SparFlame.GamePlaySystem.Resource
     public class OccupiedManageSystemAuthoring : MonoBehaviour
     {
 
-        public GameObject allyOccupiedRef;
-        public GameObject enemyOccupiedRef;
-        public GameObject neutralOccupiedRef;
-        public float crystalChangeRadius;
+        public float crystalAffectRadius;
         private class OccupiedManageSystemAuthoringBaker : Baker<OccupiedManageSystemAuthoring>
         {
             public override void Bake(OccupiedManageSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new OccupiedManageSystemConfig
+                AddComponent(entity, new CrystalAffectRadiusSq
                 {
-                    CrystalChangeRadiusSq = authoring.crystalChangeRadius * authoring.crystalChangeRadius,
-                    AllyOccupiedRef = GetEntity(authoring.allyOccupiedRef, TransformUsageFlags.None),
-                    EnemyOccupiedRef = GetEntity(authoring.enemyOccupiedRef, TransformUsageFlags.None),
-                    NeutralOccupiedRef = GetEntity(authoring.neutralOccupiedRef, TransformUsageFlags.None),
+                    Value = authoring.crystalAffectRadius * authoring.crystalAffectRadius,
                 });
             }
         }
@@ -33,11 +26,8 @@ namespace SparFlame.GamePlaySystem.Resource
 
     
     
-    public struct OccupiedManageSystemConfig : IComponentData
+    public struct CrystalAffectRadiusSq : IComponentData
     {
-        public float CrystalChangeRadiusSq;
-        public Entity AllyOccupiedRef;
-        public Entity EnemyOccupiedRef;
-        public Entity NeutralOccupiedRef;
+        public float Value;
     }
 }

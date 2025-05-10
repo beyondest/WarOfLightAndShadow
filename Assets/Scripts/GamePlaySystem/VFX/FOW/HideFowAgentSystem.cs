@@ -2,7 +2,6 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Entities.Graphics;
 using Unity.Rendering;
 
 namespace SparFlame.GamePlaySystem.Fow
@@ -11,6 +10,7 @@ namespace SparFlame.GamePlaySystem.Fow
     {
         private BufferLookup<LinkedEntityGroup> _childrenLookup;
         private ComponentLookup<MaterialMeshInfo> _meshLookup;
+        private ComponentLookup<InverseDisappearTag>  _inverseDisappearTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -18,8 +18,10 @@ namespace SparFlame.GamePlaySystem.Fow
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<HideFowAgentRequest>();
+            state.RequireForUpdate<FowConfig>();
             _childrenLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
             _meshLookup = state.GetComponentLookup<MaterialMeshInfo>(true);
+            _inverseDisappearTagLookup = state.GetComponentLookup<InverseDisappearTag>(true);
         }
 
         [BurstCompile]
@@ -27,12 +29,14 @@ namespace SparFlame.GamePlaySystem.Fow
         {
             _childrenLookup.Update(ref state);
             _meshLookup.Update(ref state);
+            _inverseDisappearTagLookup.Update(ref state);
             new HideOrShowFowAgentJob
             {
                 ChildrenLookup = _childrenLookup,
                 MeshLookup = _meshLookup,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                InverseDisappearTagLookup = _inverseDisappearTagLookup
             }.ScheduleParallel();
         }
 
@@ -43,12 +47,18 @@ namespace SparFlame.GamePlaySystem.Fow
         {
             [ReadOnly] public BufferLookup<LinkedEntityGroup> ChildrenLookup;
             [ReadOnly] public ComponentLookup<MaterialMeshInfo> MeshLookup;
+            [ReadOnly] public ComponentLookup<InverseDisappearTag> InverseDisappearTagLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in HideFowAgentRequest request)
             {
                 ECB.RemoveComponent<HideFowAgentRequest>(index, selfEntity);
-                HideOrShowRecursively(selfEntity, request.Hide, index);
+                var hide = request.Hide;
+                if (InverseDisappearTagLookup.HasComponent(selfEntity))
+                {
+                    hide = !hide;
+                }
+                HideOrShowRecursively(selfEntity, hide, index);
             }
 
             private void HideOrShowRecursively(Entity entity, bool hide, int index)

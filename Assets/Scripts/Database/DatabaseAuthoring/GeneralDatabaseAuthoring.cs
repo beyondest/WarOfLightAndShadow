@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.GamePlaySystem.Building;
+﻿using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
 using Unity.Entities;

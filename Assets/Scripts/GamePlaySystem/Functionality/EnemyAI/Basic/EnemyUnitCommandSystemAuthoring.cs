@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using System;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Units;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -8,15 +9,13 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 {
     public class EnemyUnitCommandSystemAuthoring : MonoBehaviour
     {
+        public EnemyUnitCommandSystemConfig config;
         private class EnemyAISystemAuthoringBaker : Baker<EnemyUnitCommandSystemAuthoring>
         {
             public override void Bake(EnemyUnitCommandSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new EnemyUnitCommandSystemConfig
-                {
-                    
-                });
+                AddComponent(entity, authoring.config);
             }
         }
     }
@@ -29,9 +28,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         Attack = 3
     }
     
+    [Serializable]
     public struct EnemyUnitCommandSystemConfig : IComponentData
     {
-        
+        public float aiMarchExtent;
     }
 
     public struct EnemyUnitCommandData : IComponentData

@@ -16,7 +16,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
+            _transformLookup = state.GetComponentLookup<LocalTransform>();
         }
 
         [BurstCompile]
@@ -47,7 +47,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         public partial struct GenerateSurroundingMonitorJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public FactionTag PlayerFaction;
             [ReadOnly] public MonitorPrefabData MonitorPrefabData;
 
@@ -61,6 +61,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     ? MonitorPrefabData.LightMonitorPrefab
                     : MonitorPrefabData.DarkMonitorPrefab;
                 var monitor = ECB.Instantiate(index,prefab);
+                ECB.AddComponent<GameplayEntityTag>(index,monitor);
                 ECB.AddComponent(index, monitor, new MonitorData
                 {
                     BelongsTo = request.TargetToMonitor

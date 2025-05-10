@@ -1,4 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.Waves;
 using Unity.Burst;
 using Unity.Collections;
@@ -15,11 +16,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
         private NativeList<int> _wavePoints;
 
-
-        private BufferLookup<EnemyBaseTeamAvailableData> _enemyBaseTeamAvailableData;
-        private BufferLookup<EnemyBaseTeamGeneralData> _enemyBaseTeamGeneralData;
-        private BufferLookup<TeamEntityData> _teamEntityData;
-        private ComponentLookup<TeamData> _teamData;
+        //
+        // private BufferLookup<EnemyBaseTeamAvailableData> _enemyBaseTeamAvailableData;
+        // private BufferLookup<EnemyBaseTeamGeneralData> _enemyBaseTeamGeneralData;
+        private EntityQuery _needAssignTeamUnits;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -27,10 +27,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             state.RequireForUpdate<EnemyUnitAssignSystemConfig>();
             state.RequireForUpdate<GameWaveData>();
             state.RequireForUpdate<GamingTag>();
-            _enemyBaseTeamAvailableData = state.GetBufferLookup<EnemyBaseTeamAvailableData>();
-            _enemyBaseTeamGeneralData = state.GetBufferLookup<EnemyBaseTeamGeneralData>();
-            _teamEntityData = state.GetBufferLookup<TeamEntityData>();
-            _teamData = state.GetComponentLookup<TeamData>();
+            // _enemyBaseTeamAvailableData = state.GetBufferLookup<EnemyBaseTeamAvailableData>();
+            // _enemyBaseTeamGeneralData = state.GetBufferLookup<EnemyBaseTeamGeneralData>();
+            _needAssignTeamUnits = SystemAPI.QueryBuilder().WithAll<AITag>().WithNone<InTeamTag>().
+                WithAll<UnitAttr>().WithAllRW<EnemyUnitBelongsTo>()
+                .Build();
         }
 
         [BurstCompile]
@@ -38,28 +39,164 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         {
             if (!_wavePoints.IsCreated)
                 Initialize();
+            if(_needAssignTeamUnits.IsEmpty)    return;
             var curWavePoint = GeneralUtils.GetPoint(SystemAPI.GetSingleton<GameWaveData>().CurWaveIndex, _wavePoints);
 
-            _enemyBaseTeamAvailableData.Update(ref state);
-            _enemyBaseTeamGeneralData.Update(ref state);
-            _teamEntityData.Update(ref state);
-            _teamData.Update(ref state);
 
-            var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            // This job cannot parallel !!!
-            new EnemyUnitAssignJob
+            var unitAttrs = _needAssignTeamUnits.ToComponentDataArray<UnitAttr>(Allocator.Temp);
+            var unitEntities = _needAssignTeamUnits.ToEntityArray(Allocator.Temp);
+            var bases = _needAssignTeamUnits.ToComponentDataArray<EnemyUnitBelongsTo>(Allocator.Temp);
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+ 
+            for (int i = 0; i < unitEntities.Length; i++)
             {
-                ECB = ecb,
-                BaseAvailableTeamDataLookup = _enemyBaseTeamAvailableData,
-                BaseTeamDataLookup = _enemyBaseTeamGeneralData,
-                TeamEntityLookup = _teamEntityData,
-                TeamDataLookup = _teamData,
-                TeamType2SpecialData = _wavePoint2TeamType2MemberCountEntriesLimit[curWavePoint],
-                Strategy = _wavePoint2Strategy[curWavePoint],
-            }.Schedule();
+                var entity = unitEntities[i];
+                var unitAttr = unitAttrs[i];
+                var belongsTo = bases[i].Base;
+                AssignUnitToTeamAccordingToStrategy(ref state, unitAttr,entity,belongsTo,
+                    _wavePoint2Strategy[curWavePoint],_wavePoint2TeamType2MemberCountEntriesLimit[curWavePoint],
+                    ecb);
+            }
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
+            unitAttrs.Dispose();
+            unitEntities.Dispose();
+            bases.Dispose();
+        }
+
+        private bool AssignUnitToTeamAccordingToStrategy(ref SystemState state,
+            UnitAttr attr, Entity selfEntity, Entity belongsToBase, NativeList<AITeamType> strategy,
+            NativeHashMap<int, TeamSpecialData> teamType2SpecialData, EntityCommandBuffer ecb
+        )
+        {
+            var baseAvailableTeamDatas = SystemAPI.GetBuffer<EnemyBaseTeamAvailableData>(belongsToBase);
+            var baseTeamData = SystemAPI.GetBuffer<EnemyBaseTeamGeneralData>(belongsToBase);
+
+            var assignSuccess = false;
+            foreach (var teamType in strategy)
+            {
+                var teamSpecialData = teamType2SpecialData[(int)teamType];
+                var isThisUnitSpecialForThisTeamType = attr.Type == teamSpecialData.specialUnitType
+                                                       && (teamSpecialData.specialUnitSubIndex == -1 ||
+                                                           attr.SubTypeIndex == teamSpecialData.specialUnitSubIndex);
+
+                // Check if This team is valid for current unit type 
+                var isThisUnitValidForThisTeamType = false;
+                foreach (var entry in teamSpecialData.maxMemberCountEntries)
+                {
+                    if (entry.unitType == attr.Type &&
+                        (entry.subTypeIndex == -1 || entry.subTypeIndex == attr.SubTypeIndex))
+                    {
+                        isThisUnitValidForThisTeamType = true;
+                        break;
+                    }
+                }
+
+                if (!isThisUnitValidForThisTeamType)
+                {
+                    continue;
+                }
+
+                // Find an available team to fill the unit into it
+                for (var j = 0; j < baseAvailableTeamDatas.Length; j++)
+                {
+                    var data = baseAvailableTeamDatas[j];
+                    if (teamType != data.TeamType) continue;
+                    // Try to fill the unit into current team slot
+                    for (var i = 0; i < data.AvailableMemberCountEntries.Length; i++)
+                    {
+                        var entry = data.AvailableMemberCountEntries[i];
+
+                        // Filter to find correct slot
+                        if (entry.unitType != attr.Type
+                            || (entry.subTypeIndex != -1 && entry.subTypeIndex != attr.SubTypeIndex)
+                            || entry.availableCount == 0) continue;
+
+                        // Successfully find a slot
+                        assignSuccess = true;
+                        ecb.AddComponent(selfEntity, new InTeamTag
+                        {
+                            BelongsToTeam = data.TeamEntity
+                        });
+
+                        // Change base available team data
+                        entry.availableCount--;
+                        data.AvailableMemberCountEntries[i] = entry;
+                        baseAvailableTeamDatas[j] = data;
+
+                        // Update team entity data
+                        ecb.AppendToBuffer(data.TeamEntity, new TeamEntityData
+                        {
+                            Unit = selfEntity
+                        });
+                        break;
+                    }
+
+                    if (assignSuccess) break;
+                }
+
+                if (assignSuccess) break;
+
+                // No current team available for this unit and team type
+                var curTeamDataInBase = baseTeamData[(int)teamType];
+                if (curTeamDataInBase.CurCount < teamSpecialData.teamsMaxCount)
+                {
+                    // Current team count not full in this base, then add a new team
+
+                    // Create new team
+                    var newTeam = state.EntityManager.CreateEntity();
+                    ecb.AddComponent<GameplayEntityTag>(newTeam);
+                    ecb.AddComponent(newTeam, new TeamData
+                    {
+                        TeamType = teamType,
+                        SpecialUnitCount = isThisUnitSpecialForThisTeamType ? 1 : 0,
+                        BelongsToBase = belongsToBase,
+                        // Idle = false,
+                        ShortHanded = true
+                    });
+                    ecb.AddBuffer<TeamEntityData>(newTeam);
+                    ecb.AppendToBuffer(newTeam, new TeamEntityData
+                    {
+                        Unit = selfEntity
+                    });
+                    ecb.AddComponent<TeamWaitTag>(newTeam);
+                    ecb.AddComponent<TeamStateData>(newTeam);
+                    ecb.AddComponent<TeamNeedTargetTag>(newTeam);
+                    ecb.SetComponentEnabled<TeamNeedTargetTag>(newTeam, false);
+                    // Add new available team data to current belongs to base, and change base team data
+                    var entries = teamSpecialData.maxMemberCountEntries;
+                    for (var i = 0; i < entries.Length; i++)
+                    {
+                        var entry = entries[i];
+                        // This condition should always happen, because we check the team valid in the head
+                        if (entry.unitType == attr.Type &&
+                            (entry.subTypeIndex == -1 || entry.subTypeIndex == attr.SubTypeIndex))
+                        {
+                            entry.availableCount--;
+                            entries[i] = entry;
+                        }
+                    }
+
+                    baseAvailableTeamDatas.Add(new EnemyBaseTeamAvailableData
+                    {
+                        TeamEntity = newTeam,
+                        TeamType = teamType,
+                        AvailableMemberCountEntries = entries
+                    });
+                    curTeamDataInBase.CurCount++;
+                    baseTeamData[(int)teamType] = curTeamDataInBase;
+                    // Add In team tag to this unit
+                    ecb.AddComponent(selfEntity, new InTeamTag
+                    {
+                        BelongsToTeam = newTeam
+                    });
+                    assignSuccess = true;
+                    break;
+                }
+            }
+
+            return assignSuccess;
         }
 
 

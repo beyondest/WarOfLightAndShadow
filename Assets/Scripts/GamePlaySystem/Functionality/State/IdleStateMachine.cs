@@ -10,7 +10,6 @@ namespace SparFlame.GamePlaySystem.State
 {
     [UpdateAfter(typeof(BuffSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
-    [UpdateBefore(typeof(StatSystem))]
     [BurstCompile]
     public partial struct IdleStateMachine : ISystem
     {

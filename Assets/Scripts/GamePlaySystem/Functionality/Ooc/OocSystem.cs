@@ -9,6 +9,7 @@ namespace SparFlame.GamePlaySystem.Ooc
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<OocSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -22,7 +23,7 @@ namespace SparFlame.GamePlaySystem.Ooc
             var config = SystemAPI.GetSingleton<OocSystemConfig>();
             new OocUpdateJob
             {
-                DeltaTime = SystemAPI.Time.DeltaTime,
+                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ECB = ecb
             }.ScheduleParallel();
         }

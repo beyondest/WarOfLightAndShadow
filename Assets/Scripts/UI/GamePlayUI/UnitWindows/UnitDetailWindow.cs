@@ -39,6 +39,7 @@ namespace SparFlame.UI.GamePlay
 
         public bool TrySwitchTarget(Entity target)
         {
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
             if (!Em.HasComponent<UnitAttr>(target)
                 || !Em.HasComponent<MovableData>(target)
                 || !Em.HasBuffer<CostList>(target)
@@ -73,9 +74,9 @@ namespace SparFlame.UI.GamePlay
         }
 
 
-        public override void LoadResources()
+        protected override void Start()
         {
-            base.LoadResources();
+            base.Start();
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _gamingTag = Em.CreateEntityQuery(typeof(GamingTag));
             panel.SetActive(false);

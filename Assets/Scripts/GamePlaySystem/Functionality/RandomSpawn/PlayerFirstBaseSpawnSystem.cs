@@ -1,15 +1,14 @@
 ﻿using System;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map;
+using SparFlame.GamePlaySystem.Map;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.RandomSpawn
+namespace SparFlame.GamePlaySystem.RandomSpawn
 {
-    
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     [UpdateAfter(typeof(MapInitializeSystem))]
     public partial struct PlayerFirstBaseSpawnSystem : ISystem
@@ -17,8 +16,9 @@ namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.Rand
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<MapInitInfo>();
             state.RequireForUpdate<PlayerFactionData>();
-            state.RequireForUpdate<PlayerFirstBaseEntity>();
+            state.RequireForUpdate<PlayerFirstBaseSpawnConfig>();
             state.RequireForUpdate<MapInfo>();
             state.RequireForUpdate<GameStatusData>();
         }
@@ -30,29 +30,43 @@ namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.Rand
             if (gameStatusData.Value == GameStatus.Init)
             {
                 var mapInfo = SystemAPI.GetSingleton<MapInfo>();
+                var tileSize = SystemAPI.GetSingleton<MapInitInfo>().tileSize;
                 var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>();
                 var playerPos = float2.zero;
                 ref var rnd = ref SystemAPI.GetSingletonRW<GeneralRandom>().ValueRW;
-                var data = SystemAPI.GetSingleton<PlayerFirstBaseEntity>();
+                var config = SystemAPI.GetSingleton<PlayerFirstBaseSpawnConfig>();
                 Entity basePrefab = Entity.Null;
+                
                 switch (playerFaction.Value)
                 {
                     case FactionTag.Enemy:
                         playerPos = MapUtils.SampleSquareRing(mapInfo.OuterSquareSize, mapInfo.InnerSquareSize,
+                            mapInfo.WorldCenter.xz,
                             ref rnd.Rnd);
-                        basePrefab = data.DarkPrefab;
+                        basePrefab = config.DarkPrefab;
                         break;
                     case FactionTag.Ally:
                     {
-                        var sub = mapInfo.OuterSquareSize - mapInfo.InnerSquareSize;
-                        playerPos = rnd.Rnd.NextFloat2(new float2(sub,sub), new float2(sub + mapInfo.InnerSquareSize, sub + mapInfo.InnerSquareSize));
-                        basePrefab = data.LightPrefab;
+                        // var sub = (mapInfo.OuterSquareSize - mapInfo.InnerSquareSize) / 2f;
+                        // var startX = -0.5f * tileSize + sub;
+                        playerPos = MapUtils.SampleSquareRing(mapInfo.InnerSquareSize, mapInfo.CenterRadius * 2f, mapInfo.WorldCenter.xz,
+                            ref rnd.Rnd);
+                        // playerPos = rnd.Rnd.NextFloat2(new float2(startX, startX),
+                        //     new float2(startX + mapInfo.InnerSquareSize, startX + mapInfo.InnerSquareSize));
+                        basePrefab = config.LightPrefab;
+                       
                         break;
                     }
                     case FactionTag.Neutral:
                         break;
                 }
+
+                if (SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out RandomSpawnDebug debug))
+                {
+                    playerPos = debug.playerFirstSpawnPosition.xz;
+                }
                 var entity = state.EntityManager.Instantiate(basePrefab);
+                state.EntityManager.AddComponent<GameplayEntityTag>(entity);
                 SystemAPI.SetComponent(entity, new LocalTransform
                 {
                     Position = new float3(playerPos.x, 0f, playerPos.y),
@@ -60,21 +74,26 @@ namespace SparFlame.GamePlaySystem.RandomSpawn.GamePlaySystem.Functionality.Rand
                     Scale = 1f
                 });
                 
+                var firstPosSingleton = state.EntityManager.CreateEntity();
+                state.EntityManager.AddComponent<PlayerFirstBasePos>(firstPosSingleton);
+                state.EntityManager.SetComponentData(firstPosSingleton, new PlayerFirstBasePos
+                {
+                    Value = new float3(playerPos.x, 0f, playerPos.y)
+                });
+                state.EntityManager.AddComponent<GameplayEntityTag>(firstPosSingleton);
+                
                 var changeOccupiedTagRequest = state.EntityManager.CreateEntity();
+                state.EntityManager.AddComponent<GameplayEntityTag>(changeOccupiedTagRequest);
+
                 state.EntityManager.AddComponent<ChangeOccupiedTagRequest>(changeOccupiedTagRequest);
                 state.EntityManager.SetComponentData(changeOccupiedTagRequest, new ChangeOccupiedTagRequest
                 {
                     CrystalFaction = playerFaction.Value,
-                    CrystalPos =  new float3(playerPos.x, 0f, playerPos.y),
+                    CrystalPos = new float3(playerPos.x, 0f, playerPos.y),
                     IsDestroyed = false
                 });
             }
         }
 
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-
-        }
     }
 }

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
+using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,13 +12,11 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
-using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 namespace SparFlame.GamePlaySystem.Building
 {
-    [UpdateAfter(typeof(InputMouseSystem))]
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct ConstructSystem : ISystem
     {
@@ -25,22 +24,25 @@ namespace SparFlame.GamePlaySystem.Building
 
         private BufferLookup<CostList> _costLookup;
 
-        private EntityQuery _entityQuery;
+        private EntityQuery _playerBaseQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EnemyResourceDataTag>();
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<ConstructSystemConfig>();
-
+            state.RequireForUpdate<CrystalAffectRadiusSq>();
+            state.RequireForUpdate<ConstructCommandData>();
             _constructableLookup = state.GetComponentLookup<OccupiedTag>(true);
             _costLookup = state.GetBufferLookup<CostList>(true);
 
-            _entityQuery = SystemAPI.QueryBuilder().WithAllRW<ConstructCommandData>().Build();
+            _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<PlayerTag>()
+                .WithAll<CoreCrystalTag>().Build();
         }
 
         [BurstCompile]
@@ -49,182 +51,229 @@ namespace SparFlame.GamePlaySystem.Building
             // TODO : Add construction time and animation support
             // TODO : Change construction only use for one team, turn command data to singleton
             // TODO : All player buildings can only be built in sight, not in fow
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>().Value;
+            ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
+
+            if (gameStatusData == GameStatus.Init)
+            {
+                data.Faction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+                data.CommandType = ConstructCommandType.None;
+                return;
+            }
             _constructableLookup.Update(ref state);
             _costLookup.Update(ref state);
 
-            if (_entityQuery.IsEmpty) return;
+            if (_playerBaseQuery.IsEmpty || data.CommandType == ConstructCommandType.None) return;
+
             var config = SystemAPI.GetSingleton<ConstructSystemConfig>();
+            var affectRadiusSq = SystemAPI.GetSingleton<CrystalAffectRadiusSq>().Value;
             var customInputData = SystemAPI.GetSingleton<InputMouseData>();
             var allyResourceData =
-                SystemAPI.GetBuffer<ResourceAvailableData>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
+                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
             var enemyResourceData =
-                SystemAPI.GetBuffer<ResourceAvailableData>(SystemAPI.GetSingletonEntity<EnemyResourceDataTag>());
+                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI
+                    .GetSingletonEntity<EnemyResourceDataTag>());
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var entities = _entityQuery.ToEntityArray(Allocator.Temp);
-            var datas = _entityQuery.ToComponentDataArray<ConstructCommandData>(Allocator.Temp);
-            CheckConstructionCommand(ref state, entities, datas, allyResourceData, enemyResourceData, config,
-                customInputData, ecb);
-            entities.Dispose();
-            datas.Dispose();
+            var playerBaseTrans = _playerBaseQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            
+            CheckConstructionCommand(ref state, allyResourceData, enemyResourceData, config,
+                customInputData, ecb, affectRadiusSq, playerBaseTrans);
+            playerBaseTrans.Dispose();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
-        private void CheckConstructionCommand(ref SystemState state, NativeArray<Entity> entities,
-            NativeArray<ConstructCommandData> datas,
-            DynamicBuffer<ResourceAvailableData> allyResourceData, DynamicBuffer<ResourceAvailableData> enemyResourceData,
-            ConstructSystemConfig config,
-            InputMouseData customInputData, EntityCommandBuffer ecb)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool CheckIfInCrystalRange(float3 position, in NativeArray<LocalTransform> trans,
+            float radiusSq)
         {
-            for (var i = 0; i < entities.Length; ++i)
+            var inRadius = false;
+            foreach (var transform in trans)
             {
-                var data = datas[i];
-                var entity = entities[i];
-                var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
-                var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
-                var isCrystal = buildingAttr is
-                    { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
-                
-                switch (data.CommandType)
+                if (math.distancesq(position, transform.Position) < radiusSq)
                 {
-                    case ConstructCommandType.Drag:
-                        var valid = true;
-
-                        // Check if resource is available
-                        if (!data.IsMovementShow)
-                        {
-                            foreach (var cost in _costLookup[data.TargetBuilding])
-                            {
-                                if (resourceData[(int)cost.Type].Amount < cost.Amount)
-                                {
-                                    SwitchBuildingState(ref state, ref data, PlacementStateType.NotEnoughResources,
-                                        in config, false);
-                                    valid = false;
-                                }
-                            }
-                        }
-
-                        // Check if overlap with other colliders
-                        var events = SystemAPI.GetBuffer<StatefulTriggerEvent>(data.GhostTriggerEntity);
-                        if (events.Length > 0)
-                        {
-                            SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in config, false);
-                            valid = false;
-                        }
-
-                        // Check if mouse hit on constructable area; crystal can turn neutral area to cur faction
-                        if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
-                            (!isCrystal && constructable.Faction != data.Faction)
-                            || (isCrystal && constructable.Faction == ~data.Faction)
-                           )
-                        {
-                            SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in config,
-                                false);
-                            valid = false;
-                        }
-
-                        if (valid)
-                            SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, false);
-
-                        // Synchronize the position and rotation of ghost building and ghost trigger with the input position
-                        ref var ghostTransform =
-                            ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostModelEntity).ValueRW;
-                        ref var triggerTransform =
-                            ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostTriggerEntity).ValueRW;
-
-                        // Get Target Transform
-                        var targetTransform = ghostTransform;
-                        float rotateAngle;
-                        if (math.abs(data.RotationAngle).Equals(15f))
-                        {
-                            var curDeg = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                            rotateAngle = ConstructUtils.SnapToNearest15(curDeg, data.RotationAngle);
-                        }
-                        else
-                        {
-                            rotateAngle = data.RotationAngle;
-                        }
-
-                        var rotationDelta = quaternion.RotateY(math.radians(rotateAngle));
-                        targetTransform.Position = customInputData.HitPosition;
-                        targetTransform.Scale = 1;
-                        targetTransform.Rotation =
-                            math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
-                        ghostTransform = targetTransform;
-                        triggerTransform = targetTransform;
-                        state.EntityManager.SetComponentData(entity, data);
-                        break;
-
-                    case ConstructCommandType.Start:
-                        // Check if switch building, then should destroy prior ghost preview
-                        if (data.GhostModelEntity != Entity.Null)
-                        {
-                            DestroyPriorGhost(ref state, ref data);
-                        }
-
-                        // Create ghost preview
-                        data.GhostModelEntity = InstantiateChildrenWithNewParent(ref state, data.TargetBuilding);
-                        data.GhostTriggerEntity = state.EntityManager.Instantiate(config.GhostTriggerPrefab);
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, true);
-                        AlignTriggerBoxCollider(ref state, in data);
-                        data.CommandType = ConstructCommandType.Drag;
-                        state.EntityManager.SetComponentData(entity, data);
-                        break;
-
-                    case ConstructCommandType.End:
-                        if (data.IsMovementShow) // Not move to new place, should return to original location
-                        {
-                            state.EntityManager.SetComponentData(data.TargetBuilding, data.OriTransform);
-                        }
-
-                        DestroyPriorGhost(ref state, ref data);
-                        state.EntityManager.DestroyEntity(entity);
-                        break;
-
-                    case ConstructCommandType.Build when data.State == PlacementStateType.Valid:
-                        var newTransform = SystemAPI.GetComponent<LocalTransform>(data.GhostModelEntity);
-
-                        if (!data.IsMovementShow)
-                        {
-                            // Check if crystal, then turn this plane to cur faction
-                            if (isCrystal)
-                            {
-                                var request = ecb.CreateEntity();
-                                ecb.AddComponent(request, new ChangeOccupiedTagRequest
-                                {
-                                    CrystalFaction = data.Faction,
-                                    CrystalPos = customInputData.HitPosition,
-                                    IsDestroyed = false
-                                });
-                            }
-
-                            // Reduce resources
-                            foreach (var cost in _costLookup[data.TargetBuilding])
-                            {
-                                var r = resourceData[(int)cost.Type];
-                                r.Amount -= cost.Amount;
-                                resourceData[(int)cost.Type] = r;
-                            }
-
-                            // Create building
-                            var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
-                            state.EntityManager.SetComponentData(targetBuilding, newTransform);
-                            data.CommandType = ConstructCommandType.Drag; // Continue building
-                            state.EntityManager.SetComponentData(entity, data);
-                        }
-                        else
-                        {
-                            // Move building to new place
-                            state.EntityManager.SetComponentData(data.TargetBuilding, newTransform);
-                            DestroyPriorGhost(ref state, ref data);
-                            state.EntityManager.DestroyEntity(entity); // Exit ghost show
-                        }
-
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    inRadius = true;
+                    break;
                 }
+            }
+
+            return inRadius;
+        }
+
+        private void CheckConstructionCommand(ref SystemState state,
+            DynamicBuffer<ResourceTypeToAvailableAmount> allyResourceData,
+            DynamicBuffer<ResourceTypeToAvailableAmount> enemyResourceData,
+            ConstructSystemConfig config,
+            InputMouseData customInputData, EntityCommandBuffer ecb,
+            float affectRadiusSq,
+            in NativeArray<LocalTransform> playerBaseTrans)
+        {
+            ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
+            var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
+            var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
+            var isCrystal = buildingAttr is
+                { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
+
+            
+            
+            switch (data.CommandType)
+            {
+                case ConstructCommandType.Drag:
+                    var valid = true;
+
+                    // Check if resource is available
+                    if (!data.IsMovementShow)
+                    {
+                        foreach (var cost in _costLookup[data.TargetBuilding])
+                        {
+                            if (resourceData[(int)cost.Type].Amount < cost.Amount)
+                            {
+                                SwitchBuildingState(ref state, ref data, PlacementStateType.NotEnoughResources,
+                                    in config, false);
+                                valid = false;
+                            }
+                        }
+                    }
+
+                    // Check if overlap with other colliders
+                    var events = SystemAPI.GetBuffer<StatefulTriggerEvent>(data.GhostTriggerEntity);
+                    if (events.Length > 0)
+                    {
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in config, false);
+                        valid = false;
+                    }
+
+                    // Check if mouse hit on constructable area; crystal can turn neutral area to cur faction
+                    if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
+                        (!isCrystal && constructable.Faction != data.Faction)
+                        || (isCrystal && constructable.Faction == ~data.Faction)
+                       )
+                    {
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in config,
+                            false);
+                        valid = false;
+                    }
+
+                    // Only is constructable alongside the crystal
+                    /*if (!CheckIfInCrystalRange(customInputData.HitPosition, playerBaseTrans, affectRadiusSq))
+                    {
+                        
+                    }*/
+
+                    if (valid)
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, false);
+
+                    // Synchronize the position and rotation of ghost building and ghost trigger with the input position
+                    ref var ghostTransform =
+                        ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostModelEntity).ValueRW;
+                    ref var triggerTransform =
+                        ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostTriggerEntity).ValueRW;
+
+                    // Get Target Transform
+                    var targetTransform = ghostTransform;
+                    float rotateAngle;
+                    if (math.abs(data.RotationAngle).Equals(15f))
+                    {
+                        var curDeg = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
+                        rotateAngle = ConstructUtils.SnapToNearest15(curDeg, data.RotationAngle);
+                    }
+                    else
+                    {
+                        rotateAngle = data.RotationAngle;
+                    }
+
+                    var rotationDelta = quaternion.RotateY(math.radians(rotateAngle));
+                    targetTransform.Position = customInputData.HitPosition;
+                    targetTransform.Scale = 1;
+                    targetTransform.Rotation =
+                        math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
+                    ghostTransform = targetTransform;
+                    triggerTransform = targetTransform;
+                    break;
+
+                case ConstructCommandType.Start:
+                    // Check if switch building, then should destroy prior ghost preview
+                    if (data.GhostModelEntity != Entity.Null)
+                    {
+                        DestroyPriorGhost(ref state, ref data);
+                    }
+
+                    // Create ghost preview
+                    data.GhostModelEntity = InstantiateChildrenWithNewParent(ref state, data.TargetBuilding);
+                    data.GhostTriggerEntity = state.EntityManager.Instantiate(config.GhostTriggerPrefab);
+                    state.EntityManager.AddComponent<GameplayEntityTag>(data.GhostModelEntity);
+                    state.EntityManager.AddComponent<GameplayEntityTag>(data.GhostTriggerEntity);
+                    SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, true);
+                    AlignTriggerBoxCollider(ref state, in data);
+                    data.CommandType = ConstructCommandType.Drag;
+                    break;
+
+                case ConstructCommandType.End:
+                    if (data.IsMovementShow) // Not move to new place, should return to original location
+                    {
+                        state.EntityManager.SetComponentData(data.TargetBuilding, data.OriTransform);
+                    }
+
+                    DestroyPriorGhost(ref state, ref data);
+                    data.CommandType = ConstructCommandType.None;
+                    break;
+
+                case ConstructCommandType.Build when data.State == PlacementStateType.Valid:
+                    var newTransform = SystemAPI.GetComponent<LocalTransform>(data.GhostModelEntity);
+
+                    if (!data.IsMovementShow)
+                    {
+                        // Check if crystal, then turn this plane to cur faction
+                        if (isCrystal)
+                        {
+                            var request = ecb.CreateEntity();
+                            ecb.AddComponent(request, new ChangeOccupiedTagRequest
+                            {
+                                CrystalFaction = data.Faction,
+                                CrystalPos = customInputData.HitPosition,
+                                IsDestroyed = false
+                            });
+                            ecb.AddComponent<GameplayEntityTag>(request);
+                        }
+
+                        // Reduce resources
+                        foreach (var cost in _costLookup[data.TargetBuilding])
+                        {
+                            var r = resourceData[(int)cost.Type];
+                            r.Amount -= cost.Amount;
+                            resourceData[(int)cost.Type] = r;
+                        }
+
+                        // Create building
+                        var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
+                        state.EntityManager.AddComponent<GameplayEntityTag>(targetBuilding);
+
+                        state.EntityManager.SetComponentData(targetBuilding, newTransform);
+                        data.CommandType = ConstructCommandType.Drag; // Continue building
+                    }
+                    else
+                    {
+                        // Move building to new place
+                        state.EntityManager.SetComponentData(data.TargetBuilding, newTransform);
+                        DestroyPriorGhost(ref state, ref data);
+                        data.CommandType = ConstructCommandType.None;
+                        var syncVolumeRequest = state.EntityManager.CreateEntity();
+                        state.EntityManager.AddComponent<BuildingSyncVolumeRequest>(syncVolumeRequest);
+                        state.EntityManager.SetComponentData(syncVolumeRequest, new BuildingSyncVolumeRequest
+                        {
+                            FromEntity = data.TargetBuilding,
+                        });
+                        state.EntityManager.AddComponent<GameplayEntityTag>(syncVolumeRequest);
+
+                    }
+
+                    break;
+                case ConstructCommandType.None:
+                    // Do nothing when not enter ghost show mode
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -310,6 +359,8 @@ namespace SparFlame.GamePlaySystem.Building
 
             // Create new parent
             var newParentEntity = state.EntityManager.CreateEntity();
+            state.EntityManager.AddComponent<GameplayEntityTag>(newParentEntity);
+
             state.EntityManager.AddComponent<LocalTransform>(newParentEntity);
             state.EntityManager.AddComponent<LocalToWorld>(newParentEntity);
             var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(newParentEntity);
@@ -322,6 +373,8 @@ namespace SparFlame.GamePlaySystem.Building
             foreach (var originalChild in originalChildren)
             {
                 var newChild = state.EntityManager.Instantiate(originalChild);
+                state.EntityManager.AddComponent<GameplayEntityTag>(newChild);
+
                 var childLtw = state.EntityManager.GetComponentData<LocalToWorld>(originalChild);
                 var relativeToB = math.mul(bLtwInverse, childLtw.Value);
 
@@ -347,7 +400,7 @@ namespace SparFlame.GamePlaySystem.Building
                 {
                     Position = position,
                     Rotation = rotation,
-                    Scale = math.cmax(scale) 
+                    Scale = math.cmax(scale)
                 };
 
                 state.EntityManager.SetComponentData(newChild, newLocalTransform);

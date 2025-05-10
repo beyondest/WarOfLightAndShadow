@@ -5,7 +5,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Random = Unity.Mathematics.Random;
 
-namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
+namespace SparFlame.GamePlaySystem.Map
 {
     public struct MapUtils
     {
@@ -33,48 +33,48 @@ namespace SparFlame.GamePlaySystem.Map.GamePlaySystem.Core.Map
             return xDis * xDis + yDis * yDis <= radiusSq;
         }
 
-        public static float2 SampleSquareRing(float outerSize, float innerSize, ref Random random)
+        public static float2 SampleSquareRing(float outerSize, float innerSize, float2 squareCenter, ref Unity.Mathematics.Random random)
         {
-            var halfL1 = outerSize / 2f;
-            var halfL2 = innerSize / 2f;
+            var halfOuter = outerSize / 2f;
+            var halfInner = innerSize / 2f;
 
-            // 面积
-            var a1 = outerSize * (halfL1 - halfL2); // 上 or 下
-            var a2 = (halfL1 - halfL2) * innerSize; // 左 or 右
-            var totalArea = 2 * a1 + 2 * a2;
+            // 四个区域的面积
+            float areaTopBottom = outerSize * (halfOuter - halfInner);        // 上下
+            float areaLeftRight = (halfOuter - halfInner) * innerSize;        // 左右
+            float totalArea = 2f * areaTopBottom + 2f * areaLeftRight;
 
-            var pick = random.NextFloat(0f, totalArea);
+            float pick = random.NextFloat(0f, totalArea);
 
-            if (pick < a1) // 上边
+            if (pick < areaTopBottom) // 上边
             {
-                return new float2(
-                    random.NextFloat(-halfL1, halfL1),
-                    random.NextFloat(halfL2, halfL1)
+                return squareCenter + new float2(
+                    random.NextFloat(-halfOuter, halfOuter),
+                    random.NextFloat(halfInner, halfOuter)
                 );
             }
-
-            if (pick < 2 * a1) // 下边
+            else if (pick < 2f * areaTopBottom) // 下边
             {
-                return new float2(
-                    random.NextFloat(-halfL1, halfL1),
-                    random.NextFloat(-halfL1, -halfL2)
+                return squareCenter + new float2(
+                    random.NextFloat(-halfOuter, halfOuter),
+                    random.NextFloat(-halfOuter, -halfInner)
                 );
             }
-
-            if (pick < 2 * a1 + a2) // 左边
+            else if (pick < 2f * areaTopBottom + areaLeftRight) // 左边
             {
-                return new float2(
-                    random.NextFloat(-halfL1, -halfL2),
-                    random.NextFloat(-halfL2, halfL2)
+                return squareCenter + new float2(
+                    random.NextFloat(-halfOuter, -halfInner),
+                    random.NextFloat(-halfInner, halfInner)
                 );
             }
-
-            // 右边
-            return new float2(
-                random.NextFloat(halfL2, halfL1),
-                random.NextFloat(-halfL2, halfL2)
-            );
+            else // 右边
+            {
+                return squareCenter + new float2(
+                    random.NextFloat(halfInner, halfOuter),
+                    random.NextFloat(-halfInner, halfInner)
+                );
+            }
         }
+
 
         public static MapLocType GetMapLocTypeByPos(float3 pos, float3 center, float outerSquareSize, float innerSquareSize,
             float radius)

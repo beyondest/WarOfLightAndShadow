@@ -11,7 +11,6 @@ using SparFlame.GamePlaySystem.CustomInput;
 namespace SparFlame.GamePlaySystem.Command
 {
     [BurstCompile]
-    [UpdateAfter(typeof(UnitSelectionPlusSystem))]
     public partial struct CursorManageSystem : ISystem
     {
         [BurstCompile]

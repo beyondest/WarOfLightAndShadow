@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Database;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
@@ -8,7 +9,6 @@ using SparFlame.GamePlaySystem.Generate;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Spawn;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
@@ -64,6 +64,8 @@ namespace SparFlame.UI.GamePlay
 
         [SerializeField] private Image ornamentBuffImage;
         [SerializeField] private TMP_Text ornamentBuffDescriptionText;
+        [Header("Construct Panel")]
+        [SerializeField] private GameObject constructPanel;
 
         // Interface
         public static BuildingDetailWindow Instance;
@@ -113,7 +115,7 @@ namespace SparFlame.UI.GamePlay
             }
 
             if (!ConstructWindow.Instance.IsOpened())
-                ConstructWindow.Instance.OnClickConstructEnter();
+                ConstructWindow.Instance.EnterConstruct();
             EcsGhostShowTarget?.Invoke(_targetEntity);
         }
 
@@ -133,6 +135,7 @@ namespace SparFlame.UI.GamePlay
         // Internal Data
         private Entity _targetEntity = Entity.Null;
         private bool _hasGarrisonUnits;
+        private FactionTag _playerFaction;
 
 
         // Cache
@@ -142,6 +145,7 @@ namespace SparFlame.UI.GamePlay
         // ECS
         protected EntityManager Em;
         private EntityQuery _gamingTag;
+        private EntityQuery _playerFactionQuery;
 
         #region EventFunction
 
@@ -168,11 +172,13 @@ namespace SparFlame.UI.GamePlay
             base.Start();
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _gamingTag = Em.CreateEntityQuery(typeof(GamingTag));
+            _playerFactionQuery = Em.CreateEntityQuery(typeof(PlayerFactionData));
         }
-
+        
         protected virtual void Update()
         {
-            if (_gamingTag.IsEmpty) return;
+            if (_gamingTag.IsEmpty || _playerFactionQuery.IsEmpty) return;
+            _playerFaction = _playerFactionQuery.GetSingleton<PlayerFactionData>().Value;
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
             if (!Em.HasComponent<GeneralAttr>(_targetEntity))
@@ -180,7 +186,6 @@ namespace SparFlame.UI.GamePlay
                 _targetEntity = Entity.Null;
                 return;
             }
-
             UpdateDynamicData();
         }
 
@@ -201,7 +206,7 @@ namespace SparFlame.UI.GamePlay
                 .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.ID).Sprite;
             if (multiSlotEnabled)
                 VisualizeCostSlots();
-
+            
 
             interactAbilityTriangle.enabled = false; // fortification panel
             generatePanel.SetActive(false);
@@ -216,6 +221,7 @@ namespace SparFlame.UI.GamePlay
                 if (!isMainInfoSingleton) garrisonCountText.text = $"{garrisonAttr.MaxGarrisonCount}";
             }
 
+            
             switch (_buildingAttr.Type)
             {
                 case BuildingType.Generators:
@@ -232,6 +238,7 @@ namespace SparFlame.UI.GamePlay
                     interactAbilityTriangle.enabled = true;
                     break;
                 case BuildingType.ConjuringShrines:
+                    if (generalAttr.FactionTag != _playerFaction) break;
                     conjurePanel.SetActive(true);
                     var conjureAttribute = Em.GetComponentData<ConjureAttr>(_targetEntity);
                     var currentTier = Em.GetComponentData<ExpData>(_targetEntity).CurTier;
@@ -261,15 +268,23 @@ namespace SparFlame.UI.GamePlay
                         ornamentBuffImage.sprite = BasicUIResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
                         ornamentBuffDescriptionText.text = "Not implemented";
                     }
-
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            // Check should open garrison window or conjure queue window
-            if (isMainInfoSingleton)
-                ShouldOpenGarrisonInfoConjureQueueAndMiniConjure();
+            // Check should open these control windows for player
+            if (generalAttr.FactionTag == _playerFaction)
+            {
+                constructPanel.SetActive(true);
+                if (isMainInfoSingleton )
+                    ShouldOpenGarrisonInfoConjureQueueAndMiniConjure();
+            }
+            else
+            {
+                constructPanel.SetActive(false);
+            }
+            
         }
 
         private void ShouldOpenGarrisonInfoConjureQueueAndMiniConjure()

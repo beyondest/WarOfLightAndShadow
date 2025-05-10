@@ -6,11 +6,11 @@ using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
+using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.State;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
-using Unity.Rendering;
 using UnityEngine;
 
 namespace SparFlame.Database
@@ -142,31 +142,18 @@ namespace SparFlame.Database
                     });
                 }
 
+                var fogOfWarSightRange = item.fogSightRange;
                 // Fog of War VFX
                 var fowAgentData = new FowAgentData
                 {
-                    ContributeToFOV = item.factionTag == FactionTag.Ally,
-                    DisappearInFow =  item.factionTag != FactionTag.Ally,
-                    SightRange = item.fogSightRange,
+                    SightRange = fogOfWarSightRange,
                     SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
                     DisappearAlphaThreshold = item.disappearAlphaThreshold,
-                    IsInsight = item.factionTag == FactionTag.Ally, 
+                    IsInsight = true 
                 };
                 AddComponent(entity, fowAgentData);
-                if (fowAgentData.ContributeToFOV)
-                {
-                    AddComponent<ContributeSightTag>(entity);
-                    
-                }
+        
 
-                if (fowAgentData.DisappearInFow)
-                {
-                    AddComponent<DisappearInFowTag>(entity);
-                    AddComponent(entity, new HideFowAgentRequest
-                    {
-                        Hide = true
-                    });
-                }
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)

@@ -18,7 +18,6 @@ namespace SparFlame.GamePlaySystem.State
     [BurstCompile]
     [UpdateAfter(typeof(BuffSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
-    [UpdateBefore(typeof(StatSystem))]
     public partial struct InteractStateMachine : ISystem
     {
         private BufferLookup<InsightTarget> _insightTarget;
@@ -86,7 +85,7 @@ namespace SparFlame.GamePlaySystem.State
             var attackAbilities = _attackEntityQuery.ToComponentDataArray<AttackAbility>(Allocator.TempJob);
             var attackEntities = _attackEntityQuery.ToEntityArray(Allocator.TempJob);
             state.Dependency.Complete();
-            var deltaTime = SystemAPI.Time.DeltaTime;
+            var deltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             var attackJob = new InteractStateJob<AttackAbility>
             {
                 Ability = attackAbilities,
@@ -360,6 +359,8 @@ namespace SparFlame.GamePlaySystem.State
                     AbsAmount = amount,
                     InteractType = interactType
                 });
+                ECB.AddComponent<GameplayEntityTag>(index,request);
+
             }
 
             private void InteractMoveToTarget(ref BasicStateData stateData, ref MovableData movableData,

@@ -31,13 +31,13 @@ namespace SparFlame.GamePlaySystem.Interact
             {
                 AITagLookup = _aiTagLookup,
                 Config = config,
-                DeltaTime = SystemAPI.Time.DeltaTime
+                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime
             }.ScheduleParallel();
             new NormalHpRegenerationJob
             {
                 AITagLookup = _aiTagLookup,
                 Config = config,
-                DeltaTime = SystemAPI.Time.DeltaTime
+                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime
             }.ScheduleParallel();
         }
 

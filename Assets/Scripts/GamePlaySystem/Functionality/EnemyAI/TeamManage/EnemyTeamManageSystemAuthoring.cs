@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using SparFlame.GamePlaySystem.Units;
 using Unity.Collections;
@@ -38,11 +39,14 @@ namespace SparFlame.GamePlaySystem.EnemyAI
     [Serializable]
     public struct MemberCountEntry
     {
+        [HideLabel, Tooltip("UnitType"),VerticalGroup("Type_SubType"), TableColumnWidth(120,false)]
         public UnitType unitType;
         /// <summary>
         /// -1 means no filter
         /// </summary>
+        [HideLabel, Tooltip("SubTypeIndex"),VerticalGroup("Type_SubType")]
         public int subTypeIndex;
+        [HideLabel,Tooltip("Max count in inspector"),VerticalGroup("MaxCount"), TableColumnWidth(80,false)]
         public int availableCount; 
     }
     
@@ -65,21 +69,41 @@ namespace SparFlame.GamePlaySystem.EnemyAI
     public struct TeamSpecialData
     {
         public AITeamType teamType;
-        
-        [Tooltip("To avoid units split in many teams, and population exceed, so that all enemy units remain idle,\n " +
-                 " you have to manage the balance between team max count, team composition, dwelling counts in enemy buildings pack")]
         public int teamsMaxCount;
-        [Sirenix.OdinInspector.ReadOnly,Tooltip("Auto calculated by code")]
         public int unitMaxCount;
         public UnitType specialUnitType;
-        [Tooltip("-1 means no filter on subType")]
         public int specialUnitSubIndex;
         public int specialUnitMinCount;
-        [HideLabel, LabelText("Team composition")]
         public FixedList128Bytes<MemberCountEntry> maxMemberCountEntries;
     }
-
     
+    [Serializable]
+    public struct TeamSpecialDataInspector
+    {
+        [HideLabel, TableColumnWidth(150,false),VerticalGroup("Team")]
+        public AITeamType teamType;
+        
+        [Tooltip("To avoid units split in many teams, and population exceed, so that all enemy units remain idle,\n " +
+                 " you have to manage the balance between team max count, team composition, dwelling counts in enemy buildings pack"),
+       VerticalGroup("Team"),HideLabel, LabelText("TeamMaxCount")]
+        public int teamsMaxCount;
+        [Sirenix.OdinInspector.ReadOnly,Tooltip("Auto calculated by code")
+         , VerticalGroup("Team"), HideLabel,LabelText("UnitMaxCount")]
+        public int unitMaxCount;
+        
+        [HideLabel,TableColumnWidth(150,false),Tooltip("SpecialUnitType"),VerticalGroup("SpecialUnit")]
+        public UnitType specialUnitType;
+        [Tooltip("Special Unit Sub type index filter : -1 means no filter on subType")
+         ,HideLabel,LabelText("SUSubIdx"),
+        VerticalGroup("SpecialUnit")]
+        public int specialUnitSubIndex;
+        [Tooltip("SpecialUnitMinCount"), HideLabel, LabelText("SUMin"),
+        VerticalGroup("SpecialUnit")]
+        public int specialUnitMinCount;
+        [HideLabel, VerticalGroup("Team composition"),TableList,TableColumnWidth(200, false)]
+        public List<MemberCountEntry> maxMemberCountEntries;
+    }
+
     
     public struct TeamEntityData : IBufferElementData
     {
