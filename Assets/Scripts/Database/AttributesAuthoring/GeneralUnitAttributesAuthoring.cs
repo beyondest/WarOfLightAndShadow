@@ -31,7 +31,8 @@ namespace SparFlame.Database
                 {
                     Type = item.type,
                     SubTypeIndex = item.GetSubtypeIndex(),
-                    ConjureSpeedSecondPerUnit = item.conjureSpeedSecondPerUnit
+                    ConjureSpeedSecondPerUnit = item.conjureSpeedSecondPerUnit,
+                    AnimatedModelIndex = item.animatedRootIndex
                 });
                 var buffer = AddBuffer<CostList>(entity);
                 foreach (var cost in item.costs)

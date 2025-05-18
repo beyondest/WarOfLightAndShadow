@@ -40,7 +40,9 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             calculateWtsJob.ScheduleParallel();
         }
 
+        
         [BurstCompile]
+        [WithNone(typeof(UnitDeadTag))]
         public partial struct CalculateWtsJob : IJobEntity
         {
             [ReadOnly]public float4x4 VpMatrix;

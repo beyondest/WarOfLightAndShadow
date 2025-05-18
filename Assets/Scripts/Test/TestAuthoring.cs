@@ -10,7 +10,7 @@ namespace SparFlame.Test
         {
             public override void Bake(TestAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
+                var entity = GetEntity(TransformUsageFlags.Renderable);
                 AddComponent(entity, new TestC
                 {
                     value = authoring.value

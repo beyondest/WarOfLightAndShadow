@@ -37,7 +37,7 @@ namespace SparFlame.GamePlaySystem.Resource
     [Serializable]
     public struct ResourceSpawnSystemConfig : IComponentData
     {
-        public float debugAmountScale;
+        public float edgeMargin;
     }
     
     public struct ResourceSpawnData : IBufferElementData

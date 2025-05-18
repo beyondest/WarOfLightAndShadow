@@ -3,6 +3,7 @@ using Unity.Entities;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.CustomInput;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -38,24 +39,29 @@ namespace SparFlame.GamePlaySystem.Command
             var cursorData = SystemAPI.GetSingleton<CursorData>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var inputUnitControlData = SystemAPI.GetSingleton<InputUnitControlData>();
-            
+
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (unitSelectionData.CurrentSelectCount == 0) return;
             // if (inputMouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right, IsOverUI: false}) return;
-            if(!inputUnitControlData.Command)return;
-            
+            if (!inputUnitControlData.Command) return;
+
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            float3 targetPos = float3.zero;
+
+            VFXName name = VFXName.None;
             switch (cursorData.RightCursorType)
             {
                 case CursorType.Attack:
                 {
-                    var targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    name = VFXName.ControlToAttack;
                     new MovementAttackJob
                     {
                         ECB = ecb,
-                        TargetPos = targetPos ,
-                        TargetColliderShape = SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetPos = targetPos,
+                        TargetColliderShape =
+                            SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
@@ -70,11 +76,14 @@ namespace SparFlame.GamePlaySystem.Command
 
                 case CursorType.Garrison:
                 {
+                    targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    name = VFXName.ControlToGarrison;
                     new MovementGarrisonJob()
                     {
                         ECB = ecb,
-                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetPos = targetPos,
+                        TargetColliderShape =
+                            SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                         InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq
@@ -84,11 +93,14 @@ namespace SparFlame.GamePlaySystem.Command
 
                 case CursorType.Harvest:
                 {
+                    targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    name = VFXName.ControlToHarvest;
                     new MovementHarvestJob
                     {
                         ECB = ecb,
-                        TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetPos = targetPos,
+                        TargetColliderShape =
+                            SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
@@ -97,11 +109,14 @@ namespace SparFlame.GamePlaySystem.Command
 
                 case CursorType.Heal:
                 {
+                    targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    name = VFXName.ControlToHeal;
                     new MovementHealJob
                     {
                         ECB = ecb,
-                        TargetPos =  SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
-                        TargetColliderShape = SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                        TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
+                        TargetColliderShape =
+                            SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus
                     }.ScheduleParallel();
@@ -110,6 +125,8 @@ namespace SparFlame.GamePlaySystem.Command
 
                 case CursorType.March:
                 {
+                    targetPos = inputMouseData.HitPosition;
+                    name = VFXName.ControlToMarch;
                     new MovementMarchJob
                     {
                         ECB = ecb,
@@ -121,7 +138,30 @@ namespace SparFlame.GamePlaySystem.Command
                 default:
                     return;
             }
-            
+            GenerateControlVFX(ref state, targetPos, name, unitSelectionData);
+        }
+
+        private void GenerateControlVFX(ref SystemState state, float3 spawnPos, VFXName name,
+            in UnitSelectionData unitSelectionData)
+        {
+            var vfx = state.EntityManager.CreateEntity();
+            state.EntityManager.AddComponent<VFXRequest>(vfx);
+            state.EntityManager.AddComponent<GameplayEntityTag>(vfx);
+            state.EntityManager.SetComponentData(vfx, new VFXRequest
+            {
+                Type = VFXRequestType.Spawn,
+                Filter = new VFXSubFilter
+                {
+                    Faction = unitSelectionData.CurrentSelectFaction,
+                    FactionFilterEnable = true
+                },
+                KeepDuration = 0,
+                SpawnPosition = spawnPos,
+                VFXName = name,
+                StatChangeRequest = default,
+                TargetPosition = default,
+                VFXTrackTarget = Entity.Null,
+            });
         }
     }
 
@@ -140,7 +180,7 @@ namespace SparFlame.GamePlaySystem.Command
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
-             in AttackAbility attackAbility,
+            in AttackAbility attackAbility,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
@@ -224,7 +264,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData,ref DynamicBuffer<InsightTarget> targets,
+            ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
@@ -236,13 +276,14 @@ namespace SparFlame.GamePlaySystem.Command
             {
                 InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
             }
+
             basicStateData.TargetEntity = Entity.Null;
             basicStateData.TargetState = InteractState.Idle;
             basicStateData.Focus = Focus;
         }
     }
-    
-    
+
+
     [BurstCompile]
     [WithAll(typeof(Selected))]
     public partial struct MovementGarrisonJob : IJobEntity
@@ -267,7 +308,7 @@ namespace SparFlame.GamePlaySystem.Command
             basicStateData.TargetState = InteractState.Garrison;
         }
     }
-    
+
     // When player commands unattackable unit to attack, call this job for them to make them follow the troop
     [BurstCompile]
     [WithAll(typeof(Selected))]
@@ -279,7 +320,7 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public bool Focus;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData,ref DynamicBuffer<InsightTarget> targets,
+            ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
@@ -291,6 +332,7 @@ namespace SparFlame.GamePlaySystem.Command
             {
                 InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
             }
+
             basicStateData.TargetEntity = Entity.Null;
             basicStateData.TargetState = InteractState.Idle;
             basicStateData.Focus = Focus;

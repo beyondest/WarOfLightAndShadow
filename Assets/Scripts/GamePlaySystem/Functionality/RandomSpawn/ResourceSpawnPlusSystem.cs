@@ -31,6 +31,7 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<MapInfo>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MapInitInfo>();
@@ -295,6 +296,12 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
             in float3 tileSize)
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
+            var edgeMargin = SystemAPI.GetSingleton<ResourceSpawnSystemConfig>().edgeMargin;
+            var mapInfo = SystemAPI.GetSingleton<MapInfo>();
+            var minPosValue = -tileSize.x/2f + edgeMargin;
+            var maxPosValue = -tileSize.x/2f + mapInfo.OuterSquareSize - edgeMargin;
+            var minPos = new float3(minPosValue, 0f, minPosValue);
+            var maxPos = new float3(maxPosValue, 0f, maxPosValue);
             foreach (var envPair in typeToTotalWeight)
             {
                 var resourceType = envPair.Key;
@@ -317,7 +324,7 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                                 rnd.NextFloat(-tileSize.z * 0.5f, tileSize.z * 0.5f)
                             );
                             var spawnPos = entry.Position + offset;
-
+                            spawnPos = math.clamp(spawnPos,minPos, maxPos );
                             var entity = ecb.Instantiate(chosen.Prefab);
                             ecb.AddComponent<GameplayEntityTag>(entity);
                             ecb.SetComponent(entity, new LocalTransform

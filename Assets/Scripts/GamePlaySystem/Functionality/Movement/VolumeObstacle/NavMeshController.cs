@@ -19,6 +19,8 @@ namespace SparFlame.GamePlaySystem.Movement
         private float _nextUpdateTime;
         private bool _isUpdatingAlly;
         private bool _isUpdatingEnemy;
+        private bool _pendingUpDataAlly;
+        private bool _pendingUpDateEnemy;
 
         // ECS
         private EntityManager _em;
@@ -60,7 +62,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     {
                         if (_isUpdatingAlly)
                         {
-                            // _needUpdateAlly = true;
+                            _pendingUpDataAlly = true;
                             continue;
                         };
                         ifUpdateAlly = true;
@@ -70,7 +72,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     {
                         if (_isUpdatingEnemy)
                         {
-                            // _needUpdateEnemy = true;
+                            _pendingUpDateEnemy = true;
                             continue;
                         }
                         ifUpdateEnemy = true;
@@ -87,13 +89,27 @@ namespace SparFlame.GamePlaySystem.Movement
             ecb.Dispose();
             if (ifUpdateAlly )
             {
-                // _needUpdateAlly = ifUpdateAlly && _needUpdateAlly;
                 StartCoroutine(UpdateNavMesh(FactionTag.Ally));
+            }
+            else
+            {
+                if (_pendingUpDataAlly)
+                {
+                    _pendingUpDataAlly = false;
+                    StartCoroutine(UpdateNavMesh(FactionTag.Ally));
+                }
             }
             if (ifUpdateEnemy )
             {
-                // _needUpdateEnemy = ifUpdateEnemy && _needUpdateEnemy;
                 StartCoroutine(UpdateNavMesh(FactionTag.Enemy));
+            }
+            else
+            {
+                if (_pendingUpDateEnemy)
+                {
+                    _pendingUpDateEnemy = false;
+                    StartCoroutine(UpdateNavMesh(FactionTag.Enemy));
+                }
             }
         }
 

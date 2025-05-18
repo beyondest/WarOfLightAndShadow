@@ -10,7 +10,7 @@ using Unity.Collections;
 namespace SparFlame.GamePlaySystem.Conjure
 {
     [BurstCompile]
-    [UpdateBefore(typeof(TransformSystemGroup))]
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct ConjureSystem : ISystem
     {
         private ComponentLookup<UnitAttr> _unitAttrLookup;
@@ -39,23 +39,27 @@ namespace SparFlame.GamePlaySystem.Conjure
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            // var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            // var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             // var config = SystemAPI.GetSingleton<ConjureSystemConfig>();
-
+            
             CheckConjureUnitsRequest(ref state, ecb);
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
+            var ecbp = new EntityCommandBuffer(Allocator.TempJob);
             _enemyConjuringDataLookUp.Update(ref state);
             _unitAttrLookup.Update(ref state);
-            new ConjureJob
+            var job =new ConjureJob
             {
-                ECB = ecbP,
+                ECB = ecbp.AsParallelWriter(),
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 UnitAttrLookup = _unitAttrLookup,
                 EnemyConjuringLookUp = _enemyConjuringDataLookUp
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
+            job.Complete();
+            ecbp.Playback(state.EntityManager);
+            ecbp.Dispose();
         }
 
         private void CheckConjureUnitsRequest(ref SystemState state, EntityCommandBuffer ecb)
@@ -101,7 +105,7 @@ namespace SparFlame.GamePlaySystem.Conjure
                 else
                 {
                     var data = buffer[i];
-                    data.ConjuredAmount += request.Count;
+                    data.TargetAmount += request.Count;
                     data.RemainingTimeSeconds += timeCost;
                     buffer[i] = data;
                 }
@@ -140,6 +144,7 @@ namespace SparFlame.GamePlaySystem.Conjure
                 if (data.Counter >= 1)
                 {
                     var unit = ECB.Instantiate(index, data.ConjuringEntity);
+                    
                     ECB.AddComponent<GameplayEntityTag>(index, unit);
                     var transformCopy = transform;
                     var pos = transformCopy.TransformPoint(conjureAttr.ConjurePositionBias);

@@ -35,6 +35,10 @@ namespace SparFlame.UI.GamePlay
             resourceDetailPanel.SetActive(false);
             regeneratingGo.SetActive(false);
         }
+        public void ClearCloseUpTarget()
+        {
+            _targetEntity = Entity.Null;
+        }
 
         public bool IsOpened()
         {

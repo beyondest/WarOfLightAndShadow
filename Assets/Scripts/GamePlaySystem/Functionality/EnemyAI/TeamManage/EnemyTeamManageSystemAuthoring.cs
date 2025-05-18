@@ -100,7 +100,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [Tooltip("SpecialUnitMinCount"), HideLabel, LabelText("SUMin"),
         VerticalGroup("SpecialUnit")]
         public int specialUnitMinCount;
-        [HideLabel, VerticalGroup("Team composition"),TableList,TableColumnWidth(200, false)]
+        [HideLabel, VerticalGroup("Team composition"),TableList,TableColumnWidth(220, false)]
         public List<MemberCountEntry> maxMemberCountEntries;
     }
 

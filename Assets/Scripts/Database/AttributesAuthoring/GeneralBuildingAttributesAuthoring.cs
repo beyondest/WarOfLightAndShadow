@@ -11,14 +11,15 @@ namespace SparFlame.Database
 {
     public class GeneralBuildingAttributesAuthoring : GeneralDataItemAuthoring
     {
+        public bool ifInBuildingPack;
         protected class Baker : GeneralDataItemBaker<GeneralBuildingAttributesAuthoring>
         {
             public override void Bake(GeneralBuildingAttributesAuthoring authoring)
             {
                 if(authoring.globalIdx == 0)return;
                 var item = DatabaseManager.BuildingDatabaseSo.GetItemById(authoring.globalIdx);
-                
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
+                var entity = GetEntity(authoring.ifInBuildingPack ? TransformUsageFlags.WorldSpace : TransformUsageFlags.Dynamic);
+                // var entity = GetEntity(TransformUsageFlags.Dynamic);
                 BakeGeneralDataItem(entity, item);
 
                 AddComponent(entity, new BuildingAttr

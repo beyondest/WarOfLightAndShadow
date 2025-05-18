@@ -5,6 +5,7 @@ using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.General;
 using Unity.Entities;
+using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -38,7 +39,7 @@ namespace SparFlame.UI.GamePlay
         public bool TryGetConjureInfo(int index, out Entity conjureUnit, out Entity buildingEntity,
             out int maxConjureCount)
         {
-            if (index >= _infos.Count)
+            if (index > _infos.Count || _targetEntity == Entity.Null)
             {
                 conjureUnit = Entity.Null;
                 buildingEntity = Entity.Null;
@@ -46,7 +47,7 @@ namespace SparFlame.UI.GamePlay
                 return false;
             }
 
-            conjureUnit = _infos[index].EntityPrefab;
+            conjureUnit = _infos[index - 1].EntityPrefab;
             buildingEntity = _targetEntity;
             maxConjureCount = SlotComponents[index].GetMaxConjureCount();
             return true;
@@ -57,9 +58,14 @@ namespace SparFlame.UI.GamePlay
             base.Hide();
             _targetEntity = Entity.Null;
         }
+        public void ClearCloseUpTarget()
+        {
+            _targetEntity = Entity.Null;
+        }
 
         public override void OnClickSlot(int slotIndex)
         {
+            if(_targetEntity == Entity.Null)return;
             EcsConjureUnit?.Invoke(_infos[slotIndex].EntityPrefab, _targetEntity,
                 SlotComponents[slotIndex].GetMaxConjureCount());
         }

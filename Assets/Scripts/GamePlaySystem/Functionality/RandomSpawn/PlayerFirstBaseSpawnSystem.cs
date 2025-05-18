@@ -16,6 +16,7 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<CrystalAffectRadiusSq>();
             state.RequireForUpdate<MapInitInfo>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<PlayerFirstBaseSpawnConfig>();
@@ -37,10 +38,12 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                 var config = SystemAPI.GetSingleton<PlayerFirstBaseSpawnConfig>();
                 Entity basePrefab = Entity.Null;
                 
+                var spawnableOuterSquareSize =
+                    mapInfo.OuterSquareSize - 2 * math.sqrt( SystemAPI.GetSingleton<CrystalAffectRadiusSq>().Value);
                 switch (playerFaction.Value)
                 {
                     case FactionTag.Enemy:
-                        playerPos = MapUtils.SampleSquareRing(mapInfo.OuterSquareSize, mapInfo.InnerSquareSize,
+                        playerPos = MapUtils.SampleSquareRing(spawnableOuterSquareSize, mapInfo.InnerSquareSize,
                             mapInfo.WorldCenter.xz,
                             ref rnd.Rnd);
                         basePrefab = config.DarkPrefab;
@@ -61,7 +64,7 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                         break;
                 }
 
-                if (SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out RandomSpawnDebug debug))
+                if (SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out RandomSpawnDebug debug) && debug.fixPlayerFirstPawnPosition)
                 {
                     playerPos = debug.playerFirstSpawnPosition.xz;
                 }

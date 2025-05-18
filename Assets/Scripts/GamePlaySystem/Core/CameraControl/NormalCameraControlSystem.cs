@@ -280,7 +280,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
                 //create a ramp up or acceleration
                 var speed = math.lerp(_config.TranslationSpeed, _config.TranslationMaxSpeed,
                     SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.TranslationAcceleration);
-                if (_inputData.SpeedUp) speed *= _config.SpeedUpFactor;
+                if (_inputData is { SpeedUp: true, DraggingCamera: false }) speed *= _config.SpeedUpFactor;
                 _rigTransform.position +=
                     (Vector3)_targetRigPosDelta * speed * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             }

@@ -24,9 +24,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<PlayerFactionData>();
+            state.RequireForUpdate<DarkEnemyDatabaseTag>();
+            state.RequireForUpdate<LightEnemyDatabaseTag>();
             state.RequireForUpdate<EnemyUnitAssignSystemConfig>();
             state.RequireForUpdate<GameWaveData>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             // _enemyBaseTeamAvailableData = state.GetBufferLookup<EnemyBaseTeamAvailableData>();
             // _enemyBaseTeamGeneralData = state.GetBufferLookup<EnemyBaseTeamGeneralData>();
             _needAssignTeamUnits = SystemAPI.QueryBuilder().WithAll<AITag>().WithNone<InTeamTag>().
@@ -37,8 +40,15 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!_wavePoints.IsCreated)
-                Initialize();
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if (gameStatus == GameStatus.Init)
+            {
+                if(_wavePoints.IsCreated)
+                    Deinitialize();
+                Initialize(ref state);
+                return;
+            }
+            if(gameStatus != GameStatus.Gaming)return;
             if(_needAssignTeamUnits.IsEmpty)    return;
             var curWavePoint = GeneralUtils.GetPoint(SystemAPI.GetSingleton<GameWaveData>().CurWaveIndex, _wavePoints);
 
@@ -199,11 +209,15 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             return assignSuccess;
         }
 
-
-        private void Initialize()
+        private void Initialize(ref SystemState state)
         {
-            var buffer = SystemAPI.GetSingletonBuffer<WaveUnitAssignStrategyData>();
-            var buffer3 = SystemAPI.GetSingletonBuffer<WaveTeamSpecialData>();
+            var lightEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
+            var darkEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
+            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
+                ? lightEntity
+                : darkEntity;
+            var buffer = SystemAPI.GetBuffer<WaveUnitAssignStrategyData>(entity);
+            var buffer2 = SystemAPI.GetBuffer<WaveTeamSpecialData>(entity);
             _wavePoint2Strategy = new NativeHashMap<int, NativeList<AITeamType>>(5, Allocator.Persistent);
             _wavePoint2TeamType2MemberCountEntriesLimit =
                 new NativeHashMap<int, NativeHashMap<int, TeamSpecialData>>(5, Allocator.Persistent);
@@ -225,7 +239,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
 
             // Init wave to team member consist
-            foreach (var data in buffer3)
+            foreach (var data in buffer2)
             {
                 if (!_wavePoint2TeamType2MemberCountEntriesLimit.ContainsKey(data.WavePoint))
                     _wavePoint2TeamType2MemberCountEntriesLimit.Add(data.WavePoint,
@@ -235,9 +249,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
         }
 
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
+        private void Deinitialize()
         {
             if (_wavePoint2Strategy.IsCreated)
             {
@@ -261,6 +273,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
             if (_wavePoints.IsCreated)
                 _wavePoints.Dispose();
+        }
+
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+            Deinitialize();
         }
     }
 }

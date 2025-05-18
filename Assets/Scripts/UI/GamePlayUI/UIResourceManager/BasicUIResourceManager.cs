@@ -2,12 +2,12 @@
 using JetBrains.Annotations;
 using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Command;
-using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -22,9 +22,16 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] [CanBeNull] private string factionGameOverSpriteSuffix;
         [SerializeField] [CanBeNull] private string factionHpFillSpriteSuffix;
         [SerializeField] [CanBeNull] private string factionHpBlankSpriteSuffix;
+        
+        [SerializeField] private string lightWaveColorTypeSpriteSuffix;
+        [SerializeField] private string darkWaveColorTypeSpriteSuffix;
+        [SerializeField] private string factionWaveBasicSpriteSuffix;
+        [SerializeField] private string factionCrystalHpFilledSpriteSuffix;
+        [SerializeField] private string factionCrystalHpBlankSpriteSuffix;
+
         public static BasicUIResourceManager Instance;
 
-        public readonly Dictionary<BuffType, Sprite> BuffSprites = new();
+        // public readonly Dictionary<BuffType, Sprite> BuffSprites = new();
 
         public readonly Dictionary<ResourceType, Sprite> ResourceSprites = new();
         public readonly Dictionary<Tier, Sprite> TierSprites = new();
@@ -33,6 +40,12 @@ namespace SparFlame.UI.GamePlay
         public readonly Dictionary<CursorType, Sprite> CursorSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionHpFillSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionHpBlankSprites = new();
+        public readonly Dictionary<UpRightButtonWindow.WaveColorType,Sprite> LightWaveColorTypeSprites = new();
+        public readonly Dictionary<UpRightButtonWindow.WaveColorType,Sprite> DarkWaveColorTypeSprites = new();
+        public readonly Dictionary<FactionTag,Sprite> FactionWaveTimeBasicSprites = new();   
+        public readonly Dictionary<FactionTag,Sprite> FactionCrystalHpFilledSprites = new();
+        public readonly Dictionary<FactionTag,Sprite> FactionCrystalHpBlankSprites = new();
+
         private readonly AddressableResourceGroup _group = new();
 
         public bool IsResourceLoaded()
@@ -60,8 +73,8 @@ namespace SparFlame.UI.GamePlay
             _group.Add(CR.LoadTypeSuffix<Tier, Sprite>(tierSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, TierSprites)));
             
-            _group.Add(CR.LoadTypeSuffix<BuffType, Sprite>(buffSpriteSuffix,
-                result => { CR.OnTypeSuffixLoadComplete(result, BuffSprites); }));
+            // _group.Add(CR.LoadTypeSuffix<BuffType, Sprite>(buffSpriteSuffix,
+            //     result => { CR.OnTypeSuffixLoadComplete(result, BuffSprites); }));
 
             _group.Add(CR.LoadTypeSuffix<ResourceType, Sprite>(resourceTypeSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, ResourceSprites)));
@@ -79,18 +92,38 @@ namespace SparFlame.UI.GamePlay
                 result => CR.OnTypeSuffixLoadComplete(result, FactionHpFillSprites)));
             _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionHpBlankSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, FactionHpBlankSprites)));
+            
+            _group.Add(CR.LoadTypeSuffix<UpRightButtonWindow.WaveColorType,Sprite>(lightWaveColorTypeSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, LightWaveColorTypeSprites)));
+            _group.Add(CR.LoadTypeSuffix<UpRightButtonWindow.WaveColorType, Sprite>(darkWaveColorTypeSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, DarkWaveColorTypeSprites)));
+            
+            _group.Add(CR.LoadTypeSuffix<FactionTag,Sprite>(factionWaveBasicSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, FactionWaveTimeBasicSprites)));
+            _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionCrystalHpFilledSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, FactionCrystalHpFilledSprites)));
+            _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionCrystalHpBlankSpriteSuffix,
+                result => CR.OnTypeSuffixLoadComplete(result, FactionCrystalHpBlankSprites)));
+            
         }
 
         public void UnloadResources()
         {
             _group.Release();
             ResourceSprites.Clear();
-            BuffSprites.Clear();
+            // BuffSprites.Clear();
             FactionHpSprites.Clear();
             FactionHpFillSprites.Clear();
             FactionHpBlankSprites.Clear();
             CursorSprites.Clear();
             TierSprites.Clear();
+            
+            FactionWaveTimeBasicSprites.Clear();
+            FactionCrystalHpFilledSprites.Clear();
+            FactionCrystalHpBlankSprites.Clear();
+            DarkWaveColorTypeSprites.Clear();
+            LightWaveColorTypeSprites.Clear();
+            
         }
     }
 }

@@ -16,7 +16,7 @@ namespace SparFlame.GamePlaySystem.Construction
         // Internal Data
         private FactionTag _playerCurrentFaction = FactionTag.Ally; // Only work for player command
         private bool _inGhostShow;
-        private ConstructSystemConfig2 _config2;
+        private ConstructSystemConfig _config;
 
         private bool _initEvent;
 
@@ -30,17 +30,16 @@ namespace SparFlame.GamePlaySystem.Construction
         protected override void OnCreate()
         {
             RequireForUpdate<GamingTag>();
-            RequireForUpdate<ConstructSystemConfig2>();
+            RequireForUpdate<ConstructSystemConfig>();
             RequireForUpdate<ConstructCommandData>();
         }
-
 
         protected override void OnStartRunning()
         {
             // When gameStatus is gaming, instance can never be null
             if (!_initEvent)
             {
-                _config2 = SystemAPI.GetSingleton<ConstructSystemConfig2>();
+                _config = SystemAPI.GetSingleton<ConstructSystemConfig>();
                 _initEvent = true;
                 ConstructWindow.Instance.EcsGhostShowTargetByTypeIndex += entity =>
                 {
@@ -151,7 +150,7 @@ namespace SparFlame.GamePlaySystem.Construction
                 return;
             }
 
-            angle = _inputData.Rotate * _config2.RotateSpeed;
+            angle = _inputData.Rotate * _config.RotateSpeed;
             data.RotationAngle = angle;
         }
 
@@ -196,7 +195,7 @@ namespace SparFlame.GamePlaySystem.Construction
             // Hide this entity for now, just move it to invisible place
             var transform = EntityManager.GetComponentData<LocalTransform>(entity);
             var oriTransform = transform;
-            transform.Position = _config2.HideBuildingLocation;
+            transform.Position = _config.HideBuildingLocation;
             EntityManager.SetComponentData(entity, transform);
             GhostShowTargetBuilding(entity, true, oriTransform);
         }
@@ -205,10 +204,13 @@ namespace SparFlame.GamePlaySystem.Construction
         private void ExitGhostShow()
         {
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
+            if(data.CommandType == ConstructCommandType.None)return;
             data.CommandType = ConstructCommandType.End;
             _inGhostShow = false;
         }
 
         #endregion
+
+
     }
 }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using GamePlaySystem.Database;
 using SparFlame.BootStrapper;
 using SparFlame.Database;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.Utils;
 using Unity.Entities;

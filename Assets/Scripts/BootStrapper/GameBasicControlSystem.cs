@@ -47,6 +47,7 @@ namespace SparFlame.BootStrapper
 
         protected override void OnStartRunning()
         {
+            if(GameController.Instance == null)return;
             if (!_initialized)
             {
                 _customInputActions = InputListener.Instance.GetCustomInputActions();
@@ -62,6 +63,7 @@ namespace SparFlame.BootStrapper
 
         protected override void OnUpdate()
         {
+            if(!_initialized) return;
             var gameBasicState = SystemAPI.GetSingletonRW<GameStatusData>();
             if (_enterSystemInitState)
             {

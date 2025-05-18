@@ -54,7 +54,6 @@ namespace SparFlame.GamePlaySystem.Movement
         public int MaxIterations;
         public int PathNodePoolSize;
         public int InitialNavMeshQueriesCapacity;
-        public bool IsInitialized;
         public float3 ExtentsOffset;
     }
 

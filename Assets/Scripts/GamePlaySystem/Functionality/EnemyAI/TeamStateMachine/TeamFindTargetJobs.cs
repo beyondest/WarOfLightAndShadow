@@ -178,6 +178,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
     [BurstCompile]
     [WithAll(typeof(PlayerTag))]
+    [WithNone(typeof(UnitDeadTag))]
     public partial struct FindOutsideUnitToPlayerBaseJob : IJobEntity
     {
         // Although disable the restriction, but this job CANNOT parallel because many harassTargets may have same value type

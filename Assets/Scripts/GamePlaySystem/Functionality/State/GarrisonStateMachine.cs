@@ -100,6 +100,7 @@ namespace SparFlame.GamePlaySystem.State
         }
 
         [BurstCompile]
+        [WithNone(typeof(UnitDeadTag))]
         private partial struct InGarrisonStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -235,6 +236,7 @@ namespace SparFlame.GamePlaySystem.State
         [BurstCompile]
         [WithAll(typeof(GarrisonStateTag))]
         [WithNone(typeof(InGarrison))]
+        [WithNone(typeof(UnitDeadTag))]
         private partial struct EnterGarrisonStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;

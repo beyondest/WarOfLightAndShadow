@@ -50,7 +50,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         public Entity Tower;
         public int AvailableCount;
     }
-    
    
   
 }

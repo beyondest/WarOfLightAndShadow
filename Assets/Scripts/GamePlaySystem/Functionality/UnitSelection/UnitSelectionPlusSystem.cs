@@ -4,8 +4,10 @@ using Unity.Mathematics;
 using Unity.Collections;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.Garrison;
 using Unity.Burst;
+using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.UnitSelection
 {
@@ -57,8 +59,12 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 }
 
                 if (selectable)
-                    ToggleOne(ref state, ref ecb, ref unitSelectionData, inputMouseData.HitEntity,
-                        unitSelectionConfig);
+                {
+                    var expData = SystemAPI.GetComponent<ExpData>(inputMouseData.HitEntity);
+                    var position = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    ToggleOne(ref state, ref ecb, ref unitSelectionData, inputMouseData.HitEntity, expData,
+                        position);
+                }
             }
 
             if (inputUnitSelectionData.DragSelectStart)
@@ -70,10 +76,11 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                     DeselectAll(ref state, ref ecb, ref unitSelectionData, unitSelectionConfig);
                 }
 
+                unitSelectionData.ValueRW.DragSelectStart = true;
                 StartSelectionBox(ref unitSelectionData, inputMouseData);
             }
 
-            if (inputUnitSelectionData.DraggingSelect)
+            if (inputUnitSelectionData.DraggingSelect && unitSelectionData.ValueRO.DragSelectStart)
             {
                 RecordSelectionBox(ref unitSelectionData, inputMouseData);
                 DragSelect(ref state, ref ecb, ref unitSelectionData, inputUnitSelectionData.AddUnit,
@@ -82,6 +89,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
             if (inputUnitSelectionData.DragSelectEnd)
             {
+                unitSelectionData.ValueRW.DragSelectStart = false;
                 ResetSelectionBox(ref unitSelectionData, inputMouseData);
                 LockSelected(ref state, ref ecb, false);
             }
@@ -91,20 +99,21 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             {
                 if (!request.ValueRO.IsDead)
                 {
-                    SelectOne(ref state, ref ecb, ref unitSelectionData, request.ValueRO.SelectedEntity,
-                        unitSelectionConfig, false);
+                    var expData = SystemAPI.GetComponent<ExpData>(request.ValueRO.SelectedEntity);
+                    var position = SystemAPI.GetComponent<LocalTransform>(request.ValueRO.SelectedEntity).Position;
+                    SelectOne(ref state, ref ecb, ref unitSelectionData, request.ValueRO.SelectedEntity, false,
+                        expData, position);
                 }
                 else
                 {
                     unitSelectionData.ValueRW.CurrentSelectCount -= 1;
-                    if (unitSelectionData.ValueRW.CurrentSelectCount < 0)
-                        unitSelectionData.ValueRW.CurrentSelectCount = 0;
                 }
 
                 ecb.DestroyEntity(entity);
             }
 
-
+            if (unitSelectionData.ValueRW.CurrentSelectCount < 0)
+                unitSelectionData.ValueRW.CurrentSelectCount = 0;
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
@@ -113,36 +122,47 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         #region SelectMethods
 
         private void SelectOne(ref SystemState state, ref EntityCommandBuffer ecb,
-            ref RefRW<UnitSelectionData> unitSelectionData, Entity entity,
-            in UnitSelectionConfig unitSelectionConfig, in bool isSelected)
+            ref RefRW<UnitSelectionData> unitSelectionData, Entity entity, in bool isSelected,
+            in ExpData expData, in float3 position)
         {
             if (state.EntityManager.IsComponentEnabled<Selected>(entity) == isSelected) return;
 
             ecb.SetComponentEnabled<Selected>(entity, isSelected);
             var addValue = isSelected ? 1 : -1;
             unitSelectionData.ValueRW.CurrentSelectCount += addValue;
-            EnableSelectedIndicator(ref state, ref ecb, entity, isSelected, unitSelectionConfig);
+            EnableSelectedIndicator(ref state, ref ecb, entity, isSelected,
+                unitSelectionData.ValueRO.CurrentSelectFaction, expData, position);
         }
 
         private void ToggleOne(ref SystemState state, ref EntityCommandBuffer ecb,
-            ref RefRW<UnitSelectionData> unitSelectionData, Entity entity,
-            in UnitSelectionConfig unitSelectionConfig)
+            ref RefRW<UnitSelectionData> unitSelectionData, Entity entity, in ExpData expData, in float3 position)
         {
             var isSelected = state.EntityManager.IsComponentEnabled<Selected>(entity);
             ecb.SetComponentEnabled<Selected>(entity, !isSelected);
             var addValue = !isSelected ? 1 : -1;
             unitSelectionData.ValueRW.CurrentSelectCount += addValue;
-            EnableSelectedIndicator(ref state, ref ecb, entity, !isSelected, unitSelectionConfig);
+            EnableSelectedIndicator(ref state, ref ecb, entity, !isSelected,
+                unitSelectionData.ValueRO.CurrentSelectFaction,
+                expData, position);
         }
 
         private void DeselectAll(ref SystemState state, ref EntityCommandBuffer ecb,
             ref RefRW<UnitSelectionData> unitSelectionData, in UnitSelectionConfig unitSelectionConfig)
         {
-            var query = SystemAPI.QueryBuilder().WithAll<Selected>().Build();
-            foreach (var selectedEntity in query.ToEntityArray(Allocator.Temp))
+            var query = SystemAPI.QueryBuilder().WithAll<Selected>().WithAll<ExpData>().WithAll<LocalTransform>()
+                .Build();
+            var entities = query.ToEntityArray(Allocator.Temp);
+            var trans = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            var exps = query.ToComponentDataArray<ExpData>(Allocator.Temp);
+
+            for (var i = 0; i < entities.Length; i++)
             {
-                SelectOne(ref state, ref ecb, ref unitSelectionData, selectedEntity,
-                    unitSelectionConfig, false);
+                var selectedEntity = entities[i];
+                var pos = trans[i].Position;
+                var exp = exps[i];
+                SelectOne(ref state, ref ecb, ref unitSelectionData, selectedEntity, false,
+                    exp, pos
+                );
             }
         }
 
@@ -158,20 +178,21 @@ namespace SparFlame.GamePlaySystem.UnitSelection
             CalculateMinMax(unitSelectionData.ValueRW.SelectionBoxStartPos,
                 unitSelectionData.ValueRW.SelectionBoxEndPos, out float2 min, out float2 max);
 
-            foreach (var (screenPos, entity) in SystemAPI.Query<RefRO<ScreenPos>>().WithAll<InCameraView>()
+            foreach (var (screenPos,trans, expData, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<LocalTransform>,
+                         RefRO<ExpData>>().WithAll<InCameraView>()
                          .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess().WithNone<InGarrison>()
                          .WithAll<PlayerTag>())
             {
                 // Inside selection box
                 if (IsInsideBox(screenPos.ValueRO.ScreenPosition, min, max))
                 {
-                    SelectOne(ref state, ref ecb, ref unitSelectionData, entity, unitSelectionConfig,
-                        true);
+                    SelectOne(ref state, ref ecb, ref unitSelectionData, entity,
+                        true,expData.ValueRO,trans.ValueRO.Position);
                 }
                 else
                 {
-                    SelectOne(ref state, ref ecb, ref unitSelectionData, entity, unitSelectionConfig,
-                        false);
+                    SelectOne(ref state, ref ecb, ref unitSelectionData, entity,
+                        false,expData.ValueRO,trans.ValueRO.Position);
                 }
             }
         }
@@ -263,14 +284,31 @@ namespace SparFlame.GamePlaySystem.UnitSelection
 
         private void EnableSelectedIndicator(ref SystemState state, ref EntityCommandBuffer ecb,
             in Entity entity,
-            in bool isEnable, in UnitSelectionConfig unitSelectionConfig)
+            in bool isEnable, in FactionTag curFaction, in ExpData expData, in float3 position)
         {
-            if (!_linkedGroupLookup.TryGetBuffer(entity, out var linkedEntities))
+            // if (!_linkedGroupLookup.TryGetBuffer(entity, out var linkedEntities))
+            // {
+            //     return;
+            // }
+            //
+            // ecb.SetEnabled(linkedEntities[unitSelectionConfig.SelectedIndicatorIndex].Value, isEnable);
+            var request = ecb.CreateEntity();
+            ecb.AddComponent(request, new VFXRequest
             {
-                return;
-            }
-
-            ecb.SetEnabled(linkedEntities[unitSelectionConfig.SelectedIndicatorIndex].Value, isEnable);
+                VFXName = VFXName.SelectionIndicator,
+                Filter = new VFXSubFilter
+                {
+                    FactionFilterEnable = true,
+                    Faction = curFaction,
+                    TierFilterEnable = true,
+                    Tier = expData.CurTier
+                },
+                SpawnPosition = position,
+                KeepDuration = 0,
+                StatChangeRequest = default,
+                Type = isEnable ? VFXRequestType.Spawn : VFXRequestType.Kill,
+                VFXTrackTarget = entity
+            });
         }
 
         #endregion

@@ -13,6 +13,7 @@ using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Transforms;
+
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 
 namespace SparFlame.GamePlaySystem.Interact
@@ -98,18 +99,18 @@ namespace SparFlame.GamePlaySystem.Interact
                     enabled = false
                 };
             }
+
             new CheckStatChangeRequest
             {
                 ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 RandomValue = rndValue,
-                
                 SightConfig = autoChooseTargetSystemConfig,
                 OocConfig = oocSystemConfig,
                 PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
-                
+
                 // Debug
                 StatDebug = statDebug,
-                
+
                 // Look up
                 GeneralAttrLookup = _interactableAttrLookup,
                 ObstacleTagLookup = _volumeObstacleTagLookup,
@@ -133,12 +134,12 @@ namespace SparFlame.GamePlaySystem.Interact
         public partial struct CheckStatChangeRequest : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            public float RandomValue;
+            [ReadOnly] public float RandomValue;
             [ReadOnly] public FactionTag PlayerFaction;
             [ReadOnly] public SightSystemConfig SightConfig;
             [ReadOnly] public OocSystemConfig OocConfig;
             [ReadOnly] public StatDebug StatDebug;
-            
+
             [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetListLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatLookup;
 
@@ -155,32 +156,47 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<InTeamTag> InTeamTagLookup;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
-            
+
 
             private void Execute([ChunkIndexInQuery] int index, in StatChangeRequest request, Entity entity)
             {
-                if (!StatLookup.HasComponent(request.Interactee)) return;
-                var interactorAttr = new GeneralAttr();
-                if (!request.KillByUnNormal &&
-                    !GeneralAttrLookup.TryGetComponent(request.Interactor, out interactorAttr)) return;
+                // Destroy request
+                ECB.DestroyEntity(index, entity);
+                // Check if target is already dead
                 if (!GeneralAttrLookup.TryGetComponent(request.Interactee, out var interacteeAttr)) return;
 
                 // Handle Stat Change Request. This request is destroyed other place, like pop number system
                 ref var statInteractee = ref StatLookup.GetRefRW(request.Interactee).ValueRW;
-                var statInteractor = StatLookup[request.Interactor].CurValue;
                 // This entity is already dead and handled by other request handling process
-                if (statInteractee.CurValue <= 0 || statInteractor <= 0) return;
+                if (statInteractee.CurValue <= 0) return;
 
-                
-                statInteractee.CurValue = request.InteractType == InteractType.Heal
-                    ? math.min(statInteractee.MaxValue, statInteractee.CurValue + request.AbsAmount)
-                    : math.max(0, statInteractee.CurValue - request.AbsAmount);
+                switch (request.Type)
+                {
+                    case StatChangeType.None:
+                        break;
+                    case StatChangeType.Heal:
+                        statInteractee.CurValue = math.min(statInteractee.MaxValue,
+                            statInteractee.CurValue + request.AbsAmount);
+                        break;
+                    case StatChangeType.Attack:
+                    case StatChangeType.Harvest:
+                        statInteractee.CurValue = math.max(0, statInteractee.CurValue - request.AbsAmount);
+                        break;
+                    case StatChangeType.UnNormalKill:
+                    case StatChangeType.Upgrade:
+                        statInteractee.CurValue = 0;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
                 if (StatDebug.enabled)
                 {
                     DebugCheck(request, interacteeAttr, ref statInteractee);
                 }
+
                 // Check interact type and do different jobs according to interact type 
-                CheckInteractType(in request, in statInteractee, in interactorAttr, in interacteeAttr, index);
+                CheckInteractType(in request, in statInteractee, in interacteeAttr, index);
 
                 // Remove Dead Entities, like units, resources, buildings
                 if (statInteractee.CurValue <= 0)
@@ -188,83 +204,19 @@ namespace SparFlame.GamePlaySystem.Interact
                     RemoveAndSendRequest(ref statInteractee, request.Interactee, index, in interacteeAttr);
                 }
 
-                // Destroy this stat change request, cause each request is dealt only one time
-                ECB.DestroyEntity(index, entity);
-            }
-
-            private void DebugCheck(in StatChangeRequest request,in GeneralAttr interacteeAttr, ref StatData statInteractee)
-            {
-                if (StatDebug.playerStatGeneralInfinite && interacteeAttr.FactionTag == PlayerFaction)
-                    statInteractee.CurValue = statInteractee.MaxValue;
-                if (StatDebug.playerStatGeneralZero && interacteeAttr.FactionTag == PlayerFaction)
-                    statInteractee.CurValue = 0f;
-                if(StatDebug.aiStatGeneralInfinite && interacteeAttr.FactionTag == ~PlayerFaction)
-                    statInteractee.CurValue = statInteractee.MaxValue;
-                if(StatDebug.aiStatGeneralZero && interacteeAttr.FactionTag == ~PlayerFaction)
-                    statInteractee.CurValue = 0f;
-                if (StatDebug.playerCrystalStatInfinite && interacteeAttr.FactionTag == PlayerFaction && interacteeAttr.BaseTag == BaseTag.Buildings)
-                {
-                    var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
-                    {
-                        statInteractee.CurValue = statInteractee.MaxValue;
-                    }
-                }
-                if (StatDebug.playerCrystalStatZero && interacteeAttr.FactionTag == PlayerFaction && interacteeAttr.BaseTag == BaseTag.Buildings)
-                {
-                    var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
-                    {
-                        statInteractee.CurValue = 0f;
-                    }
-                }
-                if (StatDebug.aiCrystalStatInfinite && interacteeAttr.FactionTag == ~PlayerFaction && interacteeAttr.BaseTag == BaseTag.Buildings)
-                {
-                    var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
-                    {
-                        statInteractee.CurValue = statInteractee.MaxValue;
-                    }
-                }
-                if (StatDebug.aiCrystalStatZero && interacteeAttr.FactionTag == ~PlayerFaction && interacteeAttr.BaseTag == BaseTag.Buildings)
-                {
-                    var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
-                    {
-                        statInteractee.CurValue = 0f;
-                    }
-                }
-                if (StatDebug.playerUnitStatInfinite && interacteeAttr.FactionTag == PlayerFaction  && interacteeAttr.BaseTag == BaseTag.Units)
-                {
-                    statInteractee.CurValue = statInteractee.MaxValue;
-                }
-                if (StatDebug.playerUnitStatZero && interacteeAttr.FactionTag == PlayerFaction  && interacteeAttr.BaseTag == BaseTag.Units)
-                {
-                    statInteractee.CurValue = 0f;
-                }
-                if (StatDebug.aiUnitStatInfinite && interacteeAttr.FactionTag == ~PlayerFaction  && interacteeAttr.BaseTag == BaseTag.Units)
-                {
-                    statInteractee.CurValue = statInteractee.MaxValue;
-                }
-                if (StatDebug.aiUnitStatZero && interacteeAttr.FactionTag == ~PlayerFaction  && interacteeAttr.BaseTag == BaseTag.Units)
-                {
-                    statInteractee.CurValue = 0f;
-                }
-                if(StatDebug.resourceStatInfinite && interacteeAttr.BaseTag == BaseTag.Resources)
-                    statInteractee.CurValue = statInteractee.MaxValue;
-                if(StatDebug.resourceStatZero && interacteeAttr.BaseTag == BaseTag.Resources)
-                    statInteractee.CurValue = 0f;
+                
             }
 
             private void CheckInteractType(in StatChangeRequest request, in StatData statInteractee,
-                in GeneralAttr interactorAttr, in GeneralAttr interacteeAttr,
+                in GeneralAttr interacteeAttr,
                 int index)
             {
-                switch (request.InteractType)
+                switch (request.Type)
                 {
                     // Raise attacker value in target list only when this hit will not kill the target
                     // Interactor stat must > 0 because it is checked before
-                    case InteractType.Attack:
+                    case StatChangeType.UnNormalKill:
+                    case StatChangeType.Attack:
                     {
                         // TODO : This should cause a race condition, but it works fine for now.
                         // Update interactee targetList if it has
@@ -278,7 +230,6 @@ namespace SparFlame.GamePlaySystem.Interact
                                 if (target.Entity == request.Interactor)
                                     break;
                             }
-
                             // Target Not in sight but get attacked, should add it to target list
                             if (i == targetsBuffer.Length)
                             {
@@ -302,20 +253,29 @@ namespace SparFlame.GamePlaySystem.Interact
                             }
                         }
                         // Update Ooc info(attack state or under attack state tag)
-
-                        if (statInteractee.CurValue > 0)
-                            UpdateOocInfo(request, interactorAttr, interacteeAttr, index);
-                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr, index, ECB);
+                        if (statInteractee.CurValue > 0 && request.Type != StatChangeType.UnNormalKill)
+                            UpdateOocInfo(request, request.InteractorGeneralAttr, interacteeAttr, index);
+                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, request.InteractorGeneralAttr,
+                            index,
+                            ECB);
                         break;
                     }
-                    case InteractType.Harvest:
+                    case StatChangeType.Harvest:
                         var resourceAttr = ResourceAttrLookup[request.Interactee];
-                        StatUtils.GenerateHarvestResourceRequest(request, interactorAttr, resourceAttr, index, ECB);
-                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr, index, ECB);
+                        StatUtils.GenerateHarvestResourceRequest(request, request.InteractorGeneralAttr, resourceAttr,
+                            index, ECB);
+                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, request.InteractorGeneralAttr,
+                            index, ECB);
                         break;
-                    case InteractType.Heal:
-                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, interactorAttr, index, ECB);
+                    case StatChangeType.Heal:
+                        StatUtils.GeneratePopNumberRequest(ref TransformLookup, request, request.InteractorGeneralAttr,
+                            index, ECB);
                         break;
+                    case StatChangeType.None:
+                    case StatChangeType.Upgrade:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
 
@@ -349,7 +309,6 @@ namespace SparFlame.GamePlaySystem.Interact
                                 UnitToRemove = interacteeEntity
                             });
                             ECB.AddComponent<GameplayEntityTag>(index, request);
-
                         }
 
                         var entity = ECB.CreateEntity(index);
@@ -359,8 +318,9 @@ namespace SparFlame.GamePlaySystem.Interact
                             IsDead = true,
                             SelectedEntity = Entity.Null
                         });
-                        ECB.DestroyEntity(index, interacteeEntity);
-
+                        
+                        // ECB.DestroyEntity(index, interacteeEntity);
+                        KillUnit(interacteeEntity, index);
                         break;
                     case BaseTag.Buildings:
                         if (ObstacleTagLookup.HasComponent(interacteeEntity))
@@ -373,15 +333,6 @@ namespace SparFlame.GamePlaySystem.Interact
                         {
                             StatUtils.GenerateChangeOccupiedTagRequest(in interacteeAttr,
                                 TransformLookup[interacteeEntity].Position, ECB, index);
-                            /*var request = ECB.CreateEntity(index);
-                            if (interacteeAttr.FactionTag != PlayerFaction)
-                            {
-                                ECB.AddComponent(index, request, new DestroyEnemyBaseRequest
-                                {
-                                    Base = interacteeEntity
-                                });
-                            }*/
-                           
                         }
 
                         if (buildingAttr.Type == BuildingType.Dwellings)
@@ -444,7 +395,8 @@ namespace SparFlame.GamePlaySystem.Interact
                         Seconds = interacteeSeconds
                     });
                 }
-
+                // Attacker is already dead
+                if(!TransformLookup.TryGetComponent(request.Interactor, out var _))return;
                 // Set interactor ooc data
                 if (OocTagLookup.HasComponent(request.Interactor))
                 {
@@ -467,6 +419,101 @@ namespace SparFlame.GamePlaySystem.Interact
             {
                 return requestAmount * config.StatValueChangeMultiplier;
             }
+
+            private void DebugCheck(in StatChangeRequest request, in GeneralAttr interacteeAttr,
+                ref StatData statInteractee)
+            {
+                if (StatDebug.playerStatGeneralInfinite && interacteeAttr.FactionTag == PlayerFaction)
+                    statInteractee.CurValue = statInteractee.MaxValue;
+                if (StatDebug.playerStatGeneralZero && interacteeAttr.FactionTag == PlayerFaction)
+                    statInteractee.CurValue = 0f;
+                if (StatDebug.aiStatGeneralInfinite && interacteeAttr.FactionTag == ~PlayerFaction)
+                    statInteractee.CurValue = statInteractee.MaxValue;
+                if (StatDebug.aiStatGeneralZero && interacteeAttr.FactionTag == ~PlayerFaction)
+                    statInteractee.CurValue = 0f;
+                if (StatDebug.playerCrystalStatInfinite && interacteeAttr.FactionTag == PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Buildings)
+                {
+                    var buildingAttr = BuildingAttrLookup[request.Interactee];
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    {
+                        statInteractee.CurValue = statInteractee.MaxValue;
+                    }
+                }
+
+                if (StatDebug.playerCrystalStatZero && interacteeAttr.FactionTag == PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Buildings)
+                {
+                    var buildingAttr = BuildingAttrLookup[request.Interactee];
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    {
+                        statInteractee.CurValue = 0f;
+                    }
+                }
+
+                if (StatDebug.aiCrystalStatInfinite && interacteeAttr.FactionTag == ~PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Buildings)
+                {
+                    var buildingAttr = BuildingAttrLookup[request.Interactee];
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    {
+                        statInteractee.CurValue = statInteractee.MaxValue;
+                    }
+                }
+
+                if (StatDebug.aiCrystalStatZero && interacteeAttr.FactionTag == ~PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Buildings)
+                {
+                    var buildingAttr = BuildingAttrLookup[request.Interactee];
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    {
+                        statInteractee.CurValue = 0f;
+                    }
+                }
+
+                if (StatDebug.playerUnitStatInfinite && interacteeAttr.FactionTag == PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Units)
+                {
+                    statInteractee.CurValue = statInteractee.MaxValue;
+                }
+
+                if (StatDebug.playerUnitStatZero && interacteeAttr.FactionTag == PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Units)
+                {
+                    statInteractee.CurValue = 0f;
+                }
+
+                if (StatDebug.aiUnitStatInfinite && interacteeAttr.FactionTag == ~PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Units)
+                {
+                    statInteractee.CurValue = statInteractee.MaxValue;
+                }
+
+                if (StatDebug.aiUnitStatZero && interacteeAttr.FactionTag == ~PlayerFaction &&
+                    interacteeAttr.BaseTag == BaseTag.Units)
+                {
+                    statInteractee.CurValue = 0f;
+                }
+
+                if (StatDebug.resourceStatInfinite && interacteeAttr.BaseTag == BaseTag.Resources)
+                    statInteractee.CurValue = statInteractee.MaxValue;
+                if (StatDebug.resourceStatZero && interacteeAttr.BaseTag == BaseTag.Resources)
+                    statInteractee.CurValue = 0f;
+            }
+
+            private void KillUnit(Entity unit, int index)
+            {
+                ECB.AddComponent<UnitDeadTag>(index, unit);
+               
+                ECB.RemoveComponent<GeneralAttr>(index, unit);
+                ECB.RemoveComponent<UnitAttr>(index, unit);
+                ECB.RemoveComponent<StatData>(index, unit);
+                ECB.RemoveComponent<MovableData>(index, unit);
+                ECB.RemoveComponent<Selected>(index,unit);
+                
+            }
         }
+        
+        
     }
 }

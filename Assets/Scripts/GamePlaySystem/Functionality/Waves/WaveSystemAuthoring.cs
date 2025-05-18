@@ -29,8 +29,9 @@ namespace SparFlame.GamePlaySystem.Waves
                 {
                     CurWaveIndex = -1,
                     IfWaveUpdateThisFrame = false,
-                    NeedUpdateWaveTime = -1
+                    NextWaveRemainingTime = 0f
                 });
+                AddComponent(entity, new GameWaveSystemConfig());
             }
         }
     }
@@ -59,7 +60,8 @@ namespace SparFlame.GamePlaySystem.Waves
     public struct GameWaveData : IComponentData
     {
         public int CurWaveIndex;
-        public float NeedUpdateWaveTime;
+        public float NextWaveRemainingTime;
+        public float CurWaveInterval;
         public bool IfWaveUpdateThisFrame;
     }
 
@@ -67,5 +69,7 @@ namespace SparFlame.GamePlaySystem.Waves
     {
         
     }
+
+
     
 }

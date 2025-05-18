@@ -26,6 +26,7 @@ namespace SparFlame.UI.GamePlay
         public void OnMinimizeClick()
         {
             _minimizeWindow = !_minimizeWindow;
+            ClearCloseUpTarget();
             Hide();
         }
 
@@ -76,6 +77,7 @@ namespace SparFlame.UI.GamePlay
 
         private bool _minimizeWindow;
         private CustomInputActions _customInputActions;
+        private bool _ifLastTimePlayerCloseByEsc;
 
         private Entity _closeUpTarget;
         private EntityManager _em;
@@ -113,7 +115,10 @@ namespace SparFlame.UI.GamePlay
             var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<CursorData>();
             var selectedData = _selectedData.GetSingleton<UnitSelectionData>();
-
+            
+            
+              
+                
             // Check left click event
             // Valid when left click on interactable entity
             var leftClickOnValid = !inputMouseData.IsOverUI
@@ -128,19 +133,29 @@ namespace SparFlame.UI.GamePlay
             {
                 UpdateCloseUpTarget(inputMouseData.HitEntity);
             }
-
+            
 
             // Check should show or hide info window
             // show info window when select some units or left click on valid
             var shouldShowInfoWindow = selectedData.CurrentSelectCount > 0 || leftClickOnValid;
-
+            if (selectedData.DragSelectStart)
+                _ifLastTimePlayerCloseByEsc = false;
 
             if (shouldShowInfoWindow)
             {
-                if (!_minimizeWindow && !infoPanel.activeSelf)
-                    Show();
-                else if (_minimizeWindow)
-                    maximizeButton.SetActive(true);
+                if(leftClickOnValid || !_ifLastTimePlayerCloseByEsc )
+                {
+                    _ifLastTimePlayerCloseByEsc = false;
+                    if (!_minimizeWindow && !infoPanel.activeSelf)
+                        Show();
+                    else if (_minimizeWindow)
+                        maximizeButton.SetActive(true);
+                    if (!CloseUpWindow.Instance.HasTarget())
+                    {
+                        UnitMulti2DWindow.Instance.OnClickSlot(0);
+                    }
+                }
+               
             }
 
 
@@ -193,8 +208,9 @@ namespace SparFlame.UI.GamePlay
                     ResourceDetailWindow.Instance.Hide();
             }
 
+            var closeByEsc = _customInputActions.InfoWindow.CloseWindow.WasPerformedThisFrame();
             var shouldHideInfoWindow = leftClickOnInvalid
-                                       || _customInputActions.InfoWindow.CloseWindow.WasPerformedThisFrame()
+                                       || closeByEsc
                                        || (!UnitDetailWindow.Instance.HasTarget()
                                            && !BuildingDetailWindow.Instance.HasTarget()
                                            && !InteractAbilityWindow.Instance.HasTarget()
@@ -207,7 +223,11 @@ namespace SparFlame.UI.GamePlay
                     maximizeButton.SetActive(false);
                 else if (!_minimizeWindow && infoPanel.activeSelf)
                     Hide();
+                if(closeByEsc) _ifLastTimePlayerCloseByEsc = true;
+                ClearCloseUpTarget();
             }
+
+            
         }
 
         public void Show()
@@ -222,6 +242,19 @@ namespace SparFlame.UI.GamePlay
         {
             infoPanel.SetActive(false);
             CloseUpWindow.Instance.Hide();
+        }
+
+        private void ClearCloseUpTarget()
+        {
+            CloseUpWindow.Instance.ClearCloseUpTarget();
+            UnitDetailWindow.Instance.ClearCloseUpTarget();
+            BuildingDetailWindow.Instance.ClearCloseUpTarget();
+            ResourceDetailWindow.Instance.ClearCloseUpTarget();
+            InteractAbilityWindow.Instance.ClearCloseUpTarget();
+            GarrisonInfoWindow.Instance.ClearCloseUpTarget();
+            ConjureQueueWindow.Instance.ClearCloseUpTarget();
+            MiniConjureWindow.Instance.ClearCloseUpTarget();
+            ConjureWindow.Instance.ClearCloseUpTarget();
         }
 
 

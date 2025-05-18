@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CustomInput;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.General;
@@ -27,7 +27,8 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private GameObject constructEnterButton;
 
         [SerializeField] private GameObject constructExitButton;
-
+        [SerializeField] private Scrollbar scrollbar;
+        
         // Interface
         public static ConstructWindow Instance;
         public Action<Entity> EcsGhostShowTargetByTypeIndex;
@@ -52,6 +53,7 @@ namespace SparFlame.UI.GamePlay
             InfoWindowController.Instance.Show();
             BuildingDetailWindow.Instance.Show();
             InfoWindowController.Instance.UpdateCloseUpTarget(entity);
+            BuildingDetailWindow.Instance.HideConstructPanel();
         }
 
 
@@ -59,6 +61,7 @@ namespace SparFlame.UI.GamePlay
         public void OnClickBuildingTypeButton(int type)
         {
             _currentGeneralType = (BuildingType)type;
+            scrollbar.value = 1;
             UpdateCandidates();
         }
 
@@ -66,6 +69,7 @@ namespace SparFlame.UI.GamePlay
         {
             _shouldFilterSubType = _currentSubType == subType ? !_shouldFilterSubType : true;
             _currentSubType = subType;
+            scrollbar.value = 1;
             UpdateCandidates();
         }
 
@@ -84,6 +88,7 @@ namespace SparFlame.UI.GamePlay
                 tierFilterIcon.sprite = BasicUIResourceManager.Instance.TierSprites[_currentTier];
             }
 
+            scrollbar.value = 1;
             UpdateCandidates();
         }
 

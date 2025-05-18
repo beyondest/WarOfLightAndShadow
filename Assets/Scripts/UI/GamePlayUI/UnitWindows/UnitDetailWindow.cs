@@ -36,6 +36,10 @@ namespace SparFlame.UI.GamePlay
             base.Hide();
             TargetEntity = Entity.Null;
         }
+        public void ClearCloseUpTarget()
+        {
+            TargetEntity = Entity.Null;
+        }
 
         public bool TrySwitchTarget(Entity target)
         {

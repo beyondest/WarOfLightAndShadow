@@ -16,21 +16,22 @@ namespace SparFlame.GamePlaySystem.Building
         [Tooltip("This location is used for hiding building when enter movement ghost show")]
         public float3 hideBuildingLocation  = new float3(0, -100, 0);
         public float rotateSpeed = 2f;
-
+        public float recycleScale = 0.5f;
         private class PlaceSystemAuthoringBaker : Baker<ConstructSystemAuthoring>
         {
             public override void Bake(ConstructSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new ConstructSystemConfig2
+                AddComponent(entity, new ConstructSystemConfig
                 {
                     HideBuildingLocation = authoring.hideBuildingLocation,
                     RotateSpeed = authoring.rotateSpeed,
+                    RecycleScale = authoring.recycleScale,
                 });
 
-                AddComponent(entity, new ConstructSystemConfig
+                
+                AddComponent(entity, new ConstructSystemPrefabRef
                 {
-
                     GhostTriggerPrefab = GetEntity(authoring.ghostTriggerPrefab, TransformUsageFlags.Dynamic),
                     ValidPreset = GetEntity(authoring.validRef, TransformUsageFlags.None),
                     OverlappingPreset = GetEntity(authoring.overlappingRef, TransformUsageFlags.None),
@@ -61,7 +62,7 @@ namespace SparFlame.GamePlaySystem.Building
         NotConstructable,
     }
 
-    public struct ConstructSystemConfig : IComponentData
+    public struct ConstructSystemPrefabRef : IComponentData
     {
         public Entity GhostTriggerPrefab;
 
@@ -71,10 +72,11 @@ namespace SparFlame.GamePlaySystem.Building
         public Entity NotEnoughResourcesPreset;
         public Entity NotConstructablePreset;
     }
-    public struct ConstructSystemConfig2 : IComponentData
+    public struct ConstructSystemConfig : IComponentData
     {
         public float3 HideBuildingLocation;
         public float RotateSpeed;
+        public float RecycleScale;
     }
 
     public enum ConstructCommandType

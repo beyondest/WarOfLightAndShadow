@@ -37,6 +37,7 @@ namespace SparFlame.GamePlaySystem.Units
         public UnitType Type;
         public int SubTypeIndex;
         public float ConjureSpeedSecondPerUnit;
+        public int AnimatedModelIndex;
     }
 
     public struct AttunerAttr : IComponentData

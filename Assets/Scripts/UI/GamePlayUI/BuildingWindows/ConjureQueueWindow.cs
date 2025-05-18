@@ -23,8 +23,12 @@ namespace SparFlame.UI.GamePlay
             return _targetEntity != Entity.Null;   
         }
 
-        
-        
+        public void ClearCloseUpTarget()
+        {
+            _targetEntity = Entity.Null;
+        }
+
+
         public override void OnClickSlot(int slotIndex)
         {
             // TODO : Cut the conjuring queue

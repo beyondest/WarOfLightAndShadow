@@ -65,6 +65,7 @@ namespace SparFlame.GamePlaySystem.Interact
 
 
         [BurstCompile]
+        [WithNone(typeof(UnitDeadTag))]
         private partial struct UpdateTargetListJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<SightPriority> PriorityLookup;

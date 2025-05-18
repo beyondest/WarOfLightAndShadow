@@ -87,7 +87,6 @@ namespace SparFlame.Database
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("unity type")]
         public UnitType type;
 
-
         #region Movement
 
         [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Movement")]
@@ -100,15 +99,17 @@ namespace SparFlame.Database
        
         #endregion
 
-
         [ FoldoutGroup("Gameplay/Cost"),HorizontalGroup("Gameplay/Cost/1"),ListDrawerSettings(DraggableItems = true)]
         public List<CostResourceTypeAmountPair> costs;
 
         [FoldoutGroup("Gameplay/Cost"), HorizontalGroup("Gameplay/Cost/2")]
         public float conjureSpeedSecondPerUnit;
 
-        // [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-        //  HorizontalGroup("Additional/FogOfWar/1")]
+        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/Animation"),
+         HorizontalGroup("Additional/Animation/1"),Tooltip("This is the index of go which has a animator in linked entity group of " +
+                                                           "basic go. Due to the physics shape will count as one entity in the first place," +
+                                                           "indicator will be placed at seconde place, this root should be 3")]
+        public int animatedRootIndex = 3; 
  
         
         public override int GetGeneralTypeIndex()

@@ -9,6 +9,11 @@ namespace SparFlame.UI.General
 {
     public static class UIMathMethods
     {
+        /// <summary>
+        /// Get x min : y s format of seconds data
+        /// </summary>
+        /// <param name="totalSeconds"></param>
+        /// <returns></returns>
         public static string FormatTime(int totalSeconds)
         {
             var minutes = totalSeconds / 60;

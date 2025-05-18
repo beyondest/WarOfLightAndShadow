@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.Building
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputMouseData>();
-            state.RequireForUpdate<ConstructSystemConfig>();
+            state.RequireForUpdate<ConstructSystemPrefabRef>();
             state.RequireForUpdate<CrystalAffectRadiusSq>();
             state.RequireForUpdate<ConstructCommandData>();
             _constructableLookup = state.GetComponentLookup<OccupiedTag>(true);
@@ -65,7 +65,7 @@ namespace SparFlame.GamePlaySystem.Building
 
             if (_playerBaseQuery.IsEmpty || data.CommandType == ConstructCommandType.None) return;
 
-            var config = SystemAPI.GetSingleton<ConstructSystemConfig>();
+            var config = SystemAPI.GetSingleton<ConstructSystemPrefabRef>();
             var affectRadiusSq = SystemAPI.GetSingleton<CrystalAffectRadiusSq>().Value;
             var customInputData = SystemAPI.GetSingleton<InputMouseData>();
             var allyResourceData =
@@ -104,7 +104,7 @@ namespace SparFlame.GamePlaySystem.Building
         private void CheckConstructionCommand(ref SystemState state,
             DynamicBuffer<ResourceTypeToAvailableAmount> allyResourceData,
             DynamicBuffer<ResourceTypeToAvailableAmount> enemyResourceData,
-            ConstructSystemConfig config,
+            ConstructSystemPrefabRef prefabRef,
             InputMouseData customInputData, EntityCommandBuffer ecb,
             float affectRadiusSq,
             in NativeArray<LocalTransform> playerBaseTrans)
@@ -130,7 +130,7 @@ namespace SparFlame.GamePlaySystem.Building
                             if (resourceData[(int)cost.Type].Amount < cost.Amount)
                             {
                                 SwitchBuildingState(ref state, ref data, PlacementStateType.NotEnoughResources,
-                                    in config, false);
+                                    in prefabRef, false);
                                 valid = false;
                             }
                         }
@@ -140,7 +140,7 @@ namespace SparFlame.GamePlaySystem.Building
                     var events = SystemAPI.GetBuffer<StatefulTriggerEvent>(data.GhostTriggerEntity);
                     if (events.Length > 0)
                     {
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in config, false);
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in prefabRef, false);
                         valid = false;
                     }
 
@@ -150,7 +150,7 @@ namespace SparFlame.GamePlaySystem.Building
                         || (isCrystal && constructable.Faction == ~data.Faction)
                        )
                     {
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in config,
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabRef,
                             false);
                         valid = false;
                     }
@@ -162,7 +162,7 @@ namespace SparFlame.GamePlaySystem.Building
                     }*/
 
                     if (valid)
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, false);
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabRef, false);
 
                     // Synchronize the position and rotation of ghost building and ghost trigger with the input position
                     ref var ghostTransform =
@@ -201,10 +201,10 @@ namespace SparFlame.GamePlaySystem.Building
 
                     // Create ghost preview
                     data.GhostModelEntity = InstantiateChildrenWithNewParent(ref state, data.TargetBuilding);
-                    data.GhostTriggerEntity = state.EntityManager.Instantiate(config.GhostTriggerPrefab);
+                    data.GhostTriggerEntity = state.EntityManager.Instantiate(prefabRef.GhostTriggerPrefab);
                     state.EntityManager.AddComponent<GameplayEntityTag>(data.GhostModelEntity);
                     state.EntityManager.AddComponent<GameplayEntityTag>(data.GhostTriggerEntity);
-                    SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in config, true);
+                    SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabRef, true);
                     AlignTriggerBoxCollider(ref state, in data);
                     data.CommandType = ConstructCommandType.Drag;
                     break;
@@ -288,20 +288,20 @@ namespace SparFlame.GamePlaySystem.Building
         }
 
         private void SwitchBuildingState(ref SystemState state, ref ConstructCommandData data,
-            in PlacementStateType targetState, in ConstructSystemConfig config, bool force)
+            in PlacementStateType targetState, in ConstructSystemPrefabRef prefabRef, bool force)
         {
             if (targetState == data.State && !force) return;
             data.State = targetState;
             var targetMaterial = targetState switch
             {
-                PlacementStateType.Valid => SystemAPI.GetComponent<MaterialMeshInfo>(config.ValidPreset).Material,
-                PlacementStateType.Overlapping => SystemAPI.GetComponent<MaterialMeshInfo>(config.OverlappingPreset)
+                PlacementStateType.Valid => SystemAPI.GetComponent<MaterialMeshInfo>(prefabRef.ValidPreset).Material,
+                PlacementStateType.Overlapping => SystemAPI.GetComponent<MaterialMeshInfo>(prefabRef.OverlappingPreset)
                     .Material,
                 PlacementStateType.NotEnoughResources => SystemAPI
-                    .GetComponent<MaterialMeshInfo>(config.NotEnoughResourcesPreset)
+                    .GetComponent<MaterialMeshInfo>(prefabRef.NotEnoughResourcesPreset)
                     .Material,
                 PlacementStateType.NotConstructable => SystemAPI
-                    .GetComponent<MaterialMeshInfo>(config.NotConstructablePreset).Material,
+                    .GetComponent<MaterialMeshInfo>(prefabRef.NotConstructablePreset).Material,
                 _ => throw new ArgumentOutOfRangeException(nameof(targetState), targetState, null)
             };
             // for (int i = 1; i < buffer.Length; i++)

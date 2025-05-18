@@ -15,32 +15,43 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         private NativeHashMap<int, NativeHashMap<int, int>> _wavePoint2Type2Interval;
         private NativeHashMap<int, NativeParallelMultiHashMap<int, ProbabilityPrefabEntry>> _wavePoint2Type2Entries;
         private BufferLookup<CostList> _costListLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<DarkEnemyDatabaseTag>();
+            state.RequireForUpdate<LightEnemyDatabaseTag>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EnemyResourceDataTag>();
-            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameWaveData>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<EnemySpawnSystemConfig>();
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _costListLookup = state.GetBufferLookup<CostList>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if(!_wavePoints.IsCreated)
-                Initialize();
-            var config = SystemAPI.GetSingleton<EnemySpawnSystemConfig>();
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if (gameStatus == GameStatus.Init)
+            {
+                if (_wavePoints.IsCreated)
+                    Deinitialize();
+                Initialize(ref state);
+                return;
+            }
+            if(gameStatus != GameStatus.Gaming)return;
+            // var config = SystemAPI.GetSingleton<EnemySpawnSystemConfig>();
             // Only when enemy population not exceeds, will conjure unit
             var curPlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
-            var enemyResourceDataCenter = curPlayerFaction == FactionTag.Ally ? SystemAPI.GetSingletonEntity<EnemyResourceDataTag>() :
-                    SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
+            var enemyResourceDataCenter = curPlayerFaction == FactionTag.Ally
+                ? SystemAPI.GetSingletonEntity<EnemyResourceDataTag>()
+                : SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
             var enemyResourceData = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyResourceDataCenter);
-            if (enemyResourceData[(int)ResourceType.SoulPact].Amount> 0)
+            if (enemyResourceData[(int)ResourceType.SoulPact].Amount > 0)
             {
                 _costListLookup.Update(ref state);
                 var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -49,33 +60,46 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 var curPoint = GeneralUtils.GetPoint(curWave, _wavePoints);
                 var curPointType2Interval = _wavePoint2Type2Interval[curPoint];
                 var curPointType2Entries = _wavePoint2Type2Entries[curPoint];
+
+                if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out EnemyAIDebug debug)))
+                {
+                    debug = new EnemyAIDebug
+                    {
+                        enabled = false
+                    };
+                }
+
                 new EnemyUnitSpawnJob
                 {
                     ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                    CurTime = (float)curTime,
+                    CurTime = curTime,
                     Type2Interval = curPointType2Interval,
                     Type2Entries = curPointType2Entries,
                     CostListLookup = _costListLookup,
-                    Config = config
+                    EnemyAIDebug = debug
                 }.ScheduleParallel();
             }
         }
-        
+
         [BurstCompile]
         private partial struct EnemyUnitSpawnJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public EnemySpawnSystemConfig Config;
+            [ReadOnly] public EnemyAIDebug EnemyAIDebug;
             [ReadOnly] public float CurTime;
             [ReadOnly] public NativeHashMap<int, int> Type2Interval;
             [ReadOnly] public NativeParallelMultiHashMap<int, ProbabilityPrefabEntry> Type2Entries;
             [ReadOnly] public BufferLookup<CostList> CostListLookup;
-            private void Execute([ChunkIndexInQuery] int index,in GeneralAttr generalAttr, ref EnemyConjureShrineData data,
+
+            private void Execute([ChunkIndexInQuery] int index, in GeneralAttr generalAttr,
+                ref EnemyConjureShrineData data,
                 in ConjureAttr attr, Entity selfEntity)
             {
                 if (CurTime < data.ConjureTime) return;
-                var interval = Type2Interval[(int)attr.ConjuringType];
-                data.ConjureTime = CurTime + interval/Config.GlobalConjureScale;
+                float interval = Type2Interval[(int)attr.ConjuringType];
+                if (EnemyAIDebug.enabled)
+                    interval /= EnemyAIDebug.unitSpawnSpeedScale;
+                data.ConjureTime = CurTime + interval;
                 var entry = GeneralUtils.RandomChoosePrefab(ref data.Rnd, Type2Entries,
                     (int)attr.ConjuringType);
                 var conjureCount = data.Rnd.NextInt((int)entry.AmountRange.lower, (int)entry.AmountRange.upper);
@@ -91,7 +115,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 foreach (var cost in costList)
                 {
                     var costRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent(index,costRequest, new ResourceChangeRequest
+                    ECB.AddComponent(index, costRequest, new ResourceChangeRequest
                     {
                         AbsAmount = math.abs(cost.Amount * conjureCount),
                         FromFaction = generalAttr.FactionTag,
@@ -99,16 +123,20 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         RequestType = ResourceRequestType.Consume
                     });
                     ECB.AddComponent<GameplayEntityTag>(index, selfEntity);
-
                 }
             }
         }
-        
-        
-        private void Initialize()
+
+
+        private void Initialize(ref SystemState state)
         {
-            var buffer1 = SystemAPI.GetSingletonBuffer<EnemyUnitSpawnIntervalData>();
-            var buffer2 = SystemAPI.GetSingletonBuffer<EnemyUnitSpawnProbPrefabEntry>();
+            var lightEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
+            var darkEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
+            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
+                ? lightEntity
+                : darkEntity;
+            var buffer1 = SystemAPI.GetBuffer<EnemyUnitSpawnIntervalData>(entity);
+            var buffer2 = SystemAPI.GetBuffer<EnemyUnitSpawnProbPrefabEntry>(entity);
             _wavePoint2Type2Entries =
                 new NativeHashMap<int, NativeParallelMultiHashMap<int, ProbabilityPrefabEntry>>(10,
                     Allocator.Persistent);
@@ -141,8 +169,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
         }
 
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
+        private void Deinitialize()
         {
             if (_wavePoint2Type2Interval.IsCreated)
             {
@@ -150,6 +177,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     pair.Value.Dispose();
                 }
+
                 _wavePoint2Type2Interval.Dispose();
             }
 
@@ -159,11 +187,18 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     dKvPair.Value.Dispose();
                 }
-                _wavePoint2Type2Entries.Dispose();
 
+                _wavePoint2Type2Entries.Dispose();
             }
+
             if (_wavePoints.IsCreated)
                 _wavePoints.Dispose();
+        }
+
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+            Deinitialize();
         }
     }
 }

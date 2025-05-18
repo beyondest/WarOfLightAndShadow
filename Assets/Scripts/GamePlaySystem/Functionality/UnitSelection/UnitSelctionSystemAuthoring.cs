@@ -48,10 +48,12 @@ namespace SparFlame.GamePlaySystem.UnitSelection
     
     public struct UnitSelectionData : IComponentData
     {
+        
         public int CurrentSelectCount;
         public FactionTag CurrentSelectFaction;
         public float2 SelectionBoxStartPos;
         public float2 SelectionBoxEndPos;
+        public bool DragSelectStart;
         public bool IsDragSelecting;
     }
 

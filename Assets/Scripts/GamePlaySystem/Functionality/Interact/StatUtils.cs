@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Interact
             {
                 Position = transformLookup[request.Interactee].Position
             });
-            ecb.AddComponent<GameplayEntityTag>(index,entity);
+            ecb.AddComponent<GameplayEntityTag>(index, entity);
         }
 
         public static void GenerateHarvestResourceRequest(in StatChangeRequest request,
@@ -43,26 +43,18 @@ namespace SparFlame.GamePlaySystem.Interact
             in StatChangeRequest request,
             in GeneralAttr generalAttr, int index, EntityCommandBuffer.ParallelWriter ecb)
         {
-            var popNumberType = PopNumberType.DamageDealt;
             var interactorFaction = generalAttr.FactionTag;
-            if (!request.KillByUnNormal)
+            var popNumberType = (request.Type, interactorFaction) switch
             {
-                popNumberType = (request.InteractType, interactorFaction) switch
-                {
-                    (InteractType.Heal, FactionTag.Ally) => PopNumberType.AllyHealed,
-                    (InteractType.Attack, FactionTag.Ally) => PopNumberType.DamageDealt,
-                    (InteractType.Heal, FactionTag.Enemy) => PopNumberType.EnemyHealed,
-                    (InteractType.Attack, FactionTag.Enemy) => PopNumberType.DamageTaken,
-                    (InteractType.Harvest, FactionTag.Ally) => PopNumberType.AllyHarvest,
-                    (InteractType.Harvest, FactionTag.Enemy) => PopNumberType.EnemyHarvest,
-                    _ => popNumberType
-                };
-            }
-            else
-            {
-                popNumberType =  PopNumberType.UnNormalKill;
-            }
-           
+                (StatChangeType.Heal, FactionTag.Ally) => PopNumberType.AllyHealed,
+                (StatChangeType.Attack, FactionTag.Ally) => PopNumberType.DamageDealt,
+                (StatChangeType.Heal, FactionTag.Enemy) => PopNumberType.EnemyHealed,
+                (StatChangeType.Attack, FactionTag.Enemy) => PopNumberType.DamageTaken,
+                (StatChangeType.Harvest, FactionTag.Ally) => PopNumberType.AllyHarvest,
+                (StatChangeType.Harvest, FactionTag.Enemy) => PopNumberType.EnemyHarvest,
+                _ => PopNumberType.UnNormalKill
+            };
+
             var interacteePos = transformLookup[request.Interactee].Position;
             // Spawn Pop Number VFX
             var popNumberRequest = ecb.CreateEntity(index);
@@ -74,7 +66,6 @@ namespace SparFlame.GamePlaySystem.Interact
                 Value = request.AbsAmount
             });
             ecb.AddComponent<GameplayEntityTag>(index, popNumberRequest);
-
         }
 
         public static void GenerateDestroyObstacleRequest(Entity interacteeEntity, bool isResource,
@@ -84,14 +75,14 @@ namespace SparFlame.GamePlaySystem.Interact
             ecb.AddComponent(index, destroyObstacleRequest, new VolumeObstacleDestroyRequest
             {
                 FromEntity = interacteeEntity,
-                RequestFromFaction = isResource? FactionTag.Neutral : FactionTag.Ally   // Ally or enemy is both ok
+                RequestFromFaction = isResource ? FactionTag.Neutral : FactionTag.Ally // Ally or enemy is both ok
             });
             ecb.AddComponent<GameplayEntityTag>(index, destroyObstacleRequest);
-
         }
-        
-        
-        public static void GenerateGarrisonUnitDieRequest(Entity interacteeEntity, int index,in GeneralAttr interacteeAttr,
+
+
+        public static void GenerateGarrisonUnitDieRequest(Entity interacteeEntity, int index,
+            in GeneralAttr interacteeAttr,
             ref ComponentLookup<InGarrison> inGarrisonLookup, EntityCommandBuffer.ParallelWriter ecb)
         {
             if (!inGarrisonLookup.TryGetComponent(interacteeEntity, out var inGarrison)) return;
@@ -103,10 +94,10 @@ namespace SparFlame.GamePlaySystem.Interact
                 Id = interacteeAttr.ID
             });
             ecb.AddComponent<GameplayEntityTag>(index, garrisonUnitDieRequest);
-
         }
 
-        public static void GenerateReleasePopulationRequest(Entity interacteeEntity, int index,in GeneralAttr interacteeAttr,
+        public static void GenerateReleasePopulationRequest(Entity interacteeEntity, int index,
+            in GeneralAttr interacteeAttr,
             ref BufferLookup<CostList> costListLookup, EntityCommandBuffer.ParallelWriter ecb)
         {
             var releasePopulationRequest = ecb.CreateEntity(index);
@@ -116,6 +107,7 @@ namespace SparFlame.GamePlaySystem.Interact
             {
                 if (cost.Type == ResourceType.SoulPact) amount = cost.Amount;
             }
+
             ecb.AddComponent(index, releasePopulationRequest, new ResourceChangeRequest
             {
                 AbsAmount = math.abs(amount),
@@ -123,26 +115,25 @@ namespace SparFlame.GamePlaySystem.Interact
                 RequestType = ResourceRequestType.Release,
                 Type = ResourceType.SoulPact
             });
-            ecb.AddComponent<GameplayEntityTag>(index,releasePopulationRequest);
+            ecb.AddComponent<GameplayEntityTag>(index, releasePopulationRequest);
         }
-        
-        public static void GenerateChangeOccupiedTagRequest(in GeneralAttr interacteeAttr,  float3 crystalPos,
-            EntityCommandBuffer.ParallelWriter ecb,int index)
+
+        public static void GenerateChangeOccupiedTagRequest(in GeneralAttr interacteeAttr, float3 crystalPos,
+            EntityCommandBuffer.ParallelWriter ecb, int index)
         {
             var request = ecb.CreateEntity(index);
-            ecb.AddComponent(index,request, new ChangeOccupiedTagRequest
+            ecb.AddComponent(index, request, new ChangeOccupiedTagRequest
             {
                 CrystalFaction = interacteeAttr.FactionTag,
                 CrystalPos = crystalPos,
                 IsDestroyed = true
             });
-            ecb.AddComponent<GameplayEntityTag>(index,request);
-
+            ecb.AddComponent<GameplayEntityTag>(index, request);
         }
-        
-        
+
+
         public static void GenerateDwellingDestroyResourceChangeRequest(Entity interacteeEntity, int index,
-            in GeneralAttr interacteeAttr,in DwellingAttr dwellingAttr, EntityCommandBuffer.ParallelWriter ecb)
+            in GeneralAttr interacteeAttr, in DwellingAttr dwellingAttr, EntityCommandBuffer.ParallelWriter ecb)
         {
             var request = ecb.CreateEntity(index);
             ecb.AddComponent(index, request, new ResourceChangeRequest
@@ -152,9 +143,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 FromFaction = interacteeAttr.FactionTag,
                 RequestType = ResourceRequestType.DwellingDestroyConsume
             });
-            ecb.AddComponent<GameplayEntityTag>(index,request);
-
+            ecb.AddComponent<GameplayEntityTag>(index, request);
         }
-
     }
 }

@@ -108,6 +108,7 @@ namespace SparFlame.UI.General
         {
             public bool TrySwitchTarget(Entity target);
             public bool HasTarget();
+            public void ClearCloseUpTarget();
         }
 
         public class MultiSlotsWindow<TMultiShowSlot> : MonoBehaviour,CustomDs.IResourceManager,

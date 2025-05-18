@@ -113,5 +113,24 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             commandData.TargetPos = float3.zero;
             commandData.Focus = false;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsOverlapping(in float2 newPos,in float2 newSize,in NativeList<LocalTransform> existingLocs,
+           in NativeList<BuildingPackSquareSize> existingSizes)
+        {
+            for (int i = 0; i < existingLocs.Length; i++)
+            {
+                var existingPos = existingLocs[i].Position.xz;
+                var existingSize = existingSizes[i].Value;
+
+                if (math.abs(newPos.x - existingPos.x) < (newSize.x + existingSize.x) * 0.5f &&
+                    math.abs(newPos.y - existingPos.y) < (newSize.y + existingSize.y) * 0.5f)
+                {
+                    return true; // 有重叠
+                }
+            }
+
+            return false;
+        }
     }
 }

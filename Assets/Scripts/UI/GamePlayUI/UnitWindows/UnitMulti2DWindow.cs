@@ -1,5 +1,5 @@
 ﻿using System;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using Unity.Collections;

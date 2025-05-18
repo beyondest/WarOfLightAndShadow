@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Collections;
@@ -7,6 +9,7 @@ using Unity.Transforms;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
+using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -16,7 +19,7 @@ namespace SparFlame.GamePlaySystem.State
 {
     // TODO : Split to 3 systems, and use 3 ijobentity, see if that can schedule parallel
     [BurstCompile]
-    [UpdateAfter(typeof(BuffSystem))]
+    [UpdateAfter(typeof(BuffManageSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
     public partial struct InteractStateMachine : ISystem
     {
@@ -31,6 +34,9 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<HarvestStateTag> _harvestState;
         private ComponentLookup<RegeneratingTag> _regeneratingTag;
         private ComponentLookup<AttackStateTag> _attackTag;
+        private ComponentLookup<BuildingAttr> _buildingAttrLookup;
+        private ComponentLookup<ExpData> _expDataLookup;
+
         private EntityQuery _attackEntityQuery;
         private EntityQuery _healEntityQuery;
         private EntityQuery _harvestEntityQuery;
@@ -39,6 +45,7 @@ namespace SparFlame.GamePlaySystem.State
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<InteractStateMachineConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -46,11 +53,11 @@ namespace SparFlame.GamePlaySystem.State
 
 
             _attackEntityQuery = SystemAPI.QueryBuilder().WithAllRW<AttackAbility>().WithAllRW<BasicStateData>()
-                .WithAll<AttackStateTag>().Build();
+                .WithAll<AttackStateTag>().WithNone<UnitDeadTag>().Build();
             _healEntityQuery = SystemAPI.QueryBuilder().WithAllRW<HealAbility>().WithAllRW<BasicStateData>()
-                .WithAll<HealStateTag>().Build();
+                .WithAll<HealStateTag>().WithNone<UnitDeadTag>().Build();
             _harvestEntityQuery = SystemAPI.QueryBuilder().WithAllRW<HarvestAbility>().WithAllRW<BasicStateData>()
-                .WithAll<HarvestStateTag>().Build();
+                .WithAll<HarvestStateTag>().WithNone<UnitDeadTag>().Build();
 
 
             _stat = state.GetComponentLookup<StatData>(true);
@@ -63,6 +70,8 @@ namespace SparFlame.GamePlaySystem.State
             _movable = state.GetComponentLookup<MovableData>();
             _basicState = state.GetComponentLookup<BasicStateData>();
             _regeneratingTag = state.GetComponentLookup<RegeneratingTag>();
+            _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
+            _expDataLookup = state.GetComponentLookup<ExpData>(true);
         }
 
         [BurstCompile]
@@ -82,6 +91,8 @@ namespace SparFlame.GamePlaySystem.State
             _regeneratingTag.Update(ref state);
             _harvestState.Update(ref state);
             _attackTag.Update(ref state);
+            _buildingAttrLookup.Update(ref state);
+            _expDataLookup.Update(ref state);
             var attackAbilities = _attackEntityQuery.ToComponentDataArray<AttackAbility>(Allocator.TempJob);
             var attackEntities = _attackEntityQuery.ToEntityArray(Allocator.TempJob);
             state.Dependency.Complete();
@@ -92,7 +103,7 @@ namespace SparFlame.GamePlaySystem.State
                 Entities = attackEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
-                InteractableLookup = _interactable,
+                GeneralAttrLookup = _interactable,
                 InsightTarget = _insightTarget,
                 RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
@@ -103,7 +114,9 @@ namespace SparFlame.GamePlaySystem.State
                 AttackLookup = _attackTag,
                 DeltaTime = deltaTime,
                 InteractTurnSpeed = config.InteractTurnSpeed,
-                Config = sightSystemConfig
+                BuildingAttrLookup = _buildingAttrLookup,
+                Config = sightSystemConfig,
+                ExpDataLookup = _expDataLookup
             }.Schedule(attackEntities.Length, config.AttackJobBatchCount, state.Dependency);
             state.Dependency = attackJob;
 
@@ -115,7 +128,7 @@ namespace SparFlame.GamePlaySystem.State
                 Entities = healEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
-                InteractableLookup = _interactable,
+                GeneralAttrLookup = _interactable,
                 InsightTarget = _insightTarget,
                 RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
@@ -126,7 +139,9 @@ namespace SparFlame.GamePlaySystem.State
                 AttackLookup = _attackTag,
                 DeltaTime = deltaTime,
                 InteractTurnSpeed = config.InteractTurnSpeed,
-                Config = sightSystemConfig
+                Config = sightSystemConfig,
+                BuildingAttrLookup = _buildingAttrLookup,
+                ExpDataLookup = _expDataLookup
             }.Schedule(healEntities.Length, config.HealJobBatchCount, state.Dependency);
             state.Dependency = healJob;
 
@@ -138,7 +153,7 @@ namespace SparFlame.GamePlaySystem.State
                 Entities = harvestEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
-                InteractableLookup = _interactable,
+                GeneralAttrLookup = _interactable,
                 InsightTarget = _insightTarget,
                 RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
@@ -149,7 +164,9 @@ namespace SparFlame.GamePlaySystem.State
                 AttackLookup = _attackTag,
                 DeltaTime = deltaTime,
                 InteractTurnSpeed = config.InteractTurnSpeed,
-                Config = sightSystemConfig
+                Config = sightSystemConfig,
+                BuildingAttrLookup = _buildingAttrLookup,
+                ExpDataLookup = _expDataLookup
             }.Schedule(harvestEntities.Length, config.HarvestJobBatchCount, state.Dependency);
             state.Dependency = harvestJob;
 
@@ -174,13 +191,14 @@ namespace SparFlame.GamePlaySystem.State
             public NativeArray<Entity> Entities;
 
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
-            [ReadOnly] public ComponentLookup<GeneralAttr> InteractableLookup;
+            [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
             [ReadOnly] public ComponentLookup<AttackStateTag> AttackLookup;
             [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
             [ReadOnly] public BufferLookup<InsightTarget> InsightTarget;
-
+            [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
+            [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
             [ReadOnly] public float InteractTurnSpeed;
 
             // Turn rotation to target
@@ -201,7 +219,8 @@ namespace SparFlame.GamePlaySystem.State
                 var selfEntity = Entities[index];
                 var ability = Ability[index];
                 ref var selfStateData = ref BasicStateData.GetRefRW(selfEntity).ValueRW;
-                var selfFactionTag = InteractableLookup[selfEntity].FactionTag;
+                var selfGeneralAttr = GeneralAttrLookup[selfEntity];
+                var selfFactionTag = selfGeneralAttr.FactionTag;
 
                 // Pre Check 
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
@@ -217,7 +236,7 @@ namespace SparFlame.GamePlaySystem.State
                 This may happen due to truly switch state always happen in te end of frame(ECB Playback) .
                 Fake Interact State , next frame will turn to another state*/
                 bool isTargetValid;
-                if (!InteractableLookup.TryGetComponent(selfStateData.TargetEntity, out var targetGeneralAttr)
+                if (!GeneralAttrLookup.TryGetComponent(selfStateData.TargetEntity, out var targetGeneralAttr)
                     || !StatDataLookup.TryGetComponent(selfStateData.TargetEntity, out var targetStat))
                 {
                     selfStateData.TargetEntity = Entity.Null;
@@ -245,7 +264,7 @@ namespace SparFlame.GamePlaySystem.State
                     {
                         selfStateData.TargetEntity = InteractUtils.ChooseTarget(in targetList);
                         StateUtils.SetTargetStateViaTargetType(in selfFactionTag,
-                            InteractableLookup[selfStateData.TargetEntity],
+                            GeneralAttrLookup[selfStateData.TargetEntity],
                             ref selfStateData);
                     }
 
@@ -258,7 +277,7 @@ namespace SparFlame.GamePlaySystem.State
                         in targetList, selfEntity))
                 {
                     StateUtils.SetTargetStateViaTargetType(in selfFactionTag,
-                        InteractableLookup[selfStateData.TargetEntity], ref selfStateData);
+                        GeneralAttrLookup[selfStateData.TargetEntity], ref selfStateData);
                     StateUtils.SwitchState(ref selfStateData, ECB, selfEntity, index);
                     return;
                 }
@@ -298,20 +317,23 @@ namespace SparFlame.GamePlaySystem.State
                     return;
                 }
 
-                // Look at target
-                var targetRotation = quaternion.LookRotationSafe(-(targetPos - curPos), math.up());
-                transform.Rotation =
-                    math.slerp(transform.Rotation.value, targetRotation, DeltaTime * InteractTurnSpeed);
+                // Units Look at target, attack by animation event   
+                if (selfGeneralAttr.BaseTag != BaseTag.Buildings)
+                {
+                    var targetRotation = quaternion.LookRotationSafe(-(targetPos - curPos), math.up());
+                    transform.Rotation =
+                        math.slerp(transform.Rotation.value, targetRotation, DeltaTime * InteractTurnSpeed);
+                    return;
+                }
 
-                // Try attack current target                
-                PlayAnimationAudio(ability.Speed);
+                // Only building attack target here
                 var counter = 1 / DeltaTime / ability.Speed;
                 if (++selfStateData.InteractCounter > (int)counter)
                 {
                     selfStateData.InteractCounter = 0;
                     // Calculate True Interact AbsAmount
-                    SendStatChangeRequest(selfStateData.TargetEntity, ability.Amount, index, selfEntity,
-                        ability.InteractType);
+                    BuildingAttack(selfStateData.TargetEntity, ability.Amount, index, selfEntity,
+                        ability.InteractType, selfGeneralAttr, transform.Position);
                 }
             }
 
@@ -343,31 +365,11 @@ namespace SparFlame.GamePlaySystem.State
             }
 
 
-            private void PlayAnimationAudio(float count)
-            {
-            }
-
-
-            private void SendStatChangeRequest(Entity targetEntity, int amount, int index,
-                Entity entity, InteractType interactType)
-            {
-                var request = ECB.CreateEntity(index);
-                ECB.AddComponent(index, request, new StatChangeRequest
-                {
-                    Interactor = entity,
-                    Interactee = targetEntity,
-                    AbsAmount = amount,
-                    InteractType = interactType
-                });
-                ECB.AddComponent<GameplayEntityTag>(index,request);
-
-            }
-
             private void InteractMoveToTarget(ref BasicStateData stateData, ref MovableData movableData,
                 in TInteractAbility ability, Entity entity, int index)
             {
                 var tarPos = TransformLookup[stateData.TargetEntity].Position;
-                var tarColliderShape = InteractableLookup[stateData.TargetEntity].BoxColliderSize;
+                var tarColliderShape = GeneralAttrLookup[stateData.TargetEntity].BoxColliderSize;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
                     ability.RangeSq
@@ -386,14 +388,63 @@ namespace SparFlame.GamePlaySystem.State
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool IsTargetInRange(float rangeSq, in float3 curPos, in float3 targetPos,
-                in GeneralAttr targetgeneralAttr)
+                in GeneralAttr targetGeneralAttr)
             {
                 var curPos2 = new float2(curPos.x, curPos.z);
                 var targetPos2 = new float2(targetPos.x, targetPos.z);
-                var targetColliderSizeXz = new float2(targetgeneralAttr.BoxColliderSize.x,
-                    targetgeneralAttr.BoxColliderSize.z);
+                var targetColliderSizeXz = new float2(targetGeneralAttr.BoxColliderSize.x,
+                    targetGeneralAttr.BoxColliderSize.z);
                 var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
                 return disSqPointToRect < rangeSq;
+            }
+
+
+            private void BuildingAttack(Entity targetEntity, int amount, int index,
+                Entity selfEntity, InteractType interactType, in GeneralAttr generalAttr,
+                in float3 selfPos)
+            {
+                var statChangeRequest = new StatChangeRequest
+                {
+                    Interactor = selfEntity,
+                    Interactee = targetEntity,
+                    AbsAmount = amount,
+                    Type = interactType switch
+                    {
+                        InteractType.Attack => StatChangeType.Attack,
+                        InteractType.Heal => StatChangeType.Heal,
+                        InteractType.Harvest => StatChangeType.Harvest,
+                        _ => StatChangeType.None // This should never happen
+                    },
+                    InteractorGeneralAttr = generalAttr
+                };
+
+                BuildingAttrLookup.TryGetComponent(selfEntity, out var buildingAttr);
+                var vfxName = VFXName.TowerProjectile;
+
+                var request = ECB.CreateEntity(index);
+                ECB.AddComponent<GameplayEntityTag>(index, request);
+                // if (vfxName == VFXName.None)
+                // {
+                //     // This attack will not cause damage by projectile, but cause damage directly
+                //     ECB.AddComponent(index, request,statChangeRequest);
+                // }
+                // else
+                ECB.AddComponent(index, request, new VFXRequest
+                {
+                    Filter = new VFXSubFilter
+                    {
+                        TierFilterEnable = true,
+                        Tier = ExpDataLookup[selfEntity].CurTier,
+                        FactionFilterEnable = true,
+                        Faction = generalAttr.FactionTag
+                    },
+                    StatChangeRequest = statChangeRequest,
+                    VFXName = vfxName,
+                    SpawnPosition = selfPos,
+                    Type = VFXRequestType.Spawn,
+                    KeepDuration = 0,
+                    VFXTrackTarget = Entity.Null
+                });
             }
 
             #endregion

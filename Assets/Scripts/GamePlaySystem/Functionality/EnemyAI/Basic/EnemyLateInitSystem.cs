@@ -2,6 +2,7 @@
 using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
+using SparFlame.GamePlaySystem.Waves;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -19,35 +20,50 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameWaveData>();
             state.RequireForUpdate<PlayerFactionData>();
+            state.RequireForUpdate<GameStatusData>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if (gameStatus == GameStatus.Init)
+            {
+                SystemAPI.SetSingleton(new EnemyCrystalInfo
+                {
+                    TotalCount = 0
+                });
+                return;
+            }
+            if(gameStatus != GameStatus.Gaming)return;
             _buildingAttrLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             var ecbP = ecb.AsParallelWriter();
-            var job2 = new InitCrystalPackDataJob
+            var job = new InitCrystalPackDataJob
             {
                 ECB = ecbP,
                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                 SeedBias = SystemAPI.GetSingletonRW<GeneralRandom>().ValueRW.Rnd.NextInt(),
                 BuildingAttrLookup = _buildingAttrLookup,
             }.ScheduleParallel(state.Dependency);
+            state.Dependency = job;
+            job.Complete();
             AddMonitorToNoMonitorPlayerCrystal(ref state, playerFaction, ecb);
-            job2.Complete();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
-        
+
+   
+
         private void AddMonitorToNoMonitorPlayerCrystal(ref SystemState state, FactionTag playerFaction,
             EntityCommandBuffer ecb)
         {
             foreach (var (coreCrystal, entity) in SystemAPI.Query<RefRO<CoreCrystalTag>>().WithNone<UnderMonitorTag>()
-                         .WithNone<AITag>().WithEntityAccess())
+                         .WithAll<PlayerTag>().WithEntityAccess())
             {
                 if (coreCrystal.ValueRO.Faction != playerFaction) continue;
                 var generateMonitorRequest = ecb.CreateEntity();
@@ -76,17 +92,18 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
         } */
 
-        
-         [BurstCompile]
+
+        [BurstCompile]
         [WithAll(typeof(CrystalPackNeedInitTag))]
         private partial struct InitCrystalPackDataJob : IJobEntity
         {
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public int SeedBias;
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly]public ComponentLookup<BuildingAttr> BuildingAttrLookup;
+            [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
 
-            private void Execute([EntityIndexInQuery] int index, Entity selfEntity, in DynamicBuffer<LinkedEntityGroup> children)
+            private void Execute([EntityIndexInQuery] int index, Entity selfEntity,
+                in DynamicBuffer<LinkedEntityGroup> children)
             {
                 ECB.RemoveComponent<CrystalPackNeedInitTag>(index, selfEntity);
                 var baseEntity = Entity.Null;
@@ -94,8 +111,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     var group = children[i];
                     var child = group.Value;
-                    
-                    if (BuildingAttrLookup.TryGetComponent(child, out var buildingAttr) )
+
+                    if (BuildingAttrLookup.TryGetComponent(child, out var buildingAttr))
                     {
                         // Base crystal must appear first in linked entity group, this is determined by package prefab
                         if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal })
@@ -103,6 +120,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             baseEntity = child;
                             ECB.AddBuffer<EnemyBaseGarrisonTowerData>(index, baseEntity);
                         }
+
                         if (buildingAttr is { Type: BuildingType.ConjuringShrines })
                         {
                             ECB.AddComponent<EnemyConjureShrineData>(index, child);
@@ -128,5 +146,4 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
         }
     }
-    
 }

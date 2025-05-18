@@ -221,8 +221,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             Interactor = Entity.Null,
                             Interactee = data.Unit,
                             AbsAmount = 9999,
-                            InteractType = InteractType.Attack,
-                            KillByUnNormal = true
+                            Type = StatChangeType.UnNormalKill,
+                            InteractorGeneralAttr = default
                         };
                         var request = ECB.CreateEntity(index);
                         ECB.AddComponent(index, request, statChangeRequest);

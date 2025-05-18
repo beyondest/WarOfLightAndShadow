@@ -15,18 +15,73 @@ MonoBehaviour:
   m_GroupName: Building
   m_GUID: d8d82ea7a0e5e7f468c4625a77d97879
   m_SerializeEntries:
-  - m_GUID: 14b5d0bd96b0e1342b173668d9280870
-    m_Address: BloomSpire
+  - m_GUID: 00081f6ca463eef4e998ed0a4fce2af5
+    m_Address: LightBarkTier1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1d851edbc8eac2f439c5055a2ee4a8a9
-    m_Address: AegisShrine
+  - m_GUID: 02ecbaa6b7035404c8b9c1d518b093aa
+    m_Address: EnemyAssembleFlagGather
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2a3f32ae5d44f3944bb39834ac5d982b
-    m_Address: Converter
+  - m_GUID: 04d4f7f60f3e6e64b9681f4c6277c2fb
+    m_Address: LightCommonDwellingTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 06dbd66f587326d4dabc9c73c9850c2f
+    m_Address: LightWallTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0ca038785cfe5464fa25001bd67ea935
+    m_Address: DarkPhantomGateTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0ed385efc1ac65e428433130c18c36b9
+    m_Address: LightCommonDwellingTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 100b600af33574846acf19119d616177
+    m_Address: LightBloomTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 183eeb5a1fae4884aa93ae6fb995b15f
+    m_Address: DarkTerraNexusTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 19ac58e9a0027934fa0fd500d0a9f604
+    m_Address: LightVineTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 20632c0630e6a124fb349e00f912e1b4
+    m_Address: LightWallTier4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 22d2678e8d26e9f4783877767e6e8718
+    m_Address: LightAegisShrineTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 248c79318bdccce409fc92cab719bdd9
+    m_Address: LightAssembleFlagAttack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 281cb6561ad31624bbc9f5c26eb2e9ca
+    m_Address: DarkCrystal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 29e2671436fd27e47a5df12ac7773ec9
+    m_Address: LightEldritchSealTier2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -35,23 +90,238 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2fe5f6991bebacf4dab24f78b6161d8c
-    m_Address: Wall
+  - m_GUID: 331d363d7326bec49984a5d15040ad26
+    m_Address: LightCrystal
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6cc572f770ca274438582f63599023c3
-    m_Address: StorableOrnament
+  - m_GUID: 3429bfb45300a564a8863fc86a359f86
+    m_Address: LightTerraNexusTier2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6d3c030cafce7b540af1bd2434484618
-    m_Address: PhantomGate
+  - m_GUID: 35a56aecd5cb38e4aaa233978cf42c10
+    m_Address: LightVineTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8dadae0185a689544b2f47c2128cf5ea
-    m_Address: EldritchSeal
+  - m_GUID: 36386a9986481db40b90769419b783ad
+    m_Address: LightBarkTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 373c08fb391c05a418b31df707d9b76d
+    m_Address: LightRootTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3817e49dd7451f844b6b56694a8d7754
+    m_Address: LightTowerTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 39baa18613357304b8b82853ee72acf8
+    m_Address: DarkBarkTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3b66a697ef089ff489a434021d1a2eb1
+    m_Address: LightWallTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4604e43c83666ee4d91417df250be4db
+    m_Address: LightAssembleFlagDefend
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4a934eec5c163b74288ed8879d67e6e8
+    m_Address: LightPhantomGateTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ab392574c82c7c459cbebd9d9a783ae
+    m_Address: EnemyAssembleFlagHarass
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4d1c67ab68b30b342949280bbac5ec10
+    m_Address: LightTerraNexusTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4f3829f568f318644b6d15313e0e16d1
+    m_Address: DarkEldritchSealTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 547dc1e1cce7a024582e79c6dc465d5c
+    m_Address: DarkTowerTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 59a0b4246c58cf844a86bffb6801c102
+    m_Address: DarkFlameDwellingTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a070a9e7322855438bf3422b209932f
+    m_Address: DarkCommonDwellingTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a504eb011ea75842bd625a9b78687c3
+    m_Address: LightPhantomGateTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5cc405c1dfdc1b14bb2d92d882d16a4d
+    m_Address: DarkCommonDwellingTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5d8c29acb8e95f642a5772a9c4c1e0b5
+    m_Address: DarkRootTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5eeb6b3c65cefe942851d5f9ca2ad989
+    m_Address: DarkTerraNexusTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 60d1348873cd0c249a85ef32d900fa17
+    m_Address: DarkAegisShrineTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62881859a6e34354197767eac5c25087
+    m_Address: DarkWallTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6548f5690aa3a9c47b28602954b6e658
+    m_Address: LightTowerTier4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69ddaf6f7b7cd9d4599a7f62fab7b35e
+    m_Address: LightAegisShrineTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ed3c042be583f143b2dcea5e7cd0483
+    m_Address: DarkFlameDwellingTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 72d6da55750356a48bc74e674267753d
+    m_Address: DarkBarkTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 739fd5c4167e0b949be83fd765b06d79
+    m_Address: LightBloomTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 74e66ba8381acb94cb040075a08b4c96
+    m_Address: LightVineTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 779929b374e2a6a4f853d7fe3e5a88f6
+    m_Address: DarkTowerTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 79347da0a3bd39a4e994c24e7ebbff64
+    m_Address: DarkMysticDwelling
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b4d6f1b3ea8de84f966980b49a285c5
+    m_Address: DarkVineTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7cf633815b6612c468c0981307d6b19a
+    m_Address: DarkPhantomGateTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82a1b88ac239d0d4db309b6f200e006c
+    m_Address: LightAegisShrineTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82bb50cf3a4b06b4681b9accb3f3dcd8
+    m_Address: LightBarkTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8417d098303218340825cda9177d0bfa
+    m_Address: LightTerraNexusTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8610307f40bc14d4084f18b2a528be43
+    m_Address: LightStoreSpireTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 88a07853eef3d824686a41bb2ce98dc7
+    m_Address: EnemyAssembleFlagAttack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a316262434636245b0a4f7f752ca790
+    m_Address: DarkEldritchSealTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8d9736a41da34144fa8b35343799c7ca
+    m_Address: LightFlameDwellingTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8e67d101e3a491a4e8f6e7d9993970bd
+    m_Address: LightStoreSpireTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91aefc6e0efb22e49b0b145bb4e7da61
+    m_Address: DarkBarkTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94cf74cd9bbfc6d48be72f9b2ff53cd1
+    m_Address: DarkAegisShrineTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9619895971a5978458652448090bd3e0
+    m_Address: DarkStormSpireTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9627fff0539103545a474f6ffa4a2f65
+    m_Address: DarkBloomTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 970bdef46b55a7441b4f213f5e864b49
+    m_Address: LightFlameDwellingTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 98882de6d6f68024cbb5e21193c81849
+    m_Address: LightRootTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ca6400d6f088274a88ba805e1bd535f
+    m_Address: DarkPhantomGateTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -60,28 +330,123 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a42f06e02f3b81243825eaa79ebfd600
+    m_Address: LightAssembleFlagHarass
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a4786a41e56762448849f04c32b593bf
+    m_Address: DarkTerraNexusTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a49112defa0f8924191aaed7fdc2645b
+    m_Address: LightTowerTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a5f9a1d760144c147bd331d64884d104
     m_Address: Ornaments
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b4ad27c5a19776542a4422522dff1fb0
-    m_Address: StormSpire
+  - m_GUID: b211b0ab77d59ed46a79cc35619b6015
+    m_Address: EnemyAssembleFlagDefend
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cc02e25ee0e23e647bdf76131c64be00
-    m_Address: CommonDwelling
+  - m_GUID: b40ad4bae199b6a49bbbbbec8cc7846c
+    m_Address: DarkFlameDwellingTier2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ce58d1540a52dfc49b7b8ac82f8b1bb3
-    m_Address: Tower
+  - m_GUID: b473bdd377c99d34b86b27b7f9be6fb1
+    m_Address: DarkWallTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d1324007bcfdbf74b99396974dbf51da
-    m_Address: FlameDwelling
+  - m_GUID: b48377c7c66a1d341b2202413041c758
+    m_Address: LightEldritchSealTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b89bc227b638cf546af2dad09b65ba4c
+    m_Address: DarkVineTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b8e415d8bb590c743b9efef247e8543c
+    m_Address: DarkWallTier4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba9cfb63060903a4ea422e975b23b501
+    m_Address: LightBloomTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bbac2e821a9b0e445b510d5a4f01581b
+    m_Address: LightWallTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c3f1dcdb30724c942bf0bc75829ed54c
+    m_Address: LightPhantomGateTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c7ef339d5da650c428651dbc659d3fc3
+    m_Address: DarkEldritchSealTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c90103459b97a5d4394e0f05001b0fc9
+    m_Address: LightAssembleFlagGather
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ca03bb0bd4f903d4690f1c8ea70d769a
+    m_Address: DarkStormSpireTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cfc906b3907b97d46bb6f28a2835ecf7
+    m_Address: LightCommonDwellingTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d11d7d2979b4db64eb200d9b1634c688
+    m_Address: LightRootTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d5ca045257530314c8eeeb19627d4760
+    m_Address: DarkBloomTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: db750af0638c26d408e890febb6ad04a
+    m_Address: DarkStormSpireTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd1251cfb32b91a448421e7011427701
+    m_Address: DarkTowerTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd35b443f6b3ef145aff53ad0eddfa22
+    m_Address: DarkAegisShrineTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dda9243f498f85b48820d52a0c7442fd
+    m_Address: LightStoreSpireTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e33d77bea80886b438a4d34b60a73dae
+    m_Address: DarkRootTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -95,23 +460,48 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: efd8dfceec138044aa8ff92be2283e26
-    m_Address: MysticDwelling
+  - m_GUID: eb35402effc98f84498e52cab9693acc
+    m_Address: DarkBloomTier1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f8be27eaf0202004c8193ff69043f9e2
-    m_Address: Crystal
+  - m_GUID: eb4604d4dcee8294fae5019b61dacf27
+    m_Address: DarkVineTier2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: fbd001ba6bfa96441b88d36a60c07d12
-    m_Address: UnstorableOrnament
+  - m_GUID: f0420df8f88cc084d9789716c578aaf9
+    m_Address: DarkTowerTier4
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ff91efb0640a9a44fb6b9f00e6afe43b
-    m_Address: TerraNexus
+  - m_GUID: f0e740945256e5f4d9a924d94bc5b708
+    m_Address: LightTowerTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f37cbce3dd310824184ae4ae636dbb5e
+    m_Address: LightFlameDwellingTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f563e617814624149adc7e2e53ac053f
+    m_Address: DarkWallTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f63a7d5b99e554e4484ba7775fb0243c
+    m_Address: DarkCommonDwellingTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fbf0b2869db95504f8d08056b5e74331
+    m_Address: LightEldritchSealTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fea2456d9631697469cd651f0dae9160
+    m_Address: DarkRootTier2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

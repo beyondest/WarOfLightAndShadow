@@ -67,6 +67,8 @@ namespace SparFlame.BootStrapper
             {
                 Destroy(gameObject);
             }
+
+            Application.targetFrameRate = 60;
         }
 
         

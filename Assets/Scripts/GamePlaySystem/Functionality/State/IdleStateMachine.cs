@@ -8,7 +8,7 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.State
 {
-    [UpdateAfter(typeof(BuffSystem))]
+    [UpdateAfter(typeof(BuffManageSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
     [BurstCompile]
     public partial struct IdleStateMachine : ISystem
@@ -42,6 +42,7 @@ namespace SparFlame.GamePlaySystem.State
         
         [BurstCompile]
         [WithAll(typeof(IdleStateTag))]
+        [WithNone(typeof(UnitDeadTag))]
         public partial struct IdleStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;

@@ -5,6 +5,7 @@ using SparFlame.GamePlaySystem.Building;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using SparFlame.Database.Database.DatabaseDefination;
 
 namespace Editor
 {
@@ -36,6 +37,13 @@ namespace Editor
         [Unity.Collections.ReadOnly, LabelText("Env Type To Spawn Tiles Databases"), ShowInInspector]
         public List<EnvTypeSpawnDatabaseSo> envTypeSpawnDatabases = new();
         
+        [Unity.Collections.ReadOnly, LabelText("VFX Databases"), ShowInInspector]
+        public List<VFXDatabaseSo> vfxDatabases = new();
+        
+        
+        [Unity.Collections.ReadOnly, LabelText("Buff Databases"), ShowInInspector]
+        public List<BuffDatabaseSo> buffDatabases = new();
+        
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -48,7 +56,8 @@ namespace Editor
             envDatabases = FindAllAssets<EnvDatabaseSo>("Env Database");
             envTypeSpawnDatabases = FindAllAssets<EnvTypeSpawnDatabaseSo>("Env Type Spawn Database");
             enemyAIDatabases = FindAllAssets<EnemyAIDatabaseSo>( " EnemyAI Database ");
-            
+            vfxDatabases = FindAllAssets<VFXDatabaseSo>("VFX Database");
+            buffDatabases = FindAllAssets<BuffDatabaseSo>("Buff Database");
         }
 
         private List<T> FindAllAssets<T>(string label) where T : ScriptableObject

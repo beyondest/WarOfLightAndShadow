@@ -11,7 +11,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         {
             public override void Bake(BuildingPackTagAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.WorldSpace);
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
                 var colliderBox = authoring.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize;
                 AddComponent(entity, new BuildingPackSquareSize
                 {
@@ -20,7 +20,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
         }
     }
-
 
 
     public struct BuildingPackSquareSize : IComponentData

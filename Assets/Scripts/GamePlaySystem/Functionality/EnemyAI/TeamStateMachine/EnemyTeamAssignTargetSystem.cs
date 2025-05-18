@@ -197,7 +197,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
             if (needCalDefend)
             {
-                CalculateDefendTowerSequence(enemyBaseEntities, enemyBaseTrans);
+                CalculateDefendTowerSequence(enemyBaseEntities);
             }
 
             foreach (var job in jobBuffer)
@@ -439,8 +439,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             teamStateData.CommandType = EnemyCommandType.March;
         }
 
-        private void CalculateDefendTowerSequence(NativeArray<Entity> baseEntities,
-            NativeArray<LocalTransform> baseTrans)
+        private void CalculateDefendTowerSequence(NativeArray<Entity> baseEntities)
         {
             for (var i = 0; i < baseEntities.Length; i++)
             {
@@ -449,13 +448,14 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 var list = _base2DefendTargets[target];
                 foreach (var data in garrisonDatas)
                 {
+                    if(data.AvailableCount <= 0)continue;
                     list.Add(new DefendTarget
                     {
                         AvailableCount = data.AvailableCount,
                         Pair = new TargetLocPair
                         {
-                            Location = baseTrans[i].Position,
-                            Target = target
+                            Location = _localTransformLookUp[data.Tower].Position,
+                            Target =data.Tower 
                         },
                         BaseIndexInQuery = i
                     });

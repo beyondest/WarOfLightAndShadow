@@ -17,7 +17,7 @@ namespace SparFlame.GamePlaySystem.State
     [BurstCompile]
     [UpdateAfter(typeof(MovementSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
-    [UpdateAfter(typeof(BuffSystem))]
+    [UpdateAfter(typeof(BuffManageSystem))]
     public partial struct MovingStateMachine : ISystem
     {
         private ComponentLookup<GeneralAttr> _interactableLookup;
@@ -105,6 +105,7 @@ namespace SparFlame.GamePlaySystem.State
         // TODO : Split ai movement state machine and player unit movement state machine
         [BurstCompile]
         [WithAll(typeof(MovingStateTag))]
+        [WithNone(typeof(UnitDeadTag))]
         public partial struct CheckMovingState : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;

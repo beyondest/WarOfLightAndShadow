@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Random = Unity.Mathematics.Random;
 
 // ReSharper disable UseIndexFromEndExpression
 
@@ -57,7 +58,7 @@ namespace SparFlame.GamePlaySystem.General
             switch (cutOffCount)
             {
                 case 0:
-                    return ;
+                    return;
                 case -1:
                     cutOffCount = int.MaxValue;
                     break;
@@ -74,7 +75,7 @@ namespace SparFlame.GamePlaySystem.General
             }
         }
 
-        
+
         /// <summary>
         /// E.g. cur wave point is 3, settings is 2, 4, 6, then cur point data is data of settings 4
         /// </summary>
@@ -95,13 +96,14 @@ namespace SparFlame.GamePlaySystem.General
                     return t.Value;
                 }
             }
+
             return buffer[buffer.Length - 1].Value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TData GetPointData<TPointData,TData>(float curTimeFromGameStart,IList<TPointData> buffer)
-        where TPointData : unmanaged, IPointsData<TData>
-        where TData : unmanaged
+        public static TData GetPointData<TPointData, TData>(float curTimeFromGameStart, IList<TPointData> buffer)
+            where TPointData : unmanaged, IPointsData<TData>
+            where TData : unmanaged
         {
             foreach (var t in buffer)
             {
@@ -110,9 +112,10 @@ namespace SparFlame.GamePlaySystem.General
                     return t.Value;
                 }
             }
+
             return buffer[buffer.Count - 1].Value;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetPoint(int curPoint, NativeList<int> list)
         {
@@ -123,9 +126,10 @@ namespace SparFlame.GamePlaySystem.General
                     return t;
                 }
             }
+
             return list[list.Length - 1];
         }
-        
+
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         // public static TData GetPointData<TData>(float curTimeFromGameStart,NativeHashMap<int, TData> dict)
         //     where TData : unmanaged
@@ -181,8 +185,24 @@ namespace SparFlame.GamePlaySystem.General
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetSeedByIndexTimeBias(int index, int seedBias, float elapsedTime)
         {
-            return  math.hash(new int2(index + seedBias, (int)(elapsedTime * 10000)));
+            return math.hash(new int2(index + seedBias, (int)(elapsedTime * 10000)));
         }
-        
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion NextQuaternion(ref Random random, bool onlyXZ = true)
+        {
+            if (onlyXZ)
+            {
+                float angle = random.NextFloat(0f, math.PI * 2f);
+                return quaternion.RotateY(angle);
+            }
+            else
+            {
+                float3 axis = math.normalize(random.NextFloat3Direction());
+                float angle = random.NextFloat(0f, math.PI * 2f);
+                return quaternion.AxisAngle(axis, angle);
+            }
+        }
     }
 }

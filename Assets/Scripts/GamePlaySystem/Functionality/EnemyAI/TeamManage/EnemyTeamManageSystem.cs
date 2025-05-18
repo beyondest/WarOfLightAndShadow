@@ -28,23 +28,33 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<DarkEnemyDatabaseTag>();
+            state.RequireForUpdate<PlayerFactionData>();
+            state.RequireForUpdate<LightEnemyDatabaseTag>();
             state.RequireForUpdate<GameWaveData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<EnemyTeamManageSystemConfig>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             _generalAttributeLookup = state.GetComponentLookup<GeneralAttr>(true);
             _teamDataLookup = state.GetComponentLookup<TeamData>();
             _unitAttributeLookup = state.GetComponentLookup<UnitAttr>(true);
             _garrisonAttributeLookup = state.GetComponentLookup<GarrisonAttr>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
-            
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!_wavePoints.IsCreated)
-                Initialize();
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if (gameStatusData == GameStatus.Init)
+            {
+                if(_wavePoints.IsCreated)
+                    Deinitialize();
+                Initialize(ref state);
+                return;
+            }
+            if(gameStatusData != GameStatus.Gaming)return;
+            
             var config = SystemAPI.GetSingleton<EnemyTeamManageSystemConfig>();
 
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -144,15 +154,20 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         }
 
 
-        private void Initialize()
+        private void Initialize(ref SystemState state)
         {
-            var buffer3 = SystemAPI.GetSingletonBuffer<WaveTeamSpecialData>();
+            var lightEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
+            var darkEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
+            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
+                ? lightEntity
+                : darkEntity;
+            var buffer = SystemAPI.GetBuffer<WaveTeamSpecialData>(entity);
             _wavePoint2TeamType2MemberCountEntriesLimit =
                 new NativeHashMap<int, NativeHashMap<int, TeamSpecialData>>(5, Allocator.Persistent);
             _wavePoints = new NativeList<int>(5, Allocator.Persistent);
             _wavePoint2TeamType2MaxSpecialUnitCount = new NativeHashMap<int, NativeHashMap<int, int>>(5, Allocator.Persistent);
             // Init wave to team member consist
-            foreach (var data in buffer3)
+            foreach (var data in buffer)
             {
                 if (!_wavePoint2TeamType2MemberCountEntriesLimit.ContainsKey(data.WavePoint))
                     _wavePoint2TeamType2MemberCountEntriesLimit.Add(data.WavePoint,
@@ -179,7 +194,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
         }
 
-        public void OnDestroy(ref SystemState state)
+        
+        private void Deinitialize()
         {
             if (_wavePoint2TeamType2MemberCountEntriesLimit.IsCreated)
             {
@@ -187,7 +203,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     pair.Value.Dispose();
                 }
-
                 _wavePoint2TeamType2MemberCountEntriesLimit.Dispose();
             }
 
@@ -197,10 +212,16 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     pair.Value.Dispose();
                 }
+                _wavePoint2TeamType2MaxSpecialUnitCount.Dispose();
             }
 
             if (_wavePoints.IsCreated)
                 _wavePoints.Dispose();
+        }
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+           Deinitialize();
         }
     }
 }

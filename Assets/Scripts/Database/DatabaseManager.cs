@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
+using SparFlame.Database.Database.DatabaseDefination;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Resource;
 using UnityEngine;
@@ -23,6 +24,8 @@ namespace SparFlame.Database
         private static EnvTypeSpawnDatabaseSo _envTypeSpawnDatabaseSo;
         private static EnemyAIDatabaseSo _enemyAIDatabaseSo;
         private static ResourceTypeSpawnDatabaseSo _resourceTypeSpawnDatabaseSo;
+        private static VFXDatabaseSo _vfxDatabaseSo;
+        private static BuffDatabaseSo _buffDatabaseSo;
         
         public static BuildingDatabaseSo BuildingDatabaseSo =>
             _buildingDatabaseSo ??= LoadAndMergeDatabase<BuildingDatabaseSo, BuildingDataItem>("items");
@@ -48,7 +51,11 @@ namespace SparFlame.Database
         public static EnemyAIDatabaseSo EnemyAIDatabaseSo =>
             _enemyAIDatabaseSo ??= LoadAndMergeDatabase<EnemyAIDatabaseSo, EnemyAIWaveDataItem>("items");
 
+        public static VFXDatabaseSo VFXDatabaseSo =>
+            _vfxDatabaseSo ??= LoadAndMergeDatabase<VFXDatabaseSo, VFXDataItem>("items");
         
+        public static BuffDatabaseSo BuffDatabaseSo =>
+        _buffDatabaseSo ??= LoadAndMergeDatabase<BuffDatabaseSo, BuffDataItem>("items");
         
         // This method only works for general databases
         public static GeneralDatabase<TData> GetDatabaseSo<TData>() where TData : GeneralDataItem
@@ -174,8 +181,8 @@ namespace SparFlame.Database
             _enemyAIDatabaseSo = null;
             _envTypeSpawnDatabaseSo = null;
             _resourceTypeSpawnDatabaseSo = null;
-
-            // 强制重新加载（可选）
+            _vfxDatabaseSo = null;
+            _buffDatabaseSo = null;
             _ = BuildingDatabaseSo;
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
@@ -184,7 +191,8 @@ namespace SparFlame.Database
             _ = EnemyAIDatabaseSo;
             _ = EnvTypeSpawnDatabaseSo;
             _ = ResourceTypeSpawnDatabaseSo;
-
+            _ = VFXDatabaseSo;
+            _ = BuffDatabaseSo;
             Debug.Log(" All Databases reloaded successfully!");
         }
 #endif

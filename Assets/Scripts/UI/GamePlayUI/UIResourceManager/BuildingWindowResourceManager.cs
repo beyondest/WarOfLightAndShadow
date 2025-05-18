@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.Utils;
 using UnityEngine;
 

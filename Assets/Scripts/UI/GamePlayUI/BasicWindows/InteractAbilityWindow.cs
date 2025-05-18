@@ -84,6 +84,11 @@ namespace SparFlame.UI.GamePlay
         {
             return _targetEntity != Entity.Null;
         }
+        public void ClearCloseUpTarget()
+        {
+            _targetEntity = Entity.Null;
+            
+        }
 
         #region ButtonMethods
 

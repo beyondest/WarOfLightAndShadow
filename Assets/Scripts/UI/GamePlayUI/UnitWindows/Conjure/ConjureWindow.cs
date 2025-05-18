@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.Units;
@@ -28,6 +28,10 @@ namespace SparFlame.UI.GamePlay
         {
             base.Show(pos);
             conjureWindowPanel.SetActive(true);
+        }
+        public void ClearCloseUpTarget()
+        {
+            _targetEntity = Entity.Null;
         }
 
         public override void Hide()
@@ -59,6 +63,7 @@ namespace SparFlame.UI.GamePlay
         // This method call when conjuring button in conjuring window is click. Will pass conjuring count and prefab to ecs
         public override void OnClickSlot(int slotIndex)
         {
+            if(_targetEntity == Entity.Null)return;
             var count = SlotComponents[slotIndex].GetConjureCount();
             var entity = _infos[slotIndex].EntityPrefab;
             var maxConjureCount = SlotComponents[slotIndex].GetMaxConjureCount();

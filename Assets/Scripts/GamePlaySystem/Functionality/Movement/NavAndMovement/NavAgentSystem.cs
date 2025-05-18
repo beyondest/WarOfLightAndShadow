@@ -39,8 +39,8 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            ref var config =ref SystemAPI.GetSingletonRW<NavAgentSystemConfig>().ValueRW;
-            if (!config.IsInitialized)
+            var config = SystemAPI.GetSingleton<NavAgentSystemConfig>();
+            if (!_navAgentRadius.IsCreated)
             {
                 InitNavMeshQueries(ref config);
                 var buffer = SystemAPI.GetSingletonBuffer<AgentIdRadiusPair>();
@@ -216,7 +216,6 @@ namespace SparFlame.GamePlaySystem.Movement
 
         private void InitNavMeshQueries(ref NavAgentSystemConfig config)
         {
-            config.IsInitialized = true;
             _navMeshWorld = NavMeshWorld.GetDefaultWorld();
             _navMeshQueries = new NativeList<NavMeshQuery>(config.InitialNavMeshQueriesCapacity, Allocator.Persistent);
             for (int i = 0; i < config.InitialNavMeshQueriesCapacity; i++)

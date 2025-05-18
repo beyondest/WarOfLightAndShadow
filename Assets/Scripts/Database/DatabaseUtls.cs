@@ -1,7 +1,7 @@
 ﻿using GamePlaySystem.Database;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CameraControl;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
@@ -48,7 +48,10 @@ namespace SparFlame.Database
                 AddComponent<InCameraView>(entity);
                 AddComponent<InCameraExtendView>(entity);
                 SetComponentEnabled<InCameraView>(entity, false);
-                SetComponentEnabled<InCameraExtendView>(entity,false);
+                SetComponentEnabled<InCameraExtendView>(entity, false);
+
+                // VFX Buffer
+                AddBuffer<TrackedByVFX>(entity);
 
                 // Exp
                 if (item.upgradable)
@@ -149,11 +152,9 @@ namespace SparFlame.Database
                     SightRange = fogOfWarSightRange,
                     SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
                     DisappearAlphaThreshold = item.disappearAlphaThreshold,
-                    IsInsight = true 
+                    IsInsight = true
                 };
                 AddComponent(entity, fowAgentData);
-        
-
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
@@ -179,11 +180,6 @@ namespace SparFlame.Database
                     RequestFromFaction = item.factionTag,
                 });
             }
-           
         }
     }
-
-
-    
-   
 }

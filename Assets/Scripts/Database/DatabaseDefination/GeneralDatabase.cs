@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using SparFlame.Database;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Exp;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using Unity.Physics.Authoring;
+using UnityEditor.AddressableAssets;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 // ReSharper disable RedundantJumpStatement
 
 #if UNITY_EDITOR
@@ -170,6 +174,7 @@ namespace GamePlaySystem.Database
         [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
          HorizontalGroup("Additional/FogOfWar/2")]
         public float disappearAlphaThreshold = 0.1f;
+        
         
         
         #endregion
@@ -334,5 +339,38 @@ namespace GamePlaySystem.Database
             if(_shouldCheckExp)return ;
             return ;
         }
+        
+#if UNITY_EDITOR
+        [Button("Auto assign Addressable Sprite")]
+        private void AutoAssignSpritesFromAddressables()
+        {
+
+            foreach (var item in Items)
+            {
+                if (item.prefab == null)
+                {
+                    Debug.LogWarning($"empty prefab in id {item.id}");
+                    continue;
+                }
+
+                string key = item.prefab.name;
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+                var entry = settings.groups
+                    .SelectMany(g => g.entries)
+                    .FirstOrDefault(e => e.address == key);
+
+                if (entry == null)
+                {
+                    Debug.LogWarning($"Not find Addressables  key：{key}");
+                    continue;
+                }
+
+                item.sprite2D = new AssetReferenceSprite(entry.guid);
+            }
+
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssets();
+        }
+#endif
     }
 }

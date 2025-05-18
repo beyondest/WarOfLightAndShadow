@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using SparFlame.Database;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Conjure;
-using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Generate;
@@ -12,6 +12,7 @@ using SparFlame.GamePlaySystem.Resource;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -66,15 +67,30 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private TMP_Text ornamentBuffDescriptionText;
         [Header("Construct Panel")]
         [SerializeField] private GameObject constructPanel;
-
+        [SerializeField] private GameObject upgradeButton;
+        
+        [Header("Upgrade Panel")]
+        [SerializeField] private GameObject upgradePanel;
+        [SerializeField] private Image nextTierImage;
+        [SerializeField] private Color notUpgradableColor = Color.red;
+        
         // Interface
         public static BuildingDetailWindow Instance;
         public Action<Entity> EcsGhostShowTarget;
-
+        public Action<Entity> EcsRecycleTarget;
+        
         public override void Hide()
         {
             base.Hide();
             _targetEntity = Entity.Null;
+        }
+
+        public void UpDatePlayerGlobalResourceData(DynamicBuffer<ResourceTypeToAvailableAmount> playerResources)
+        {
+            foreach (var costList in playerResources)
+            {
+                _playerResources[costList.ResourceType] = costList.Amount;
+            }
         }
 
         public bool TrySwitchTarget(Entity target)
@@ -88,10 +104,30 @@ namespace SparFlame.UI.GamePlay
             return true;
         }
 
+        public void HideConstructPanel()
+        {
+            constructPanel.SetActive(false);
+        }
+
         public bool HasTarget()
         {
             return _targetEntity != Entity.Null;
         }
+
+        public void ClearCloseUpTarget()
+        {
+            _targetEntity = Entity.Null;
+        }
+        public override void LoadResources()
+        {
+            base.LoadResources();
+            generatePanel.SetActive(false);
+            dwellingPanel.SetActive(false);
+            ornamentPanel.SetActive(false);
+            conjurePanel.SetActive(false);
+            interactAbilityTriangle.enabled = false;
+        }
+
 
         #region ButtonMethods
 
@@ -119,15 +155,22 @@ namespace SparFlame.UI.GamePlay
             EcsGhostShowTarget?.Invoke(_targetEntity);
         }
 
-
-        public void OnClickStore()
-        {
-            throw new NotImplementedException();
-        }
+        
 
         public void OnClickRecycle()
         {
-            throw new NotImplementedException();
+            EcsRecycleTarget?.Invoke(_targetEntity);
+        }
+
+        public void OnClickUpgrade()
+        {
+            var list = CalculateUpgradeCostList();
+            var exp = Em.GetComponentData<ExpData>(_targetEntity);
+            var oriInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
+                Em.GetComponentData<GeneralAttr>(_targetEntity).ID);
+            var upGradeInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
+                Em.GetComponentData<GeneralAttr>(exp.NextTierPrefab).ID);
+            BuildingUpgradePopUpWindow.Instance.PopUp(list,oriInfo,upGradeInfo,_targetEntity);
         }
 
         #endregion
@@ -137,10 +180,10 @@ namespace SparFlame.UI.GamePlay
         private bool _hasGarrisonUnits;
         private FactionTag _playerFaction;
 
-
         // Cache
         private GameObject _costSlotPrefab;
         private BuildingAttr _buildingAttr;
+        private readonly Dictionary<ResourceType, int> _playerResources = new();
 
         // ECS
         protected EntityManager Em;
@@ -157,16 +200,8 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        public override void LoadResources()
-        {
-            base.LoadResources();
-            generatePanel.SetActive(false);
-            dwellingPanel.SetActive(false);
-            ornamentPanel.SetActive(false);
-            conjurePanel.SetActive(false);
-            interactAbilityTriangle.enabled = false;
-        }
-
+        
+       
         protected override void Start()
         {
             base.Start();
@@ -213,6 +248,8 @@ namespace SparFlame.UI.GamePlay
             conjurePanel.SetActive(false);
             dwellingPanel.SetActive(false);
             ornamentPanel.SetActive(false);
+            upgradePanel.SetActive(false);
+
 
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
             {
@@ -221,6 +258,18 @@ namespace SparFlame.UI.GamePlay
                 if (!isMainInfoSingleton) garrisonCountText.text = $"{garrisonAttr.MaxGarrisonCount}";
             }
 
+            if (Em.HasComponent<ExpData>(_targetEntity))
+            {
+                var prefab = Em.GetComponentData<ExpData>(_targetEntity).NextTierPrefab;
+                if (prefab != Entity.Null)
+                {
+                    upgradePanel.SetActive(true);
+                    var nextTierGeneralAttr = Em.GetComponentData<GeneralAttr>(prefab);
+                    var buildingAttr = Em.GetComponentData<BuildingAttr>(prefab);
+                    nextTierImage.sprite = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(buildingAttr.Type,
+                        nextTierGeneralAttr.ID).Sprite;
+                }
+            }
             
             switch (_buildingAttr.Type)
             {
@@ -265,7 +314,7 @@ namespace SparFlame.UI.GamePlay
                     {
                         var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity);
                         ornamentPanel.SetActive(true);
-                        ornamentBuffImage.sprite = BasicUIResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
+                        // ornamentBuffImage.sprite = BasicUIResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
                         ornamentBuffDescriptionText.text = "Not implemented";
                     }
                     break;
@@ -284,7 +333,6 @@ namespace SparFlame.UI.GamePlay
             {
                 constructPanel.SetActive(false);
             }
-            
         }
 
         private void ShouldOpenGarrisonInfoConjureQueueAndMiniConjure()
@@ -354,28 +402,99 @@ namespace SparFlame.UI.GamePlay
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            
+            if(isMainInfoSingleton)
+                VisualizeCostSlots();
         }
 
         private void VisualizeCostSlots()
         {
-            var costList = Em.GetBuffer<CostList>(_targetEntity);
-            // Visualize cost attributes
-            for (var i = 0; i < Slots.Count; i++)
+            if (!isMainInfoSingleton)
             {
-                if (i < costList.Length)
+                var costList = Em.GetBuffer<CostList>(_targetEntity);
+                // Visualize cost attributes
+                for (var i = 0; i < Slots.Count; i++)
                 {
-                    Slots[i].SetActive(true);
-                    var cost = costList[i];
-                    var costSlot = SlotComponents[i];
-                    costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
-                    costSlot.label.text = cost.Type.ToString();
-                    costSlot.value.text = $"x{cost.Amount}";
-                }
-                else
-                {
-                    Slots[i].SetActive(false);
+                    if (i < costList.Length)
+                    {
+                        Slots[i].SetActive(true);
+                        var cost = costList[i];
+                        var costSlot = SlotComponents[i];
+                        costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
+                        costSlot.label.text = cost.Type.ToString();
+                        costSlot.value.text = $"x{cost.Amount}";
+                    }
+                    else
+                    {
+                        Slots[i].SetActive(false);
+                    }
                 }
             }
+            else
+            {
+                // Main info singleton use cost slot to show how much cost to upgrade
+                var list = CalculateUpgradeCostList();
+                var isUpgradable = list.Count > 0;
+                for (var i = 0; i < Slots.Count; i++)
+                {
+                    if (i < list.Count)
+                    {
+                        Slots[i].SetActive(true);
+                        var cost = list[i];
+                        var costSlot = SlotComponents[i];
+                        
+                        costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
+                        costSlot.label.text = cost.Type.ToString();
+                        costSlot.value.text = $"x{cost.Amount}";
+                        if (cost.Amount > _playerResources[cost.Type])
+                        {
+                            isUpgradable = false;
+                            costSlot.label.color = notUpgradableColor;
+                            costSlot.value.color = notUpgradableColor;
+                        }
+                        else
+                        {
+                            costSlot.label.color = Color.white;
+                            costSlot.value.color = Color.white;
+                        }
+                        
+                    }
+                    else
+                    {
+                        Slots[i].SetActive(false);
+                    }
+                }
+                
+                upgradeButton.SetActive(isUpgradable); 
+            }
+           
+        }
+
+        private List<CostList> CalculateUpgradeCostList()
+        {
+            var list = new List<CostList>();
+            if (Em.HasComponent<ExpData>(_targetEntity))
+            {
+                var expData = Em.GetComponentData<ExpData>(_targetEntity);
+                if (expData.CurTier != expData.MaxTier)
+                {
+                    var curCost = Em.GetBuffer<CostList>(_targetEntity);
+                    var tarCost = Em.GetBuffer<CostList>(expData.NextTierPrefab);
+                    foreach (var costList in tarCost)
+                    {
+                        var e = costList;
+                        foreach (var curCostList in curCost)
+                        {
+                            if (curCostList.Type == e.Type)
+                            {
+                                e.Amount = math.clamp(e.Amount - curCostList.Amount, 0, e.Amount);
+                            }
+                        }
+                        list.Add(e);
+                    }
+                }
+            }
+            return list;
         }
     }
 }

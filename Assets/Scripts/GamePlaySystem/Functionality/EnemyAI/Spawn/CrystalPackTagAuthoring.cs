@@ -9,7 +9,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         {
             public override void Bake(CrystalPackTagAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.WorldSpace);
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent<CrystalPackNeedInitTag>(entity);
             }
         }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using SparFlame.Database;
-using SparFlame.GamePlaySystem.Exp;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.UI.General;
@@ -77,10 +76,8 @@ namespace SparFlame.UI.GamePlay
 
         public bool TrySwitchTarget(Entity target)
         {
-            if (!BasicUIResourceManager.Instance.IsResourceLoaded()) return false;
             // reset the last target layer
             SetLayerRecursively(_targetEntity, _oriLayer);
-
             if (!_em.HasComponent<GeneralAttr>(target)) return false;
             _targetHasExp = _em.HasComponent<ExpData>(target);
             _targetEntity = target;
@@ -95,6 +92,12 @@ namespace SparFlame.UI.GamePlay
         public bool HasTarget()
         {
             return _targetEntity != Entity.Null;
+        }
+
+        public void ClearCloseUpTarget()
+        {
+            SetLayerRecursively(_targetEntity, _oriLayer);
+            _targetEntity = Entity.Null;
         }
 
 
@@ -192,24 +195,24 @@ namespace SparFlame.UI.GamePlay
             closeUpCamera.transform.LookAt(tarTransform.Position + new float3(0, 0.5f * y, 0));
 
             // Update BuffData
-            if (_em.HasComponent<BuffData>(_targetEntity))
-            {
-                var buffData = _em.GetBuffer<BuffData>(_targetEntity);
-                var count = Mathf.Min(Slots.Count, buffData.Length);
-                for (var i = 0; i < Slots.Count; i++)
-                {
-                    if (i < count)
-                    {
-                        Slots[i].SetActive(true);
-                        var buff = SlotComponents[i];
-                        buff.button.image.sprite = BasicUIResourceManager.Instance.BuffSprites[buffData[i].Type];
-                    }
-                    else
-                    {
-                        Slots[i].SetActive(false);
-                    }
-                }
-            }
+            // if (_em.HasComponent<BuffData>(_targetEntity))
+            // {
+            //     var buffData = _em.GetBuffer<BuffData>(_targetEntity);
+            //     var count = Mathf.Min(Slots.Count, buffData.Length);
+            //     for (var i = 0; i < Slots.Count; i++)
+            //     {
+            //         if (i < count)
+            //         {
+            //             Slots[i].SetActive(true);
+            //             var buff = SlotComponents[i];
+            //             // buff.button.image.sprite = BasicUIResourceManager.Instance.BuffSprites[buffData[i].Type];
+            //         }
+            //         else
+            //         {
+            //             Slots[i].SetActive(false);
+            //         }
+            //     }
+            // }
         }
 
 
@@ -303,6 +306,7 @@ namespace SparFlame.UI.GamePlay
                 oriLayer = renderFilter.Layer;
                 renderFilter.Layer = newLayer;
                 _em.SetSharedComponent(e, renderFilter);
+                if(e == entity)continue;
                 SetLayerRecursively(e, newLayer);
             }
 

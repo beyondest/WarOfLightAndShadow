@@ -32,4 +32,7 @@ namespace SparFlame.GamePlaySystem.Hints
         public float3 Position;
         public HintType Type;
     }
+    
+    
+    
 }
