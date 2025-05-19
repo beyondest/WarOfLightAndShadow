@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
 using SparFlame.GamePlaySystem.Garrison;
 using Unity.Burst;
 using Unity.Collections;
@@ -183,7 +184,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         statInteractee.CurValue = math.max(0, statInteractee.CurValue - request.AbsAmount);
                         break;
                     case StatChangeType.UnNormalKill:
-                    case StatChangeType.Upgrade:
+                    case StatChangeType.SimpleClean_UsedAsUpgrade:
                         statInteractee.CurValue = 0;
                         break;
                     default:
@@ -272,7 +273,7 @@ namespace SparFlame.GamePlaySystem.Interact
                             index, ECB);
                         break;
                     case StatChangeType.None:
-                    case StatChangeType.Upgrade:
+                    case StatChangeType.SimpleClean_UsedAsUpgrade:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -329,10 +330,17 @@ namespace SparFlame.GamePlaySystem.Interact
                         }
 
                         var buildingAttr = BuildingAttrLookup[interacteeEntity];
-                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal })
+                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
+                            or {Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon})
                         {
                             StatUtils.GenerateChangeOccupiedTagRequest(in interacteeAttr,
                                 TransformLookup[interacteeEntity].Position, ECB, index);
+                            if (buildingAttr.SubTypeIndex == (int)OrnamentType.Beacon)
+                            {
+                                var updateLightLineRequest = ECB.CreateEntity(index);
+                                ECB.AddComponent<GameplayEntityTag>(index, updateLightLineRequest);
+                                ECB.AddComponent<UpdateLightLineRequest>(index,updateLightLineRequest);
+                            }
                         }
 
                         if (buildingAttr.Type == BuildingType.Dwellings)
@@ -435,7 +443,8 @@ namespace SparFlame.GamePlaySystem.Interact
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+                        or {SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
                     {
                         statInteractee.CurValue = statInteractee.MaxValue;
                     }
@@ -445,7 +454,8 @@ namespace SparFlame.GamePlaySystem.Interact
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+                        or {SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
                     {
                         statInteractee.CurValue = 0f;
                     }
@@ -455,7 +465,8 @@ namespace SparFlame.GamePlaySystem.Interact
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+                        or {SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
                     {
                         statInteractee.CurValue = statInteractee.MaxValue;
                     }
@@ -465,7 +476,8 @@ namespace SparFlame.GamePlaySystem.Interact
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
-                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments })
+                    if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+                        or {SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
                     {
                         statInteractee.CurValue = 0f;
                     }

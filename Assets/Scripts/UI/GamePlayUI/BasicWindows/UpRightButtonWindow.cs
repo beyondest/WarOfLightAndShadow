@@ -178,8 +178,8 @@ namespace SparFlame.UI.GamePlay
 
             
             // Update hp info
-            enemyCrystalFilledHp.enabled = enemyInfo.TotalCount != 0;
-            enemyCrystalBlankHp.enabled = enemyInfo.TotalCount != 0;
+            enemyCrystalFilledHp.enabled = enemyInfo.InSightValidCount != 0;
+            enemyCrystalBlankHp.enabled = enemyInfo.InSightValidCount != 0;
             // Update crystal hp info
             if (playerInfo.MaxTotalHp != 0f)
                 playerCrystalFilledHp.fillAmount = playerInfo.CurTotalHp / playerInfo.MaxTotalHp;

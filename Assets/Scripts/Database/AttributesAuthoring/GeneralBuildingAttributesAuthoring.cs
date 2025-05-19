@@ -12,13 +12,16 @@ namespace SparFlame.Database
     public class GeneralBuildingAttributesAuthoring : GeneralDataItemAuthoring
     {
         public bool ifInBuildingPack;
+
         protected class Baker : GeneralDataItemBaker<GeneralBuildingAttributesAuthoring>
         {
             public override void Bake(GeneralBuildingAttributesAuthoring authoring)
             {
-                if(authoring.globalIdx == 0)return;
+                if (authoring.globalIdx == 0) return;
                 var item = DatabaseManager.BuildingDatabaseSo.GetItemById(authoring.globalIdx);
-                var entity = GetEntity(authoring.ifInBuildingPack ? TransformUsageFlags.WorldSpace : TransformUsageFlags.Dynamic);
+                var entity = GetEntity(authoring.ifInBuildingPack
+                    ? TransformUsageFlags.WorldSpace
+                    : TransformUsageFlags.Dynamic);
                 // var entity = GetEntity(TransformUsageFlags.Dynamic);
                 BakeGeneralDataItem(entity, item);
 
@@ -37,6 +40,7 @@ namespace SparFlame.Database
                         Type = cost.costResourceType
                     });
                 }
+
                 BakeVolumeObstacleAttr(item, entity);
                 BakeGarrisonAttr(item, entity);
                 BakeGenerateAttr(item, entity);
@@ -44,8 +48,6 @@ namespace SparFlame.Database
                 BakeDwellingAttr(item, entity);
                 BakeOrnamentAttr(item, entity);
             }
-
-           
 
 
             private void BakeGarrisonAttr(BuildingDataItem item, Entity entity)
@@ -74,7 +76,7 @@ namespace SparFlame.Database
             private void BakeGenerateAttr(BuildingDataItem item, Entity entity)
             {
                 if (item is not GeneratorData generatorData) return;
-                AddComponent(entity,new GenerateAttr
+                AddComponent(entity, new GenerateAttr
                 {
                     GenerateResourceType = generatorData.generateResourceType,
                     GenerateInitialSpeed = generatorData.initGenerateSpeed,
@@ -87,7 +89,7 @@ namespace SparFlame.Database
 
             private void BakeConjureAttr(BuildingDataItem item, Entity entity)
             {
-                if(item is not ConjuringShrineData conjuringData) return;
+                if (item is not ConjuringShrineData conjuringData) return;
                 AddComponent(entity, new ConjureAttr
                 {
                     ConjuringType = conjuringData.conjureUnitType,
@@ -98,7 +100,7 @@ namespace SparFlame.Database
 
             private void BakeDwellingAttr(BuildingDataItem item, Entity entity)
             {
-                if(item is not DwellingData data) return;
+                if (item is not DwellingData data) return;
                 AddComponent(entity, new DwellingAttr
                 {
                     ResourceType = data.dwellingResourceType,
@@ -109,25 +111,25 @@ namespace SparFlame.Database
 
             private void BakeOrnamentAttr(BuildingDataItem item, Entity entity)
             {
-                if(item is not OrnamentData ornamentData) return;
+                if (item is not OrnamentData ornamentData) return;
                 if (ornamentData.hasBuff)
                 {
-                    AddComponent(entity, new StaticBuffAttr
-                    {
-                        Type = ornamentData.ornamentBuffType,
-                        RangeSq = ornamentData.buffRange * ornamentData.buffRange,
-                        LastSeconds = ornamentData.buffLastTimeSeconds
-                    });
+                    
                 }
-                if (ornamentData.GetSubtypeIndex() == (int)OrnamentType.Crystal)
+
+                
+                if (ornamentData.ornamentType is OrnamentType.Crystal or OrnamentType.Beacon)
                 {
                     AddComponent(entity, new CoreCrystalTag
                     {
                         Faction = item.factionTag
                     });
                 }
+                if (item.factionTag == FactionTag.Ally && ornamentData.ornamentType == OrnamentType.Crystal)
+                {
+                    AddComponent<LightSingleCrystalTag>(entity);
+                }
             }
         }
     }
 }
-

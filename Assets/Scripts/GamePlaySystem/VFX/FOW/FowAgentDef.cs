@@ -46,7 +46,7 @@ namespace SparFlame.GamePlaySystem.Fow
         public float4 UV;
     }
 
-    public struct ContributeSightTag : IComponentData
+    public struct ContributeSightTag : IComponentData,IEnableableComponent
     {
         
     }
@@ -85,8 +85,13 @@ namespace SparFlame.GamePlaySystem.Fow
         }
     }
     
+    // For elder grove plants
     public struct InverseDisappearTag : IComponentData
     {
         
     }
+
+
+    
+    
 }

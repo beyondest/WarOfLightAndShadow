@@ -34,7 +34,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             {
                 SystemAPI.SetSingleton(new EnemyCrystalInfo
                 {
-                    TotalCount = 0
+                    TotalCount = 0,
+                    InSightValidCount = 0
                 });
                 return;
             }
@@ -114,8 +115,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
                     if (BuildingAttrLookup.TryGetComponent(child, out var buildingAttr))
                     {
-                        // Base crystal must appear first in linked entity group, this is determined by package prefab
-                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal })
+                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
+                            or {Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon})
                         {
                             baseEntity = child;
                             ECB.AddBuffer<EnemyBaseGarrisonTowerData>(index, baseEntity);

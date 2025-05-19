@@ -23,7 +23,7 @@ namespace SparFlame.GamePlaySystem.Resource
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<CrystalAffectRadiusSq>();
+            state.RequireForUpdate<CrystalAffectMapRadiusSq>();
             state.RequireForUpdate<ChangeOccupiedTagRequest>();
             state.RequireForUpdate<GamingTag>();
             _crystalPosRecordLookUp = state.GetComponentLookup<CrystalPosVector4Override>();
@@ -39,7 +39,7 @@ namespace SparFlame.GamePlaySystem.Resource
             _crystalPosRecordLookUp3.Update(ref state);
             _crystalPosRecordLookUp2.Update(ref state);
             _crystalPosRecordLookUp.Update(ref state);
-            var config = SystemAPI.GetSingleton<CrystalAffectRadiusSq>();
+            var config = SystemAPI.GetSingleton<CrystalAffectMapRadiusSq>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var ecbSingleton = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>();
             foreach (var (request, entity) in SystemAPI.Query<RefRO<ChangeOccupiedTagRequest>>().WithEntityAccess())
@@ -70,7 +70,7 @@ namespace SparFlame.GamePlaySystem.Resource
         {
             [ReadOnly] public FactionTag ChangeIntoFaction;
             [ReadOnly] public float3 CrystalPos;
-            [ReadOnly] public CrystalAffectRadiusSq Config;
+            [ReadOnly] public CrystalAffectMapRadiusSq Config;
             [ReadOnly] public MapInfo Info;
             [ReadOnly] public float TileSize;
             [NativeDisableParallelForRestriction] public ComponentLookup<CrystalPosVector4Override> CrystalPosRecord;
@@ -91,16 +91,12 @@ namespace SparFlame.GamePlaySystem.Resource
                     )) return;
 
                 var meshChild = group[1].Value;
-                var isLight = ChangeIntoFaction == FactionTag.Ally ? 1f : 0f;
                 var shouldResetToNeg = ChangeIntoFaction == FactionTag.Neutral;
                 ECB.SetComponent(index, meshChild, new CrystalRadiusFloatOverride
                 {
-                    Value = Config.Value
+                    Value = math.sqrt(Config.Value)
                 });
-                ECB.SetComponent(index, meshChild, new IsLightFloatOverride
-                {
-                    Value = isLight
-                });
+                
                 ref var pos1 = ref CrystalPosRecord.GetRefRW(meshChild).ValueRW;
                 ref var pos2 = ref CrystalPosRecord2.GetRefRW(meshChild).ValueRW;
                 ref var pos3 = ref CrystalPosRecord3.GetRefRW(meshChild).ValueRW;
@@ -167,7 +163,25 @@ namespace SparFlame.GamePlaySystem.Resource
                     {
                         ECB.DestroyEntity(index, envEntity.Value);
                     }
+
+                    if (tag.Faction == FactionTag.Ally)
+                    {
+                        ECB.SetComponent(index, meshChild, new IsLightFloatOverride
+                        {
+                            Value = 1
+                        });
+                    }
+
+                    if (tag.Faction == FactionTag.Enemy)
+                    {
+                        ECB.SetComponent(index, meshChild, new IsLightFloatOverride
+                        {
+                            Value = 0
+                        });
+                    }
+                    
                     envEntities.Clear();
+                    
                 }
             }
         }

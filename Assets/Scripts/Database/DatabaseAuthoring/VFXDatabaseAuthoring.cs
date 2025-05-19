@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
 using Unity.Entities;
 using UnityEngine;
@@ -36,8 +35,8 @@ namespace SparFlame.Database
                                 HorizontalSpeed = item.horizontalSpeed,
                                 BaseRelativeHeight = item.baseRelativeHeight,
                                 MaxFlightDistance = item.maxFlightDistance,
-                                NotStopUntilReachMaxDis = item.notStopUntilReachMaxDis,
-                                IsParabola = item.isParabola,
+                                ProjectileType = item.projectileType,
+                                InitialHeight = item.initialHeight,
                             },
                             Filter = new VFXSubFilter
                             {

@@ -22,5 +22,22 @@ namespace SparFlame.GamePlaySystem.Building
             var yRadians = math.atan2(siny_cosp, cosy_cosp);
             return math.degrees(yRadians);
         }
+        
+        
+   
+        
+        public static int GetYRotation90FromQuaternion(quaternion rot)
+        {
+            // 将 quaternion 转换为欧拉角（弧度）
+            float3 euler = math.degrees(math.Euler(rot));
+
+            // 只考虑 Y 轴旋转，四舍五入到最近的 90°
+            int yRot = (int)math.round(euler.y / 90f) * 90;
+
+            // 保证落在 0, 90, 180, 270 之间
+            yRot = ((yRot % 360) + 360) % 360;
+
+            return yRot;
+        }
     }
 }

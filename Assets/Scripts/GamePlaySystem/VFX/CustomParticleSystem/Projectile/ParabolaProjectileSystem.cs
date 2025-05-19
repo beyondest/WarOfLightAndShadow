@@ -9,14 +9,14 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
 {
     public struct ParabolaProjectileData : IComponentData
     {
-        
         // Must be set when projectile spawn
-        
+
         public Entity Target;
         public float StartTime;
         public StatChangeRequest Request;
         public float MaxFlightDistance;
-        public bool NotStopUntilReachMaxDis;
+        public ProjectileType ProjectileType;
+        public float InitialHeight;
         public float3 StartPos;
 
         // Internal data
@@ -26,7 +26,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         // Fixed data of this kind projectile
         public Entity HitEffectPrefab;
         public float HorizontalSpeed; // Fixed speed
-        public float MaxIncreaseHeight; // Relative max height from start pos
+        public float MaxAbsHeight; // Relative max height from start pos
     }
 
     public partial struct ParabolaProjectileSystem : ISystem
@@ -81,14 +81,15 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                 }
                 else
                 {
-                     targetPos = targetTransform.Position;
-                     data.TargetLastPos = targetPos;
+                    targetPos = targetTransform.Position;
+                    data.TargetLastPos = targetPos;
                 }
 
                 ref var curTransform = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
 
+
                 // For straight thoroughly projectile
-                if (data.NotStopUntilReachMaxDis)
+                if (data.ProjectileType == ProjectileType.NoHeightChangeUntilReachMaxDis)
                 {
                     var direction = targetPos.xz - data.StartPos.xz;
                     var curDis0 = math.length(curTransform.Position.xz - data.StartPos.xz);
@@ -98,28 +99,40 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                     }
                     else
                     {
-                        var nextPos = curTransform.Position.xz+ math.normalizesafe(direction) * data.HorizontalSpeed * DeltaTime;
-                        curTransform.Position= new float3(nextPos.x, curTransform.Position.y, nextPos.y);
+                        var nextPos = curTransform.Position.xz +
+                                      math.normalizesafe(direction) * data.HorizontalSpeed * DeltaTime;
+                        curTransform.Position = new float3(nextPos.x, curTransform.Position.y, nextPos.y);
                     }
+
                     return;
                 }
-                
+
+
                 // For single target projectile
                 var curDis = math.length(targetPos.xz - curTransform.Position.xz);
-                if (curDis <= data.HorizontalSpeed * DeltaTime|| curDis < Config.ReachDis)
+                if (curDis <= data.HorizontalSpeed * DeltaTime || curDis < Config.ReachDis)
                 {
                     DestroyProjectile(index, selfEntity, data, targetPos);
                     return;
                 }
-                
+
                 var curDirection = math.normalize(targetPos - curTransform.Position);
-                var predictReachDuration =curDis / data.HorizontalSpeed;
+                var predictReachDuration = curDis / data.HorizontalSpeed;
                 var duration = CurTime - data.StartTime + predictReachDuration;
                 float t = (CurTime - data.StartTime) / duration;
                 t = math.saturate(t);
+                float height = 0f;
+                if (data.ProjectileType == ProjectileType.GoStraightToTargetWithHeightChange)
+                {
+                    var heightDelta = data.InitialHeight- targetPos.y;
+                    height = data.InitialHeight- heightDelta * t;
+                }
+                else
+                {
+                    // 垂直方向：抛物线 (y = 4h * t * (1 - t))
+                    height = 4f * data.MaxAbsHeight * t * (1 - t);
+                }
 
-                // 垂直方向：抛物线 (y = 4h * t * (1 - t))
-                float height = 4f * data.MaxIncreaseHeight * t * (1 - t);
                 float3 pos = curTransform.Position + curDirection * data.HorizontalSpeed * DeltaTime;
                 pos.y = height;
                 var trulyMoveDirection = math.normalize(pos - curTransform.Position);
@@ -128,8 +141,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                 // 方向朝向目标
                 curTransform.Rotation = quaternion.LookRotationSafe(trulyMoveDirection, math.up());
             }
-            
-            private void DestroyProjectile(int index, Entity selfEntity,in ParabolaProjectileData data,
+
+            private void DestroyProjectile(int index, Entity selfEntity, in ParabolaProjectileData data,
                 in float3 pos)
             {
                 // If this projectile has hit effect, then spawn it
@@ -145,12 +158,14 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         TimeToLive = 0,
                         Tracker = Entity.Null,
                         VFXType = VFXType.Instant,
+                        MaxWaitTimeForAllStopPlay = 2f,
+                        KillUntilAllStopPlay = true
                     });
                     var prefabTrans = TransformLookup[data.HitEffectPrefab];
                     prefabTrans.Position = pos;
                     ECB.SetComponent(index, hitVfx, prefabTrans);
                 }
-                
+
                 // If target is alive, then spawn stat change effect
                 if (data.IsTargetAlive)
                 {
@@ -158,6 +173,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                     ECB.AddComponent<GameplayEntityTag>(index, request);
                     ECB.AddComponent(index, request, data.Request);
                 }
+
                 ECB.DestroyEntity(index, selfEntity);
             }
         }

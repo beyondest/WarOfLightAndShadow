@@ -149,7 +149,7 @@ namespace SparFlame.GamePlaySystem.Command
             state.EntityManager.AddComponent<GameplayEntityTag>(vfx);
             state.EntityManager.SetComponentData(vfx, new VFXRequest
             {
-                Type = VFXRequestType.Spawn,
+                RequestType = VFXRequestType.Spawn,
                 Filter = new VFXSubFilter
                 {
                     Faction = unitSelectionData.CurrentSelectFaction,

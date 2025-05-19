@@ -267,7 +267,7 @@ namespace SparFlame.GamePlaySystem.Building
        
         
         public override int GetSubtypeIndex() => (int)ornamentType;
-        public override bool IsAttackable() => ornamentType == OrnamentType.Crystal;
+        public override bool IsAttackable() => ornamentType is OrnamentType.Crystal or OrnamentType.Beacon;
         protected override void InitDefaults()
         {
             base.InitDefaults();

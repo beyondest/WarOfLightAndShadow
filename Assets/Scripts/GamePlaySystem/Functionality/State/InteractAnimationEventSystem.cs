@@ -4,7 +4,6 @@ using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
@@ -217,7 +216,7 @@ namespace SparFlame.GamePlaySystem.State
                                 },
                                 KeepDuration = 4, // This is cleric healing circle duration; Other interact effect is projectile and its lifetime not handled by this variable
                                 StatChangeRequest = statChangeRequest,
-                                Type = VFXRequestType.Spawn,
+                                RequestType = VFXRequestType.Spawn,
                                 VFXName = eventInfo.sendVfxName,
                                 VFXTrackTarget = Entity.Null,
                                 TargetPosition = targetTransform.Position
@@ -247,13 +246,10 @@ namespace SparFlame.GamePlaySystem.State
                             ECB.AddComponent(index,aoeBuffRequest,new BuffRequest
                             {
                                 SpawnPosition = selfTransform.Position,
-                                SpawnRotation = targetTransform.Rotation,
+                                SpawnRotation = selfTransform.Rotation,
                                 TrackTarget = Entity.Null,
-                                Duration = 0,
-                                IfBuffLifeHandledByGeneralBuffManageSystem = false,
                                 // Only magic unit has aoe attack, others only has vfx
                                 Name = stateData.CurState == InteractState.Healing ? BuffName.ClericHealCircle : BuffName.MagicSwordSplash,
-                                BuffType = BuffType.AoeInteract,
                                 Filter = new BuffFilter
                                 {
                                     factionFilterEnabled = true,
@@ -321,7 +317,7 @@ namespace SparFlame.GamePlaySystem.State
                         StatChangeRequest = statChangeRequest,
                         VFXName = vfxName,
                         SpawnPosition = selfPos,
-                        Type = VFXRequestType.Spawn,
+                        RequestType = VFXRequestType.Spawn,
                         KeepDuration = 0,
                         VFXTrackTarget = Entity.Null
                     });

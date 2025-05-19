@@ -5,6 +5,7 @@ using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
+using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -20,6 +21,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
     {
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private BufferLookup<LinkedEntityGroup> _linkedEntityGroupLookup;
+        private ComponentLookup<UnitAttr> _unitAttrLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -32,6 +34,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             state.RequireForUpdate<GamingTag>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _linkedEntityGroupLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
+            _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
         }
 
         [BurstCompile]
@@ -40,6 +43,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             var config = SystemAPI.GetSingleton<EnemyInitDistinguishConfig>();
             _buildingAttrLookup.Update(ref state);
             _linkedEntityGroupLookup.Update(ref state);
+            _unitAttrLookup.Update(ref state);
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
@@ -49,8 +53,9 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 BuildingAttrLookup = _buildingAttrLookup,
                 DistinguishConfig = config,
                 EnemyFaction = ~playerFaction,
+                UnitAttrLookup = _unitAttrLookup
             }.ScheduleParallel(state.Dependency);
-            
+
             job.Complete();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -64,6 +69,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         public partial struct DistinguishEnemyJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
+            [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public EnemyInitDistinguishConfig DistinguishConfig;
             [ReadOnly] public FactionTag EnemyFaction;
@@ -75,30 +81,55 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 if (attr.FactionTag != EnemyFaction)
                 {
                     ECB.AddComponent<PlayerTag>(index, selfEntity);
-                    ECB.AddComponent<ContributeSightTag>(index, selfEntity);
                     if (attr.BaseTag == BaseTag.Buildings)
                     {
                         var buildingAttr = BuildingAttrLookup[selfEntity];
-                        if (buildingAttr.SubTypeIndex == (int)OrnamentType.Crystal)
+                        // Only crystal and beacon can contribute to sight
+                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal } or
+                            { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon })
                         {
                             ECB.AddBuffer<SurroundingData>(index, selfEntity);
-                            ECB.AddComponent(index,selfEntity, new SurroundingValue
+                            ECB.AddComponent(index, selfEntity, new SurroundingValue
                             {
                                 Value = 0f
                             });
+                            // Only light crystal and beacon can contribute to sight, no matter what player faction is
+                            if (attr.FactionTag == FactionTag.Ally)
+                            {
+                                ECB.AddComponent<ContributeSightTag>(index, selfEntity);
+                                ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity,true);
+                            }
                         }
                     }
-                    fowAgent.IsInsight = true;
+                    else
+                    {
+                        var unitAttr = UnitAttrLookup[selfEntity];
+                        if ( attr.FactionTag == FactionTag.Ally)
+                        {
+                            ECB.AddComponent<ContributeSightTag>(index, selfEntity);
+                            // Only light cavalry can contribute to light, other light unit may have light by cavalry buff
+                            ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity, unitAttr.Type == UnitType.Cavalry);
+                        }
+                    }
+                    fowAgent.IsInsight = true; // When first spawn, player unit or building must be visible
                     return;
                 }
 
                 ECB.AddComponent<AITag>(index, selfEntity);
-                fowAgent.IsInsight = false;
-                ECB.AddComponent<DisappearInFowTag>(index, selfEntity);
-                ECB.AddComponent(index, selfEntity, new HideFowAgentRequest
+                if (EnemyFaction == FactionTag.Ally)
                 {
-                    Hide = true
-                });
+                    fowAgent.IsInsight = true; // When first spawn, enemy unit or building is visible when it is light faction
+                }
+                else
+                {
+                    fowAgent.IsInsight = false;
+                    ECB.AddComponent<DisappearInFowTag>(index, selfEntity);
+                    ECB.AddComponent(index, selfEntity, new HideFowAgentRequest
+                    {
+                        Hide = true
+                    });
+                }
+               
 
                 // Detail distinguishes
                 switch (attr.BaseTag)
@@ -111,7 +142,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             // ECB.AddComponent<EnemyConjureShrineData>(index, selfEntity);
                         }
 
-                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal })
+                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
+                            or {Type: BuildingType.Ornaments , SubTypeIndex: (int)OrnamentType.Beacon})
                         {
                             ECB.AddComponent<EnemyBaseBelongsTo>(index, selfEntity);
 
@@ -136,7 +168,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                                 IsDestroyed = false
                             });
                             ECB.AddComponent<GameplayEntityTag>(index, selfEntity);
-                            
+                            if (attr.FactionTag == FactionTag.Ally)
+                            {
+                                ECB.AddComponent<ContributeSightTag>(index, selfEntity);
+                                ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity,true);
+                            }
                         }
 
                         break;
@@ -145,6 +181,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         ECB.AddComponent<EnemyUnitCommandData>(index, selfEntity);
                         ECB.AddComponent<EnemyUnitCommandUpdate>(index, selfEntity);
                         ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, selfEntity, false);
+                        
+                        if (attr.FactionTag == FactionTag.Ally)
+                        {
+                            ECB.AddComponent<ContributeSightTag>(index, selfEntity);
+                            ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity,UnitAttrLookup[selfEntity].Type == UnitType.Cavalry);
+                        }
                         break;
                     case BaseTag.Resources:
                         break;
@@ -153,7 +195,5 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 }
             }
         }
-
-       
     }
 }

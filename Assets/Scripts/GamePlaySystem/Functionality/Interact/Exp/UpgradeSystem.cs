@@ -71,7 +71,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 {
                     SpawnPosition = trans.Position,
                     VFXName = VFXName.Upgrade,
-                    Type = VFXRequestType.Spawn,
+                    RequestType = VFXRequestType.Spawn,
                     KeepDuration = 0f,
                     VFXTrackTarget =upgradeEntity,
                     Filter = new VFXSubFilter
@@ -80,7 +80,8 @@ namespace SparFlame.GamePlaySystem.Interact
                         Faction = generalAttr.FactionTag,
                         TierFilterEnable = false
                     },
-                    StatChangeRequest = default
+                    StatChangeRequest = default,
+                    TargetPosition = default,
                 });
                 
 
@@ -91,7 +92,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     AbsAmount = 9999,
                     Interactee = req.ValueRO.FromEntity,
                     Interactor = Entity.Null,
-                    Type = StatChangeType.Upgrade,
+                    Type = StatChangeType.SimpleClean_UsedAsUpgrade,
                     InteractorGeneralAttr = default
                 });
             }

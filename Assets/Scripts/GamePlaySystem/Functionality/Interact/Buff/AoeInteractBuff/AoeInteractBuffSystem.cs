@@ -1,11 +1,10 @@
 ﻿using System;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace SparFlame.GamePlaySystem.Interact.AoeInteractBuff
+namespace SparFlame.GamePlaySystem.Interact
 {
     public partial struct AoeInteractBuffSystem : ISystem
     {

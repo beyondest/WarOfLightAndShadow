@@ -59,6 +59,10 @@ namespace SparFlame.GamePlaySystem.General
     public struct EnemyCrystalInfo : IComponentData
     {
         public int TotalCount;
+        /// <summary>
+        /// This only counts in sight crystal, and if enemy is light, only count single crystal
+        /// </summary>
+        public int InSightValidCount;
         public float CurTotalHp;
         public float MaxTotalHp;
     }
@@ -91,7 +95,7 @@ namespace SparFlame.GamePlaySystem.General
         Heal = 2,
         Harvest = 3,
         UnNormalKill = 4,
-        Upgrade = 5
+        SimpleClean_UsedAsUpgrade = 5
     }
     
     public enum Tier

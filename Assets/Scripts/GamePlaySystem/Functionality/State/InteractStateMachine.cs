@@ -77,6 +77,7 @@ namespace SparFlame.GamePlaySystem.State
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var config = SystemAPI.GetSingleton<InteractStateMachineConfig>();
@@ -99,6 +100,7 @@ namespace SparFlame.GamePlaySystem.State
             var deltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             var attackJob = new InteractStateJob<AttackAbility>
             {
+                CurTime = curTime,
                 Ability = attackAbilities,
                 Entities = attackEntities,
                 StatDataLookup = _stat,
@@ -124,6 +126,8 @@ namespace SparFlame.GamePlaySystem.State
             var healEntities = _healEntityQuery.ToEntityArray(Allocator.TempJob);
             var healJob = new InteractStateJob<HealAbility>
             {
+                CurTime = curTime,
+
                 Ability = healAbilities,
                 Entities = healEntities,
                 StatDataLookup = _stat,
@@ -149,6 +153,8 @@ namespace SparFlame.GamePlaySystem.State
             var harvestEntities = _harvestEntityQuery.ToEntityArray(Allocator.TempJob);
             var harvestJob = new InteractStateJob<HarvestAbility>
             {
+                CurTime = curTime,
+
                 Ability = harvestAbilities,
                 Entities = harvestEntities,
                 StatDataLookup = _stat,
@@ -187,6 +193,7 @@ namespace SparFlame.GamePlaySystem.State
         private struct InteractStateJob<TInteractAbility> : IJobParallelFor
             where TInteractAbility : struct, IInteractAbility
         {
+            [ReadOnly] public float CurTime;
             public NativeArray<TInteractAbility> Ability;
             public NativeArray<Entity> Entities;
 
@@ -400,9 +407,11 @@ namespace SparFlame.GamePlaySystem.State
 
 
             private void BuildingAttack(Entity targetEntity, int amount, int index,
-                Entity selfEntity, InteractType interactType, in GeneralAttr generalAttr,
+                Entity selfEntity, InteractType interactType, in GeneralAttr selfGeneralAttr,
                 in float3 selfPos)
             {
+                var targetPos = TransformLookup[targetEntity].Position;
+
                 var statChangeRequest = new StatChangeRequest
                 {
                     Interactor = selfEntity,
@@ -415,35 +424,79 @@ namespace SparFlame.GamePlaySystem.State
                         InteractType.Harvest => StatChangeType.Harvest,
                         _ => StatChangeType.None // This should never happen
                     },
-                    InteractorGeneralAttr = generalAttr
+                    InteractorGeneralAttr = selfGeneralAttr
                 };
 
-                BuildingAttrLookup.TryGetComponent(selfEntity, out var buildingAttr);
+                var buildingAttr = BuildingAttrLookup[selfEntity];
                 var vfxName = VFXName.TowerProjectile;
+                var damageDelayTime = math.distance(selfPos, targetPos) / 6f;// Tower Projectile speed
+                
+                
+                // Spawn vfx request
+                var vfxRequest = ECB.CreateEntity(index);
+                ECB.AddComponent<GameplayEntityTag>(index, vfxRequest);
+                
+                // Crystal, beacon, tower tier 4 not has expData
+                bool hasTier = ExpDataLookup.TryGetComponent(selfEntity, out var expData);
+                if (!hasTier)
+                {
+                    // Tower tier 4 is not support, so tier 4 tower is considered as special tower using magic circle attack
+                    // Crystal and beacon use projectile tier 1
+                    vfxName = buildingAttr.Type == BuildingType.Ornaments
+                        ? VFXName.TowerProjectile
+                        : VFXName.TowerCircleAttack;
+                }
 
-                var request = ECB.CreateEntity(index);
-                ECB.AddComponent<GameplayEntityTag>(index, request);
-                // if (vfxName == VFXName.None)
-                // {
-                //     // This attack will not cause damage by projectile, but cause damage directly
-                //     ECB.AddComponent(index, request,statChangeRequest);
-                // }
-                // else
-                ECB.AddComponent(index, request, new VFXRequest
+                if (vfxName == VFXName.TowerCircleAttack)
+                    damageDelayTime = 0.2f;
+
+                statChangeRequest.Interactee = Entity.Null;
+                ECB.AddComponent(index, vfxRequest, new VFXRequest
                 {
                     Filter = new VFXSubFilter
                     {
                         TierFilterEnable = true,
-                        Tier = ExpDataLookup[selfEntity].CurTier,
+                        Tier = hasTier ? expData.CurTier : Tier.Tier1,
                         FactionFilterEnable = true,
-                        Faction = generalAttr.FactionTag
+                        Faction = selfGeneralAttr.FactionTag
                     },
                     StatChangeRequest = statChangeRequest,
                     VFXName = vfxName,
                     SpawnPosition = selfPos,
-                    Type = VFXRequestType.Spawn,
+                    RequestType = VFXRequestType.Spawn,
                     KeepDuration = 0,
-                    VFXTrackTarget = Entity.Null
+                    VFXTrackTarget = Entity.Null,
+                    TargetPosition = targetPos
+                });
+
+                
+                // Spawn buff trigger to deal damage
+                statChangeRequest.Interactee = targetEntity;
+
+                var aoeBuffRequest = ECB.CreateEntity(index);
+                ECB.AddComponent<GameplayEntityTag>(index, aoeBuffRequest);
+                ECB.AddComponent(index, aoeBuffRequest, new AoeInteractData
+                {
+                    TriggerTime = CurTime + damageDelayTime, 
+                    StatChangeRequest = statChangeRequest,
+                    TargetFaction = ~selfGeneralAttr.FactionTag,
+                });
+                ECB.AddComponent(index, aoeBuffRequest, new BuffRequest
+                {
+                    SpawnPosition = targetPos,
+                    SpawnRotation = quaternion.identity,
+                    TrackTarget = Entity.Null,
+                    // Only magic unit has aoe attack, others only has vfx
+                    Name = vfxName == VFXName.TowerProjectile
+                        ? BuffName.MagicTowerProjectile
+                        : BuffName.MagicTowerCircle,
+                    Filter = new BuffFilter
+                    {
+                    factionFilterEnabled = true,
+                    faction = selfGeneralAttr.FactionTag,
+                    tier = hasTier ? expData.CurTier : Tier.Tier1,
+                    tierFilterEnabled = true
+                }
                 });
             }
 

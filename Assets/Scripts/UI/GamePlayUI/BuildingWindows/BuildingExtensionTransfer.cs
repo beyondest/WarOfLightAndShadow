@@ -3,6 +3,7 @@ using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace SparFlame.UI.GamePlay
@@ -37,15 +38,16 @@ namespace SparFlame.UI.GamePlay
             BuildingDetailWindow.Instance.UpDatePlayerGlobalResourceData(playerResources);
         }
 
-     
-
         private void RecycleBuilding(Entity entity)
         {
-            if(!SystemAPI.HasBuffer<CostList>(entity))
+            if(!SystemAPI.HasBuffer<CostList>(entity) || SystemAPI.HasComponent<LightSingleCrystalTag>(entity))
                 return;
+            
             var buffer = SystemAPI.GetBuffer<CostList>(entity);
+            var list = new NativeList<CostList>(Allocator.Temp);    
+            list.AddRange(buffer.AsNativeArray());
             var scale = SystemAPI.GetSingleton<ConstructSystemConfig>().RecycleScale;
-            foreach (var cost in buffer )
+            foreach (var cost in list )
             {
                 var request = EntityManager.CreateEntity();
                 EntityManager.AddComponent<GameplayEntityTag>(request);
@@ -58,6 +60,20 @@ namespace SparFlame.UI.GamePlay
                     RequestType = ResourceRequestType.Generate
                 });
             }
+
+            var fakeKillRequest = EntityManager.CreateEntity();
+            EntityManager.AddComponent<StatChangeRequest>(fakeKillRequest);
+            EntityManager.AddComponent<GameplayEntityTag>(fakeKillRequest);
+            EntityManager.SetComponentData(fakeKillRequest, new StatChangeRequest
+            {
+                Type = StatChangeType.SimpleClean_UsedAsUpgrade,
+                AbsAmount = 0,
+                Interactee = entity,
+                Interactor = Entity.Null,
+                InteractorGeneralAttr = new GeneralAttr()
+            });
+            list.Dispose();
+
         }
 
         private void UpgradeBuilding(List<CostList> costs, Entity entity)

@@ -50,8 +50,9 @@ namespace SparFlame.Database
                 SetComponentEnabled<InCameraView>(entity, false);
                 SetComponentEnabled<InCameraExtendView>(entity, false);
 
-                // VFX Buffer
+                // VFX Buffer and Buff buffer
                 AddBuffer<TrackedByVFX>(entity);
+                AddBuffer<TrackedByBuff>(entity);
 
                 // Exp
                 if (item.upgradable)

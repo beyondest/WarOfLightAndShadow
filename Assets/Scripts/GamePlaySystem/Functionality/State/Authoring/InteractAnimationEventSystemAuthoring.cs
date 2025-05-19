@@ -11,6 +11,7 @@ namespace SparFlame.GamePlaySystem.State
 {
     public class InteractAnimationEventSystemAuthoring : MonoBehaviour
     {
+        
         [TableList]
         public List<AnimationEventInfoInspector> infos; 
         private class Baker : Baker<InteractAnimationEventSystemAuthoring>

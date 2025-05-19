@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using Sirenix.OdinInspector;
+using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -8,15 +9,33 @@ namespace SparFlame.GamePlaySystem.Building
 {
     public class ConstructSystemAuthoring : MonoBehaviour
     {
+        
+        [Header("Prefabs")]
+        [AssetsOnly]
         public GameObject ghostTriggerPrefab;
+        [AssetsOnly]
         public GameObject validRef;
+        [AssetsOnly]
+
         public GameObject overlappingRef;
+        [AssetsOnly]
+
         public GameObject notEnoughResourceRef;
+        [AssetsOnly]
+
         public GameObject notConstructableRef;
+
+        [AssetsOnly] public GameObject previewGridPrefab;
+        [AssetsOnly] public GameObject previewCubePrefab;
+        [AssetsOnly] public GameObject previewAttackRangePrefab;
+        
+        
+        [Header("General config")]
         [Tooltip("This location is used for hiding building when enter movement ghost show")]
         public float3 hideBuildingLocation  = new float3(0, -100, 0);
         public float rotateSpeed = 2f;
         public float recycleScale = 0.5f;
+        
         private class PlaceSystemAuthoringBaker : Baker<ConstructSystemAuthoring>
         {
             public override void Bake(ConstructSystemAuthoring authoring)
@@ -30,13 +49,16 @@ namespace SparFlame.GamePlaySystem.Building
                 });
 
                 
-                AddComponent(entity, new ConstructSystemPrefabRef
+                AddComponent(entity, new ConstructSystemPrefabs
                 {
                     GhostTriggerPrefab = GetEntity(authoring.ghostTriggerPrefab, TransformUsageFlags.Dynamic),
                     ValidPreset = GetEntity(authoring.validRef, TransformUsageFlags.None),
                     OverlappingPreset = GetEntity(authoring.overlappingRef, TransformUsageFlags.None),
                     NotEnoughResourcesPreset = GetEntity(authoring.notEnoughResourceRef, TransformUsageFlags.None),
                     NotConstructablePreset = GetEntity(authoring.notConstructableRef, TransformUsageFlags.None),
+                    PreviewAttackRangePrefab = GetEntity(authoring.previewAttackRangePrefab, TransformUsageFlags.Dynamic),
+                    GridPrefab = GetEntity(authoring.previewGridPrefab, TransformUsageFlags.Dynamic),
+                    PreviewCubePrefab = GetEntity(authoring.previewCubePrefab, TransformUsageFlags.Dynamic),
                 });
                 AddComponent(entity, new ConstructCommandData
                 {
@@ -62,15 +84,21 @@ namespace SparFlame.GamePlaySystem.Building
         NotConstructable,
     }
 
-    public struct ConstructSystemPrefabRef : IComponentData
+    public struct ConstructSystemPrefabs : IComponentData
     {
         public Entity GhostTriggerPrefab;
+        public Entity GridPrefab;
+        public Entity PreviewCubePrefab;
+        public Entity PreviewAttackRangePrefab;
+        
 
         // Material preset
         public Entity ValidPreset;
         public Entity OverlappingPreset;
         public Entity NotEnoughResourcesPreset;
         public Entity NotConstructablePreset;
+        
+        
     }
     public struct ConstructSystemConfig : IComponentData
     {
@@ -95,6 +123,7 @@ namespace SparFlame.GamePlaySystem.Building
         public float RotationAngle;
         public Entity TargetBuilding;
         public bool IsMovementShow;
+        public bool EnterConstruct;
 
         // Feedback
         public PlacementStateType State;
@@ -104,7 +133,8 @@ namespace SparFlame.GamePlaySystem.Building
         public LocalTransform OriTransform;
         public Entity GhostModelEntity; // Only the model of target building
         public Entity GhostTriggerEntity;
-        public Entity SightRangeEntity;
+        public Entity PreviewAttackRangeEntity;
+        public Entity PreviewCube;
 
     }
 

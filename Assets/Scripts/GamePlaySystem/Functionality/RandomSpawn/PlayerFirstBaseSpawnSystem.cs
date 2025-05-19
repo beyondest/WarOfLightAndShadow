@@ -16,7 +16,8 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<CrystalAffectRadiusSq>();
+            state.RequireForUpdate<ConstructGridSize>();
+            state.RequireForUpdate<CrystalAffectMapRadiusSq>();
             state.RequireForUpdate<MapInitInfo>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<PlayerFirstBaseSpawnConfig>();
@@ -39,7 +40,7 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                 Entity basePrefab = Entity.Null;
                 
                 var spawnableOuterSquareSize =
-                    mapInfo.OuterSquareSize - 2 * math.sqrt( SystemAPI.GetSingleton<CrystalAffectRadiusSq>().Value);
+                    mapInfo.OuterSquareSize - 2 * math.sqrt( SystemAPI.GetSingleton<CrystalAffectMapRadiusSq>().Value);
                 switch (playerFaction.Value)
                 {
                     case FactionTag.Enemy:
@@ -68,11 +69,17 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                 {
                     playerPos = debug.playerFirstSpawnPosition.xz;
                 }
+                GeneralUtils.GetSnapGridPosition(new float3(playerPos.x, 0f, playerPos.y),
+                    0f,SystemAPI.GetComponent<GeneralAttr>(basePrefab).BoxColliderSize,SystemAPI.GetSingleton<ConstructGridSize>().Value,
+                    out var snapPos);
+                playerPos.x = snapPos.x;
+                playerPos.y = snapPos.z;
                 var entity = state.EntityManager.Instantiate(basePrefab);
                 state.EntityManager.AddComponent<GameplayEntityTag>(entity);
+                
                 SystemAPI.SetComponent(entity, new LocalTransform
                 {
-                    Position = new float3(playerPos.x, 0f, playerPos.y),
+                    Position = new float3(playerPos.x, 0f,playerPos.y),
                     Rotation = quaternion.identity,
                     Scale = 1f
                 });

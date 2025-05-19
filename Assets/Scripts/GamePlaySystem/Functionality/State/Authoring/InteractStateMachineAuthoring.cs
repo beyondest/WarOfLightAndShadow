@@ -13,7 +13,6 @@ namespace SparFlame.GamePlaySystem.State
         public int harvestJobBatchCount = 16;
         public float interactTurnSpeed = 7.5f;
 
-        
         private class InteractStateMachineAuthoringBaker : Baker<InteractStateMachineAuthoring>
         {
             public override void Bake(InteractStateMachineAuthoring authoring)

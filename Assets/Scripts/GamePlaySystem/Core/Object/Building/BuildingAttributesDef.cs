@@ -86,13 +86,13 @@ namespace SparFlame.GamePlaySystem.Building
     }
 
 
-
-
     public enum OrnamentType
     {
         Crystal = 0,       // Shard（水晶碎片）, Cluster（水晶簇）, Monolith（晶体巨柱）
-        StorableOrnament = 1,      // Crate（储物箱）, Depot（储存站）, Warehouse（仓库）
-        UnStorableOrnament = 2,    // Relic（遗物）, Totem（图腾柱）, Monument（纪念碑）
+        Beacon = 1,
+        Others = 3
+        // StorableOrnament = 1,      // Crate（储物箱）, Depot（储存站）, Warehouse（仓库）
+        // UnStorableOrnament = 2,    // Relic（遗物）, Totem（图腾柱）, Monument（纪念碑）
     }
 
     

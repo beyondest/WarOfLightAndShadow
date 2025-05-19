@@ -47,6 +47,16 @@ namespace SparFlame.GamePlaySystem.Construction
                 };
                 ConstructWindow.Instance.EcsExitGhostShow += ExitGhostShow;
                 BuildingDetailWindow.Instance.EcsGhostShowTarget += MovementGhostShowTargetBuilding;
+                ConstructWindow.Instance.EcsEnterConstruct += () =>
+                {
+                    var data = SystemAPI.GetSingletonRW<ConstructCommandData>();
+                    data.ValueRW.EnterConstruct = true;
+                };
+                ConstructWindow.Instance.EcsExitConstruct += () =>
+                {
+                    var data = SystemAPI.GetSingletonRW<ConstructCommandData>();
+                    data.ValueRW.EnterConstruct = false;
+                };
             }
         }
 
@@ -81,6 +91,7 @@ namespace SparFlame.GamePlaySystem.Construction
             if (!_inputData.Enter) return;
             if (ConstructWindow.Instance.IsOpened()) return;
             ConstructWindow.Instance.Show();
+            
         }
 
         private bool CheckExit()
@@ -132,26 +143,33 @@ namespace SparFlame.GamePlaySystem.Construction
         private void CheckRotate(ref ConstructCommandData data)
         {
             float angle;
-            if (_inputData.FineAdjustment)
-            {
-                if (_inputData.LeftRotate)
-                    angle = -15;
-                else if (_inputData.RightRotate)
-                    angle = 15;
-                else
-                    angle = 0;
-                data.RotationAngle = angle;
-                return;
-            }
+            // if (_inputData.FineAdjustment)
+            // {
+            //     if (_inputData.LeftRotate)
+            //         angle = -15;
+            //     else if (_inputData.RightRotate)
+            //         angle = 15;
+            //     else
+            //         angle = 0;
+            //     data.RotationAngle = angle;
+            //     return;
+            // }
 
             if (math.abs(_inputData.Rotate) < 0.1f)
             {
                 data.RotationAngle = 0f;
                 return;
             }
-
-            angle = _inputData.Rotate * _config.RotateSpeed;
+            if (_inputData.LeftRotate )
+                angle = -90;
+            else if (_inputData.RightRotate)
+                angle = 90;
+            else
+                angle = 0;
             data.RotationAngle = angle;
+
+            /*angle = _inputData.Rotate * _config.RotateSpeed;
+            data.RotationAngle = angle;*/
         }
 
         private void CheckSnap()
@@ -171,18 +189,32 @@ namespace SparFlame.GamePlaySystem.Construction
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
             if (!_inGhostShow)
             {
-                data = new ConstructCommandData
-                {
-                    TargetBuilding = target,
-                    CommandType = ConstructCommandType.Start,
-                    Faction = _playerCurrentFaction,
-                    GhostModelEntity = Entity.Null,
-                    GhostTriggerEntity = Entity.Null,
-                    RotationAngle = 0,
-                    State = PlacementStateType.Valid,
-                    IsMovementShow = movementShow,
-                    OriTransform = oriTransform
-                };
+                data.TargetBuilding = target;
+                data.CommandType = ConstructCommandType.Start;
+                data.Faction = _playerCurrentFaction;
+                data.GhostModelEntity = Entity.Null;
+                data.GhostTriggerEntity = Entity.Null;
+                data.RotationAngle = 0;
+                data.State = PlacementStateType.Valid;
+                data.IsMovementShow = movementShow;
+                data.OriTransform = oriTransform;
+                
+                // data = new ConstructCommandData
+                // {
+                //     TargetBuilding = target,
+                //     CommandType = ConstructCommandType.Start,
+                //     Faction = _playerCurrentFaction,
+                //     GhostModelEntity = Entity.Null,
+                //     GhostTriggerEntity = Entity.Null,
+                //     
+                //     RotationAngle = 0,
+                //     State = PlacementStateType.Valid,
+                //     IsMovementShow = movementShow,
+                //     OriTransform = oriTransform,
+                //     EnterConstruct = true,
+                //     PreviewCube = Entity.Null,
+                //     PreviewAttackRangeEntity = Entity.Null,
+                // };
                 _inGhostShow = true;
                 return;
             }

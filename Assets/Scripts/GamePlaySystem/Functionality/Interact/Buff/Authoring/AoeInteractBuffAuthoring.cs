@@ -3,7 +3,7 @@ using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring
+namespace SparFlame.GamePlaySystem.Interact
 {
     public class AoeInteractBuffAuthoring : MonoBehaviour
     {
@@ -24,6 +24,12 @@ namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interac
                 {
                     MaxTriggerCount = authoring.maxTriggerCount,
                     TriggerDuration = authoring.triggerDuration,
+                });
+                AddComponent(entity, new GeneralBuffData
+                {
+                    StartTime = 0,
+                    TrackTarget = Entity.Null,
+                    Duration = float.MaxValue
                 });
             }
         }

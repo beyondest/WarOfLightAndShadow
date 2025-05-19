@@ -1,6 +1,5 @@
 ﻿using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.General
 {
@@ -32,6 +31,12 @@ namespace SparFlame.GamePlaySystem.General
         public float3 Value;
 
     }
+
+    public struct LightSingleCrystalTag : IComponentData
+    {
+        
+    }
+    
     
     // public struct AllyCoreCrystalTag : IComponentData
     // {

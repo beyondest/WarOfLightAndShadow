@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 // ReSharper disable UseIndexFromEndExpression
@@ -204,5 +205,60 @@ namespace SparFlame.GamePlaySystem.General
                 return quaternion.AxisAngle(axis, angle);
             }
         }
+        //
+        // public static void GetSnapGridPosition(in float3 hitPosition, float rotationAngle,
+        //     float3 boxColliderSize, float gridSize, out float3 gridPosition)
+        // {
+        //     // 2. 建筑吸附到最近格子中心（旋转前）
+        //     int rawSizeX = (int)math.ceil(boxColliderSize.x / gridSize);
+        //     int rawSizeZ = (int)math.ceil(boxColliderSize.z / gridSize);
+        //
+        //     // 90度旋转支持
+        //     bool rotated90 = math.abs(math.abs(math.round(rotationAngle) % 180) - 90) < 0.001;
+        //     int sizeX = rotated90 ? rawSizeZ : rawSizeX;
+        //     int sizeZ = rotated90 ? rawSizeX : rawSizeZ;
+        //     float3 snappedPos = new float3(
+        //         math.floor(hitPosition.x / gridSize) * gridSize + (sizeX % 2 == 0 ? gridSize / 2 : 0),
+        //         hitPosition.y,
+        //         math.floor(hitPosition.z / gridSize) * gridSize + (sizeZ % 2 == 0 ? gridSize / 2 : 0)
+        //     );
+        //     gridPosition = snappedPos;
+        // }
+        public static void GetSnapGridPosition(in float3 hitPosition, float rotationAngle,
+            float3 boxColliderSize, float gridSize, out float3 gridPosition)
+        {
+            // 1. 计算旋转后占用格子数
+            int rawSizeX = (int)math.ceil(boxColliderSize.x / gridSize);
+            int rawSizeZ = (int)math.ceil(boxColliderSize.z / gridSize);
+
+            // 是否旋转90/270度（调换X和Z）
+            bool rotated90 = math.abs(math.abs(math.round(rotationAngle) % 180) - 90) < 0.001f;
+
+            
+            int sizeX = rotated90 ? rawSizeZ : rawSizeX;
+            int sizeZ = rotated90 ? rawSizeX : rawSizeZ;
+            // if (rotated90)
+            // {
+            //     Debug.Log($"rawx {rawSizeX}, newx {sizeX}, rawz {rawSizeZ}, newz {sizeZ}");
+            // }
+            // 2. 对齐方式：使得坐标落在合法中心点上
+            float halfGrid = gridSize / 2f;
+
+            // 计算 snappedX（如果是偶数格，就落在偶数 * halfGrid，如果是奇数格，就落在奇数 * halfGrid）
+            float xRaw = math.floor(hitPosition.x / halfGrid) * halfGrid;
+            float zRaw = math.floor(hitPosition.z / halfGrid) * halfGrid;
+
+            float xSnapped = ((sizeX % 2 == 0) ? 
+                math.round(xRaw / gridSize) * gridSize : 
+                math.round((xRaw - halfGrid) / gridSize) * gridSize + halfGrid);
+
+            float zSnapped = ((sizeZ % 2 == 0) ? 
+                math.round(zRaw / gridSize) * gridSize : 
+                math.round((zRaw - halfGrid) / gridSize) * gridSize + halfGrid);
+
+            gridPosition = new float3(xSnapped, hitPosition.y, zSnapped);
+        }
+
+
     }
 }

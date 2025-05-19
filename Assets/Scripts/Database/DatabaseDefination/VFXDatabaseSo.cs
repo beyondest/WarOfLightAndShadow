@@ -60,23 +60,38 @@ namespace SparFlame.Database.Database.DatabaseDefination
         public float horizontalSpeed;
 
         [VerticalGroup("Projectile"), HorizontalGroup("Projectile/2"), ShowIf(nameof(IsProjectile))]
-        public bool isParabola;
+        public ProjectileType projectileType;
         
         [VerticalGroup("Projectile"), HorizontalGroup("Projectile/3")]
-        [ShowIf(nameof(IsProjectile)),ShowIf(nameof(isParabola)), Tooltip("If 0, then projectile is straight forward, otherwise is increased by distance")]
+        [ShowIf(nameof(IsProjectile)),ShowIf(nameof(IsParabola)), Tooltip("If 0, then projectile is straight forward, otherwise is increased by distance")]
         public float baseRelativeHeight;
         
-        [VerticalGroup("Projectile"), HorizontalGroup("Projectile/4"), ShowIf(nameof(IsProjectile))]
-        public bool notStopUntilReachMaxDis;
         
-        [VerticalGroup("Projectile"), HorizontalGroup("Projectile/5")]
-        [ShowIf(nameof(IsProjectile)), ShowIf(nameof(notStopUntilReachMaxDis))]
+        [VerticalGroup("Projectile"), HorizontalGroup("Projectile/4")]
+        [ShowIf(nameof(IsProjectile)), ShowIf(nameof(IsNotStopUntilReachMaxDis))]
         public float maxFlightDistance;
-        
+
+        [VerticalGroup("Projectile"), HorizontalGroup("Projectile/5")]
+        [ShowIf(nameof(IsProjectile)), ShowIf(nameof(IsGoStraightWithHeightChange))]
+        public float initialHeight;
         
         private bool IsProjectile()
         {
             return type == VFXType.Projectile;
+        }
+
+        private bool IsGoStraightWithHeightChange()
+        {
+            return projectileType == ProjectileType.GoStraightToTargetWithHeightChange;
+        }
+        private bool IsNotStopUntilReachMaxDis()
+        {
+            return projectileType == ProjectileType.NoHeightChangeUntilReachMaxDis;
+        }
+
+        private bool IsParabola()
+        {
+            return projectileType == ProjectileType.Parabola;
         }
     }
 }

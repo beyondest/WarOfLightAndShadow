@@ -83,11 +83,11 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                 // If request to track someone but that entity is dead, then continue
                 if (request.VFXTrackTarget != Entity.Null)
                 {
-                    if (!SystemAPI.HasComponent<LocalTransform>(request.VFXTrackTarget))
+                    if (!SystemAPI.HasBuffer<TrackedByVFX>(request.VFXTrackTarget))
                         continue;
                 }
 
-                switch (request.Type)
+                switch (request.RequestType)
                 {
                     case VFXRequestType.Spawn:
                     {
@@ -173,9 +173,25 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         }
                         else
                         {
-                            var hasHitEffect = GeneralUtils.TryGetValueAt(_vfxName2PrefabDatabase,
-                                (int)targetPair.PData.HitEffectName,
-                                0, out var hitPair);
+                            var hitPrefab = Entity.Null;
+                            if (targetPair.PData.HitEffectName != VFXName.None)
+                            {
+                                foreach (var pair in _vfxName2PrefabDatabase.GetValuesForKey((int)targetPair.PData.HitEffectName))
+                                {
+                                    if (request.Filter.FactionFilterEnable)
+                                    {
+                                        if (pair.Filter.FactionFilterEnable && pair.Filter.Faction != request.Filter.Faction)
+                                            continue;
+                                    }
+                                    if (request.Filter.TierFilterEnable)
+                                    {
+                                        if (pair.Filter.TierFilterEnable && pair.Filter.Tier != request.Filter.Tier)
+                                            continue;
+                                    }
+                                    hitPrefab = pair.Prefab;
+                                }
+                            }
+                            
                             var isTargetAlive = false;
                             var targetLastPos = request.TargetPosition;
                             if (SystemAPI.HasComponent<LocalTransform>(request.StatChangeRequest.Interactee))
@@ -188,9 +204,9 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                             var dis = math.distance(targetLastPos, request.SpawnPosition);
                             ecb.AddComponent(vfx, new ParabolaProjectileData
                             {
-                                HitEffectPrefab = hasHitEffect ? hitPair.Prefab : Entity.Null,
+                                HitEffectPrefab = hitPrefab,
                                 HorizontalSpeed = targetPair.PData.HorizontalSpeed,
-                                MaxIncreaseHeight = targetPair.PData.IsParabola
+                                MaxAbsHeight = targetPair.PData.ProjectileType == ProjectileType.Parabola
                                     ? targetPair.PData.BaseRelativeHeight * dis *
                                       parabolaConfig.HeightIncreasePerUnitDis
                                     : 0,
@@ -200,12 +216,11 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                                 TargetLastPos = targetLastPos,
                                 IsTargetAlive = isTargetAlive,
                                 MaxFlightDistance = targetPair.PData.MaxFlightDistance,
-                                NotStopUntilReachMaxDis = targetPair.PData.NotStopUntilReachMaxDis,
-                                StartPos = request.SpawnPosition
+                                StartPos = request.SpawnPosition,
+                                ProjectileType = targetPair.PData.ProjectileType,
+                                InitialHeight = targetPair.PData.InitialHeight,
                             });
                         }
-
-
                         break;
                     }
                     case VFXRequestType.Kill:
@@ -221,7 +236,6 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                                 break;
                             }
                         }
-
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

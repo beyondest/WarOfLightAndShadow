@@ -2,6 +2,8 @@
 using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
+using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
@@ -12,6 +14,7 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -24,28 +27,44 @@ namespace SparFlame.GamePlaySystem.Building
 
         private BufferLookup<CostList> _costLookup;
 
+        private EntityQuery _buildingQuery;
         private EntityQuery _playerBaseQuery;
+        private NativeList<Entity> _grids;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<ConstructGridSize>();
+            state.RequireForUpdate<ConstructSystemConfig>();
+            state.RequireForUpdate<CrystalAffectMapRadiusSq>();
+            state.RequireForUpdate<LightLineConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EnemyResourceDataTag>();
             state.RequireForUpdate<AllyResourceDataTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputMouseData>();
-            state.RequireForUpdate<ConstructSystemPrefabRef>();
-            state.RequireForUpdate<CrystalAffectRadiusSq>();
+            state.RequireForUpdate<ConstructSystemPrefabs>();
             state.RequireForUpdate<ConstructCommandData>();
             _constructableLookup = state.GetComponentLookup<OccupiedTag>(true);
             _costLookup = state.GetBufferLookup<CostList>(true);
 
             _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<PlayerTag>()
                 .WithAll<CoreCrystalTag>().Build();
+            _buildingQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<BuildingAttr>()
+                .WithAll<GeneralAttr>()
+                .WithAll<PlayerTag>().Build();
+            _grids = new NativeList<Entity>(Allocator.Persistent);
         }
 
         [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+            if (_grids.IsCreated)
+                _grids.Dispose();
+            
+        }
+
         public void OnUpdate(ref SystemState state)
         {
             // TODO : Add construction time and animation support
@@ -60,25 +79,30 @@ namespace SparFlame.GamePlaySystem.Building
                 data.CommandType = ConstructCommandType.None;
                 return;
             }
+
             _constructableLookup.Update(ref state);
             _costLookup.Update(ref state);
 
+
+            if (data.EnterConstruct && _grids.Length == 0 && !_buildingQuery.IsEmpty)
+            {
+                VisualizeGrid(ref state);
+            }
+
+            if (!data.EnterConstruct && _grids.Length != 0)
+            {
+                ClearGrid(ref state);
+            }
+
             if (_playerBaseQuery.IsEmpty || data.CommandType == ConstructCommandType.None) return;
 
-            var config = SystemAPI.GetSingleton<ConstructSystemPrefabRef>();
-            var affectRadiusSq = SystemAPI.GetSingleton<CrystalAffectRadiusSq>().Value;
-            var customInputData = SystemAPI.GetSingleton<InputMouseData>();
-            var allyResourceData =
-                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
-            var enemyResourceData =
-                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI
-                    .GetSingletonEntity<EnemyResourceDataTag>());
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var playerBaseTrans = _playerBaseQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            
-            CheckConstructionCommand(ref state, allyResourceData, enemyResourceData, config,
-                customInputData, ecb, affectRadiusSq, playerBaseTrans);
+
+
+            CheckConstructionCommand(ref state,
+                ecb, playerBaseTrans);
             playerBaseTrans.Dispose();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -102,21 +126,31 @@ namespace SparFlame.GamePlaySystem.Building
         }
 
         private void CheckConstructionCommand(ref SystemState state,
-            DynamicBuffer<ResourceTypeToAvailableAmount> allyResourceData,
-            DynamicBuffer<ResourceTypeToAvailableAmount> enemyResourceData,
-            ConstructSystemPrefabRef prefabRef,
-            InputMouseData customInputData, EntityCommandBuffer ecb,
-            float affectRadiusSq,
+            EntityCommandBuffer ecb,
             in NativeArray<LocalTransform> playerBaseTrans)
         {
+            var gridSize = SystemAPI.GetSingleton<ConstructGridSize>().Value;
+            var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
+            var lightLineAffectRadiusSq = SystemAPI.GetSingleton<LightLineConfig>().LightLineMaxDisSq;
+            var constructableRadiusSq = SystemAPI.GetSingleton<CrystalAffectMapRadiusSq>().Value;
+            var customInputData = SystemAPI.GetSingleton<InputMouseData>();
+            var allyResourceData =
+                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
+            var enemyResourceData =
+                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI
+                    .GetSingletonEntity<EnemyResourceDataTag>());
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
             var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
+            var generalAttr = SystemAPI.GetComponent<GeneralAttr>(data.TargetBuilding);
             var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
             var isCrystal = buildingAttr is
                 { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
+            var isBeacon = buildingAttr is
+            {
+                Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon
+            };
+            var curFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
 
-            
-            
             switch (data.CommandType)
             {
                 case ConstructCommandType.Drag:
@@ -130,7 +164,7 @@ namespace SparFlame.GamePlaySystem.Building
                             if (resourceData[(int)cost.Type].Amount < cost.Amount)
                             {
                                 SwitchBuildingState(ref state, ref data, PlacementStateType.NotEnoughResources,
-                                    in prefabRef, false);
+                                    in prefabs, false);
                                 valid = false;
                             }
                         }
@@ -140,29 +174,36 @@ namespace SparFlame.GamePlaySystem.Building
                     var events = SystemAPI.GetBuffer<StatefulTriggerEvent>(data.GhostTriggerEntity);
                     if (events.Length > 0)
                     {
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in prefabRef, false);
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Overlapping, in prefabs, false);
                         valid = false;
                     }
 
-                    // Check if mouse hit on constructable area; crystal can turn neutral area to cur faction
+                    // Dark crystal can construct anywhere except for light faction tile
+
+                    // If not on constructable plane or this place is occupied by enemy then not constructable
                     if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
-                        (!isCrystal && constructable.Faction != data.Faction)
-                        || (isCrystal && constructable.Faction == ~data.Faction)
+                        constructable.Faction == ~data.Faction
+                        || (!isBeacon && !isCrystal && (constructable.Faction != data.Faction || !CheckIfInCrystalRange(
+                            customInputData.HitPosition,
+                            playerBaseTrans, constructableRadiusSq)))
                        )
                     {
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabRef,
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
                             false);
                         valid = false;
                     }
 
-                    // Only is constructable alongside the crystal
-                    /*if (!CheckIfInCrystalRange(customInputData.HitPosition, playerBaseTrans, affectRadiusSq))
+                    // When player is light, only is constructable alongside the beacons
+                    if (isBeacon &&
+                        !CheckIfInCrystalRange(customInputData.HitPosition, playerBaseTrans, lightLineAffectRadiusSq))
                     {
-                        
-                    }*/
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
+                            false);
+                        valid = false;
+                    }
 
                     if (valid)
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabRef, false);
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabs, false);
 
                     // Synchronize the position and rotation of ghost building and ghost trigger with the input position
                     ref var ghostTransform =
@@ -170,26 +211,42 @@ namespace SparFlame.GamePlaySystem.Building
                     ref var triggerTransform =
                         ref SystemAPI.GetComponentRW<LocalTransform>(data.GhostTriggerEntity).ValueRW;
 
+                    ref var cubePreviewTransform =
+                        ref SystemAPI.GetComponentRW<LocalTransform>(data.PreviewCube).ValueRW;
                     // Get Target Transform
                     var targetTransform = ghostTransform;
-                    float rotateAngle;
-                    if (math.abs(data.RotationAngle).Equals(15f))
-                    {
-                        var curDeg = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                        rotateAngle = ConstructUtils.SnapToNearest15(curDeg, data.RotationAngle);
-                    }
-                    else
-                    {
-                        rotateAngle = data.RotationAngle;
-                    }
-
-                    var rotationDelta = quaternion.RotateY(math.radians(rotateAngle));
-                    targetTransform.Position = customInputData.HitPosition;
+                    // float rotateAngle;
+                    // if (math.abs(data.RotationAngle).Equals(15f))
+                    // {
+                    //     var curDeg = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
+                    //     rotateAngle = ConstructUtils.SnapToNearest15(curDeg, data.RotationAngle);
+                    // }
+                    // else
+                    // {
+                    //     rotateAngle = data.RotationAngle;
+                    // }
+                    var rotationDelta = quaternion.RotateY(math.radians(data.RotationAngle));
                     targetTransform.Scale = 1;
                     targetTransform.Rotation =
                         math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
+                    var rotationAbsAngle = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
+                    GeneralUtils.GetSnapGridPosition(customInputData.HitPosition,rotationAbsAngle , generalAttr.BoxColliderSize,
+                        gridSize, out var snapPosition);
+                    // targetTransform.Position = customInputData.HitPosition;
+                    targetTransform.Position = snapPosition;
+
                     ghostTransform = targetTransform;
                     triggerTransform = targetTransform;
+                    if (data.PreviewAttackRangeEntity != Entity.Null)
+                    {
+                        ref var attackPreviewTransform =
+                            ref SystemAPI.GetComponentRW<LocalTransform>(data.PreviewAttackRangeEntity).ValueRW;
+                        attackPreviewTransform.Position = targetTransform.Position;
+                        attackPreviewTransform.Rotation = targetTransform.Rotation;
+                    }
+
+                    cubePreviewTransform.Position = targetTransform.Position;
+                    cubePreviewTransform.Rotation = targetTransform.Rotation;
                     break;
 
                 case ConstructCommandType.Start:
@@ -197,14 +254,32 @@ namespace SparFlame.GamePlaySystem.Building
                     if (data.GhostModelEntity != Entity.Null)
                     {
                         DestroyPriorGhost(ref state, ref data);
+                        ClearPreview(ref state, ref data);
                     }
 
                     // Create ghost preview
                     data.GhostModelEntity = InstantiateChildrenWithNewParent(ref state, data.TargetBuilding);
-                    data.GhostTriggerEntity = state.EntityManager.Instantiate(prefabRef.GhostTriggerPrefab);
+                    data.GhostTriggerEntity = state.EntityManager.Instantiate(prefabs.GhostTriggerPrefab);
+                    if (SystemAPI.HasComponent<AttackStateTag>(data.TargetBuilding))
+                    {
+                        data.PreviewAttackRangeEntity =
+                            state.EntityManager.Instantiate(prefabs.PreviewAttackRangePrefab);
+                        var ability = SystemAPI.GetComponent<AttackAbility>(data.TargetBuilding);
+                        state.EntityManager.SetComponentData(data.PreviewAttackRangeEntity, new LocalTransform
+                        {
+                            Scale = math.sqrt(ability.RangeSq)
+                        });
+                    }
+                    else data.PreviewAttackRangeEntity = Entity.Null;
+
+
+                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, generalAttr.BoxColliderSize, gridSize,
+                        out data.PreviewCube);
+                    // VisualizeGrid(ref state, gridSize, playerBaseTrans,constructableRadiusSq, prefabs.GridPrefab);
+
                     state.EntityManager.AddComponent<GameplayEntityTag>(data.GhostModelEntity);
                     state.EntityManager.AddComponent<GameplayEntityTag>(data.GhostTriggerEntity);
-                    SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabRef, true);
+                    SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabs, true);
                     AlignTriggerBoxCollider(ref state, in data);
                     data.CommandType = ConstructCommandType.Drag;
                     break;
@@ -214,7 +289,8 @@ namespace SparFlame.GamePlaySystem.Building
                     {
                         state.EntityManager.SetComponentData(data.TargetBuilding, data.OriTransform);
                     }
-
+                    
+                    ClearPreview(ref state, ref data);
                     DestroyPriorGhost(ref state, ref data);
                     data.CommandType = ConstructCommandType.None;
                     break;
@@ -224,8 +300,8 @@ namespace SparFlame.GamePlaySystem.Building
 
                     if (!data.IsMovementShow)
                     {
-                        // Check if crystal, then turn this plane to cur faction
-                        if (isCrystal)
+                        // Dark Crystal and Light beacon can change occupied tag 
+                        if (isCrystal || isBeacon)
                         {
                             var request = ecb.CreateEntity();
                             ecb.AddComponent(request, new ChangeOccupiedTagRequest
@@ -250,7 +326,40 @@ namespace SparFlame.GamePlaySystem.Building
                         state.EntityManager.AddComponent<GameplayEntityTag>(targetBuilding);
 
                         state.EntityManager.SetComponentData(targetBuilding, newTransform);
+                        
+                        // Exchange grid preview
+                        _grids.Add(data.PreviewCube);
+                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, generalAttr.BoxColliderSize, gridSize,
+                            out data.PreviewCube);
+                        
                         data.CommandType = ConstructCommandType.Drag; // Continue building
+                        
+                        var vfxRequest = ecb.CreateEntity();
+                        ecb.AddComponent<GameplayEntityTag>(vfxRequest);
+                        ecb.AddComponent(vfxRequest, new VFXRequest
+                        {
+                            TargetPosition = default,
+                            Filter = new VFXSubFilter
+                            {
+                                Faction = curFaction,
+                                FactionFilterEnable = true,
+                                Tier = default,
+                                TierFilterEnable = false
+                            },
+                            KeepDuration = 0,
+                            SpawnPosition = newTransform.Position,
+                            StatChangeRequest = default,
+                            RequestType = VFXRequestType.Spawn,
+                            VFXName = VFXName.Construct,
+                            VFXTrackTarget = Entity.Null
+                        });
+
+                        if (isBeacon)
+                        {
+                            var updateLightLineRequest = ecb.CreateEntity();
+                            ecb.AddComponent<GameplayEntityTag>(updateLightLineRequest);
+                            ecb.AddComponent<UpdateLightLineRequest>(updateLightLineRequest);
+                        }
                     }
                     else
                     {
@@ -265,7 +374,6 @@ namespace SparFlame.GamePlaySystem.Building
                             FromEntity = data.TargetBuilding,
                         });
                         state.EntityManager.AddComponent<GameplayEntityTag>(syncVolumeRequest);
-
                     }
 
                     break;
@@ -277,6 +385,123 @@ namespace SparFlame.GamePlaySystem.Building
             }
         }
 
+        private void ClearPreview(ref SystemState state, ref ConstructCommandData data)
+        {
+           
+            if (data.PreviewCube != Entity.Null)
+                state.EntityManager.DestroyEntity(data.PreviewCube);
+            if (data.PreviewAttackRangeEntity != Entity.Null)
+                state.EntityManager.DestroyEntity(data.PreviewAttackRangeEntity);
+        }
+
+        private void ClearGrid(ref SystemState state)
+        {
+            foreach (var entity in _grids)
+            {
+                state.EntityManager.DestroyEntity(entity);
+            }
+
+            _grids.Clear();
+        }
+
+        private void GetPreviewCube(ref SystemState state, Entity cubePrefab, float3 targetColliderSize, float gridSize,
+            out Entity cubeParent)
+        {
+            var entityManager = state.EntityManager;
+
+            // 1. 创建父实体
+            cubeParent = entityManager.CreateEntity(typeof(LocalTransform));
+
+            state.EntityManager.AddComponent<GameplayEntityTag>(cubeParent);
+
+            state.EntityManager.AddComponent<LocalTransform>(cubeParent);
+            state.EntityManager.AddComponent<LocalToWorld>(cubeParent);
+            var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(cubeParent);
+            entityManager.SetComponentData(cubeParent, new LocalTransform
+            {
+                Position = float3.zero,
+                Rotation = quaternion.identity,
+                Scale = 1f
+            });
+            buffer.Add(cubeParent);
+
+            entityManager.AddComponent<GameplayEntityTag>(cubeParent);
+            // _cubesAndParent.Add(cubeParent);
+            // 2. 计算在网格下所需的格子数量
+            int sizeX = (int)math.ceil(targetColliderSize.x / gridSize);
+            int sizeZ = (int)math.ceil(targetColliderSize.z / gridSize);
+
+            // 3. 计算中心偏移，使 cubes 居中于 parent
+            float offsetX = -(sizeX - 1) * gridSize * 0.5f;
+            float offsetZ = -(sizeZ - 1) * gridSize * 0.5f;
+
+            // 4. 逐个生成 cube，并设置相对于 parent 的位置
+            for (int x = 0; x < sizeX; x++)
+            {
+                for (int z = 0; z < sizeZ; z++)
+                {
+                    float3 localPos = new float3(
+                        offsetX + x * gridSize,
+                        0f,
+                        offsetZ + z * gridSize
+                    );
+                    var cubeEntity = entityManager.Instantiate(cubePrefab);
+                    entityManager.SetComponentData(cubeEntity, new LocalTransform
+                    {
+                        Position = localPos,
+                        Rotation = quaternion.identity,
+                        Scale = 1f
+                    });
+                    // 设置为 cubeParent 的子物体
+                    entityManager.AddComponentData(cubeEntity, new Parent { Value = cubeParent });
+                    // _cubesAndParent.Add(cubeEntity);
+                    var buffer2 = SystemAPI.GetBuffer<LinkedEntityGroup>(cubeParent);
+                    buffer2.Add(cubeEntity);
+                }
+            }
+        }
+
+   
+
+        private void VisualizeGrid(ref SystemState state)
+        {
+            var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
+            var gridSize = SystemAPI.GetSingleton<ConstructGridSize>().Value;
+            var trans = _buildingQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            var generalAttrs = _buildingQuery.ToComponentDataArray<GeneralAttr>(Allocator.Temp);
+
+            for (var i = 0; i < trans.Length; i++)
+            {
+                var boxColliderSize = generalAttrs[i].BoxColliderSize;
+                var tran = trans[i];
+
+                // 1. 获取旋转角度（只支持 90° 的倍数）
+                int yRotDeg = ConstructUtils.GetYRotation90FromQuaternion(tran.Rotation);
+
+                // 2. 生成 cubeParent + 子 cubes（旋转支持）
+                GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize, gridSize,
+                    out var cubeParent);
+
+                // 3. 计算吸附位置（根据旋转决定对齐）
+                GeneralUtils.GetSnapGridPosition(tran.Position, yRotDeg , boxColliderSize, gridSize, out var gridPosition);
+
+                // 4. 设置 cubeParent 的位置和旋转
+                state.EntityManager.SetComponentData(cubeParent, new LocalTransform
+                {
+                    Position = gridPosition,
+                    Rotation = tran.Rotation,
+                    Scale = 1f
+                });
+
+                state.EntityManager.AddComponent<GameplayEntityTag>(cubeParent);
+                _grids.Add(cubeParent);
+            }
+        }
+
+
+        public struct TestPreview : IComponentData
+        {
+        }
 
         private void DestroyPriorGhost(ref SystemState state, ref ConstructCommandData data)
         {
@@ -288,43 +513,62 @@ namespace SparFlame.GamePlaySystem.Building
         }
 
         private void SwitchBuildingState(ref SystemState state, ref ConstructCommandData data,
-            in PlacementStateType targetState, in ConstructSystemPrefabRef prefabRef, bool force)
+            in PlacementStateType targetState, in ConstructSystemPrefabs prefabs, bool force)
         {
             if (targetState == data.State && !force) return;
             data.State = targetState;
             var targetMaterial = targetState switch
             {
-                PlacementStateType.Valid => SystemAPI.GetComponent<MaterialMeshInfo>(prefabRef.ValidPreset).Material,
-                PlacementStateType.Overlapping => SystemAPI.GetComponent<MaterialMeshInfo>(prefabRef.OverlappingPreset)
+                PlacementStateType.Valid => SystemAPI.GetComponent<MaterialMeshInfo>(prefabs.ValidPreset).Material,
+                PlacementStateType.Overlapping => SystemAPI.GetComponent<MaterialMeshInfo>(prefabs.OverlappingPreset)
                     .Material,
                 PlacementStateType.NotEnoughResources => SystemAPI
-                    .GetComponent<MaterialMeshInfo>(prefabRef.NotEnoughResourcesPreset)
+                    .GetComponent<MaterialMeshInfo>(prefabs.NotEnoughResourcesPreset)
                     .Material,
                 PlacementStateType.NotConstructable => SystemAPI
-                    .GetComponent<MaterialMeshInfo>(prefabRef.NotConstructablePreset).Material,
+                    .GetComponent<MaterialMeshInfo>(prefabs.NotConstructablePreset).Material,
                 _ => throw new ArgumentOutOfRangeException(nameof(targetState), targetState, null)
             };
             // for (int i = 1; i < buffer.Length; i++)
             // {
-            ChangeMaterialRecursively(ref state, data.GhostModelEntity, targetMaterial);
+            ChangeMaterialRecursively(ref state, data.PreviewCube, targetMaterial,targetState);
             // }
         }
-
-
-        private void ChangeMaterialRecursively(ref SystemState state, Entity entity, int newMaterial)
+        private void ChangeMaterialRecursively(ref SystemState state, Entity entity, int newMaterial, PlacementStateType targetState)
         {
-            if (SystemAPI.HasComponent<MaterialMeshInfo>(entity))
-            {
-                var material = SystemAPI.GetComponentRW<MaterialMeshInfo>(entity);
-                material.ValueRW.Material = newMaterial;
-            }
-
-            if (!SystemAPI.HasBuffer<LinkedEntityGroup>(entity)) return;
             var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
-            for (int i = 1; i < buffer.Length; i++)
+            foreach (var group in buffer)
             {
-                ChangeMaterialRecursively(ref state, buffer[i].Value, newMaterial);
+                if (SystemAPI.HasComponent<MaterialMeshInfo>(group.Value))
+                {
+                    var material = SystemAPI.GetComponentRW<MaterialMeshInfo>(group.Value);
+                    material.ValueRW.Material = newMaterial;
+                }
+                // if (SystemAPI.ManagedAPI.HasComponent<ParticleSystem>(group.Value))
+                // {
+                //     var sys = SystemAPI.ManagedAPI.GetComponent<ParticleSystem>(group.Value);
+                //     switch (targetState)
+                //     {
+                //         case PlacementStateType.Valid:
+                //             sys.set
+                //             break;
+                //         case PlacementStateType.Overlapping:
+                //             break;
+                //         case PlacementStateType.NotEnoughResources:
+                //             break;
+                //         case PlacementStateType.NotConstructable:
+                //             break;
+                //         default:
+                //             throw new ArgumentOutOfRangeException(nameof(targetState), targetState, null);
+                //     }
+                // }
             }
+           
+            // if (!SystemAPI.HasBuffer<LinkedEntityGroup>(entity)) return;
+            // for (int i = 1; i < buffer.Length; i++)
+            // {
+            //     ChangeMaterialRecursively(ref state, buffer[i].Value, newMaterial);
+            // }
         }
 
         private void AlignTriggerBoxCollider(ref SystemState state, in ConstructCommandData data)
@@ -412,52 +656,40 @@ namespace SparFlame.GamePlaySystem.Building
             return newParentEntity;
         }
 
+ 
 
-        /*private Entity InstantiateChildrenWithNewParent(ref SystemState state, Entity oriParentEntity)
-        {
-            if (!SystemAPI.HasBuffer<LinkedEntityGroup>(oriParentEntity))
-                return Entity.Null;
-
-            var linkedEntities = SystemAPI.GetBuffer<LinkedEntityGroup>(oriParentEntity);
-            if (linkedEntities.Length <= 1)
-                return Entity.Null;
-            using var originalChildren = new NativeList<Entity>(linkedEntities.Length - 1, Allocator.Temp);
-
-            for (var i = 1; i < linkedEntities.Length; i++)
-            {
-                originalChildren.Add(linkedEntities[i].Value);
-            }
-
-            // Create new parent
-            var newParentEntity = state.EntityManager.CreateEntity();
-            state.EntityManager.AddComponent<LocalTransform>(newParentEntity);
-            state.EntityManager.AddComponent<LocalToWorld>(newParentEntity);
-            var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(newParentEntity);
-            buffer.Add(newParentEntity);
-
-            // Get original parent world transform
-            var bLtw = state.EntityManager.GetComponentData<LocalToWorld>(oriParentEntity);
-            var bLtwInverse = math.inverse(bLtw.Value);
-
-            foreach (var originalChild in originalChildren)
-            {
-                var newChild = state.EntityManager.Instantiate(originalChild);
-                var childLtw = state.EntityManager.GetComponentData<LocalToWorld>(originalChild);
-                var relativeToB = math.mul(bLtwInverse, childLtw.Value);
-                // Calculate new transform
-                var newLocalTransform = new LocalTransform
-                {
-                    Position = relativeToB.c3.xyz,
-                    Rotation = new quaternion(relativeToB),
-                    Scale = 1
-                };
-                state.EntityManager.SetComponentData(newChild, newLocalTransform);
-                state.EntityManager.SetComponentData(newChild, new Parent { Value = newParentEntity });
-                var newLinkedEntities = state.EntityManager.GetBuffer<LinkedEntityGroup>(newParentEntity);
-                newLinkedEntities.Add(new LinkedEntityGroup { Value = newChild });
-            }
-
-            return newParentEntity;
-        }*/
+        // private void VisualizeGrid(ref SystemState state,
+        //     float gridSize,
+        //     NativeArray<LocalTransform> basePositions, float constructableRadiusSq,
+        //     Entity gridPreviewPrefab)
+        // {
+        //     var entityManager = state.EntityManager;
+        //
+        //     foreach (var trans in basePositions)
+        //     {
+        //         var basePos = trans.Position;
+        //         int radiusInGrid = (int)math.ceil(math.sqrt(constructableRadiusSq)) / (int)gridSize;
+        //         for (int x = -radiusInGrid; x <= radiusInGrid; x++)
+        //         {
+        //             for (int z = -radiusInGrid; z <= radiusInGrid; z++)
+        //             {
+        //                 float3 pos = basePos + new float3(x * gridSize, 0, z * gridSize);
+        //                 if (math.distancesq(pos, basePos) > constructableRadiusSq)
+        //                     continue;
+        //
+        //                 var gridEntity = entityManager.Instantiate(gridPreviewPrefab);
+        //                 entityManager.AddComponent<GameplayEntityTag>(gridEntity);
+        //                 entityManager.SetComponentData(gridEntity, new LocalTransform
+        //                 {
+        //                     Position = pos,
+        //                     Rotation = quaternion.identity,
+        //                     Scale = 1
+        //                 });
+        //                 entityManager.AddComponent<TestPreview>(gridEntity);
+        //                 _grids.Add(gridEntity);
+        //             }
+        //         }
+        //     }
+        // }
     }
 }

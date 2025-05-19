@@ -1,8 +1,10 @@
 ﻿using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics.Authoring;
 using UnityEngine;
 
@@ -53,8 +55,16 @@ namespace SparFlame.Database
                             Hide = true
                         });
                     }
+                    AddComponent(entity, new ScreenPos
+                    {
+                        ScreenPosition = float2.zero
+                    });
+                    AddComponent<InCameraView>(entity);
+                    AddComponent<InCameraExtendView>(entity);
+                    SetComponentEnabled<InCameraView>(entity, false);
+                    SetComponentEnabled<InCameraExtendView>(entity, false);
+
                 }
-               
             }
         }
     }

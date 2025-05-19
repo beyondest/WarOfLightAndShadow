@@ -2,6 +2,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 namespace SparFlame.GamePlaySystem.Fow
@@ -13,9 +14,12 @@ namespace SparFlame.GamePlaySystem.Fow
         
        [SerializeField] [Tooltip("Size of the fog of war RenderTexture that will be projected with the Plane")]
         private int fowTextureSize = 2048;
-         [SerializeField] [Tooltip("Color of the fog of war")]
-        private Color fowColor = new(0.1f, 0.1f, 0.1f, 0.7f);
-
+         [FormerlySerializedAs("fowColor")] [SerializeField] [Tooltip("Color of the fog of war")]
+        private Color lightFowColor = new(0.1f, 0.1f, 0.1f, 0.7f);
+        [SerializeField] [Tooltip("Color of the fog of war")]
+        private Color darkFowColor = new(0.1f, 0.1f, 0.1f, 0.7f);
+        
+        
         [Range(0.01f, 1.0f)] [SerializeField] [Tooltip("How frequently will the fog of war be updated?")]
         private float updateInterval = 0.02f;
         
@@ -65,8 +69,10 @@ namespace SparFlame.GamePlaySystem.Fow
                 AddComponent(entity, new FowConfig
                 {
                     FowTextureSize = authoring.fowTextureSize,
-                    FowColor = new float4(authoring.fowColor.r,authoring.fowColor.g,
-                        authoring.fowColor.b,authoring.fowColor.a),
+                    LightFowColor = new float4(authoring.lightFowColor.r,authoring.lightFowColor.g,
+                        authoring.lightFowColor.b,authoring.lightFowColor.a),
+                    DarkFowColor = new float4(authoring.darkFowColor.r, authoring.darkFowColor.g,
+                        authoring.darkFowColor.b, authoring.darkFowColor.a),
                     BlockOffset = authoring.blockOffset,
                     BlurIterationCount = authoring.blurIterationCount,
                     Sigma = authoring.sigma,
@@ -88,7 +94,8 @@ namespace SparFlame.GamePlaySystem.Fow
     public struct FowConfig : IComponentData
     {
         public int FowTextureSize;
-        public float4 FowColor;
+        public float4 LightFowColor;
+        public float4 DarkFowColor;
         public float UpdateInterval;
         public float BlockOffset;
         public float Sigma;

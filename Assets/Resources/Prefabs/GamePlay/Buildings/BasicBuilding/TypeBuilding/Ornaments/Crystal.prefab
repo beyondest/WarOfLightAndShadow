@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8908912628301969713}
   - component: {fileID: 7122232910183450555}
   - component: {fileID: 3025968174072950920}
+  - component: {fileID: 986614739032439106}
   m_Layer: 0
   m_Name: mese
   m_TagString: Untagged
@@ -86,6 +87,18 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &986614739032439106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8362303329211228162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b579f477d3e48dfb9dad0e284129ba9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &5651800226702565011
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -40,7 +40,7 @@ namespace SparFlame.GamePlaySystem.Fow
         // Internal Data
         private bool _initialized;
         private float _updateTime;
-
+        private float4 _currentColor;
 
         private RenderTexture _fowRenderTexture;
         private Material _blurMaterial;
@@ -138,6 +138,7 @@ namespace SparFlame.GamePlaySystem.Fow
 
         private void LateInitialize()
         {
+            var config = SystemAPI.GetSingleton<FowConfig>();
             _fovMapArray = FogOfWarGo.Instance.fovMapArray;
             _pixelReader = FogOfWarGo.Instance.pixelReader;
             if(_fovMaterial != null)
@@ -157,6 +158,9 @@ namespace SparFlame.GamePlaySystem.Fow
             _kernelID = _pixelReader.FindKernel("ReadPixels");
             _pixelReader.SetTexture(_kernelID, InputTexture, _fowRenderTexture);
             _pixelReader.SetBuffer(_kernelID, OutputBuffer, _outputAlphaBuffer);
+            _currentColor = SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
+                ? config.LightFowColor
+                : config.DarkFowColor;
         }
         
         private void Initialize(in FowConfig config)
@@ -222,7 +226,7 @@ namespace SparFlame.GamePlaySystem.Fow
             _fovMaterial.SetFloat(PlaneSizeZ, config.LossyScale.z);
 
             _fovMaterial.SetColor(FowColor,
-                new Color(config.FowColor.x, config.FowColor.y, config.FowColor.z, config.FowColor.w));
+                new Color(_currentColor.x, _currentColor.y, _currentColor.z, _currentColor.w));
             _fovMaterial.SetFloat(BlockOffset, config.BlockOffset);
 
             // Set uniform values for FOWMaterial

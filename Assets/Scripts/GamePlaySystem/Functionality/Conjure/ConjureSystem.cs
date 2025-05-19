@@ -1,3 +1,4 @@
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Mathematics;
@@ -174,6 +175,26 @@ namespace SparFlame.GamePlaySystem.Conjure
                             Base = enemyConjureShrineData.Base
                         });
                     }
+
+                    var vfxRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<GameplayEntityTag>(index, vfxRequest);
+                    ECB.AddComponent(index, vfxRequest, new VFXRequest
+                    {
+                        TargetPosition = default,
+                        Filter = new VFXSubFilter
+                        {
+                            Faction = generalAttr.FactionTag,
+                            FactionFilterEnable = true,
+                            Tier = default,
+                            TierFilterEnable = false
+                        },
+                        KeepDuration = 0,
+                        SpawnPosition = pos,
+                        StatChangeRequest = default,
+                        VFXName = VFXName.ConjureUnit,
+                        VFXTrackTarget = Entity.Null,
+                        RequestType = VFXRequestType.Spawn
+                    });
                 }
             }
         }

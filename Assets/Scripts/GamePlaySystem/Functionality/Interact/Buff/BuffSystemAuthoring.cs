@@ -28,6 +28,7 @@ namespace SparFlame.GamePlaySystem.Interact
     {
         None = 0,
         AoeInteract = 1,
+        SingleTargetNotStackable = 2,
         
     }
 
@@ -36,25 +37,27 @@ namespace SparFlame.GamePlaySystem.Interact
         None = 0,
         MagicSwordSplash = 1,
         ClericHealCircle = 2,
+        MagicTowerProjectile = 3,
+        MagicTowerCircle = 4
     }
 
     public struct BuffRequest : IComponentData
     {
         public BuffName Name;
-        public BuffType BuffType;
         public Entity TrackTarget;
         public float3 SpawnPosition;
         public quaternion SpawnRotation;
-        public bool IfBuffLifeHandledByGeneralBuffManageSystem;
-        public float Duration;
         public BuffFilter Filter;
     }
     
     
-    public struct BuffData : IComponentData
+    public struct GeneralBuffData : IComponentData
     {
         public Entity TrackTarget;
         public float StartTime;
+        /// <summary>
+        /// If this buff lifetime handled by its special system, set it to max float value
+        /// </summary>
         public float Duration;
     }
 
@@ -80,12 +83,15 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct BuffSystemConfig : IComponentData
     {
     }
-    
-    public struct StaticBuffAttr : IComponentData
+
+
+
+    public struct TrackedByBuff : IBufferElementData
     {
-        public BuffType Type;
-        public float RangeSq;
-        public float LastSeconds;
+        public Entity BuffEntity;
+        public BuffName Name;
+        public int Count;
+        public int MaxStackCount;
     }
     
 }

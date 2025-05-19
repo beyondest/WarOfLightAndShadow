@@ -143,13 +143,14 @@ namespace SparFlame.UI.GamePlay
             if (Em.HasComponent<OocTag>(_targetEntity) ||
                 Em.HasComponent<ConstructingTag>(_targetEntity)
                 || _hasGarrisonUnits
-                || _buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal })
+                || _buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
+                || _buildingAttr is {Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon})
             {
                 // TODO : Hints pop support
                 Debug.Log(" not allow to relocate, this should pop up hints");
                 return;
             }
-
+            
             if (!ConstructWindow.Instance.IsOpened())
                 ConstructWindow.Instance.EnterConstruct();
             EcsGhostShowTarget?.Invoke(_targetEntity);
@@ -310,13 +311,13 @@ namespace SparFlame.UI.GamePlay
                         || Em.HasComponent<HealAbility>(_targetEntity)
                         || Em.HasComponent<HarvestAbility>(_targetEntity))
                         interactAbilityTriangle.enabled = true;
-                    if (Em.HasComponent<StaticBuffAttr>(_targetEntity))
-                    {
-                        var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity);
-                        ornamentPanel.SetActive(true);
-                        // ornamentBuffImage.sprite = BasicUIResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
-                        ornamentBuffDescriptionText.text = "Not implemented";
-                    }
+                    // if (Em.HasComponent<StaticBuffAttr>(_targetEntity))
+                    // {
+                    //     var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity);
+                    //     ornamentPanel.SetActive(true);
+                    //     // ornamentBuffImage.sprite = BasicUIResourceManager.Instance.BuffSprites[staticBuffAttr.Type];
+                    //     ornamentBuffDescriptionText.text = "Not implemented";
+                    // }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.Interact;
@@ -31,6 +32,8 @@ namespace SparFlame.UI.GamePlay
         
         // Interface
         public static ConstructWindow Instance;
+        public Action EcsEnterConstruct;
+        public Action EcsExitConstruct;
         public Action<Entity> EcsGhostShowTargetByTypeIndex;
         public Action EcsExitGhostShow;
 
@@ -102,6 +105,7 @@ namespace SparFlame.UI.GamePlay
             constructEnterButton.SetActive(false);
             constructExitButton.SetActive(true);
             constructWindowPanel.SetActive(true);
+            EcsEnterConstruct?.Invoke();
         }
 
         public override void Hide()
@@ -111,6 +115,8 @@ namespace SparFlame.UI.GamePlay
             constructExitButton.SetActive(false);
             constructEnterButton.SetActive(true);
             constructWindowPanel.SetActive(false);
+            EcsExitConstruct?.Invoke();
+
             // These line may not need to add, because this will record player preference
             // _shouldFilterTier = false;
             // _shouldFilterSubType = false;
@@ -160,17 +166,26 @@ namespace SparFlame.UI.GamePlay
             panel.SetActive(false);
             constructWindowPanel.SetActive(false);
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            GameController.Instance.OnPlayerChooseFaction += factionTag => _currentFaction = factionTag;
         }
 
         private void UpdateCandidates()
         {
-            if (!BuildingWindowResourceManager.Instance.IsResourceLoaded()) return;
-            _currentFaction = _em.CreateEntityQuery(typeof(UnitSelectionData)).GetSingleton<UnitSelectionData>()
-                .CurrentSelectFaction;
-
+            
             _infos.Clear();
             _infos = BuildingWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, _currentFaction,
                 _currentSubType, _currentTier, true, _shouldFilterSubType, _shouldFilterTier);
+            if (_currentGeneralType == BuildingType.Ornaments)
+            {
+                for (int i = _infos.Count - 1; i >= 0; i--)
+                {
+                    // Light faction cannot construct crystal, dark faction cannot construct beacon
+                    if (_currentFaction == FactionTag.Ally && _infos[i].SubtypeIndex == (int)OrnamentType.Crystal)
+                        _infos.RemoveAt(i);
+                    if(_currentFaction == FactionTag.Enemy && _infos[i].SubtypeIndex == (int)OrnamentType.Beacon)
+                        _infos.RemoveAt(i);
+                }
+            }
             var count = _infos.Count;
             for (var i = 0; i < Slots.Count; i++)
             {

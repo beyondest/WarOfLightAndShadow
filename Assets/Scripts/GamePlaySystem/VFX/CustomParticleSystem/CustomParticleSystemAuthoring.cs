@@ -45,8 +45,12 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         FlameSpear3 = 14,
         ControlToGarrison = 15,
         ControlToHarvest = 16,
-        ControlToHeal = 17
-        
+        ControlToHeal = 17,
+        Construct = 18,
+        ConjureUnit = 19,
+        TowerHitEffect = 20,
+        TowerCircleAttack = 21,
+        CrystalBeaconAttack = 22
     }
 
     public enum VFXType
@@ -90,7 +94,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         /// </summary>
         public Entity VFXTrackTarget;
 
-        public VFXRequestType Type;
+        public VFXRequestType RequestType;
         
         /// <summary>
         /// Spawn Position
@@ -163,8 +167,15 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         public float BaseRelativeHeight;
         public float HorizontalSpeed;
         public float MaxFlightDistance;
-        public bool NotStopUntilReachMaxDis;
-        public bool IsParabola;
+        public float InitialHeight;
+        public ProjectileType ProjectileType;
+    }
+
+    public enum ProjectileType
+    {
+        Parabola = 0,
+        NoHeightChangeUntilReachMaxDis = 1,
+        GoStraightToTargetWithHeightChange = 2,
     }
     
     public struct VFXPrefabDataPair

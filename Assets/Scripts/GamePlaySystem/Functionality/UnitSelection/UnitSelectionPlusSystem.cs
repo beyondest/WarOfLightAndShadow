@@ -306,7 +306,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
                 SpawnPosition = position,
                 KeepDuration = 0,
                 StatChangeRequest = default,
-                Type = isEnable ? VFXRequestType.Spawn : VFXRequestType.Kill,
+                RequestType = isEnable ? VFXRequestType.Spawn : VFXRequestType.Kill,
                 VFXTrackTarget = entity
             });
         }

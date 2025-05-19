@@ -30,7 +30,7 @@ namespace SparFlame.GamePlaySystem.Map
                 math.abs(gridCenterPos.x -tileSize/2f - crystalPos.x));
             var yDis = math.min(math.abs(gridCenterPos.z + tileSize/2f - crystalPos.z),
                 math.abs(gridCenterPos.z -tileSize/2f - crystalPos.z));
-            return xDis * xDis + yDis * yDis <= radiusSq;
+            return xDis * xDis + yDis * yDis <= radiusSq * 5 ;
         }
 
         public static float2 SampleSquareRing(float outerSize, float innerSize, float2 squareCenter, ref Unity.Mathematics.Random random)

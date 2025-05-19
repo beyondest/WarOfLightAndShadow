@@ -15,6 +15,7 @@ namespace SparFlame.GamePlaySystem.Fow
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<HideFowAgentRequest>();
@@ -27,6 +28,7 @@ namespace SparFlame.GamePlaySystem.Fow
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             _childrenLookup.Update(ref state);
             _meshLookup.Update(ref state);
             _inverseDisappearTagLookup.Update(ref state);
@@ -36,7 +38,8 @@ namespace SparFlame.GamePlaySystem.Fow
                 MeshLookup = _meshLookup,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                InverseDisappearTagLookup = _inverseDisappearTagLookup
+                InverseDisappearTagLookup = _inverseDisappearTagLookup,
+                PlayerFaction = playerFaction
             }.ScheduleParallel();
         }
 
@@ -45,6 +48,7 @@ namespace SparFlame.GamePlaySystem.Fow
         [BurstCompile]
         private partial struct HideOrShowFowAgentJob : IJobEntity
         {
+            [ReadOnly] public FactionTag PlayerFaction;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> ChildrenLookup;
             [ReadOnly] public ComponentLookup<MaterialMeshInfo> MeshLookup;
             [ReadOnly] public ComponentLookup<InverseDisappearTag> InverseDisappearTagLookup;
@@ -53,6 +57,7 @@ namespace SparFlame.GamePlaySystem.Fow
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in HideFowAgentRequest request)
             {
                 ECB.RemoveComponent<HideFowAgentRequest>(index, selfEntity);
+                if(PlayerFaction == FactionTag.Enemy)return; // Dark faction has global sight
                 var hide = request.Hide;
                 if (InverseDisappearTagLookup.HasComponent(selfEntity))
                 {
@@ -70,13 +75,13 @@ namespace SparFlame.GamePlaySystem.Fow
                 {
                     if (!MeshLookup.HasComponent(buffer[i].Value))
                     {
-                        HideOrShowRecursively(buffer[i].Value, hide, index);
+                        // HideOrShowRecursively(buffer[i].Value, hide, index);
                         continue;
                     }
 
                     if (hide) ECB.AddComponent<DisableRendering>(index, buffer[i].Value);
                     else ECB.RemoveComponent<DisableRendering>(index, buffer[i].Value);
-                    HideOrShowRecursively(buffer[i].Value, hide, index);
+                    // HideOrShowRecursively(buffer[i].Value, hide, index);
                 }
             }
         }
