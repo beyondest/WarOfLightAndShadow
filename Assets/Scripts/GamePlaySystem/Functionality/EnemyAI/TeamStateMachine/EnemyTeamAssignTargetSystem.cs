@@ -175,24 +175,29 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
                 if (needCalAttack)
                 {
-                    jobBuffer.Add(new FindCrystalToBaseJob
+                    var job = new FindCrystalToBaseJob
                     {
                         AttackAbilityLookUp = _attackAbilityLookUp,
                         StatDataLookUp = _statDataLookUp,
                         BasePos = enemyBaseTrans[i].Position,
                         Config = findCrystalToBase,
                         AttackTargets = _base2ValueType2AttackTargets[enemyBaseEntities[i]]
-                    }.Schedule(state.Dependency));
+                    }.Schedule(state.Dependency);
+                    state.Dependency = job;
+                    jobBuffer.Add(job);
+                    
                 }
             }
 
             if (needCalHarass)
             {
-                jobBuffer.Add(new FindOutsideUnitToPlayerBaseJob
+                var job = new FindOutsideUnitToPlayerBaseJob
                 {
                     Config = findOutSideUnitToPlayer,
                     HarassTargets = _valueType2HarassTargets
-                }.Schedule(state.Dependency));
+                }.Schedule(state.Dependency);
+                state.Dependency = job;
+                jobBuffer.Add(job);
             }
 
             if (needCalDefend)

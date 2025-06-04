@@ -22,7 +22,7 @@ namespace SparFlame.Database
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 const float volumeRadius = 0f;
                 var physicsShapeAuthoring = authoring.GetComponent<PhysicsShapeAuthoring>();
-                if (physicsShapeAuthoring != null)
+                if (physicsShapeAuthoring)
                 {
                     AddComponent<VolumeObstacleTag>(entity);
                     AddComponent(entity, new VolumeObstacleSpawnRequest
@@ -33,38 +33,42 @@ namespace SparFlame.Database
                         VolumeAreaType = AreaType.NotWalkable,
                         RequestFromFaction = FactionTag.Neutral,
                     });
+                    SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
                 }
-                if (!authoring.debugShow)
-                {
-                    var fowAgentData = new FowAgentData
-                    {
-                        SightRange = 0,
-                        SightCos = Mathf.Cos(360f * 0.5f * Mathf.Deg2Rad),
-                        DisappearAlphaThreshold = authoring.disappearInFowThreshold,
-                        IsInsight = false, 
-                    };
-                    AddComponent(entity, fowAgentData);
-                    if (authoring.ifInverseAgent)
-                    {
-                        AddComponent<InverseDisappearTag>(entity);
-                    }
-                    else
-                    {
-                        AddComponent(entity, new HideFowAgentRequest
-                        {
-                            Hide = true
-                        });
-                    }
-                    AddComponent(entity, new ScreenPos
-                    {
-                        ScreenPosition = float2.zero
-                    });
-                    AddComponent<InCameraView>(entity);
-                    AddComponent<InCameraExtendView>(entity);
-                    SetComponentEnabled<InCameraView>(entity, false);
-                    SetComponentEnabled<InCameraExtendView>(entity, false);
-
-                }
+                // if (!authoring.debugShow)
+                // {
+                //     var fowAgentData = new FowAgentData
+                //     {
+                //         SightRange = 0,
+                //         SightCos = Mathf.Cos(360f * 0.5f * Mathf.Deg2Rad),
+                //         DisappearAlphaThreshold = authoring.disappearInFowThreshold,
+                //         IsInsight = false, 
+                //     };
+                //     AddComponent(entity, fowAgentData);
+                //     if (authoring.ifInverseAgent)
+                //     {
+                //         AddComponent<InverseDisappearTag>(entity);
+                //     }
+                //     else
+                //     {
+                //         AddComponent(entity, new HideFowAgentRequest
+                //         {
+                //             Hide = true
+                //         });
+                //     }
+                //     AddComponent(entity, new ScreenPos
+                //     {
+                //         ScreenPosition = float2.zero
+                //     });
+                //     AddComponent<InCameraView>(entity);
+                //     AddComponent<InCameraExtendView>(entity);
+                //     SetComponentEnabled<InCameraView>(entity, false);
+                //     SetComponentEnabled<InCameraExtendView>(entity, false);
+                //     AddComponent<DisappearInFowTag>(entity);
+                //
+                //     AddComponent<InDarknessTag>(entity);
+                //     SetComponentEnabled<InDarknessTag>(entity, false);
+                // }
             }
         }
     }

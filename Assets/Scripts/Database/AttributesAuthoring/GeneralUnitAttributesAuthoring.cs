@@ -1,4 +1,4 @@
-﻿using SparFlame.GamePlaySystem.CameraControl;
+﻿using System;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
@@ -7,7 +7,6 @@ using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
-using UnityEngine;
 using UnityEngine.AI;
 
 namespace SparFlame.Database
@@ -34,6 +33,30 @@ namespace SparFlame.Database
                     ConjureSpeedSecondPerUnit = item.conjureSpeedSecondPerUnit,
                     AnimatedModelIndex = item.animatedRootIndex
                 });
+                switch (item.type)
+                {
+                    case UnitType.Shield:
+                        AddComponent<ShieldTag>(entity);
+                        break;
+                    case UnitType.Ranged:
+                        AddComponent<RangedTag>(entity);
+
+                        break;
+                    case UnitType.Magic:
+                        if(item.GetSubtypeIndex() == (int)MagicType.Cleric)
+                            AddComponent<ClericTag>(entity);
+                        if(item.GetSubtypeIndex() == (int)MagicType.Mage)
+                            AddComponent<MageTag>(entity);
+                        break;
+                    case UnitType.Cavalry:
+                        AddComponent<CavalryTag>(entity);
+                        break;
+                    case UnitType.Worker:
+                        AddComponent<WorkerTag>(entity);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
                 var buffer = AddBuffer<CostList>(entity);
                 foreach (var cost in item.costs)
                 {

@@ -5,18 +5,16 @@ using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using SparFlame.Database;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using Unity.Physics.Authoring;
-using UnityEditor.AddressableAssets;
+
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceLocations;
 // ReSharper disable RedundantJumpStatement
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.AddressableAssets;
 #endif
 
 
@@ -183,11 +181,12 @@ namespace GamePlaySystem.Database
 
         public virtual int GetGeneralTypeIndex()
         {
-            throw new NotImplementedException();
+            throw new ArgumentException("This method should be overridden in derived classes to return the correct type index.");
         }
         public virtual int GetSubtypeIndex()
         {
-            throw new NotImplementedException();
+            throw new ArgumentException("This method should be overridden in derived classes to return the correct type index.");
+
         }
         public bool HasSight()
         {

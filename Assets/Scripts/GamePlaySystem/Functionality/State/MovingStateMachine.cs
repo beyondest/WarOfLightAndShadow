@@ -102,7 +102,6 @@ namespace SparFlame.GamePlaySystem.State
         }
 
 
-        // TODO : Split ai movement state machine and player unit movement state machine
         [BurstCompile]
         [WithAll(typeof(MovingStateTag))]
         [WithNone(typeof(UnitDeadTag))]

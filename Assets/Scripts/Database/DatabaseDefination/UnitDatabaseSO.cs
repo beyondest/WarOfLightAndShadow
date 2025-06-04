@@ -69,10 +69,9 @@ namespace SparFlame.Database
                 // 创建一个新列表副本，防止多个引用共享一个列表实例
                 item.costs = new List<CostResourceTypeAmountPair>(targetCosts);
             }
-
-            // 标记为已更改（以便在编辑器中保存）
-            UnityEditor.EditorUtility.SetDirty(this);
-            Debug.Log("All unit costs changed");
+            // // 标记为已更改（以便在编辑器中保存）
+            // UnityEditor.EditorUtility.SetDirty(this);
+            // Debug.Log("All unit costs changed");
         }
         
         

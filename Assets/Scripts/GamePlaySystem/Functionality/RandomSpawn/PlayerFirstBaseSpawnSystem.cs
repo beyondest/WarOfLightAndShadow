@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.RandomSpawn
 {
@@ -23,9 +24,10 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
             state.RequireForUpdate<PlayerFirstBaseSpawnConfig>();
             state.RequireForUpdate<MapInfo>();
             state.RequireForUpdate<GameStatusData>();
+
         }
 
-        [BurstCompile]
+        // [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
@@ -53,12 +55,13 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                     {
                         // var sub = (mapInfo.OuterSquareSize - mapInfo.InnerSquareSize) / 2f;
                         // var startX = -0.5f * tileSize + sub;
-                        playerPos = MapUtils.SampleSquareRing(mapInfo.InnerSquareSize, mapInfo.CenterRadius * 2f, mapInfo.WorldCenter.xz,
-                            ref rnd.Rnd);
+                        playerPos = new float2(285f, 285f);
+                        // playerPos = MapUtils.SampleSquareRing(mapInfo.InnerSquareSize, mapInfo.CenterRadius * 2f, mapInfo.WorldCenter.xz,
+                        //     ref rnd.Rnd);
                         // playerPos = rnd.Rnd.NextFloat2(new float2(startX, startX),
                         //     new float2(startX + mapInfo.InnerSquareSize, startX + mapInfo.InnerSquareSize));
                         basePrefab = config.LightPrefab;
-                       
+                        
                         break;
                     }
                     case FactionTag.Neutral:
@@ -92,16 +95,16 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
                 });
                 state.EntityManager.AddComponent<GameplayEntityTag>(firstPosSingleton);
                 
-                var changeOccupiedTagRequest = state.EntityManager.CreateEntity();
-                state.EntityManager.AddComponent<GameplayEntityTag>(changeOccupiedTagRequest);
-
-                state.EntityManager.AddComponent<ChangeOccupiedTagRequest>(changeOccupiedTagRequest);
-                state.EntityManager.SetComponentData(changeOccupiedTagRequest, new ChangeOccupiedTagRequest
-                {
-                    CrystalFaction = playerFaction.Value,
-                    CrystalPos = new float3(playerPos.x, 0f, playerPos.y),
-                    IsDestroyed = false
-                });
+                // var changeOccupiedTagRequest = state.EntityManager.CreateEntity();
+                // state.EntityManager.AddComponent<GameplayEntityTag>(changeOccupiedTagRequest);
+                //
+                // state.EntityManager.AddComponent<ChangeOccupiedTagRequest>(changeOccupiedTagRequest);
+                // state.EntityManager.SetComponentData(changeOccupiedTagRequest, new ChangeOccupiedTagRequest
+                // {
+                //     CrystalFaction = playerFaction.Value,
+                //     CrystalPos = new float3(playerPos.x, 0f, playerPos.y),
+                //     IsDestroyed = false
+                // });
             }
         }
 

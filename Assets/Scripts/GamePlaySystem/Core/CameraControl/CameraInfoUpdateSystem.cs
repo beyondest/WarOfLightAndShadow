@@ -32,7 +32,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
             cameraData.CameraRight = _mainCamera.transform.right;
             cameraData.CameraForward = _mainCamera.transform.forward;
             cameraData.CameraUp = _mainCamera.transform.up;
-            cameraData.CameraPosition = _mainCamera.transform.position;
         }
     }
 }

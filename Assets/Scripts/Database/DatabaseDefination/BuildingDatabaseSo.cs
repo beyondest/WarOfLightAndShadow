@@ -104,6 +104,10 @@ namespace SparFlame.GamePlaySystem.Building
         [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Cost"),ListDrawerSettings(DraggableItems = true)]
         public List<CostResourceTypeAmountPair> costs;
 
+        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Cost")]
+        public float constructTime = 10f;
+
+
         [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/1"),
         Tooltip("This count should grow with tier, using this to avoid player put all units in a weak tower")]
         public int maxGarrisonCount;

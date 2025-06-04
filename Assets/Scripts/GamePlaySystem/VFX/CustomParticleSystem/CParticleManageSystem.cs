@@ -115,8 +115,6 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         if (!find)
                         {
                             // This should never happen
-                            Debug.LogError(
-                                $"Not find request vfx, this should never happen {request.VFXName} {request.Filter}");
                             continue;
                         }
 
@@ -129,6 +127,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                             {
                                 if (vfxExist.Name == request.VFXName)
                                 {
+                                    if(!SystemAPI.HasComponent<VFXData>(vfxExist.VFX))continue;
                                     var vfxData = SystemAPI.GetComponentRW<VFXData>(vfxExist.VFX);
                                     vfxData.ValueRW.KeepDuration = request.KeepDuration;
                                     vfxData.ValueRW.Reset = true;
@@ -141,9 +140,11 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         }
 
                         var vfx = EntityManager.Instantiate(targetPair.Prefab);
-                        var originalTrans = SystemAPI.GetComponent<LocalTransform>(targetPair.Prefab);
-                        originalTrans.Position = request.SpawnPosition;
-                        EntityManager.SetComponentData(vfx, originalTrans);
+                        ecb.AddComponent<GameplayEntityTag>(vfx);
+
+                        var trans = SystemAPI.GetComponent<LocalTransform>(targetPair.Prefab);
+                        trans.Position = request.SpawnPosition;
+                        EntityManager.SetComponentData(vfx, trans);
 
                         if (request.VFXTrackTarget != Entity.Null)
                         {
@@ -155,7 +156,6 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                             });
                         }
 
-                        ecb.AddComponent<GameplayEntityTag>(vfx);
                         // Projectile vfx need to be dealt separately
                         if (targetPair.VFXType != VFXType.Projectile)
                         {

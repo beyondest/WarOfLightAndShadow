@@ -9,6 +9,7 @@ namespace SparFlame.UI.GamePlay
     {
         public static ResourceInfoWindow Instance;
         public int occupiedPopulationValue;
+        public int totalAmount;
         
         public void UpdateStaticData(DynamicBuffer<ResourceTypeToAvailableAmount> datas)
         {
@@ -44,16 +45,10 @@ namespace SparFlame.UI.GamePlay
                         slot.value.text = data.Amount.ToString();
                     }
                     else
-                    {   
+                    {
                         // Population resource amount accounts for available value, not total value
-                        var totalPopulation = data.Amount + occupiedPopulationValue;
-                        slot.value.text = $"{occupiedPopulationValue}/{totalPopulation}";
-                        if(occupiedPopulationValue > totalPopulation)
-                            slot.value.color = Color.red;
-                        else
-                        {
-                            slot.value.color = Color.white;
-                        }
+                        slot.value.text = $"{occupiedPopulationValue}/{totalAmount}";
+                        slot.value.color = occupiedPopulationValue > totalAmount ? Color.red : Color.white;
                     }
                 }
                 else
@@ -65,7 +60,7 @@ namespace SparFlame.UI.GamePlay
 
         private void Awake()
         {
-            if(Instance == null)
+            if(!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);

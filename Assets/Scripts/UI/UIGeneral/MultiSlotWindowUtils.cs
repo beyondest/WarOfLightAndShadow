@@ -63,7 +63,7 @@ namespace SparFlame.UI.General
                         slot.SetActive(false);
                         var slotComponent = slot.GetComponent<TMultiShowSlot>();
                         slotComponent.Index = r * config.cols + c;
-                        if (onClickSlot != null && slotComponent.button != null)
+                        if (onClickSlot != null && slotComponent.button)
                         {
                             // TODO : Extend original button class to support right click event and long click event
                             slotComponent.button.onClick.AddListener(() => { onClickSlot(slotComponent.Index); });

@@ -32,18 +32,17 @@ namespace SparFlame.GamePlaySystem.Building
         // Worked = 4, // Obsolete
     }
 
-    public struct ConstructingTag : IComponentData
+
+    public struct ConstructingData : IComponentData
     {
-        
+        public float LastTime;
     }
-    
     
     public struct BuildingAttr : IComponentData
     {
         public BuildingType Type;
-        // public BuildingState CurBuildingState;
         public int SubTypeIndex;
-        // public float BuildingStateCount;
+        public float ConstructTime;
     }
 
         public enum BuildingType 

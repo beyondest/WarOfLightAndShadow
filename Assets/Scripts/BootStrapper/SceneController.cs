@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using SparFlame.GamePlaySystem.General;
 using UnityEngine;
 using SparFlame.Utils;
 using Unity.Entities;
@@ -9,8 +10,11 @@ namespace SparFlame.BootStrapper
 {
     public class SceneController : MonoBehaviour, CustomDs.IResourceManager
     {
-        
-                
+
+
+        [SerializeField] private SubScene lightSubscene ;
+        [SerializeField] private SubScene darkSubscene ;
+
         [SerializeField] private string gamingGroupName = "GamingGroup";
         [SerializeField] private SceneGroup[] sceneGroups;
         
@@ -33,6 +37,7 @@ namespace SparFlame.BootStrapper
         public void LoadResources()
         {
             LoadSceneGroup(gamingGroupName,_loading);
+
         }
 
         public void UnloadResources()
@@ -48,6 +53,7 @@ namespace SparFlame.BootStrapper
         private float _normalSceneLoadProgress;
         private bool _subsceneLoaded;
         private float _subsceneLoadProgress;
+        public FactionTag _playerFaction;
 
       
 
@@ -73,6 +79,7 @@ namespace SparFlame.BootStrapper
         private void Start()
         {
             GeneralResourceManager.Instance.Register(this);
+            // GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
         }
 
         public void LoadSceneGroup(string sceneGroupName, LoadingProgress progress = null)
@@ -85,10 +92,14 @@ namespace SparFlame.BootStrapper
             }
             StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, progress,false, OnSceneGroupLoaded));
             EcsStartLoadScene?.Invoke();
+
             foreach (var subsceneData in sceneGroup.subscenes)
             {
                 SceneSystem.LoadSceneAsync(World.DefaultGameObjectInjectionWorld.Unmanaged, subsceneData.sceneRef.SceneGUID);
             }
+
+            SceneSystem.LoadSceneAsync(World.DefaultGameObjectInjectionWorld.Unmanaged,
+                _playerFaction == FactionTag.Ally ? lightSubscene.SceneGUID : darkSubscene.SceneGUID);
         }
 
         public void UnloadSceneGroup(string sceneGroupName)
@@ -103,6 +114,17 @@ namespace SparFlame.BootStrapper
             foreach (var subsceneData in sceneGroup.subscenes)
             {
                 SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged, subsceneData.sceneRef.SceneGUID);
+            }
+
+            if (_playerFaction == FactionTag.Ally)
+            {
+                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,lightSubscene.SceneGUID);
+
+            }
+            else
+            {
+                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,darkSubscene.SceneGUID);
+
             }
         }
     }

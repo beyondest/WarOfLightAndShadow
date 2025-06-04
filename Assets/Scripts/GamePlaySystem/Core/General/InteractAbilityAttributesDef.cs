@@ -13,7 +13,6 @@ namespace SparFlame.GamePlaySystem.General
     //     [Tooltip("How many targets it can attack at one time")]
     //     public int interactCount = 1;
     //
-    //     // TODO : Check if this is not movable game object, then it interact range should be bigger than sight range
     //     public float interactRange = 1f;
     //
     //     public int interactBasicAmount = 10;

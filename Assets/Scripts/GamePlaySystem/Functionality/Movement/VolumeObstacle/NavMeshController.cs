@@ -119,11 +119,9 @@ namespace SparFlame.GamePlaySystem.Movement
             {
                 case FactionTag.Ally:
                     _isUpdatingAlly = true;
-                    Debug.Log($"Update NavMesh Ally according to Request");
                     break;
                 case FactionTag.Enemy:
                     _isUpdatingEnemy = true;
-                    Debug.Log($"Update NavMesh Enemy according to Request");
                     break;
                 case FactionTag.Neutral:
                 default:

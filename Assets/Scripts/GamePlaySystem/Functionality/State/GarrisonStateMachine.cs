@@ -33,7 +33,7 @@ namespace SparFlame.GamePlaySystem.State
 
         private ComponentLookup<GarrisonStateTag> _garrisonStateTagLookup;
         private ComponentLookup<OocTag> _oocTagLookup;
-        private ComponentLookup<ConstructingTag> _constructingTagLookup;
+        private ComponentLookup<ConstructingData> _constructingTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -46,11 +46,11 @@ namespace SparFlame.GamePlaySystem.State
             _garrisonAttrLookup = state.GetComponentLookup<GarrisonAttr>(true);
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _allowGarrisonUnitLookup = state.GetBufferLookup<AllowGarrisonUnit>(true);
-            _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
+            _insightTargetLookup = state.GetBufferLookup<InsightTarget>(true);
             _generalAttrLookup = state.GetComponentLookup<GeneralAttr>(true);
             _garrisonStateTagLookup = state.GetComponentLookup<GarrisonStateTag>(true);
             _oocTagLookup = state.GetComponentLookup<OocTag>(true);
-            _constructingTagLookup = state.GetComponentLookup<ConstructingTag>(true);
+            _constructingTagLookup = state.GetComponentLookup<ConstructingData>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
             _selectedAttrLookup = state.GetComponentLookup<Selected>(true);
         }
@@ -105,7 +105,7 @@ namespace SparFlame.GamePlaySystem.State
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
-            [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> InsightTargetLookup;
+            [ReadOnly] public BufferLookup<InsightTarget> InsightTargetLookup;
             [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
@@ -151,7 +151,7 @@ namespace SparFlame.GamePlaySystem.State
                 //   Generator
                 if (buildingAttr.Type == BuildingType.Generators)
                 {
-                    if (!OocTagLookup.HasComponent(inGarrison.BuildingEntity)) return;
+                    if (!OocTagLookup.IsComponentEnabled(inGarrison.BuildingEntity)) return;
                     // Under attack
                     GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
                         TransformLookup[inGarrison.BuildingEntity], GarrisonAttrLookup[inGarrison.BuildingEntity],
@@ -165,13 +165,13 @@ namespace SparFlame.GamePlaySystem.State
                 // Fortification
                 var selfSights = InsightTargetLookup[selfEntity];
                 var buildingSights = InsightTargetLookup[inGarrison.BuildingEntity];
-                foreach (var sight in buildingSights)
+                foreach (var buildingTarget in buildingSights)
                 {
-                    selfSights.Add(sight);
+                    ECB.AppendToBuffer(index, selfEntity,buildingTarget);
                 }
 
                 // No targets
-                if (selfSights.Length == 0)
+                if (buildingSights.Length == 0 && selfSights.Length == 0)
                 {
                     // Garrison into original building
                     if (stateData.CurState == InteractState.Idle)
@@ -245,7 +245,7 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
             [ReadOnly] public BufferLookup<AllowGarrisonUnit> AllowGarrisonUnitLookup;
             [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
-            [ReadOnly] public ComponentLookup<ConstructingTag> ConstructingTagLookup;
+            [ReadOnly] public ComponentLookup<ConstructingData> ConstructingTagLookup;
             [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
 
@@ -265,7 +265,8 @@ namespace SparFlame.GamePlaySystem.State
                 }
 
                 // If target building is under attack or constructing, turn to idle
-                if (OocTagLookup.HasComponent(stateData.TargetEntity) ||
+                if (
+                    OocTagLookup.IsComponentEnabled(stateData.TargetEntity) ||
                     ConstructingTagLookup.HasComponent(stateData.TargetEntity))
                 {
                     stateData.TargetState = InteractState.Idle;
@@ -319,13 +320,13 @@ namespace SparFlame.GamePlaySystem.State
                 ECB.AddComponent(index, selfEntity, inGarrison);
                 if (SelectedLookup.IsComponentEnabled(selfEntity))
                 {
-                    var reduceSelectedUnitRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent(index, reduceSelectedUnitRequest, new UnitSelectReduceRequest
-                    {
-                        IsDead = false,
-                        SelectedEntity = selfEntity
-                    });
-                    ECB.AddComponent<GameplayEntityTag>(index,reduceSelectedUnitRequest);
+                    // var reduceSelectedUnitRequest = ECB.CreateEntity(index);
+                    // ECB.AddComponent(index, reduceSelectedUnitRequest, new UnitSelectReduceRequest
+                    // {
+                    //     IsDead = false,
+                    //     SelectedEntity = selfEntity
+                    // });
+                    // ECB.AddComponent<GameplayEntityTag>(index,reduceSelectedUnitRequest);
                 }
 
                 var request = ECB.CreateEntity(index);

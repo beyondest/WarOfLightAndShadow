@@ -19,6 +19,7 @@ namespace SparFlame.UI.Menu.Out
         [SerializeField] private GameObject loadingDark;
         [SerializeField] private Image loadingFillLight;
         [SerializeField] private Image loadingFillDark;
+        [SerializeField] private GameObject settings;
 
         [SerializeField] private Image gameOverImage;
         [SerializeField] private TMP_Text gameOverText;
@@ -84,6 +85,16 @@ namespace SparFlame.UI.Menu.Out
             Debug.LogWarning("Continue to last saving is not implemented yet");
         }
 
+        public void OnClickSettings()
+        {
+            settings.SetActive(true);
+        }
+
+        public void OnClickReturn()
+        {
+            settings.SetActive(false);
+        }
+
         #endregion
 
 
@@ -130,6 +141,7 @@ namespace SparFlame.UI.Menu.Out
             selectMenu.SetActive(false);
             pauseMenu.SetActive(false);
             gameOverMenu.SetActive(false);
+            settings.SetActive(false);
         }
 
         private void OnGameStart()
@@ -138,6 +150,7 @@ namespace SparFlame.UI.Menu.Out
             loadingLight.SetActive(false);
             selectMenu.SetActive(false);
             gamePlayWindow.SetActive(true);
+            UpRightButtonWindow.Instance.OnClickTutorial();
         }
 
         private void OnGameOver(FactionTag winner)

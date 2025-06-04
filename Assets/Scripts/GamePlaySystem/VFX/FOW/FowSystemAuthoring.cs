@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.GamePlaySystem.CameraControl;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -87,6 +88,25 @@ namespace SparFlame.GamePlaySystem.Fow
                     Position = authoring.Position,
                 });
                 
+                
+                var mousePosEntity = CreateAdditionalEntity(TransformUsageFlags.Dynamic);
+                AddComponent<MousePositionFowTag>(mousePosEntity);
+                AddComponent(mousePosEntity, new FowAgentData
+                {
+                    SightRange = 0,
+                    IsInsight = true
+                });
+                AddComponent(mousePosEntity, new ScreenPos
+                {
+                    ScreenPosition = float2.zero
+                });
+                AddComponent<InCameraView>(mousePosEntity);
+                AddComponent<InCameraExtendView>(mousePosEntity);
+                SetComponentEnabled<InCameraView>(mousePosEntity, false);
+                SetComponentEnabled<InCameraExtendView>(mousePosEntity, false);
+                AddComponent<DisappearInFowTag>(mousePosEntity);
+                AddComponent<InDarknessTag>(mousePosEntity);
+                SetComponentEnabled<InDarknessTag>(mousePosEntity, false);
             }
         }
     }
@@ -110,6 +130,15 @@ namespace SparFlame.GamePlaySystem.Fow
         public float3 Right;
         public float3 LocalScale;
 
+    }
+
+    public struct MousePositionFowTag : IComponentData
+    {
+    }
+
+    public struct InDarknessTag : IComponentData,IEnableableComponent
+    {
+        
     }
     
 }

@@ -4,6 +4,7 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
+using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
@@ -14,7 +15,6 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
-using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -34,6 +34,8 @@ namespace SparFlame.GamePlaySystem.Building
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
+            state.RequireForUpdate<MousePositionFowTag>();
             state.RequireForUpdate<ConstructGridSize>();
             state.RequireForUpdate<ConstructSystemConfig>();
             state.RequireForUpdate<CrystalAffectMapRadiusSq>();
@@ -65,11 +67,10 @@ namespace SparFlame.GamePlaySystem.Building
             
         }
 
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            // TODO : Add construction time and animation support
-            // TODO : Change construction only use for one team, turn command data to singleton
-            // TODO : All player buildings can only be built in sight, not in fow
+
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>().Value;
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
 
@@ -100,7 +101,7 @@ namespace SparFlame.GamePlaySystem.Building
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var playerBaseTrans = _playerBaseQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
 
-
+            
             CheckConstructionCommand(ref state,
                 ecb, playerBaseTrans);
             playerBaseTrans.Dispose();
@@ -151,6 +152,14 @@ namespace SparFlame.GamePlaySystem.Building
             };
             var curFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
 
+            // Light faction can only build buildings in light ness, including beacon
+            var mouseCheckNotPass = false;
+            if (curFaction == FactionTag.Ally)
+            {
+                mouseCheckNotPass =
+                    SystemAPI.IsComponentEnabled<InDarknessTag>(SystemAPI.GetSingletonEntity<MousePositionFowTag>());
+            }
+            
             switch (data.CommandType)
             {
                 case ConstructCommandType.Drag:
@@ -192,10 +201,15 @@ namespace SparFlame.GamePlaySystem.Building
                             false);
                         valid = false;
                     }
-
                     // When player is light, only is constructable alongside the beacons
-                    if (isBeacon &&
+                    if (valid && isBeacon &&
                         !CheckIfInCrystalRange(customInputData.HitPosition, playerBaseTrans, lightLineAffectRadiusSq))
+                    {
+                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
+                            false);
+                        valid = false;
+                    }
+                    if (valid && mouseCheckNotPass)
                     {
                         SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
                             false);
@@ -215,16 +229,7 @@ namespace SparFlame.GamePlaySystem.Building
                         ref SystemAPI.GetComponentRW<LocalTransform>(data.PreviewCube).ValueRW;
                     // Get Target Transform
                     var targetTransform = ghostTransform;
-                    // float rotateAngle;
-                    // if (math.abs(data.RotationAngle).Equals(15f))
-                    // {
-                    //     var curDeg = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                    //     rotateAngle = ConstructUtils.SnapToNearest15(curDeg, data.RotationAngle);
-                    // }
-                    // else
-                    // {
-                    //     rotateAngle = data.RotationAngle;
-                    // }
+                    
                     var rotationDelta = quaternion.RotateY(math.radians(data.RotationAngle));
                     targetTransform.Scale = 1;
                     targetTransform.Rotation =
@@ -300,19 +305,6 @@ namespace SparFlame.GamePlaySystem.Building
 
                     if (!data.IsMovementShow)
                     {
-                        // Dark Crystal and Light beacon can change occupied tag 
-                        if (isCrystal || isBeacon)
-                        {
-                            var request = ecb.CreateEntity();
-                            ecb.AddComponent(request, new ChangeOccupiedTagRequest
-                            {
-                                CrystalFaction = data.Faction,
-                                CrystalPos = customInputData.HitPosition,
-                                IsDestroyed = false
-                            });
-                            ecb.AddComponent<GameplayEntityTag>(request);
-                        }
-
                         // Reduce resources
                         foreach (var cost in _costLookup[data.TargetBuilding])
                         {
@@ -324,8 +316,19 @@ namespace SparFlame.GamePlaySystem.Building
                         // Create building
                         var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
                         state.EntityManager.AddComponent<GameplayEntityTag>(targetBuilding);
-
                         state.EntityManager.SetComponentData(targetBuilding, newTransform);
+
+                        // Make the building in constructing state
+                        state.EntityManager.AddComponent<ConstructingData>(targetBuilding);
+                        var attr = state.EntityManager.GetComponentData<BuildingAttr>(targetBuilding);
+                        state.EntityManager.SetComponentData(targetBuilding, new ConstructingData
+                        {
+                            LastTime = attr.ConstructTime
+                        });
+                        if(buildingAttr.Type == BuildingType.Dwellings)
+                            state.EntityManager.SetComponentEnabled<DwellingGeneratePopulationTag>(targetBuilding,false);
+                        state.EntityManager.SetComponentEnabled<VolumeObstacleSpawnRequest>(targetBuilding,false);
+                        
                         
                         // Exchange grid preview
                         _grids.Add(data.PreviewCube);
@@ -364,6 +367,7 @@ namespace SparFlame.GamePlaySystem.Building
                     else
                     {
                         // Move building to new place
+                        _grids.Add(data.PreviewCube);
                         state.EntityManager.SetComponentData(data.TargetBuilding, newTransform);
                         DestroyPriorGhost(ref state, ref data);
                         data.CommandType = ConstructCommandType.None;
@@ -409,11 +413,9 @@ namespace SparFlame.GamePlaySystem.Building
         {
             var entityManager = state.EntityManager;
 
-            // 1. 创建父实体
-            cubeParent = entityManager.CreateEntity(typeof(LocalTransform));
+            cubeParent = entityManager.CreateEntity();
 
             state.EntityManager.AddComponent<GameplayEntityTag>(cubeParent);
-
             state.EntityManager.AddComponent<LocalTransform>(cubeParent);
             state.EntityManager.AddComponent<LocalToWorld>(cubeParent);
             var buffer = state.EntityManager.AddBuffer<LinkedEntityGroup>(cubeParent);
@@ -499,9 +501,6 @@ namespace SparFlame.GamePlaySystem.Building
         }
 
 
-        public struct TestPreview : IComponentData
-        {
-        }
 
         private void DestroyPriorGhost(ref SystemState state, ref ConstructCommandData data)
         {
@@ -531,10 +530,10 @@ namespace SparFlame.GamePlaySystem.Building
             };
             // for (int i = 1; i < buffer.Length; i++)
             // {
-            ChangeMaterialRecursively(ref state, data.PreviewCube, targetMaterial,targetState);
+            ChangeMaterialRecursively(ref state, data.PreviewCube, targetMaterial);
             // }
         }
-        private void ChangeMaterialRecursively(ref SystemState state, Entity entity, int newMaterial, PlacementStateType targetState)
+        private void ChangeMaterialRecursively(ref SystemState state, Entity entity, int newMaterial)
         {
             var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
             foreach (var group in buffer)

@@ -175,6 +175,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5ad62383314678945b59d1b6410ed9a3
+    m_Address: LightBeacon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5cc405c1dfdc1b14bb2d92d882d16a4d
     m_Address: DarkCommonDwellingTier3
     m_ReadOnly: 0

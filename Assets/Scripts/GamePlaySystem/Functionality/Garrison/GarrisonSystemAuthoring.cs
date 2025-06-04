@@ -56,13 +56,11 @@ namespace SparFlame.GamePlaySystem.Garrison
         public float PriorMass;
     }
 
-    /// <summary>
-    /// All buildings with this tag will radiate buff to fortifications around it
-    /// </summary>
-    public struct UnderDefence : IComponentData
-    {
-        public float RangeSq;
-    }
+
+    // public struct UnderDefence : IComponentData
+    // {
+    //     public float RangeSq;
+    // }
 
     /// <summary>
     /// The only way to Garrison count--

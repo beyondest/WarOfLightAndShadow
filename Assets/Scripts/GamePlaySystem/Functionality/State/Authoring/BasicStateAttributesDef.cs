@@ -23,24 +23,7 @@ namespace SparFlame.GamePlaySystem.State
     //     }
     // }
     
-    public enum InteractState
-    {
-        Idle = 0,
-        Attacking = 1,
-        Moving = 2,
-        Garrison = 3,
-        Harvesting =4,
-        Healing = 5,
-    }
 
-    public struct BasicStateData : IComponentData
-    {
-        public InteractState CurState;
-        public bool Focus;
-        public Entity TargetEntity;
-        public InteractState TargetState;
-        public int InteractCounter;
-    }
     
 
 

@@ -37,7 +37,7 @@ namespace SparFlame.GamePlaySystem.Ooc
             {
                 oocTag.Seconds -= DeltaTime;
                 if (oocTag.Seconds <= 0)
-                    ECB.RemoveComponent<OocTag>(index, entity);
+                    ECB.SetComponentEnabled<OocTag>(index, entity , false);
             }
         }
     }

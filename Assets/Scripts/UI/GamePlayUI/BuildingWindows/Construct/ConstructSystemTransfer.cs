@@ -1,10 +1,10 @@
 ﻿using System;
+using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.GamePlay;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -79,7 +79,6 @@ namespace SparFlame.GamePlaySystem.Construction
             // Check construct input
             CheckBuild(ref commandData);
             CheckRotate(ref commandData);
-            CheckSnap();
         }
 
 
@@ -128,6 +127,8 @@ namespace SparFlame.GamePlaySystem.Construction
                     data.CommandType = ConstructCommandType.Build;
                     if (data.IsMovementShow)
                         _inGhostShow = false; // If this is movement show mode, exit after build target
+                    var hitPosition = SystemAPI.GetSingleton<InputMouseData>().HitPosition;
+                    AudioUtils.PlayAudioClip(AudioName.Construct, hitPosition,EntityManager);
                     break;
                 case PlacementStateType.Overlapping:
                     break;
@@ -172,10 +173,7 @@ namespace SparFlame.GamePlaySystem.Construction
             data.RotationAngle = angle;*/
         }
 
-        private void CheckSnap()
-        {
-            // TODO : Check snap building
-        }
+
 
         #endregion
 

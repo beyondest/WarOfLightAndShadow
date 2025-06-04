@@ -2,6 +2,7 @@
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Conjure;
+using SparFlame.GamePlaySystem.Hints;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -43,10 +44,20 @@ namespace SparFlame.UI.GamePlay
         {
             if (_inputConjureData.HotKeyIndex > 0)
             {
-                if (MiniConjureWindow.Instance.TryGetConjureInfo(_inputConjureData.HotKeyIndex, out var unit,
-                        out var building,out var maxConjureCount))
+                if (MiniConjureWindow.Instance.TryGetConjureInfo(_inputConjureData.HotKeyIndex, out var index))
                 {
-                    ConjureUnits(unit,  1, building,maxConjureCount);
+                    MiniConjureWindow.Instance.OnClickSlot(index);
+                    // if (maxConjureCount == 0)
+                    // {
+                    //     var hintRequest = EntityManager.CreateEntity();
+                    //     EntityManager.AddComponent<HintRequest>(hintRequest);
+                    //     EntityManager.SetComponentData(hintRequest, new HintRequest
+                    //     {
+                    //         Name = HintName.NotEnoughResource,
+                    //     });
+                    //     return;
+                    // }
+                    // ConjureUnits(unit,  1, building,maxConjureCount);
                 }
             }
         }

@@ -78,12 +78,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             // job.Complete();
             // ecb.Dispose();
 
-            var waveData = SystemAPI.GetSingleton<GameWaveData>();
-            if (waveData.IfWaveUpdateThisFrame || SystemAPI.GetSingleton<GameTimeData>().ElapsedTime >
-                nextSpawnTime.Value)
-            {
-                RandomSpawnEnemyBuildingPack(ref state, waveData, ref nextSpawnTime);
-            }
+            // var waveData = SystemAPI.GetSingleton<GameWaveData>();
+            // if (waveData.IfWaveUpdateThisFrame || SystemAPI.GetSingleton<GameTimeData>().ElapsedTime >
+            //     nextSpawnTime.Value)
+            // {
+            //     RandomSpawnEnemyBuildingPack(ref state, waveData, ref nextSpawnTime);
+            // }
         }
 
         private void RandomSpawnEnemyBuildingPack(ref SystemState state, in GameWaveData waveData,

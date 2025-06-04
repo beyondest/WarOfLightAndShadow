@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.EnemyAI
 {
@@ -112,6 +113,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     Count = conjureCount
                 });
                 var costList = CostListLookup[entry.Prefab];
+   
                 foreach (var cost in costList)
                 {
                     var costRequest = ECB.CreateEntity(index);

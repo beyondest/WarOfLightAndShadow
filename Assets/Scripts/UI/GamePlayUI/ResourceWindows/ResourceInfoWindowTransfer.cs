@@ -41,8 +41,11 @@ namespace SparFlame.UI.GamePlay
                 ResourceInfoWindow.Instance.UpdateStaticData(datas);
                 _faction = curFaction;
             }
-            ResourceInfoWindow.Instance.occupiedPopulationValue =
-                SystemAPI.GetComponent<PopulationOccupiedData>(entity).Value;
+
+            var data = SystemAPI.GetComponent<PopulationSpecialData>(entity);
+            ResourceInfoWindow.Instance.occupiedPopulationValue =data
+                .OccupiedAmount;
+            ResourceInfoWindow.Instance.totalAmount = data.TotalAmount;
             ResourceInfoWindow.Instance.UpdateDynamicData(datas);
         }
     }

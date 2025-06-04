@@ -54,7 +54,6 @@ namespace SparFlame.GamePlaySystem.Movement
         public Entity FromEntity;
     }
 
-    // TODO : Each time you close door, use this request, and don't forget to set door entity box collider deactivate
     public struct DoorControlRequest : IComponentData
     {
         /// <summary>
@@ -65,7 +64,6 @@ namespace SparFlame.GamePlaySystem.Movement
         public Entity FromEntity;
     }
 
-    // TODO : Change dictionary to buffer, and save it as native hash map in system
     internal class VolumeObstacleSystemConfig : IComponentData
     {
         public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;

@@ -56,7 +56,22 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                     }
 
                     data.Reset = false;
-                    return;
+                    if (data.Tracker != Entity.Null)
+                    {
+                        // Tracker is dead
+                        if (!SystemAPI.HasComponent<LocalTransform>(data.Tracker))
+                        {
+                            DestroyVFX(ref state, selfEntity, data, curTime, ecb);
+                        }
+                        else
+                        {
+                            var targetTransform = SystemAPI.GetComponent<LocalTransform>(data.Tracker);
+                            var trans = SystemAPI.GetComponentRW<LocalTransform>(selfEntity);
+                            trans.ValueRW.Position = targetTransform.Position;
+                            // trans.ValueRW.Rotation = targetTransform.Rotation;
+                        }
+                    }
+                    continue;
                 }
 
                 if (data.Tracker != Entity.Null)

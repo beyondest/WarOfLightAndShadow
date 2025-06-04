@@ -40,6 +40,13 @@ namespace SparFlame.GamePlaySystem.Units
         public int AnimatedModelIndex;
     }
 
+    public struct ShieldTag : IComponentData{}
+    public struct RangedTag : IComponentData{}
+    public struct ClericTag : IComponentData{}
+    public struct CavalryTag : IComponentData{}
+    public struct WorkerTag : IComponentData{}
+    public struct MageTag : IComponentData{}
+        
     public struct AttunerAttr : IComponentData
     {
         public float GenerateSpeedBonus;

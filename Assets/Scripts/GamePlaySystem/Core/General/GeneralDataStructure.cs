@@ -19,7 +19,6 @@ namespace SparFlame.GamePlaySystem.General
             
     }
     
-    // TODO : Split amount range for only resource spawn data structure
     public struct ProbabilityPrefabEntry
     {
         public Entity Prefab;

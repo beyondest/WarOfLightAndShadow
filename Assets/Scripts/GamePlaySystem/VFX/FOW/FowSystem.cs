@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using SparFlame.GamePlaySystem.CameraControl;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.General;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -99,9 +101,19 @@ namespace SparFlame.GamePlaySystem.Fow
                 return;
             }
             if(gameStatusData.Value != GameStatus.Gaming)return;
+            
+            var mousePositionInfoEntity = SystemAPI.GetSingletonEntity<MousePositionFowTag>();
+            var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
+            EntityManager.SetComponentData(mousePositionInfoEntity, new LocalTransform
+            {
+                Position = inputMouseData.HitPosition,
+                Rotation = quaternion.identity,
+                Scale = 1f
+            });
             var config = SystemAPI.GetSingleton<FowConfig>();
             var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             if (curTime <= _updateTime) return;
+           
             _updateTime = curTime + config.UpdateInterval;
             UpdateContributorSight(config);
             if (_needAgentVisibilityUpdate)
@@ -138,6 +150,7 @@ namespace SparFlame.GamePlaySystem.Fow
 
         private void LateInitialize()
         {
+            _updateTime = 0;
             var config = SystemAPI.GetSingleton<FowConfig>();
             _fovMapArray = FogOfWarGo.Instance.fovMapArray;
             _pixelReader = FogOfWarGo.Instance.pixelReader;
@@ -173,8 +186,9 @@ namespace SparFlame.GamePlaySystem.Fow
             
             _fowRenderTexture =
                 new RenderTexture(config.FowTextureSize, config.FowTextureSize, 1, RenderTextureFormat.ARGB32);
-            _outputAlphaBuffer =
-                new ComputeBuffer(1, sizeof(float) * config.MaxEnemyCount, ComputeBufferType.IndirectArguments);
+            // _outputAlphaBuffer =
+            //     new ComputeBuffer(1, sizeof(float) * config.MaxEnemyCount, ComputeBufferType.IndirectArguments);
+            _outputAlphaBuffer = new ComputeBuffer(config.MaxEnemyCount, sizeof(float),ComputeBufferType.Default);
             _positionsBuffer = new ComputeBuffer(config.MaxAllyCount, sizeof(float) * 3,
                 ComputeBufferType.IndirectArguments);
             _forwardsBuffer = new ComputeBuffer(config.MaxAllyCount, sizeof(float) * 3,
@@ -262,7 +276,6 @@ namespace SparFlame.GamePlaySystem.Fow
                 Graphics.Blit(temp, _fowRenderTexture, _blurMaterial);
             }
 
-
             RenderTexture.ReleaseTemporary(temp);
         }
 
@@ -283,7 +296,6 @@ namespace SparFlame.GamePlaySystem.Fow
                 _visibilityTargetAgents.Add(agent.Self);
                 targetAgentUVs.Add(agent.UV);
             }
-
 
             // Use the compute shader to retrieve pixel data from the GPU to CPU
             _pixelReader.SetInt(TargetAgentCount, _visibilityTargetAgents.Length);
@@ -307,6 +319,7 @@ namespace SparFlame.GamePlaySystem.Fow
             for (var i = 0; i < _visibilityTargetAgents.Length; ++i)
             {
                 var entity = _visibilityTargetAgents[i];
+                if(!EntityManager.HasComponent<FowAgentData>(entity))continue;
                 var agent = EntityManager.GetAspect<FowAgent>(entity);
                 var isInSight = alphaSamples[i] <= agent.DisappearAlphaThreshold;
                 agent.SetUnderFow(isInSight, ecb);

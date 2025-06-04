@@ -6,7 +6,7 @@ using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Generate;
-using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.UI.General;
@@ -28,10 +28,13 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private Image generalTypeIcon;
         [SerializeField] private TMP_Text description;
         [SerializeField] private Image idSingleIcon;
-        [SerializeField] private Image interactAbilityTriangle;
+        [SerializeField] private GameObject interactAbilityPanel;
 
         [Header("Building detail")] [SerializeField]
         private Image buildingStateIcon;
+
+        [SerializeField] private GameObject constructingPanel;
+        [SerializeField] private TMP_Text constructTimeText;
 
         [SerializeField] private TMP_Text buildingStateText;
 
@@ -99,6 +102,7 @@ namespace SparFlame.UI.GamePlay
             if (!Em.HasComponent<BuildingAttr>(target))
                 return false;
             _targetEntity = target;
+            _ifConstructing = false;
             UpdateStaticData();
             // UpdateDynamicData();
             return true;
@@ -125,7 +129,7 @@ namespace SparFlame.UI.GamePlay
             dwellingPanel.SetActive(false);
             ornamentPanel.SetActive(false);
             conjurePanel.SetActive(false);
-            interactAbilityTriangle.enabled = false;
+            interactAbilityPanel.SetActive(false);
         }
 
 
@@ -140,14 +144,32 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickRelocate()
         {
-            if (Em.HasComponent<OocTag>(_targetEntity) ||
-                Em.HasComponent<ConstructingTag>(_targetEntity)
-                || _hasGarrisonUnits
-                || _buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
-                || _buildingAttr is {Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon})
+            var isCrystal = _buildingAttr is
+                { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
+            var isConstructing = Em.HasComponent<ConstructingData>(_targetEntity);
+            var isUnderAttack = Em.IsComponentEnabled<OocTag>(_targetEntity);
+            if (isUnderAttack ||
+                isConstructing
+                || isCrystal || _hasGarrisonUnits
+                )
             {
-                // TODO : Hints pop support
-                Debug.Log(" not allow to relocate, this should pop up hints");
+                var hintName = HintName.None;
+                if (isCrystal)
+                {
+                    hintName = HintName.CrystalCannotRelocate;
+                }
+                else if (_hasGarrisonUnits)
+                {
+                    hintName = HintName.CannotRelocateWhenHasGarrisonUnits;
+                }
+                else if (isUnderAttack) hintName = HintName.CannotRelocateWhenUnderAttack;
+                else if (isConstructing) hintName = HintName.CannotRelocateWhenConstructing;
+                var hintRequest = Em.CreateEntity();
+                Em.AddComponent<HintRequest>(hintRequest);
+                Em.SetComponentData(hintRequest, new HintRequest
+                {
+                    Name = hintName
+                });
                 return;
             }
             
@@ -160,6 +182,28 @@ namespace SparFlame.UI.GamePlay
 
         public void OnClickRecycle()
         {
+            var isCrystal = _buildingAttr is
+                { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
+            var isUnderAttack = Em.IsComponentEnabled<OocTag>(_targetEntity);
+            var isConstructing = Em.HasComponent<ConstructingData>(_targetEntity);
+
+            if (isCrystal || isUnderAttack || isConstructing)
+            {
+                var hintName = HintName.None;
+                if (isCrystal)
+                {
+                    hintName = HintName.CrystalCannotRecycle;
+                }
+                else if (isUnderAttack) hintName = HintName.CannotRelocateWhenUnderAttack;
+                else hintName = HintName.CannotRecycleWhenConstructing;
+                var hintRequest = Em.CreateEntity();
+                Em.AddComponent<HintRequest>(hintRequest);
+                Em.SetComponentData(hintRequest, new HintRequest
+                {
+                    Name = hintName
+                });
+                return;
+            }
             EcsRecycleTarget?.Invoke(_targetEntity);
         }
 
@@ -179,6 +223,7 @@ namespace SparFlame.UI.GamePlay
         // Internal Data
         private Entity _targetEntity = Entity.Null;
         private bool _hasGarrisonUnits;
+        private bool _ifConstructing;
         private FactionTag _playerFaction;
 
         // Cache
@@ -195,7 +240,7 @@ namespace SparFlame.UI.GamePlay
 
         protected virtual void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -240,18 +285,37 @@ namespace SparFlame.UI.GamePlay
                 BuildingWindowResourceManager.Instance.BuildingGeneralTypeSprites[_buildingAttr.Type];
             idSingleIcon.sprite = BuildingWindowResourceManager.Instance
                 .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.ID).Sprite;
-            if (multiSlotEnabled)
-                VisualizeCostSlots();
+            
             
 
-            interactAbilityTriangle.enabled = false; // fortification panel
+            interactAbilityPanel.SetActive(false);
             generatePanel.SetActive(false);
             conjurePanel.SetActive(false);
             dwellingPanel.SetActive(false);
             ornamentPanel.SetActive(false);
             upgradePanel.SetActive(false);
+            constructingPanel.SetActive(false);
+            
+            if (Em.HasComponent<ConstructingData>(_targetEntity))
+            {
+                constructingPanel.SetActive(true);
+                var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTime;
+                constructTimeText.text = UIMathMethods.FormatTime((int)time);
+                _ifConstructing = true;
+                foreach (var slot in Slots)
+                {
+                    slot.SetActive(false);
+                }
+                return;
+            }
+            if (multiSlotEnabled)
+                VisualizeCostSlots();
+            ActiveNecessaryPanels(generalAttr);
+        }
 
-
+        private void ActiveNecessaryPanels(GeneralAttr generalAttr)
+        {
+            
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
             {
                 var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
@@ -285,7 +349,8 @@ namespace SparFlame.UI.GamePlay
                         generateSpeedText.text = $"{generateAttribute.MinCultivatorsRequireToGenerate}/s";
                     break;
                 case BuildingType.Fortifications:
-                    interactAbilityTriangle.enabled = true;
+                    interactAbilityPanel.SetActive(true);
+
                     break;
                 case BuildingType.ConjuringShrines:
                     if (generalAttr.FactionTag != _playerFaction) break;
@@ -310,7 +375,7 @@ namespace SparFlame.UI.GamePlay
                     if (Em.HasComponent<AttackAbility>(_targetEntity)
                         || Em.HasComponent<HealAbility>(_targetEntity)
                         || Em.HasComponent<HarvestAbility>(_targetEntity))
-                        interactAbilityTriangle.enabled = true;
+                        interactAbilityPanel.SetActive(true);
                     // if (Em.HasComponent<StaticBuffAttr>(_targetEntity))
                     // {
                     //     var staticBuffAttr = Em.GetComponentData<StaticBuffAttr>(_targetEntity);
@@ -365,17 +430,33 @@ namespace SparFlame.UI.GamePlay
 
         private void UpdateDynamicData()
         {
+            
             _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
             // Visualize function panel and doingThings panel
-            var underAttack = Em.HasComponent<OocTag>(_targetEntity);
-            var constructing = Em.HasComponent<ConstructingTag>(_targetEntity);
+            var underAttack = Em.HasComponent<OocTag>(_targetEntity) && Em.IsComponentEnabled<OocTag>(_targetEntity);
+            var constructing = Em.HasComponent<ConstructingData>(_targetEntity);
             var generating = Em.HasComponent<GeneratingTag>(_targetEntity);
             var conjuring = Em.HasComponent<ConjuringTag>(_targetEntity);
             var currentState = BuildingUtils.GetBuildingState(underAttack, constructing, conjuring, generating);
             buildingStateIcon.sprite =
                 BuildingWindowResourceManager.Instance.BuildingStateSprites[currentState];
             buildingStateText.text = currentState.ToString();
-
+            if (_ifConstructing)
+            {
+                if (!Em.HasComponent<ConstructingData>(_targetEntity))
+                {
+                    ActiveNecessaryPanels(Em.GetComponentData<GeneralAttr>(_targetEntity));
+                    _ifConstructing = false;
+                    constructingPanel.SetActive(false);
+                }
+                else
+                {
+                    var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTime;
+                    
+                    constructTimeText.text = UIMathMethods.FormatTime((int)time);
+                    return;   
+                }
+            }
             // Check garrison data
             _hasGarrisonUnits = false;
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))

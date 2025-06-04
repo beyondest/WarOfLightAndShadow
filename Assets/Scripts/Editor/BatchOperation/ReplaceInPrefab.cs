@@ -83,25 +83,71 @@ public class PrefabDarkToLightReplacer : EditorWindow
 
             if (child.name.StartsWith(originalNamePrefix))
             {
-                string lightName = correspondingNamePrefix + child.name[originalNamePrefix.Length..];
+                string trimmedName =correspondingNamePrefix + child.name[originalNamePrefix.Length..]; // 去除前缀
+                GameObject bestMatch = null;
 
-                if (lightPrefabDict.TryGetValue(lightName, out GameObject lightPrefab) && lightPrefab != null)
+                // 模糊匹配：只要 light prefab 名在 trimmedName 中出现就匹配
+                foreach (var kvp in lightPrefabDict)
                 {
-                    GameObject newLight = PrefabUtility.InstantiatePrefab(lightPrefab) as GameObject;
+                    if (trimmedName.Contains(kvp.Key))
+                    {
+                        bestMatch = kvp.Value;
+                        break; // 找到第一个匹配的就用（可根据需要改成最长匹配等策略）
+                    }
+                }
+
+                if (bestMatch != null)
+                {
+                    GameObject newLight = PrefabUtility.InstantiatePrefab(bestMatch) as GameObject;
                     newLight.transform.SetParent(child.parent, false);
                     newLight.transform.localPosition = child.localPosition;
                     newLight.transform.localRotation = child.localRotation;
                     newLight.transform.localScale = child.localScale;
-                    newLight.name = lightPrefab.name;
+                    newLight.name = bestMatch.name;
 
                     GameObject.DestroyImmediate(child.gameObject);
                 }
                 else
                 {
-                    Debug.LogWarning($"Could not find prefab named '{lightName}' in path.");
+                    Debug.LogWarning($"[模糊匹配失败] 无法为 {child.name} 找到合适的 Light prefab。");
                 }
             }
         }
     }
+
+    // private void ReplaceRecursive(Transform current)
+    // {
+    //     List<Transform> children = new List<Transform>();
+    //     for (int i = 0; i < current.childCount; i++)
+    //     {
+    //         children.Add(current.GetChild(i));
+    //     }
+    //
+    //     foreach (var child in children)
+    //     {
+    //         ReplaceRecursive(child); // 先递归子节点
+    //
+    //         if (child.name.StartsWith(originalNamePrefix))
+    //         {
+    //             string lightName = correspondingNamePrefix + child.name[originalNamePrefix.Length..];
+    //
+    //             if (lightPrefabDict.TryGetValue(lightName, out GameObject lightPrefab) && lightPrefab != null)
+    //             {
+    //                 GameObject newLight = PrefabUtility.InstantiatePrefab(lightPrefab) as GameObject;
+    //                 newLight.transform.SetParent(child.parent, false);
+    //                 newLight.transform.localPosition = child.localPosition;
+    //                 newLight.transform.localRotation = child.localRotation;
+    //                 newLight.transform.localScale = child.localScale;
+    //                 newLight.name = lightPrefab.name;
+    //
+    //                 GameObject.DestroyImmediate(child.gameObject);
+    //             }
+    //             else
+    //             {
+    //                 Debug.LogWarning($"Could not find prefab named '{lightName}' in path.");
+    //             }
+    //         }
+    //     }
+    // }
 
 }

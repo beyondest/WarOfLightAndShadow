@@ -1,0 +1,62 @@
+﻿using System;
+using System.Collections.Generic;
+using Unity.Entities;
+using UnityEngine;
+
+namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring
+{
+    
+    
+    public class DarkShieldBuffSystemAuthoring : MonoBehaviour
+    {
+        public List<DarkShieldBuffConfig> reflectionDamageScalesTier;
+        public float darkShieldReflectDamageDuration = 1f;
+        private class DarkShieldBuffBaker : Baker<DarkShieldBuffSystemAuthoring>
+        {
+            public override void Bake(DarkShieldBuffSystemAuthoring systemAuthoring)
+            {
+                var entity = GetEntity(TransformUsageFlags.None);
+                var buffer = AddBuffer<DarkShieldBuffConfig>(entity);
+                foreach (var config in systemAuthoring.reflectionDamageScalesTier)
+                {
+                    buffer.Add(new DarkShieldBuffConfig
+                    {
+                        reflectDamageScale = config.reflectDamageScale,
+                        maxTauntCount = config.maxTauntCount
+                    });
+                    
+                }
+                AddComponent(entity, new DarkShieldBuffGeneralConfig
+                {
+                    DarkShieldReflectDamageDuration = systemAuthoring.darkShieldReflectDamageDuration
+                });
+            }
+        }
+    }
+
+
+    [Serializable]
+    public struct DarkShieldBuffConfig : IBufferElementData
+    {
+        public float reflectDamageScale;
+        public int maxTauntCount;
+    }
+
+    public struct DarkShieldBuffGeneralConfig : IComponentData
+    {
+        public float DarkShieldReflectDamageDuration;
+    }
+    public struct DarkShieldTauntBuff : IComponentData
+    {
+        public float ReflectDamageScale;
+        public int MaxTauntCount;
+    }
+
+
+    public struct DarkShieldTauntedBuff : IComponentData,IEnableableComponent
+    {
+        public float TauntTime;
+        public Entity TauntedBy;
+    }
+    
+}

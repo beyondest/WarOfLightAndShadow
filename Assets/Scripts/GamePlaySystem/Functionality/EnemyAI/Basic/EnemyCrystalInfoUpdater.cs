@@ -47,7 +47,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             var playerCurHp = 0f;
             // Insight enemy crystal, and if enemy is light, single core crystal
             var enemyCrystalValidCount = 0;
-            // var playerCrystalCount = 0;
+            var playerCrystalCount = 0;
 
             for (var i = 0; i < enemyStats.Length; i++)
             {
@@ -68,7 +68,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 if (playerFaction == FactionTag.Ally && !SystemAPI.HasComponent<LightSingleCrystalTag>(entity))continue;
                 playerMaxHp += data.MaxValue;
                 playerCurHp += data.CurValue;
-                // playerCrystalCount ++;
+                playerCrystalCount ++;
             }
 
             SystemAPI.SetSingleton(new EnemyCrystalInfo
@@ -80,7 +80,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             });
             SystemAPI.SetSingleton(new PlayerCrystalInfo
             {
-                TotalCount = playerStats.Length,
+                TotalCount = playerCrystalCount,
                 CurTotalHp = playerCurHp,
                 MaxTotalHp = playerMaxHp,
             });

@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using Unity.Burst;
@@ -43,6 +44,7 @@ namespace SparFlame.GamePlaySystem.State
         [BurstCompile]
         [WithAll(typeof(IdleStateTag))]
         [WithNone(typeof(UnitDeadTag))]
+        [WithNone(typeof(ConstructingData))]
         public partial struct IdleStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -60,7 +62,6 @@ namespace SparFlame.GamePlaySystem.State
                 CheckIfHomeUnderAttack();
                 if(targets.IsEmpty)return;
                 
-                // TODO : This target is not exist ???
                 stateData.TargetEntity = InteractUtils.ChooseTarget(targets);
                 var targetGeneralAttr = GeneralAttrLookup[stateData.TargetEntity];
                 var selfGeneralAttr = GeneralAttrLookup[entity];

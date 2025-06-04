@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
@@ -52,7 +53,7 @@ namespace SparFlame.GamePlaySystem.Interact
             new UpdateTargetListJob
             {
                 Config = config,
-                InteractableAttrLookup = _interactableLookup,
+                GeneralAttrLookUp = _interactableLookup,
                 StatDataLookup = _statDataLookup,
                 HealLookup = _healLookup,
                 HarvestLookup = _harvestLookup,
@@ -69,7 +70,7 @@ namespace SparFlame.GamePlaySystem.Interact
         private partial struct UpdateTargetListJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<SightPriority> PriorityLookup;
-            [ReadOnly] public ComponentLookup<GeneralAttr> InteractableAttrLookup;
+            [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookUp;
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
@@ -80,7 +81,7 @@ namespace SparFlame.GamePlaySystem.Interact
 
             private void Execute(ref DynamicBuffer<InsightTarget> targets, Entity selfEntity)
             {
-                var selfFaction = InteractableAttrLookup[selfEntity].FactionTag;
+                var selfFaction = GeneralAttrLookUp[selfEntity].FactionTag;
                 var selfPos = TransformLookup[selfEntity].Position;
 
                 for (var i = targets.Length - 1; i >= 0; i--)
@@ -91,7 +92,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     var canHeal = HealLookup.HasComponent(selfEntity);
 
                     // Remove invalid target
-                    if (!InteractableAttrLookup.TryGetComponent(insightTarget.Entity, out var targetgeneralAttr)
+                    if (!GeneralAttrLookUp.TryGetComponent(insightTarget.Entity, out var targetgeneralAttr)
                         || !StatDataLookup.TryGetComponent(insightTarget.Entity, out var targetStatData)
                         || !InteractUtils.IsTargetValid(in targetgeneralAttr, in selfFaction, in targetStatData,
                             canHeal,

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using SparFlame.GamePlaySystem.Conjure;
+using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.General;
@@ -9,7 +11,8 @@ using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class MiniConjureWindow : MultiSlotWindowUtils.MultiSlotsWindow<MiniConjureSlot>, MultiSlotWindowUtils.ISingleTargetWindow
+    public class MiniConjureWindow : MultiSlotWindowUtils.MultiSlotsWindow<MiniConjureSlot>,
+        MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Public interface
         public static MiniConjureWindow Instance;
@@ -28,28 +31,27 @@ namespace SparFlame.UI.GamePlay
         public bool TrySwitchTarget(Entity target)
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            if(!_em.HasComponent<ConjureAttr>(target))
+            if (!_em.HasComponent<ConjureAttr>(target))
                 return false;
             _targetEntity = target;
             _currentGeneralType = _em.GetComponentData<ConjureAttr>(target).ConjuringType;
             UpdateCandidates();
             return true;
         }
-        
-        public bool TryGetConjureInfo(int index, out Entity conjureUnit, out Entity buildingEntity,
-            out int maxConjureCount)
+
+        public bool TryGetConjureInfo(int index, out int conjureIndex
+          )
         {
             if (index > _infos.Count || _targetEntity == Entity.Null)
             {
-                conjureUnit = Entity.Null;
-                buildingEntity = Entity.Null;
-                maxConjureCount = 0;
+                conjureIndex = 0;
                 return false;
             }
 
-            conjureUnit = _infos[index - 1].EntityPrefab;
-            buildingEntity = _targetEntity;
-            maxConjureCount = SlotComponents[index].GetMaxConjureCount();
+            conjureIndex = index - 1;
+            // conjureUnit = _infos[index - 1].EntityPrefab;
+            // buildingEntity = _targetEntity;
+            // maxConjureCount = SlotComponents[index].GetMaxConjureCount();
             return true;
         }
 
@@ -58,6 +60,7 @@ namespace SparFlame.UI.GamePlay
             base.Hide();
             _targetEntity = Entity.Null;
         }
+
         public void ClearCloseUpTarget()
         {
             _targetEntity = Entity.Null;
@@ -65,7 +68,18 @@ namespace SparFlame.UI.GamePlay
 
         public override void OnClickSlot(int slotIndex)
         {
-            if(_targetEntity == Entity.Null)return;
+            if (_targetEntity == Entity.Null) return;
+            var maxCount = SlotComponents[slotIndex].GetMaxConjureCount();
+            if (maxCount == 0)
+            {
+                var hintRequest = _em.CreateEntity();
+                _em.AddComponent<HintRequest>(hintRequest);
+                _em.SetComponentData(hintRequest, new HintRequest
+                {
+                    Name = HintName.NotEnoughResource,
+                });
+                return;
+            }
             EcsConjureUnit?.Invoke(_infos[slotIndex].EntityPrefab, _targetEntity,
                 SlotComponents[slotIndex].GetMaxConjureCount());
         }
@@ -92,7 +106,8 @@ namespace SparFlame.UI.GamePlay
                 .GetSingleton<UnitSelectionData>()
                 .CurrentSelectFaction;
             _infos.Clear();
-            _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, currentSelectFaction);
+            _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, currentSelectFaction,
+                tier: _em.GetComponentData<ExpData>(_targetEntity).CurTier, filterTier:true);
             var count = _infos.Count;
             for (var i = 0; i < Slots.Count; i++)
             {
@@ -109,7 +124,6 @@ namespace SparFlame.UI.GamePlay
             }
         }
 
-  
 
         public bool HasTarget()
         {

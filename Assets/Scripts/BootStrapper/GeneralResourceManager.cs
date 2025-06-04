@@ -60,7 +60,11 @@ namespace SparFlame.BootStrapper
 
         private void Start()
         {
-            GameController.Instance.OnPlayerChooseFaction += _ =>StartLoadResources();
+            GameController.Instance.OnPlayerChooseFaction += faction =>
+            {
+                SceneController.Instance._playerFaction = faction;
+                StartLoadResources();
+            };
             GameController.Instance.OnBackToMainMenu += ReleaseAllResources;
         }
 
@@ -68,7 +72,6 @@ namespace SparFlame.BootStrapper
         {
             while (true)
             {
-                
                 var allReady = _providers.All(p => p.IsInitialized);
                 if (allReady)
                     break;
@@ -76,7 +79,7 @@ namespace SparFlame.BootStrapper
                 OnInitProgress?.Invoke(avgProgress);
                 yield return new WaitForSeconds(checkInitInterval);
             }
-            Debug.Log("All resources loaded");
+
             OnAllResourceLoaded?.Invoke();
         }
     }

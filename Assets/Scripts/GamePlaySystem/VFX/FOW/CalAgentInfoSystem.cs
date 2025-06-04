@@ -69,7 +69,7 @@ namespace SparFlame.GamePlaySystem.Fow
                     agent.UV = new float4(uv.x, uv.y, 0, 0);
                 }
         
-                if (ContributeSightLookup.HasComponent(selfEntity))
+                if (ContributeSightLookup.HasComponent(selfEntity) && ContributeSightLookup.IsComponentEnabled(selfEntity))
                 {
                     var relativePos = localPos * FogCenter.Scale; 
                     agent.RelativePosition = relativePos;

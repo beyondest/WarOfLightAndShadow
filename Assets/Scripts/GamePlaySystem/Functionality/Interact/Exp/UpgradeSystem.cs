@@ -1,6 +1,10 @@
-﻿using SparFlame.GamePlaySystem.CustomParticleSystem;
+﻿using SparFlame.BootStrapper;
+using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Movement;
+using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -40,6 +44,8 @@ namespace SparFlame.GamePlaySystem.Interact
                 ecb.AddComponent<GameplayEntityTag>(upgradeEntity);
                 var trans = SystemAPI.GetComponent<LocalTransform>(req.ValueRO.FromEntity);
                 ecb.SetComponent(upgradeEntity, trans);
+                
+                // If this unit is a garrisoned unit, the upgraded unit still needs to be garrisoned
                 if (SystemAPI.HasComponent<InGarrison>(req.ValueRO.FromEntity))
                 {
                     var inGarrison = SystemAPI.GetComponent<InGarrison>(req.ValueRO.FromEntity);
@@ -51,20 +57,17 @@ namespace SparFlame.GamePlaySystem.Interact
                     }
                 }
 
-                if (SystemAPI.HasBuffer<GarrisonEntity>(req.ValueRO.FromEntity))
+                if (generalAttr.BaseTag == BaseTag.Buildings)
                 {
-                    var garrisonEntities = SystemAPI.GetBuffer<GarrisonEntity>(req.ValueRO.FromEntity);
-                    foreach (var garrisonEntity in garrisonEntities)
+                    ecb.AddComponent(upgradeEntity, new ConstructingData
                     {
-                        ecb.AppendToBuffer(upgradeEntity, garrisonEntity);
-                    }
-                    var garrisonDatas = SystemAPI.GetBuffer<GarrisonTypeData>(req.ValueRO.FromEntity);
-                    foreach (var garrisonData in garrisonDatas)
-                    {
-                        ecb.AppendToBuffer(upgradeEntity, garrisonData);
-                    }
+                        LastTime = SystemAPI.GetComponent<BuildingAttr>(expData.NextTierPrefab).ConstructTime
+                    });
+                    if(SystemAPI.HasComponent<DwellingGeneratePopulationTag>(expData.NextTierPrefab))
+                        ecb.SetComponentEnabled<DwellingGeneratePopulationTag>(upgradeEntity, false);
+                    ecb.SetComponentEnabled<VolumeObstacleSpawnRequest>(upgradeEntity, false);
                 }
-
+                
                 var vfx = ecb.CreateEntity();
                 ecb.AddComponent<GameplayEntityTag>(vfx);
                 ecb.AddComponent(vfx, new VFXRequest
@@ -83,8 +86,9 @@ namespace SparFlame.GamePlaySystem.Interact
                     StatChangeRequest = default,
                     TargetPosition = default,
                 });
+                AudioUtils.PlayAudioClip(AudioName.Upgrade, trans.Position,ecb);
                 
-
+                
                 var destroyOriginalRequest = ecb.CreateEntity();
                 ecb.AddComponent<GameplayEntityTag>(destroyOriginalRequest);
                 ecb.AddComponent(destroyOriginalRequest, new StatChangeRequest
@@ -92,7 +96,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     AbsAmount = 9999,
                     Interactee = req.ValueRO.FromEntity,
                     Interactor = Entity.Null,
-                    Type = StatChangeType.SimpleClean_UsedAsUpgrade,
+                    Type = StatChangeType.SimpleCleanUsedAsUpgrade,
                     InteractorGeneralAttr = default
                 });
             }

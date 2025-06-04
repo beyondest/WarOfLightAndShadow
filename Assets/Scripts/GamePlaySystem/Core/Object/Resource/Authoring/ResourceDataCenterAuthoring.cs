@@ -60,11 +60,11 @@ namespace SparFlame.GamePlaySystem.Resource
                         break;
                     case FactionTag.Ally:
                         AddComponent<AllyResourceDataTag>(entity);
-                        AddComponent<PopulationOccupiedData>(entity);
+                        AddComponent<PopulationSpecialData>(entity);
                         break;
                     case FactionTag.Enemy:
                         AddComponent<EnemyResourceDataTag>(entity);
-                        AddComponent<PopulationOccupiedData>(entity);
+                        AddComponent<PopulationSpecialData>(entity);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -95,9 +95,10 @@ namespace SparFlame.GamePlaySystem.Resource
         public int Amount;
     }
 
-    public struct PopulationOccupiedData : IComponentData
+    public struct PopulationSpecialData : IComponentData
     {
-        public int Value;
+        public int OccupiedAmount;
+        public int TotalAmount;
     }
 
     public struct AllyResourceDataTag : IComponentData

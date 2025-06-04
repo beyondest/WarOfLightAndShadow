@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Movement
         [ReadOnly] public MovementDebug Debug;
         private void Execute(
             ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
-            ref Surroundings surroundings, /*ref PhysicsVelocity physicsVelocity,in PhysicsMass mass,*/
+            ref Surroundings surroundings, ref PhysicsVelocity physicsVelocity,in PhysicsMass mass,
             in DynamicBuffer<WaypointBuffer> waypointBuffer
         )
         {
@@ -201,7 +201,7 @@ namespace SparFlame.GamePlaySystem.Movement
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
                 TryMove(ref transform, ref movableData, ref surroundings, navAgent,
-                    idealDirection, curPosY0 /*, ref physicsVelocity, mass*/
+                    idealDirection, curPosY0 , ref physicsVelocity, mass
                 );
                 // surroundings.IdealDirection = idealDirection;
             }
@@ -223,9 +223,9 @@ namespace SparFlame.GamePlaySystem.Movement
             ref MovableData movableData,
             ref Surroundings surroundings,
             in NavAgentComponent navAgent,
-            in float3 idealFront, in float3 curPosY0
-            // ref PhysicsVelocity velocity,
-            // in PhysicsMass mass
+            in float3 idealFront, in float3 curPosY0,
+            ref PhysicsVelocity velocity,
+            in PhysicsMass mass
         )
         {
             var scale = Debug.enabled ? Debug.playerMovementScale : 1f;
@@ -240,12 +240,16 @@ namespace SparFlame.GamePlaySystem.Movement
             surroundings.MoveSuccess =
                 !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
             var targetRotation = quaternion.LookRotationSafe(-idealFront, math.up());
-            // targetRotation =  math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
+            targetRotation =  math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
+            transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
+
+            // Physics moving
             // var targetPos = transform.Position + moveLength * idealFront;
             // var targetTransform = new RigidTransform(targetRotation, targetPos);
             // velocity = PhysicsVelocity.CalculateVelocityToTarget(mass, transform.Position, transform.Rotation,
             //     targetTransform, 1/DeltaTime);
-            transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
+            
+            // Normal Moving
             transform.Position += moveLength * idealFront;
         }
 

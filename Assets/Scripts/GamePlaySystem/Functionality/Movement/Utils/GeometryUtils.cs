@@ -28,7 +28,6 @@ namespace SparFlame.GamePlaySystem.Movement
                 sc = 0;
                 tc = d / b;
 
-                // todo: handle b = 0 (=> a and/or c is 0)
             }
             else
             {

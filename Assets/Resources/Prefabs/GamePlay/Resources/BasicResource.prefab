@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   globalIdx: 0
+  debugShow: 1
 --- !u!114 &805125940132748899
 MonoBehaviour:
   m_ObjectHideFlags: 0

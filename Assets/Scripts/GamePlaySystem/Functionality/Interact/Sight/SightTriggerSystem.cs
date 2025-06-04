@@ -81,8 +81,7 @@ namespace SparFlame.GamePlaySystem.Interact
                             //           $" B : {triggerEvent.EntityB}, : {triggerEvent.ColliderKeyB} Self  : {entity}");
                             InteractUtils.Remove(ref targets,target);
                             break;
-                        // TODO : Split healer job from other units, cause this spends too much
-                        // Healer must check the target even when stay because ally unit may get hurt after it gets insight to healer
+
                         case StatefulEventState.Stay :
                             InteractUtils.NoDupAdd(ref targets, insightTarget);
                             break;

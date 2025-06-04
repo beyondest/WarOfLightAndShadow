@@ -6,6 +6,7 @@ using SparFlame.GamePlaySystem.Generate;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.Database
 {
@@ -23,13 +24,16 @@ namespace SparFlame.Database
                     ? TransformUsageFlags.WorldSpace
                     : TransformUsageFlags.Dynamic);
                 // var entity = GetEntity(TransformUsageFlags.Dynamic);
+                
                 BakeGeneralDataItem(entity, item);
 
                 AddComponent(entity, new BuildingAttr
                 {
                     SubTypeIndex = item.GetSubtypeIndex(),
                     Type = item.type,
+                    ConstructTime = item.constructTime
                 });
+                
 
                 var buffer = AddBuffer<CostList>(entity);
                 foreach (var cost in item.costs)
@@ -107,6 +111,7 @@ namespace SparFlame.Database
                     Amount = data.dwellingAmount
                 });
                 AddComponent<DwellingGeneratePopulationTag>(entity);
+                SetComponentEnabled<DwellingGeneratePopulationTag>(entity,true);
             }
 
             private void BakeOrnamentAttr(BuildingDataItem item, Entity entity)
@@ -116,13 +121,17 @@ namespace SparFlame.Database
                 {
                     
                 }
-
-                
                 if (ornamentData.ornamentType is OrnamentType.Crystal or OrnamentType.Beacon)
                 {
                     AddComponent(entity, new CoreCrystalTag
                     {
                         Faction = item.factionTag
+                    });
+                    AddComponent(entity, new ChangeOccupiedTagRequest
+                    {
+                        CrystalFaction = item.factionTag,
+                        IsDestroyed = false,
+                        CrystalPos = float3.zero
                     });
                 }
                 if (item.factionTag == FactionTag.Ally && ornamentData.ornamentType == OrnamentType.Crystal)

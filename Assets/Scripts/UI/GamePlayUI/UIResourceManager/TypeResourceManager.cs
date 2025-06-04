@@ -22,7 +22,7 @@ namespace SparFlame.UI.GamePlay
         // For fast filter
         public int SubtypeIndex;
         public Tier Tier;
-        public FactionTag FactionTag; // TODO : Change data structure to make filter faster
+        public FactionTag FactionTag; 
 
         // For pass the entity from ui to ecs
         public Entity EntityPrefab;

@@ -41,6 +41,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             RequireForUpdate<NormalCameraControlConfig>();
             RequireForUpdate<InputMouseData>();
             RequireForUpdate<InputCameraNormalData>();
+            // RequireForUpdate<PlayerFirstBasePos>();
             RequireForUpdate<MapInfo>();
         }
 
@@ -92,6 +93,9 @@ namespace SparFlame.GamePlaySystem.CameraControl
             UpdateRigPosition();
             UpdateCameraZoomPosition();
             // LimitCamera();
+            var cameraData = SystemAPI.GetSingleton<CameraData>();
+            cameraData.CameraRigPosition = _rigTransform.position;
+            SystemAPI.SetSingleton(cameraData);
         }
 
         private void LimitCamera()

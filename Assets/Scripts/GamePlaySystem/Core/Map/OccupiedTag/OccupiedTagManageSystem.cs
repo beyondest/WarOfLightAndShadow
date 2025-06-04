@@ -44,12 +44,24 @@ namespace SparFlame.GamePlaySystem.Resource
             var ecbSingleton = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>();
             foreach (var (request, entity) in SystemAPI.Query<RefRO<ChangeOccupiedTagRequest>>().WithEntityAccess())
             {
+                var crystalPos = request.ValueRO.CrystalPos;
+                if (request.ValueRO.IsDestroyed)
+                {
+                    ecb.DestroyEntity(entity);
+                }
+                else
+                {
+                    if(!SystemAPI.HasComponent<LocalTransform>(entity))
+                        continue;
+                    ecb.RemoveComponent<ChangeOccupiedTagRequest>(entity);
+                    crystalPos = SystemAPI.GetComponent<LocalTransform>(entity).Position;
+                }
                 var job = new ChangeOccupiedTagJob
                 {
                     Config = config,
                     ChangeIntoFaction =
                         request.ValueRO.IsDestroyed ? FactionTag.Neutral : request.ValueRO.CrystalFaction,
-                    CrystalPos = request.ValueRO.CrystalPos,
+                    CrystalPos = crystalPos,
                     ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                     CrystalPosRecord = _crystalPosRecordLookUp,
                     CrystalPosRecord2 = _crystalPosRecordLookUp2,
@@ -57,7 +69,6 @@ namespace SparFlame.GamePlaySystem.Resource
                     CrystalPosRecord4 = _crystalPosRecordLookUp4,
                 }.ScheduleParallel(state.Dependency);
                 job.Complete();
-                ecb.DestroyEntity(entity);
             }
 
             ecb.Playback(state.EntityManager);

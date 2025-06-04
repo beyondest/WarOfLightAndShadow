@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Ooc
         }
     }
 
-    public struct OocTag : IComponentData
+    public struct OocTag : IComponentData, IEnableableComponent
     {
         public float Seconds;
     }

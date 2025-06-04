@@ -35,23 +35,23 @@ namespace SparFlame.GamePlaySystem.Movement
                 {
                     enabled = false
                 };
-            }
-            new PlayerMovementJob
+            } 
+            state.Dependency = new PlayerMovementJob
             {
                 PhysicsWorld = physicsWorld,
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = config,
                 Debug = debug
-            }.ScheduleParallel();
-            new AIMovementJob
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency = new AIMovementJob
             {
                 PhysicsWorld = physicsWorld,
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = config,
                 Debug = debug
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
     }
 

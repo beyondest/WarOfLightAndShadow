@@ -1,4 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.Waves;
 using Unity.Burst;
@@ -80,6 +81,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             NativeHashMap<int, TeamSpecialData> teamType2SpecialData, EntityCommandBuffer ecb
         )
         {
+            if(!SystemAPI.HasBuffer<EnemyBaseTeamAvailableData>(belongsToBase))return false;
             var baseAvailableTeamDatas = SystemAPI.GetBuffer<EnemyBaseTeamAvailableData>(belongsToBase);
             var baseTeamData = SystemAPI.GetBuffer<EnemyBaseTeamGeneralData>(belongsToBase);
 
@@ -155,6 +157,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     // Current team count not full in this base, then add a new team
 
                     // Create new team
+                    
                     var newTeam = state.EntityManager.CreateEntity();
                     ecb.AddComponent<GameplayEntityTag>(newTeam);
                     ecb.AddComponent(newTeam, new TeamData
@@ -202,6 +205,22 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         BelongsToTeam = newTeam
                     });
                     assignSuccess = true;
+                    
+                    // Create hint info to tell player enemy is assemble a new team
+                    var hintRequest = ecb.CreateEntity();
+                    ecb.AddComponent<GameplayEntityTag>(hintRequest);
+                    ecb.AddComponent(hintRequest, new HintRequest
+                    {
+                        Name = teamType switch
+                        {
+                            AITeamType.Attack => HintName.EnemyIsAssemblingAttackTeam,
+                            AITeamType.Defense => HintName.EnemyIsAssemblingDefenseTeam,
+                            AITeamType.Gather => HintName.EnemyIsAssemblingGatheringTeam,
+                            AITeamType.Harass => HintName.EnemyIsAssemblingStrikeTeam,
+                            _ => HintName.None
+                        }
+                    });
+                    
                     break;
                 }
             }

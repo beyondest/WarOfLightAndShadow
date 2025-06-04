@@ -13,10 +13,7 @@ namespace SparFlame.Database
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent<VFXRootTag>(entity);
-                // TODO : Change data structure of vfx to make them used like units and buildings
             }
         }
     }
-
-
 }

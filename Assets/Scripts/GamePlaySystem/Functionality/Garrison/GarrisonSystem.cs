@@ -106,9 +106,9 @@ namespace SparFlame.GamePlaySystem.Garrison
                 }
 
                 // Remove bonus if count is lower than minimum request
-                if (entityBuffer.Length < config.MinCountToTriggerDefenceBuff
-                    && SystemAPI.HasComponent<UnderDefence>(request.BuildingEntity))
-                    ecb.RemoveComponent<UnderDefence>(request.BuildingEntity);
+                // if (entityBuffer.Length < config.MinCountToTriggerDefenceBuff
+                //     && SystemAPI.HasComponent<UnderDefence>(request.BuildingEntity))
+                //     ecb.RemoveComponent<UnderDefence>(request.BuildingEntity);
                 ecb.DestroyEntity(entity);
             }
         }
@@ -151,8 +151,8 @@ namespace SparFlame.GamePlaySystem.Garrison
                     // Clear count , buff, buffer, continue
                     entityBuffer.Clear();
                     dataBuffer.Clear();
-                    if (SystemAPI.HasComponent<UnderDefence>(command.BuildingEntity))
-                        ecb.RemoveComponent<UnderDefence>(command.BuildingEntity);
+                    // if (SystemAPI.HasComponent<UnderDefence>(command.BuildingEntity))
+                    //     ecb.RemoveComponent<UnderDefence>(command.BuildingEntity);
                     ecb.DestroyEntity(entity);
                     continue;
                 }
@@ -212,9 +212,9 @@ namespace SparFlame.GamePlaySystem.Garrison
                 }
                 ecb.DestroyEntity(entity);
                 // if counts lower than trigger count, remove bonus
-                if (entityBuffer.Length < config.MinCountToTriggerDefenceBuff
-                    && SystemAPI.HasComponent<UnderDefence>(command.BuildingEntity))
-                    ecb.RemoveComponent<UnderDefence>(command.BuildingEntity);
+                // if (entityBuffer.Length < config.MinCountToTriggerDefenceBuff
+                //     && SystemAPI.HasComponent<UnderDefence>(command.BuildingEntity))
+                //     ecb.RemoveComponent<UnderDefence>(command.BuildingEntity);
             }
         }
 
@@ -271,17 +271,17 @@ namespace SparFlame.GamePlaySystem.Garrison
                     Value = inRequest.UnitEntity
                 });
 
-                // Fortification building will gain under defence buff if count exceeds
-                if (garrisonEntities.Length >= config.MinCountToTriggerDefenceBuff
-                    && buildingAttr.Type == BuildingType.Fortifications
-                    && !SystemAPI.HasComponent<UnderDefence>(inRequest.BuildingEntity))
-                {
-                    var attackAbility = SystemAPI.GetComponent<AttackAbility>(inRequest.BuildingEntity);
-                    ecb.AddComponent(entity, new UnderDefence
-                    {
-                        RangeSq = attackAbility.RangeSq
-                    });
-                }
+                // // Fortification building will gain under defence buff if count exceeds
+                // if (garrisonEntities.Length >= config.MinCountToTriggerDefenceBuff
+                //     && buildingAttr.Type == BuildingType.Fortifications
+                //     && !SystemAPI.HasComponent<UnderDefence>(inRequest.BuildingEntity))
+                // {
+                //     var attackAbility = SystemAPI.GetComponent<AttackAbility>(inRequest.BuildingEntity);
+                //     ecb.AddComponent(entity, new UnderDefence
+                //     {
+                //         RangeSq = attackAbility.RangeSq
+                //     });
+                // }
                 ecb.DestroyEntity(entity);
             }
         }

@@ -44,6 +44,9 @@ namespace Editor
         [Unity.Collections.ReadOnly, LabelText("Buff Databases"), ShowInInspector]
         public List<BuffDatabaseSo> buffDatabases = new();
         
+        [Unity.Collections.ReadOnly, LabelText("Hint Databases"), ShowInInspector]
+        public List<HintDatabaseSo> hintDatabases = new();
+        
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -58,6 +61,7 @@ namespace Editor
             enemyAIDatabases = FindAllAssets<EnemyAIDatabaseSo>( " EnemyAI Database ");
             vfxDatabases = FindAllAssets<VFXDatabaseSo>("VFX Database");
             buffDatabases = FindAllAssets<BuffDatabaseSo>("Buff Database");
+            hintDatabases = FindAllAssets<HintDatabaseSo>("Hint Database");
         }
 
         private List<T> FindAllAssets<T>(string label) where T : ScriptableObject
@@ -92,6 +96,7 @@ namespace Editor
             window.titleContent = new GUIContent("Database Finder");
             window.RefreshDatabases();
             window.Show();
+            
         }
     }
 }

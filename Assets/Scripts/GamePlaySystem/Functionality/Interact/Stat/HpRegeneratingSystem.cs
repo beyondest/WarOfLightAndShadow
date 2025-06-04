@@ -16,6 +16,7 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<StatSystemConfig>();
             state.RequireForUpdate<OocSystemConfig>();

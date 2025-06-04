@@ -24,6 +24,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem.LightLine
                     SightCos =  Mathf.Cos(authoring.sightDegree * 0.5f * Mathf.Deg2Rad),
                     IsInsight = true
                 });
+                AddComponent<InDarknessTag>(entity);
+                SetComponentEnabled<InDarknessTag>(entity, false);
                 AddComponent(entity, new ScreenPos
                 {
                     ScreenPosition = float2.zero

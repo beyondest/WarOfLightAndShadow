@@ -124,13 +124,13 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             {
                 var surrounding = surroundingData[i];
                 // Only attackable unit counts; And remove dead units
-                if (!AttackAbilityLookUp.TryGetComponent(surrounding.Entity, out var attackAbility))
+                if (!AttackAbilityLookUp.TryGetComponent(surrounding.Entity, out var attackAbility)
+                    ||!StatDataLookUp.TryGetComponent(surrounding.Entity,out var stat))
                 {
                     surroundingData.RemoveAt(i);
                     continue;
                 }
 
-                var stat = StatDataLookUp[surrounding.Entity];
                 surroundingValue += attackAbility.Amount * attackAbility.Speed * attackAbility.Targets *
                                     stat.CurValue;
             }

@@ -27,7 +27,6 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private InteractAbilitySlot interactAbilitySlot;
 
 
-        // TODO : Change All multi slots to Set target, input is spriteEntityInfo
         public void SetTarget(in SpriteEntityInfo info)
         {
             //  Update basic ui info

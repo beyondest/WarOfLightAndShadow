@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
+using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -42,7 +44,7 @@ namespace SparFlame.UI.GamePlay
         {
             if(!SystemAPI.HasBuffer<CostList>(entity) || SystemAPI.HasComponent<LightSingleCrystalTag>(entity))
                 return;
-            
+            AudioUtils.PlayAudioClip(AudioName.Recycle, SystemAPI.GetComponent<LocalTransform>(entity).Position,EntityManager);
             var buffer = SystemAPI.GetBuffer<CostList>(entity);
             var list = new NativeList<CostList>(Allocator.Temp);    
             list.AddRange(buffer.AsNativeArray());
@@ -66,7 +68,7 @@ namespace SparFlame.UI.GamePlay
             EntityManager.AddComponent<GameplayEntityTag>(fakeKillRequest);
             EntityManager.SetComponentData(fakeKillRequest, new StatChangeRequest
             {
-                Type = StatChangeType.SimpleClean_UsedAsUpgrade,
+                Type = StatChangeType.SimpleCleanUsedAsUpgrade,
                 AbsAmount = 0,
                 Interactee = entity,
                 Interactor = Entity.Null,

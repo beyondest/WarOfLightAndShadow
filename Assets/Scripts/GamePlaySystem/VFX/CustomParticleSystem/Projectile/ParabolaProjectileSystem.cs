@@ -1,9 +1,11 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.BootStrapper;
+using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.CustomParticleSystem
 {
@@ -121,11 +123,14 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                 var duration = CurTime - data.StartTime + predictReachDuration;
                 float t = (CurTime - data.StartTime) / duration;
                 t = math.saturate(t);
-                float height = 0f;
+                float3 pos = curTransform.Position + curDirection * data.HorizontalSpeed * DeltaTime;
+
+                float height;
                 if (data.ProjectileType == ProjectileType.GoStraightToTargetWithHeightChange)
                 {
                     var heightDelta = data.InitialHeight- targetPos.y;
                     height = data.InitialHeight- heightDelta * t;
+                    if (height > pos.y) height = pos.y;
                 }
                 else
                 {
@@ -133,7 +138,6 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                     height = 4f * data.MaxAbsHeight * t * (1 - t);
                 }
 
-                float3 pos = curTransform.Position + curDirection * data.HorizontalSpeed * DeltaTime;
                 pos.y = height;
                 var trulyMoveDirection = math.normalize(pos - curTransform.Position);
                 // 更新位置
@@ -164,6 +168,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                     var prefabTrans = TransformLookup[data.HitEffectPrefab];
                     prefabTrans.Position = pos;
                     ECB.SetComponent(index, hitVfx, prefabTrans);
+                    // Generate tower magic ball hit sound
+                    AudioUtils.PlayAudioClip(AudioName.TowerMagicBallHit, pos,ECB, index);
                 }
 
                 // If target is alive, then spawn stat change effect

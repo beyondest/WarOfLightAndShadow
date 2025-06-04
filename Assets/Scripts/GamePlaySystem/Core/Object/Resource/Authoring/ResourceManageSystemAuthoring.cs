@@ -39,7 +39,6 @@ namespace SparFlame.GamePlaySystem.Resource
         DwellingDestroyConsume = 4
     }
 
-    /// TODO Change construction use this request too
     public struct ResourceChangeRequest : IComponentData
     {
         public ResourceType Type;

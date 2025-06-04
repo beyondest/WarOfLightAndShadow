@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -8,7 +9,10 @@ namespace SparFlame.UI.GamePlay
     {
         public RectTransform miniMapRect;
         public RectTransform miniMapSquareRect;
-
+        public Camera miniMapCamera;
+     
+        public RawImage miniMapImage;
+        
         public static MiniMapWindow Instance;
         public event Action OnEcsOnSquareDrag ;
         private void Awake()
@@ -19,6 +23,16 @@ namespace SparFlame.UI.GamePlay
             {
                 Destroy(gameObject);
             }
+            
+            
+        }
+
+        private void Start()
+        {
+            var rt = new RenderTexture((int)miniMapImage.rectTransform.rect.width,
+                (int)miniMapImage.rectTransform.rect.height, 16);
+            miniMapCamera.targetTexture = rt;
+            miniMapImage.texture = rt;
             
         }
 

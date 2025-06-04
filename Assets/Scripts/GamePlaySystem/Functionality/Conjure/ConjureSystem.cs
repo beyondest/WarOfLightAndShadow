@@ -152,7 +152,7 @@ namespace SparFlame.GamePlaySystem.Conjure
                     // var pos = transform.Position + conjureAttr.ConjurePositionBias;
                     ECB.SetComponent(index, unit, new LocalTransform
                     {
-                        Position = pos, // TODO : Make sure unit can never be stuck when it is conjured
+                        Position = pos, 
                         Rotation = quaternion.identity,
                         Scale = 1f
                     });

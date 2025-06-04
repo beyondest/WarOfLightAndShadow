@@ -41,6 +41,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem.LightLine
         {
             RequireForUpdate<GamingTag>();
             RequireForUpdate<LightSingleCrystalTag>();
+            RequireForUpdate<LightLineConfig>();
             _updateLightLineRequestQuery = SystemAPI.QueryBuilder().WithAll<UpdateLightLineRequest>().Build();
             _lightLineSightQuery = SystemAPI.QueryBuilder().WithAll<LightLineSightTag>().Build();
         }

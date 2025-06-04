@@ -13,7 +13,6 @@ namespace SparFlame.GamePlaySystem.Movement
 {
     public partial class VolumeObstacleSystem : SystemBase
     {
-        // TODO Change into native hash map
         private readonly Dictionary<Entity, (GameObject, GameObject)> _entityMap = new();
         private readonly Dictionary<Entity, GameObject> _neutralEntityMap = new();
         private Dictionary<FactionTag, GameObject> _obstacleTypePrefabMap;
@@ -42,7 +41,6 @@ namespace SparFlame.GamePlaySystem.Movement
             }
         }
         
-        // TODO : Add job parallel support
         protected override void OnUpdate()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
@@ -96,7 +94,7 @@ namespace SparFlame.GamePlaySystem.Movement
                          .Query<RefRO<BuildingSyncVolumeRequest>>().WithEntityAccess())
             {
                 var transform = SystemAPI.GetComponent<LocalTransform>(request.ValueRO.FromEntity);
-                var (notWalkableVolume, highCostVolume) = _entityMap[entity];
+                var (notWalkableVolume, highCostVolume) = _entityMap[request.ValueRO.FromEntity];
                 notWalkableVolume.transform.position = transform.Position;
                 notWalkableVolume.transform.rotation = transform.Rotation;
                 highCostVolume.transform.position = transform.Position;
@@ -168,12 +166,11 @@ namespace SparFlame.GamePlaySystem.Movement
                     _neutralEntityMap.Add(entity, obstacle);
                 }
                 // Ally or Enemy
-                // TODO : Change request from faction to only boolean value, because we only need to know whether it is resource
                 else
                 {
                     GameObject volumeNotWalkable = null;
                     GameObject volumeHighCost = null;
-                    if (!req.NotGenerateNotWalkableVolume)
+                    // if (!req.NotGenerateNotWalkableVolume)
                     {
                         // request from ally, then this building is ally, then this building is not walkable volume for ally
                         volumeNotWalkable = Object.Instantiate(_obstacleTypePrefabMap[req.RequestFromFaction],
@@ -198,7 +195,7 @@ namespace SparFlame.GamePlaySystem.Movement
                         navMeshVolume0.center = req.Center;
                     }
 
-                    if (!req.NotGenerateHighCostVolume)
+                    // if (!req.NotGenerateHighCostVolume)
                     {
                         // If request from ally, then the building is high cost volume for enemy so we use ~
                         volumeHighCost = Object.Instantiate(_volumeTypePrefabMap[~req.RequestFromFaction],

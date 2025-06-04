@@ -72,8 +72,8 @@ namespace SparFlame.GamePlaySystem.Fow
         
         public void SetUnderFow(bool isInSight, EntityCommandBuffer ecb)
         {
+            ecb.SetComponentEnabled<InDarknessTag>(_self, !isInSight);
             // This request should be removed every frame before next time calculation
-            // TODO find a safer way 
             if (IsInsight != isInSight)
             {
                 _fovAgentData.ValueRW.IsInsight = isInSight;

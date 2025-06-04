@@ -6,6 +6,7 @@ using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
+using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.State;
 using Unity.Entities;
@@ -38,6 +39,11 @@ namespace SparFlame.Database
                     MaxValue = item.stat,
                     CurValue = item.stat
                 });
+                if (item.baseTag != BaseTag.Resources)
+                {
+                    AddComponent<OocTag>(entity);
+                    SetComponentEnabled<OocTag>(entity, false);
+                }
 
                 // Screen Pos, both building, resource, unit can hide in fog of war, so this is needed;
                 // Unit selection needs the screen pos too.
@@ -146,16 +152,27 @@ namespace SparFlame.Database
                     });
                 }
 
-                var fogOfWarSightRange = item.fogSightRange;
-                // Fog of War VFX
-                var fowAgentData = new FowAgentData
+
+                if (item.baseTag == BaseTag.Units || (item.baseTag == BaseTag.Buildings &&
+                                                      item.GetGeneralTypeIndex() == (int)BuildingType.Ornaments
+                                                      &&( item.GetSubtypeIndex() == (int)OrnamentType.Crystal ||
+                                                      item.GetSubtypeIndex() == (int)OrnamentType.Beacon)))
                 {
-                    SightRange = fogOfWarSightRange,
-                    SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
-                    DisappearAlphaThreshold = item.disappearAlphaThreshold,
-                    IsInsight = true
-                };
-                AddComponent(entity, fowAgentData);
+                    var fogOfWarSightRange = item.fogSightRange;
+                    // Fog of War VFX
+                    var fowAgentData = new FowAgentData
+                    {
+                        SightRange = fogOfWarSightRange,
+                        SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
+                        DisappearAlphaThreshold = item.disappearAlphaThreshold,
+                        IsInsight = true
+                    };
+                    AddComponent(entity, fowAgentData);
+                    AddComponent<DisappearInFowTag>(entity);
+
+                    AddComponent<InDarknessTag>(entity);
+                    SetComponentEnabled<InDarknessTag>(entity, false);
+                }
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
@@ -180,6 +197,7 @@ namespace SparFlame.Database
                     VolumeAreaType = areaType,
                     RequestFromFaction = item.factionTag,
                 });
+                SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
             }
         }
     }

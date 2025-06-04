@@ -29,7 +29,8 @@ namespace SparFlame.GamePlaySystem.Interact
         None = 0,
         AoeInteract = 1,
         SingleTargetNotStackable = 2,
-        
+        LightShieldBuffType = 3,
+        DarkShieldBuffType = 4,
     }
 
     public enum BuffName
@@ -38,7 +39,14 @@ namespace SparFlame.GamePlaySystem.Interact
         MagicSwordSplash = 1,
         ClericHealCircle = 2,
         MagicTowerProjectile = 3,
-        MagicTowerCircle = 4
+        MagicTowerCircle = 4,
+        LightShield = 5,
+        DarkShield = 6,
+        LightCavalry = 7,
+        DarkCavalry = 8,
+        LightArcher = 9,
+        DarkArcher = 10,
+        
     }
 
     public struct BuffRequest : IComponentData

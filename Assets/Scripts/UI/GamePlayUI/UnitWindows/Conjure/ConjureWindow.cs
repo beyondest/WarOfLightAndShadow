@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Conjure;
+using SparFlame.GamePlaySystem.CustomInput;
+using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
 using SparFlame.UI.General;
@@ -64,9 +66,20 @@ namespace SparFlame.UI.GamePlay
         public override void OnClickSlot(int slotIndex)
         {
             if(_targetEntity == Entity.Null)return;
+            
             var count = SlotComponents[slotIndex].GetConjureCount();
             var entity = _infos[slotIndex].EntityPrefab;
             var maxConjureCount = SlotComponents[slotIndex].GetMaxConjureCount();
+            if (maxConjureCount == 0)
+            {
+                var hintRequest = _em.CreateEntity();
+                _em.AddComponent<HintRequest>(hintRequest);
+                _em.SetComponentData(hintRequest, new HintRequest
+                {
+                    Name = HintName.NotEnoughResource,
+                });
+                return;
+            }
             EcsConjureUnits?.Invoke(entity, count,_targetEntity,maxConjureCount);
         }
 
@@ -121,7 +134,7 @@ namespace SparFlame.UI.GamePlay
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -136,6 +149,8 @@ namespace SparFlame.UI.GamePlay
             _shouldFilterSubType = false;
             _currentTier = maxTier;
             tierFilterIcon.color = Color.gray;
+            var customInputActions = InputListener.Instance.GetCustomInputActions();
+            customInputActions.InfoWindow.CloseWindow.performed += _ => Hide();
         }
         #endregion
 
@@ -146,8 +161,11 @@ namespace SparFlame.UI.GamePlay
             _infos.Clear();
             _currentFaction = _em.CreateEntityQuery(typeof(UnitSelectionData)).GetSingleton<UnitSelectionData>()
                 .CurrentSelectFaction;
+            
+            // _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType,_currentFaction,
+            //     _currentSubType, _currentTier, true,_shouldFilterSubType, _shouldFilterTier);
             _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType,_currentFaction,
-                _currentSubType, _currentTier, true,_shouldFilterSubType, _shouldFilterTier);
+                _currentSubType, _em.GetComponentData<ExpData>(_targetEntity).CurTier, true,_shouldFilterSubType,true);
             var count = _infos.Count;
             for (var i = 0; i < Slots.Count; i++)
             {

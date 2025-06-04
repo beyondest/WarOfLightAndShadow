@@ -16,6 +16,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
@@ -46,7 +47,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
             }
 
             var config = SystemAPI.GetSingleton<PopNumberConfig>();
-            var elapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
+            var elapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             var ecbSingleton = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>();
             var cameraData = SystemAPI.GetSingleton<CameraData>();
 

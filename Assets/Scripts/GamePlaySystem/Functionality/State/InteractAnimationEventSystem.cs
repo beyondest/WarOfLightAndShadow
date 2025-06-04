@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Animation;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
@@ -18,14 +19,14 @@ namespace SparFlame.GamePlaySystem.State
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct InteractAnimationEventSystem : ISystem
     {
-
         private NativeParallelMultiHashMap<int, AnimationEventInfo> _hashStringToEventInfos;
         private ComponentLookup<AttackAbility> _attackLookup;
-        private ComponentLookup<HealAbility>    _healLookup;
+        private ComponentLookup<HealAbility> _healLookup;
         private ComponentLookup<HarvestAbility> _harvestLookup;
         private BufferLookup<AnimationEventData> _eventsLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<AnimationStateData> _animationStateLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -45,7 +46,7 @@ namespace SparFlame.GamePlaySystem.State
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if(!_hashStringToEventInfos.IsCreated)
+            if (!_hashStringToEventInfos.IsCreated)
                 Initialize();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -73,9 +74,7 @@ namespace SparFlame.GamePlaySystem.State
                 EventsLookup = _eventsLookup,
                 AnimationStateLookup = _animationStateLookup,
                 CurTime = curTime,
-                
             }.ScheduleParallel();
-
         }
 
         [BurstCompile]
@@ -88,13 +87,13 @@ namespace SparFlame.GamePlaySystem.State
         private void Initialize()
         {
             var buffer = SystemAPI.GetSingletonBuffer<AnimationEventInfo>();
-            _hashStringToEventInfos = new NativeParallelMultiHashMap<int, AnimationEventInfo>(5,Allocator.Persistent);
+            _hashStringToEventInfos = new NativeParallelMultiHashMap<int, AnimationEventInfo>(5, Allocator.Persistent);
             foreach (var info in buffer)
             {
-                _hashStringToEventInfos.Add( info.eventName.GetHashCode(), info);
+                _hashStringToEventInfos.Add(info.eventName.GetHashCode(), info);
             }
         }
-        
+
         [BurstCompile]
         [WithAll(typeof(UnitDeadTag))]
         public partial struct UnitDeadJob : IJobEntity
@@ -104,13 +103,15 @@ namespace SparFlame.GamePlaySystem.State
             [NativeDisableParallelForRestriction] public ComponentLookup<AnimationStateData> AnimationStateLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
-            private void Execute([ChunkIndexInQuery]int index, Entity selfEntity, in DynamicBuffer<LinkedEntityGroup> groups
+            private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,
+                in DynamicBuffer<LinkedEntityGroup> groups
                 )
             {
                 for (int i = 1; i < groups.Length; i++)
                 {
                     var child = groups[i].Value;
-                    if (EventsLookup.TryGetBuffer(child, out var buffer)) // When unit with dead tag raise events, it must be dead event
+                    if (EventsLookup.TryGetBuffer(child,
+                            out var buffer)) // When unit with dead tag raise events, it must be dead event
                     {
                         ref var stateData = ref AnimationStateLookup.GetRefRW(child).ValueRW;
                         if (stateData.State != UnitAnimationState.Die)
@@ -125,55 +126,59 @@ namespace SparFlame.GamePlaySystem.State
                             stateData.ClipBStartTime = CurTime;
                             stateData.PlaySpeed = 1f;
                             buffer.Clear();
+                            
                             return;
                         }
-                       
-                        if(buffer.Length == 0)continue;
+
+                        if (buffer.Length == 0) continue;
                         ECB.DestroyEntity(index, selfEntity);
                         break;
                     }
                 }
             }
         }
-        
-        
+
+
         [BurstCompile]
         [WithNone(typeof(IdleStateTag))]
         [WithNone(typeof(MovingStateTag))]
         [WithNone(typeof(GarrisonStateTag))]
         [WithNone(typeof(UnitDeadTag))]
-        public partial struct  CheckAnimationEventJob : IJobEntity
+        public partial struct CheckAnimationEventJob : IJobEntity
         {
             [ReadOnly] public float CurTime;
             [NativeDisableParallelForRestriction] public BufferLookup<AnimationEventData> EventsLookup;
             [ReadOnly] public NativeParallelMultiHashMap<int, AnimationEventInfo> HashStringToEventInfos;
             [ReadOnly] public ComponentLookup<AttackAbility> AttackLookup;
             [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
-            [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup; 
+            [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
-            
+
             public EntityCommandBuffer.ParallelWriter ECB;
 
-            private void Execute([ChunkIndexInQuery]int index,in DynamicBuffer<LinkedEntityGroup> children, in BasicStateData stateData,
+            private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<LinkedEntityGroup> children,
+                in BasicStateData stateData,in LocalTransform transform,
                 in GeneralAttr generalAttr, in UnitAttr unitAttr, in ExpData expData, Entity selfEntity
-               )
+            )
             {
-                if(stateData.CurState != InteractState.Attacking
-                   && stateData.CurState != InteractState.Healing
-                   && stateData.CurState != InteractState.Harvesting)return;
-                
-                if(!LocalTransformLookup.TryGetComponent(stateData.TargetEntity, out var targetTransform))return;
+                if (stateData.CurState != InteractState.Attacking
+                    && stateData.CurState != InteractState.Healing
+                    && stateData.CurState != InteractState.Harvesting) return;
+
+                if (!LocalTransformLookup.TryGetComponent(stateData.TargetEntity, out var targetTransform)) return;
                 var selfTransform = LocalTransformLookup[selfEntity];
                 // Check model animation events buffer to raise interact stat change 
                 for (int i = 1; i < children.Length; i++)
                 {
-                    if(!EventsLookup.TryGetBuffer(children[i].Value, out var events))continue;
-                    if(events.Length == 0)continue;
+                    if (!EventsLookup.TryGetBuffer(children[i].Value, out var events)) continue;
+                    if (events.Length == 0) continue;
                     // We only suggest that there is only one event happen 
                     var e = events[0];
                     events.Clear();
-                    if (GeneralUtils.TryGetValueAt(HashStringToEventInfos, e.NameHash, e.Parameter - 1, out var eventInfo))
+                    if (GeneralUtils.TryGetValueAt(HashStringToEventInfos, e.NameHash, e.Parameter - 1,
+                            out var eventInfo))
                     {
+                        // Generate VFX and stat change request
                         var statChangeRequest = new StatChangeRequest
                         {
                             Interactor = selfEntity,
@@ -194,19 +199,21 @@ namespace SparFlame.GamePlaySystem.State
                             },
                             InteractorGeneralAttr = generalAttr
                         };
-                        
+
                         statChangeRequest.AbsAmount = (int)(statChangeRequest.AbsAmount * eventInfo.amountMultiplier);
-                        
+
                         if (eventInfo.sendVfxName != VFXName.None)
                         {
                             var vfxRequest = ECB.CreateEntity(index);
                             ECB.AddComponent<GameplayEntityTag>(index, vfxRequest);
-                            if(eventInfo.animationInteractType != AnimationInteractType.VfxChangeStat)
+                            if (eventInfo.animationInteractType != AnimationInteractType.VfxChangeStat)
                                 statChangeRequest.Interactee = Entity.Null;
                             var vfx = new VFXRequest
                             {
                                 // If attacking, then vfx starts from attacker, otherwise starts from target position
-                                SpawnPosition = stateData.CurState == InteractState.Healing ?targetTransform.Position : selfTransform.Position,
+                                SpawnPosition = stateData.CurState == InteractState.Healing
+                                    ? targetTransform.Position
+                                    : selfTransform.Position,
                                 Filter = new VFXSubFilter
                                 {
                                     FactionFilterEnable = true,
@@ -214,14 +221,15 @@ namespace SparFlame.GamePlaySystem.State
                                     Tier = expData.CurTier,
                                     TierFilterEnable = true,
                                 },
-                                KeepDuration = 4, // This is cleric healing circle duration; Other interact effect is projectile and its lifetime not handled by this variable
+                                KeepDuration =
+                                    4, // This is cleric healing circle duration; Other interact effect is projectile and its lifetime not handled by this variable
                                 StatChangeRequest = statChangeRequest,
                                 RequestType = VFXRequestType.Spawn,
                                 VFXName = eventInfo.sendVfxName,
                                 VFXTrackTarget = Entity.Null,
                                 TargetPosition = targetTransform.Position
                             };
-                            ECB.AddComponent(index,vfxRequest, vfx);
+                            ECB.AddComponent(index, vfxRequest, vfx);
                         }
 
                         if (eventInfo.animationInteractType == AnimationInteractType.AoeBuffChangeStat)
@@ -243,13 +251,15 @@ namespace SparFlame.GamePlaySystem.State
                                 TargetFaction = targetFaction,
                             });
 
-                            ECB.AddComponent(index,aoeBuffRequest,new BuffRequest
+                            ECB.AddComponent(index, aoeBuffRequest, new BuffRequest
                             {
                                 SpawnPosition = selfTransform.Position,
                                 SpawnRotation = selfTransform.Rotation,
                                 TrackTarget = Entity.Null,
                                 // Only magic unit has aoe attack, others only has vfx
-                                Name = stateData.CurState == InteractState.Healing ? BuffName.ClericHealCircle : BuffName.MagicSwordSplash,
+                                Name = stateData.CurState == InteractState.Healing
+                                    ? BuffName.ClericHealCircle
+                                    : BuffName.MagicSwordSplash,
                                 Filter = new BuffFilter
                                 {
                                     factionFilterEnabled = true,
@@ -265,67 +275,44 @@ namespace SparFlame.GamePlaySystem.State
                             var statChangeRequestEntity = ECB.CreateEntity(index);
                             statChangeRequest.Interactee = stateData.TargetEntity;
                             ECB.AddComponent<GameplayEntityTag>(index, statChangeRequestEntity);
-                            ECB.AddComponent(index,statChangeRequestEntity, statChangeRequest);                            
+                            ECB.AddComponent(index, statChangeRequestEntity, statChangeRequest);
                         }
+                        
+                        // Generate audio request
+                        var name = AudioName.None;
+                        switch (unitAttr.Type)
+                        {
+                            case UnitType.Shield:
+                                break;
+                            case UnitType.Ranged:
+                                name = AudioName.ArrowShoot;
+                                break;
+                            case UnitType.Magic:
+                                name = stateData.CurState == InteractState.Healing?
+                                    AudioName.ClericHealCircle : AudioName.MagicSwordSplash;
+                                break;
+                            case UnitType.Cavalry:
+                                name = AudioName.Spear;
+                                break;
+                            case UnitType.Worker:
+                                name = AudioName.WorkerHarvest;
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+                        if (name != AudioName.None)
+                        {
+                            AudioUtils.PlayAudioClip(name, transform.Position,ECB, index);
+                        }
+
                     }
-                    
+
                     // Only check one event in models
                     break;
                 }
             }
 
-            private void UnitAttack(Entity targetEntity, int amount, int index,
-                Entity selfEntity, InteractType interactType, in GeneralAttr generalAttr,
-                in UnitAttr unitAttr,in ExpData expData,
-                in float3 selfPos)
-            {
-                var statChangeRequest = new StatChangeRequest
-                {
-                    Interactor = selfEntity,
-                    Interactee = targetEntity,
-                    AbsAmount = amount,
-                    Type = interactType switch
-                    {
-                        InteractType.Attack => StatChangeType.Attack,
-                        InteractType.Heal => StatChangeType.Heal,
-                        InteractType.Harvest => StatChangeType.Harvest,
-                        _ => StatChangeType.None // This should never happen
-                    },
-                    InteractorGeneralAttr = generalAttr
-                };
-                
-                var vfxName = VFXUtils.GetProjectileVFXNameByAttr(unitAttr, new BuildingAttr(), generalAttr);
-                
-                var request = ECB.CreateEntity(index);
-                ECB.AddComponent<GameplayEntityTag>(index, request);
-                if (vfxName == VFXName.None)
-                {
-                    // This attack will not cause damage by projectile, but cause damage directly
-                    ECB.AddComponent(index, request,statChangeRequest);
-                }
-                else
-                {
-                    ECB.AddComponent(index, request, new VFXRequest
-                    {
-                        Filter = new VFXSubFilter
-                        {
-                            TierFilterEnable = true,
-                            Tier = expData.CurTier,
-                            FactionFilterEnable = true,
-                            Faction = generalAttr.FactionTag
-                        },
-                        StatChangeRequest = statChangeRequest,
-                        VFXName = vfxName,
-                        SpawnPosition = selfPos,
-                        RequestType = VFXRequestType.Spawn,
-                        KeepDuration = 0,
-                        VFXTrackTarget = Entity.Null
-                    });
-                }
-            }
-
+            
         }
-        
-        
     }
 }

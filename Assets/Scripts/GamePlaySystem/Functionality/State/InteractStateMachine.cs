@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.General;
@@ -17,7 +18,6 @@ using Unity.Mathematics;
 
 namespace SparFlame.GamePlaySystem.State
 {
-    // TODO : Split to 3 systems, and use 3 ijobentity, see if that can schedule parallel
     [BurstCompile]
     [UpdateAfter(typeof(BuffManageSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
@@ -462,7 +462,7 @@ namespace SparFlame.GamePlaySystem.State
                     },
                     StatChangeRequest = statChangeRequest,
                     VFXName = vfxName,
-                    SpawnPosition = selfPos,
+                    SpawnPosition = vfxName == VFXName.TowerCircleAttack ? targetPos : selfPos,
                     RequestType = VFXRequestType.Spawn,
                     KeepDuration = 0,
                     VFXTrackTarget = Entity.Null,
@@ -498,8 +498,13 @@ namespace SparFlame.GamePlaySystem.State
                     tierFilterEnabled = true
                 }
                 });
+                
+                // Spawn audio request
+                var audioName = vfxName == VFXName.TowerProjectile
+                    ? AudioName.TowerMagicBallStart
+                    : AudioName.TowerMagicCircle;
+                AudioUtils.PlayAudioClip(audioName, selfPos,ECB, index);
             }
-
             #endregion
         }
     }

@@ -17,10 +17,9 @@ namespace SparFlame.BootStrapper
         private bool _initialized;
         private bool _isPaused;
         private bool _enterSystemInitState;
-        private EntityQuery _playerCrystalQuery;
         private GameBasicConfig _gameBasicConfig;
         private CustomInputActions _customInputActions;
-        private bool _isPlayerDetected;
+        private bool _alreadyToWin;
 
         protected override void OnCreate()
         {
@@ -29,7 +28,6 @@ namespace SparFlame.BootStrapper
             {
                 Rnd = new Random(seed)
             });
-            _playerCrystalQuery = SystemAPI.QueryBuilder().WithAll<CoreCrystalTag>().WithAll<PlayerTag>().Build();
             EntityManager.CreateSingleton(new GameStatusData
             {
                 Value = GameStatus.NotStarted
@@ -76,7 +74,7 @@ namespace SparFlame.BootStrapper
 
             if (gameBasicState.ValueRW.Value == GameStatus.Init) // This is the time all systems init complete
             {
-                _isPlayerDetected = false;
+                _alreadyToWin = false;
                 gameBasicState.ValueRW.Value = GameStatus.Gaming;
                 var gaming = EntityManager.CreateEntity();
                 EntityManager.AddComponent<GamingTag>(gaming);
@@ -87,10 +85,12 @@ namespace SparFlame.BootStrapper
             _gameBasicConfig = SystemAPI.GetSingleton<GameBasicConfig>();
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
 
-            if (!_isPlayerDetected)
+            var enemyCrystalInfo = SystemAPI.GetSingleton<EnemyCrystalInfo>();
+            var playerCrystalInfo = SystemAPI.GetSingleton<PlayerCrystalInfo>();
+            if (!_alreadyToWin)
             {
-                if (!_playerCrystalQuery.IsEmpty)
-                    _isPlayerDetected = true;
+                if (playerCrystalInfo.TotalCount != 0 && enemyCrystalInfo.TotalCount != 0)
+                    _alreadyToWin = true;
                 else
                 {
                     return;
@@ -99,8 +99,24 @@ namespace SparFlame.BootStrapper
 
             if (_gameBasicConfig.enablePause)
                 CheckPlayerPauseAction();
-            if (_playerCrystalQuery.IsEmpty)
+            if (enemyCrystalInfo.TotalCount == 0)
+            {
+                SystemAPI.SetSingleton(new GameStatusData
+                {
+                    Value = GameStatus.NotStarted
+                });
+                GameController.Instance.GameOver(playerFaction);
+                _alreadyToWin = false;
+            }
+            else if(playerCrystalInfo.TotalCount == 0)
+            {
+                SystemAPI.SetSingleton(new GameStatusData
+                {
+                    Value = GameStatus.NotStarted
+                });
                 GameController.Instance.GameOver(~playerFaction);
+                _alreadyToWin = false;
+            }
         }
 
         private void BeginSystemInit()

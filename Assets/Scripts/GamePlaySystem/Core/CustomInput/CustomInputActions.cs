@@ -515,7 +515,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
                     ""name"": """",
                     ""id"": ""db049c82-4ca2-472f-9ee5-7aaac8db9fda"",
                     ""path"": ""<Mouse>/leftButton"",
-                    ""interactions"": ""MultiTap"",
+                    ""interactions"": ""MultiTap(tapDelay=0.3)"",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""ClassSelect"",

@@ -106,8 +106,7 @@ namespace SparFlame.GamePlaySystem.Movement
     {
     }
 
-    // TODO : Change request to entity request not component request
-    public struct VolumeObstacleSpawnRequest : IComponentData
+    public struct VolumeObstacleSpawnRequest : IComponentData,IEnableableComponent
     {
         public float3 Center;
         public float3 Size;
@@ -122,7 +121,7 @@ namespace SparFlame.GamePlaySystem.Movement
         /// </summary>
         public FactionTag RequestFromFaction;
 
-        public bool NotGenerateNotWalkableVolume;
-        public bool NotGenerateHighCostVolume;
+        // public bool NotGenerateNotWalkableVolume;
+        // public bool NotGenerateHighCostVolume;
     }
 }

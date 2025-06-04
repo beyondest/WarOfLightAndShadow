@@ -26,6 +26,7 @@ namespace SparFlame.GamePlaySystem.Movement
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<NavAgentSystemConfig>();
             _entityQuery = SystemAPI.QueryBuilder()
@@ -78,7 +79,7 @@ namespace SparFlame.GamePlaySystem.Movement
                     FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
-                    ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                    ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                     Iterations = config.MaxIterations,
                     MaxPathSize = config.MaxPathSize,
                     ExtentsOffset = config.ExtentsOffset

@@ -172,7 +172,7 @@ namespace SparFlame.UI.GamePlay
                     UnitMulti2DWindow.Instance.Show();
                     UnitMulti2DWindow.Instance
                         .OnClickSlot(
-                            0); // TODO : Due to the unit multi system update after the multi window is opened, this may not show when first drag select
+                            0);
                 }
             }
             else

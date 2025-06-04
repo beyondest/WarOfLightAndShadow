@@ -4,6 +4,7 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
+using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -11,6 +12,7 @@ using SparFlame.GamePlaySystem.State;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Command
 {
@@ -18,9 +20,12 @@ namespace SparFlame.GamePlaySystem.Command
     [UpdateBefore(typeof(MovementSystem))]
     public partial struct PlayerCommandSystem : ISystem
     {
+        
+        private ComponentLookup<InDarknessTag> _inDarknessLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<CommandConfig>();
@@ -29,12 +34,13 @@ namespace SparFlame.GamePlaySystem.Command
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<GarrisonSystemConfig>();
+            _inDarknessLookup = state.GetComponentLookup<InDarknessTag>(true);
         }
 
-        // TODO : Rewrite this with generic type ijobchunk or generic type ijobparallelfor
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _inDarknessLookup.Update(ref state);
             var garrisonConfig = SystemAPI.GetSingleton<GarrisonSystemConfig>();
             var cursorData = SystemAPI.GetSingleton<CursorData>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
@@ -42,7 +48,6 @@ namespace SparFlame.GamePlaySystem.Command
 
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (unitSelectionData.CurrentSelectCount == 0) return;
-            // if (inputMouseData is not { ClickFlag: ClickFlag.Start, ClickType: ClickType.Right, IsOverUI: false}) return;
             if (!inputUnitControlData.Command) return;
 
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -50,6 +55,7 @@ namespace SparFlame.GamePlaySystem.Command
             float3 targetPos = float3.zero;
 
             VFXName name = VFXName.None;
+            var isLight = SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally;
             switch (cursorData.RightCursorType)
             {
                 case CursorType.Attack:
@@ -63,13 +69,17 @@ namespace SparFlame.GamePlaySystem.Command
                         TargetColliderShape =
                             SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
-                        Focus = inputUnitControlData.Focus
+                        Focus = inputUnitControlData.Focus,
+                        IsLight = isLight,
+                        InDarknessLookup = _inDarknessLookup,
                     }.ScheduleParallel();
                     new MovementHealerMarchJob
                     {
                         ECB = ecb,
                         TargetPos = targetPos,
-                        Focus = inputUnitControlData.Focus
+                        Focus = inputUnitControlData.Focus,
+                        IsLight = isLight,
+                        InDarknessLookup = _inDarknessLookup,
                     }.ScheduleParallel();
                     break;
                 }
@@ -86,7 +96,9 @@ namespace SparFlame.GamePlaySystem.Command
                             SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
-                        InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq
+                        InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,
+                        IsLight = isLight,
+                        InDarknessLookup = _inDarknessLookup,
                     }.ScheduleParallel();
                     break;
                 }
@@ -102,7 +114,9 @@ namespace SparFlame.GamePlaySystem.Command
                         TargetColliderShape =
                             SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
-                        Focus = inputUnitControlData.Focus
+                        Focus = inputUnitControlData.Focus,
+                        IsLight = isLight,
+                        InDarknessLookup = _inDarknessLookup,
                     }.ScheduleParallel();
                     break;
                 }
@@ -118,7 +132,9 @@ namespace SparFlame.GamePlaySystem.Command
                         TargetColliderShape =
                             SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
                         TargetEntity = inputMouseData.HitEntity,
-                        Focus = inputUnitControlData.Focus
+                        Focus = inputUnitControlData.Focus,
+                        IsLight = isLight,
+                        InDarknessLookup = _inDarknessLookup,
                     }.ScheduleParallel();
                     break;
                 }
@@ -131,7 +147,9 @@ namespace SparFlame.GamePlaySystem.Command
                     {
                         ECB = ecb,
                         TargetPos = inputMouseData.HitPosition,
-                        Focus = inputUnitControlData.Focus
+                        Focus = inputUnitControlData.Focus,
+                        IsLight = isLight,
+                        InDarknessLookup = _inDarknessLookup,
                     }.ScheduleParallel();
                     break;
                 }
@@ -153,7 +171,8 @@ namespace SparFlame.GamePlaySystem.Command
                 Filter = new VFXSubFilter
                 {
                     Faction = unitSelectionData.CurrentSelectFaction,
-                    FactionFilterEnable = true
+                    FactionFilterEnable = true,
+                    
                 },
                 KeepDuration = 0,
                 SpawnPosition = spawnPos,
@@ -170,6 +189,7 @@ namespace SparFlame.GamePlaySystem.Command
 
     [BurstCompile]
     [WithAll(typeof(Selected))]
+    [WithNone(typeof(UnitDeadTag))]
     public partial struct MovementAttackJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -177,12 +197,15 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
+        [ReadOnly] public bool IsLight;
+        [ReadOnly] public ComponentLookup<InDarknessTag> InDarknessLookup;
 
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in AttackAbility attackAbility,
             Entity entity)
         {
+            if(IsLight && InDarknessLookup.IsComponentEnabled(entity))return;
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, attackAbility.RangeSq);
             basicStateData.TargetState = InteractState.Moving;
@@ -199,6 +222,7 @@ namespace SparFlame.GamePlaySystem.Command
 
     [BurstCompile]
     [WithAll(typeof(Selected))]
+    [WithNone(typeof(UnitDeadTag))]
     public partial struct MovementHealJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -206,12 +230,15 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
-
+        [ReadOnly] public bool IsLight;
+        [ReadOnly] public ComponentLookup<InDarknessTag> InDarknessLookup;
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in HealAbility healingAbility,
             Entity entity)
         {
+            if(IsLight && InDarknessLookup.IsComponentEnabled(entity))return;
+
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, healingAbility.RangeSq);
             basicStateData.TargetState = InteractState.Moving;
@@ -228,6 +255,8 @@ namespace SparFlame.GamePlaySystem.Command
 
     [BurstCompile]
     [WithAll(typeof(Selected))]
+    [WithNone(typeof(UnitDeadTag))]
+
     public partial struct MovementHarvestJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -235,12 +264,15 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
-
+        [ReadOnly] public bool IsLight;
+        [ReadOnly] public ComponentLookup<InDarknessTag> InDarknessLookup;
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
+            if(IsLight && InDarknessLookup.IsComponentEnabled(entity))return;
+
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, harvestAbility.RangeSq);
             basicStateData.TargetState = InteractState.Moving;
@@ -257,16 +289,21 @@ namespace SparFlame.GamePlaySystem.Command
 
     [BurstCompile]
     [WithAll(typeof(Selected))]
+    [WithNone(typeof(UnitDeadTag))]
+
     public partial struct MovementMarchJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public bool Focus;
-
+        [ReadOnly] public bool IsLight;
+        [ReadOnly] public ComponentLookup<InDarknessTag> InDarknessLookup;
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
+            
+            if(IsLight && InDarknessLookup.IsComponentEnabled(entity))return;
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
                 MovementCommandType.March, 0f);
             basicStateData.TargetState = InteractState.Moving;
@@ -286,6 +323,8 @@ namespace SparFlame.GamePlaySystem.Command
 
     [BurstCompile]
     [WithAll(typeof(Selected))]
+    [WithNone(typeof(UnitDeadTag))]
+
     public partial struct MovementGarrisonJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -294,11 +333,14 @@ namespace SparFlame.GamePlaySystem.Command
         [ReadOnly] public float InteractiveRangeSq;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
-
+        [ReadOnly] public bool IsLight;
+        [ReadOnly] public ComponentLookup<InDarknessTag> InDarknessLookup;
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData,
             Entity entity)
         {
+            if(IsLight && InDarknessLookup.IsComponentEnabled(entity))return;
+
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, InteractiveRangeSq);
             basicStateData.TargetState = InteractState.Moving;
@@ -312,17 +354,22 @@ namespace SparFlame.GamePlaySystem.Command
     // When player commands unattackable unit to attack, call this job for them to make them follow the troop
     [BurstCompile]
     [WithAll(typeof(Selected))]
-    [WithNone(typeof(AttackStateTag))]
+    [WithNone(typeof(AttackAbility))]
+    [WithNone(typeof(UnitDeadTag))]
+
     public partial struct MovementHealerMarchJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public bool Focus;
-
+        [ReadOnly] public bool IsLight;
+        [ReadOnly] public ComponentLookup<InDarknessTag> InDarknessLookup;
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
+            if(IsLight && InDarknessLookup.IsComponentEnabled(entity))return;
+
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
                 MovementCommandType.March, 0f);
             basicStateData.TargetState = InteractState.Moving;

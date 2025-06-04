@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         TowerProjectile = 4,
         MagicSwordProjectile1 = 5,
         RangedUnitProjectile = 6,
-        MagicShield = 7,
+        LightShield = 7,
         FlameSpear1 = 8,
         SelectionIndicator = 9,
         MagicSwordProjectile2 = 10,
@@ -50,7 +50,12 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         ConjureUnit = 19,
         TowerHitEffect = 20,
         TowerCircleAttack = 21,
-        CrystalBeaconAttack = 22
+        CrystalBeaconAttack = 22,
+        GarrisonUnderDefense = 23,
+        GarrisonUnderDefenseTier4 = 24,
+        DarkShield = 25,
+        LightSelfBurn = 26,
+        DarkSelfBurn = 27,
     }
 
     public enum VFXType

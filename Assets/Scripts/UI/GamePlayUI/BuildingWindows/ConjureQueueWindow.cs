@@ -31,7 +31,6 @@ namespace SparFlame.UI.GamePlay
 
         public override void OnClickSlot(int slotIndex)
         {
-            // TODO : Cut the conjuring queue
         }
         // Internal Data
         

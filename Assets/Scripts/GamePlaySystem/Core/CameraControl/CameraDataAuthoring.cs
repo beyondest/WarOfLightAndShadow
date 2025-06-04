@@ -1,3 +1,4 @@
+using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -80,16 +81,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
         
     }
 
-    public struct CameraData : IComponentData
-    {
-        public float4x4 ViewMatrix;
-        public float4x4 ProjectionMatrix;
-        public float2 ScreenSize;
-        public float3 CameraRight;
-        public float3 CameraForward;
-        public float3 CameraUp;
-        public float3 CameraPosition;
-    }
 
 
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact.ShieldDefense;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -49,6 +50,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     if (!SystemAPI.HasBuffer<TrackedByBuff>(request.TrackTarget))
                         continue;
                 }
+
                 var prefabDataPair = new BuffPrefabDataPair();
                 var find = false;
                 foreach (var pair in _buffNameToPrefabDataPair.GetValuesForKey((int)request.Name))
@@ -71,9 +73,10 @@ namespace SparFlame.GamePlaySystem.Interact
                 if (!find)
                 {
                     // This should never happen
-                    Debug.LogError($"Not find request buff name {request.Name} for filter {request.Filter}");
+                    // Debug.LogError($"Not find request buff name {request.Name} for filter {request.Filter}");
                     continue;
                 }
+
                 CheckAndApplySpecifiedBuffData(ref state, ecb,
                     in request, entity, prefabDataPair);
             }
@@ -127,6 +130,7 @@ namespace SparFlame.GamePlaySystem.Interact
                             return;
                         }
                     }
+
                     buff = state.EntityManager.Instantiate(pair.Prefab);
                     buffer.Add(new TrackedByBuff
                     {
@@ -136,10 +140,19 @@ namespace SparFlame.GamePlaySystem.Interact
                         MaxStackCount = 1
                     });
                     break;
+                case BuffType.LightShieldBuffType:
+                    buff = state.EntityManager.Instantiate(pair.Prefab);
+                    var shieldBuffData = SystemAPI.GetComponent<LightShieldBuffData>(pair.Prefab);
+                    shieldBuffData.Defender = request.TrackTarget;
+                    ecb.SetComponent(buff, shieldBuffData);
+                    break;
+                case BuffType.DarkShieldBuffType:
+                        
+                    break;
             }
 
-            if (buff == Entity.Null)return;
-            
+            if (buff == Entity.Null) return;
+
             ecb.AddComponent<GameplayEntityTag>(buff);
             ecb.SetComponent(buff, new LocalTransform
             {
@@ -147,10 +160,10 @@ namespace SparFlame.GamePlaySystem.Interact
                 Rotation = request.SpawnRotation,
                 Scale = 1
             });
-            var buffData = SystemAPI.GetComponent<GeneralBuffData>(pair.Prefab);
-            buffData.TrackTarget = request.TrackTarget;
-            buffData.StartTime = curTime;
-            ecb.SetComponent(buff, buffData);
+            var generalBuffData = SystemAPI.GetComponent<GeneralBuffData>(pair.Prefab);
+            generalBuffData.TrackTarget = request.TrackTarget;
+            generalBuffData.StartTime = curTime;
+            ecb.SetComponent(buff, generalBuffData);
         }
 
         [BurstCompile]

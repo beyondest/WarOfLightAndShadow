@@ -116,7 +116,7 @@ namespace SparFlame.Database
 
         public override int GetSubtypeIndex()
         {
-            throw new NotImplementedException("Resource data item has no subtypes");
+            throw new ArgumentException("Resource data item has no subtypes");
         }
     }
 }

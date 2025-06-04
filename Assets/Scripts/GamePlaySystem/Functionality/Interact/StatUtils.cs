@@ -1,10 +1,12 @@
 ﻿using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.PopNumber;
 using SparFlame.GamePlaySystem.Resource;
+using SparFlame.GamePlaySystem.Units;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -13,15 +15,22 @@ namespace SparFlame.GamePlaySystem.Interact
 {
     public struct StatUtils
     {
-        public static void GenerateResourceTierNotMatchHint(ref ComponentLookup<LocalTransform> transformLookup,
-            in StatChangeRequest request, int index, EntityCommandBuffer.ParallelWriter ecb)
+        public static void GenerateUpdateLightLineRequest(int index, EntityCommandBuffer.ParallelWriter ecb)
         {
-            var entity = ecb.CreateEntity(index);
-            ecb.AddComponent(index, entity, new HintRequest
+            var updateLightLineRequest = ecb.CreateEntity(index);
+            ecb.AddComponent<GameplayEntityTag>(index, updateLightLineRequest);
+            ecb.AddComponent<UpdateLightLineRequest>(index, updateLightLineRequest);
+        }
+        public static void GenerateRemoveFromTeamRequest(EntityCommandBuffer.ParallelWriter ecb, int index, Entity interacteeEntity, InTeamTag inTeamTag, ComponentLookup<UnitAttr> unitAttrLookup)
+        {
+            var request = ecb.CreateEntity(index);
+            ecb.AddComponent(index, request, new RemoveFromTeamRequest
             {
-                Position = transformLookup[request.Interactee].Position
+                UnitAttr = unitAttrLookup[interacteeEntity],
+                BelongsToTeam = inTeamTag.BelongsToTeam,
+                UnitToRemove = interacteeEntity
             });
-            ecb.AddComponent<GameplayEntityTag>(index, entity);
+            ecb.AddComponent<GameplayEntityTag>(index, request);
         }
 
         public static void GenerateHarvestResourceRequest(in StatChangeRequest request,

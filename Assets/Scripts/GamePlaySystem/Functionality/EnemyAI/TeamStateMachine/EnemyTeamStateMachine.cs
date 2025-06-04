@@ -119,7 +119,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 ref TeamStateData teamStateData,
                 EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity)
             {
-                if (OocTagLookup.HasComponent(teamData.BelongsToBase) &&
+                if (OocTagLookup.IsComponentEnabled(teamData.BelongsToBase) &&
                     teamData.TeamType is AITeamType.Harass or AITeamType.Gather or AITeamType.Defense)
                 {
                     var basePos = LocalTransformLookup[teamData.BelongsToBase];
@@ -128,7 +128,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     foreach (var teamEntityData in teamEntities)
                     {
                         var unitState = BasicStateLookup[teamEntityData.Unit];
-                        if (unitState.CurState == InteractState.Garrison)
+                        if (unitState.CurState == InteractState.Garrison && InGarrisonLookup.HasComponent(teamEntityData.Unit))
                         {
                             var moveOutCommand = ecb.CreateEntity(index);
                             ecb.AddComponent(index, moveOutCommand, new GarrisonMoveOutCommand
