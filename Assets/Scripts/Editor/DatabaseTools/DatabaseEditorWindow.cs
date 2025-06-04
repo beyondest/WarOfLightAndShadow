@@ -20,13 +20,7 @@ namespace Editor
         [Unity.Collections.ReadOnly, LabelText("Resource Databases"), ShowInInspector]
         public List<ResourceDatabaseSo> resourceDatabases = new();
 
-        [Unity.Collections.ReadOnly, LabelText("Resource Wave Spawn Databases"), ShowInInspector]
-        public List<ResourceWaveSpawnDatabaseSo> resourceSpawnDatabases = new();
-        
-        [Unity.Collections.ReadOnly, LabelText("Resource Type To Spawn Tiles Databases"), ShowInInspector]
-        public List<ResourceTypeSpawnDatabaseSo> resourceTypeSpawnDatabases = new();
-        
- 
+
         [Unity.Collections.ReadOnly, LabelText("EnemyAI Databases"), ShowInInspector]
         public List<EnemyAIDatabaseSo> enemyAIDatabases = new();
 
@@ -54,8 +48,6 @@ namespace Editor
             buildingDatabases = FindAllAssets<BuildingDatabaseSo>("Building Database");
             unitDatabases = FindAllAssets<UnitDatabaseSo>("Unit Database");
             resourceDatabases = FindAllAssets<ResourceDatabaseSo>("Resource Database");
-            resourceSpawnDatabases = FindAllAssets<ResourceWaveSpawnDatabaseSo>("Resource Wave Spawn Database");
-            resourceTypeSpawnDatabases = FindAllAssets<ResourceTypeSpawnDatabaseSo>("Resource Type Spawn Database");
             envDatabases = FindAllAssets<EnvDatabaseSo>("Env Database");
             envTypeSpawnDatabases = FindAllAssets<EnvTypeSpawnDatabaseSo>("Env Type Spawn Database");
             enemyAIDatabases = FindAllAssets<EnemyAIDatabaseSo>( " EnemyAI Database ");
@@ -79,7 +71,7 @@ namespace Editor
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 var asset = AssetDatabase.LoadAssetAtPath<T>(path);
-                if (asset != null)
+                if (asset)
                 {
                     assets.Add(asset);
                 }

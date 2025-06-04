@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using SparFlame.GamePlaySystem.General;
 using Unity.Collections;
 using Unity.Entities;

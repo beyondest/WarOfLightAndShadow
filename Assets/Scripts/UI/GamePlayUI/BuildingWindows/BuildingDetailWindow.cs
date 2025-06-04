@@ -194,7 +194,7 @@ namespace SparFlame.UI.GamePlay
                 {
                     hintName = HintName.CrystalCannotRecycle;
                 }
-                else if (isUnderAttack) hintName = HintName.CannotRelocateWhenUnderAttack;
+                else if (isUnderAttack) hintName = HintName.CannotRecycleWhenUnderAttack;
                 else hintName = HintName.CannotRecycleWhenConstructing;
                 var hintRequest = Em.CreateEntity();
                 Em.AddComponent<HintRequest>(hintRequest);
@@ -340,7 +340,7 @@ namespace SparFlame.UI.GamePlay
             {
                 case BuildingType.Generators:
                     generatePanel.SetActive(true);
-                    var generateAttribute = Em.GetComponentData<GenerateAttr>(_targetEntity);
+                    var generateAttribute = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
                     generateResourceIcon.sprite =
                         BasicUIResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
                     generateTypeText.text = generateAttribute.GenerateResourceType.ToString();
@@ -471,9 +471,19 @@ namespace SparFlame.UI.GamePlay
             {
                 case BuildingType.Generators:
                 {
-                    var generateAttribute = Em.GetComponentData<GenerateAttr>(_targetEntity);
-                    generateSpeedText.text = $"Current : {generateAttribute.CurGenerateSpeed}/s" + "\n" +
-                                             $"Max : {generateAttribute.MaxGenerateSpeed}/s";
+                    var generateSpeed = 0f;
+                    if (Em.HasComponent<ResourceMineGenerateAttr>(_targetEntity))
+                    {
+                        var generateAttribute = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
+                        generateSpeed = generateAttribute.CurGenerateSpeed;
+                    }
+                    else if(Em.HasComponent<PlantGenerateAttr>(_targetEntity))
+                    {
+                        var plantGenerateAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
+                        generateSpeed = plantGenerateAttr.GenerateSpeed;
+                    }
+                    generateSpeedText.text = $"GenerateSpeed : {generateSpeed}";
+                   
                     break;
                 }
                 case BuildingType.ConjuringShrines:

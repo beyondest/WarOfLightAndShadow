@@ -2,13 +2,10 @@
 using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Ooc;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.State;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
@@ -153,26 +150,7 @@ namespace SparFlame.Database
                 }
 
 
-                if (item.baseTag == BaseTag.Units || (item.baseTag == BaseTag.Buildings &&
-                                                      item.GetGeneralTypeIndex() == (int)BuildingType.Ornaments
-                                                      &&( item.GetSubtypeIndex() == (int)OrnamentType.Crystal ||
-                                                      item.GetSubtypeIndex() == (int)OrnamentType.Beacon)))
-                {
-                    var fogOfWarSightRange = item.fogSightRange;
-                    // Fog of War VFX
-                    var fowAgentData = new FowAgentData
-                    {
-                        SightRange = fogOfWarSightRange,
-                        SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
-                        DisappearAlphaThreshold = item.disappearAlphaThreshold,
-                        IsInsight = true
-                    };
-                    AddComponent(entity, fowAgentData);
-                    AddComponent<DisappearInFowTag>(entity);
-
-                    AddComponent<InDarknessTag>(entity);
-                    SetComponentEnabled<InDarknessTag>(entity, false);
-                }
+          
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)

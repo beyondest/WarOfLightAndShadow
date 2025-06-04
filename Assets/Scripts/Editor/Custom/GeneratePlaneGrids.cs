@@ -1,5 +1,4 @@
-﻿using SparFlame.GamePlaySystem.Fow;
-using SparFlame.GamePlaySystem.Map;
+﻿using SparFlame.GamePlaySystem.Map;
 using SparFlame.GamePlaySystem.Movement;
 using UnityEditor;
 using UnityEngine;
@@ -51,8 +50,8 @@ namespace Editor
 
             if (GUILayout.Button("Generate Grid"))
             {
-                if (_planePrefab == null ||
-                    (_ifGenerateSlopesAndCorners && (_slopePrefab == null || _cornerPrefab == null)))
+                if (!_planePrefab ||
+                    (_ifGenerateSlopesAndCorners && (!_slopePrefab || !_cornerPrefab)))
                 {
                     Debug.LogError("Please assign all required prefabs.");
                     return;
@@ -245,83 +244,20 @@ namespace Editor
         }
         */
 
-        private void CreateSlope(Vector3 position, Quaternion rotation, Transform parent)
+        private void CreateSlope(Vector3 pos, Quaternion rotation, Transform parent)
         {
             GameObject slope = (GameObject)PrefabUtility.InstantiatePrefab(_slopePrefab);
-            slope.transform.position = position;
+            slope.transform.position = pos;
             slope.transform.rotation = rotation;
             slope.transform.SetParent(parent);
         }
 
-        private void CreateCorner(Vector3 position, Transform parent)
+        private void CreateCorner(Vector3 pos, Transform parent)
         {
             GameObject corner = (GameObject)PrefabUtility.InstantiatePrefab(_cornerPrefab);
-            corner.transform.position = position;
+            corner.transform.position = pos;
             corner.transform.rotation = Quaternion.identity;
             corner.transform.SetParent(parent);
-        }
-
-
-        private void GenerateSlopes(Transform parent)
-        {
-            for (int i = 0; i < _rows; i++)
-            {
-                // Left edge
-                Vector3 posLeft = new Vector3(0 - _tileSize, 0, i * _tileSize);
-                GameObject slopeLeft = (GameObject)PrefabUtility.InstantiatePrefab(_slopePrefab);
-                slopeLeft.transform.position = posLeft;
-                slopeLeft.transform.rotation = Quaternion.Euler(0, 90, 0);
-                slopeLeft.transform.SetParent(parent);
-
-                // Right edge
-                Vector3 posRight = new Vector3((_columns - 1) * _tileSize + _tileSize, 0, i * _tileSize);
-                GameObject slopeRight = (GameObject)PrefabUtility.InstantiatePrefab(_slopePrefab);
-                slopeRight.transform.position = posRight;
-                slopeRight.transform.rotation = Quaternion.Euler(0, -90, 0);
-                slopeRight.transform.SetParent(parent);
-            }
-
-            for (int j = 0; j < _columns; j++)
-            {
-                // Bottom edge
-                Vector3 posBottom = new Vector3(j * _tileSize, 0, 0 - _tileSize);
-                GameObject slopeBottom = (GameObject)PrefabUtility.InstantiatePrefab(_slopePrefab);
-                slopeBottom.transform.position = posBottom;
-                slopeBottom.transform.rotation = Quaternion.Euler(0, 0, 0);
-                slopeBottom.transform.SetParent(parent);
-
-                // Top edge
-                Vector3 posTop = new Vector3(j * _tileSize, 0, (_rows - 1) * _tileSize + _tileSize);
-                GameObject slopeTop = (GameObject)PrefabUtility.InstantiatePrefab(_slopePrefab);
-                slopeTop.transform.position = posTop;
-                slopeTop.transform.rotation = Quaternion.Euler(0, 180, 0);
-                slopeTop.transform.SetParent(parent);
-            }
-
-            if (_cornerPrefab == null)
-            {
-                Debug.LogError("Corner Prefab not assigned!");
-                return;
-            }
-
-            // 四个角落
-            Vector3[] corners = new Vector3[]
-            {
-                new Vector3(-_tileSize, 0, -_tileSize), // Bottom-left
-                new Vector3(_columns * _tileSize, 0, -_tileSize), // Bottom-right
-                new Vector3(-_tileSize, 0, _rows * _tileSize), // Top-left
-                new Vector3(_columns * _tileSize, 0, _rows * _tileSize) // Top-right
-            };
-            // float[] yRotations = { 45f, -45f, 135f, -135f };
-            float[] yRotations = { 0, 0, 0, 0 };
-
-            for (int i = 0; i < 4; i++)
-            {
-                GameObject cornerSlope = (GameObject)PrefabUtility.InstantiatePrefab(_cornerPrefab);
-                cornerSlope.transform.position = corners[i];
-                cornerSlope.transform.rotation = Quaternion.Euler(0, yRotations[i], 0);
-                cornerSlope.transform.SetParent(parent);
-            }
         }
 
 
@@ -329,7 +265,7 @@ namespace Editor
         {
             // Replace nav mesh controller
             var marker = FindAnyObjectByType<NavMeshController>();
-            if (marker == null)
+            if (!marker)
             {
                 Debug.LogWarning("No GameObject with CenterMarkerComponent found in scene.");
                 return;
@@ -349,13 +285,13 @@ namespace Editor
             Debug.Log("NavMeshController object positioned and collider resized.");
             
             // Reset map info authoring
-            var mapInfoAuthoring = FindAnyObjectByType<MapInfoAuthoring>();
-            if (mapInfoAuthoring != null)
+            var mapInfoAuthoring = FindAnyObjectByType<MiniMapSystemAuthoring>();
+            if (mapInfoAuthoring)
             {
-                var original = mapInfoAuthoring.mapInitInfo;
+                var original = mapInfoAuthoring.mapInfo;
                 original.tileSize = tileSize;
-                original.tileCount = rows * columns;
-                mapInfoAuthoring.mapInitInfo = original;
+                original.outerSquareSize = rows * tileSize;
+                mapInfoAuthoring.mapInfo = original;
                 EditorUtility.SetDirty(mapInfoAuthoring);
                 UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(mapInfoAuthoring.gameObject.scene);
                 Debug.Log("MapInfoAuthoring reset and reBake");
@@ -364,26 +300,6 @@ namespace Editor
             {
                 Debug.LogWarning("You should manually change MapInfoAuthoring in subscene");
             }
-            // Reset the fog of war and try to reset its ref in subscene
-            var fow = FindAnyObjectByType<FogOfWarGo>();
-            var autoInitSuccess = false;
-            if (fow != null)
-            {
-                var size = tileSize * rows;
-                fow.transform.position = new Vector3(-tileSize/2f, -0.5f, -tileSize/2f);
-                fow.transform.localScale = new Vector3(size, size, size);
-                var fowRef = FindAnyObjectByType<FogOfWarTagAuthoring>();
-                if (fowRef != null)
-                {
-                    fowRef.transform.position = fow.transform.position;
-                    fowRef.transform.rotation = fow.transform.rotation;
-                    fowRef.transform.localScale = fow.transform.localScale;
-                    autoInitSuccess = true;
-                }
-            }
-            if(!autoInitSuccess)
-                Debug.LogError("You have to manually change fog of war controller in game scene and fog of war ref in subscene");
-            
 
         }
     }

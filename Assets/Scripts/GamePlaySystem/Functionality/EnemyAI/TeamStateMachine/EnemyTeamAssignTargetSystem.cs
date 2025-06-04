@@ -43,7 +43,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<MapInfo>();
             state.RequireForUpdate<GeneralRandom>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<EnemyTeamAssignTargetConfig>();
@@ -54,7 +53,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             _enemyBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<EnemyBasePosData>().Build();
             _needTargetTeamsQuery = SystemAPI.QueryBuilder().WithAll<TeamNeedTargetTag>()
                 .WithAllRW<TeamStateData>().WithAll<TeamData>().Build();
-            _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<CoreCrystalTag>()
+            _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<CrystalDef>()
                 .WithAll<PlayerTag>().Build();
 
             _attackAbilityLookUp = state.GetComponentLookup<AttackAbility>(true);

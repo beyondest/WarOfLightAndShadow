@@ -29,8 +29,6 @@ namespace SparFlame.GamePlaySystem.Interact
         None = 0,
         AoeInteract = 1,
         SingleTargetNotStackable = 2,
-        LightShieldBuffType = 3,
-        DarkShieldBuffType = 4,
     }
 
     public enum BuffName

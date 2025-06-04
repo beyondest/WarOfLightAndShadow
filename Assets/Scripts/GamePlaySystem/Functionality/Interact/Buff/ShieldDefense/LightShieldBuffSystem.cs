@@ -5,214 +5,136 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace SparFlame.GamePlaySystem.Interact.ShieldDefense
+namespace SparFlame.GamePlaySystem.Interact
 {
     public partial struct LightShieldBuffSystem : ISystem
     {
-        private BufferLookup<LightShieldDefenderData> _defenderData;
-        private ComponentLookup<BasicStateData> _basicStateData;
-        private ComponentLookup<ExpData> _expLookup;
+        private ComponentLookup<LightShieldUnderDefend> _defenderData;
+        private ComponentLookup<LocalTransform> _transformLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<LightShieldBuffGeneralConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<GameTimeData>();
-            _defenderData = state.GetBufferLookup<LightShieldDefenderData>();
-            _basicStateData = state.GetComponentLookup<BasicStateData>(true);
-            _expLookup = state.GetComponentLookup<ExpData>(true);
+            _defenderData = state.GetComponentLookup<LightShieldUnderDefend>();
+            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _defenderData.Update(ref state);
-            _basicStateData.Update(ref state);
-            _expLookup.Update(ref state);
-            var job = new ShieldBuffJob
+            _transformLookup.Update(ref state);
+            var ecbP = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+                .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            new LightShieldBuffJob
             {
-                DefenderLookup = _defenderData,
-                StateData = _basicStateData,
-                CurTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
-                ExpData = _expLookup,
-            }.Schedule(state.Dependency);
-            job.Complete();
-
-            new DefenderDataCheckApplyVFXJob
+                LightShieldUnderDefendLookup = _defenderData,
+                TransformLookup = _transformLookup,
+                Config = SystemAPI.GetSingleton<LightShieldBuffGeneralConfig>(),
+                ECB = ecbP
+            }.ScheduleParallel();
+            new LightShieldDefendBuffTimerJob
             {
-                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                ExpLookup = _expLookup,
+                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
+                ECB = ecbP,
             }.ScheduleParallel();
         }
 
+
         [BurstCompile]
-        public partial struct DefenderDataCheckApplyVFXJob : IJobEntity
+        public partial struct LightShieldBuffJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<ExpData> ExpLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
-            private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<LightShieldDefenderData> datas,
-                Entity selfEntity,
-                in LocalTransform transform, in GeneralAttr generalAttr)
+            [NativeDisableParallelForRestriction]
+            public ComponentLookup<LightShieldUnderDefend> LightShieldUnderDefendLookup;
+
+            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public LightShieldBuffGeneralConfig Config;
+
+            private void Execute([ChunkIndexInQuery] int index,
+                in DynamicBuffer<AoeTarget> targets,
+                ref LightShieldBuff data, in BasicStateData stateData, Entity selfEntity)
             {
-                for (var i = datas.Length - 1; i >= 0; i--)
+                if (stateData.CurState != InteractState.Attacking && stateData.TargetState != InteractState.Attacking)
                 {
-                    var data = datas[i];
-                    if (!ExpLookup.HasComponent(data.Entity))
-                    {
-                        datas.RemoveAt(i);
-                    }
+                    return; // General buff system will remove this buff
                 }
 
-                if (datas.Length > 0)
+                AddNewShieldData(targets, data, index, selfEntity);
+            }
+
+            private void AddNewShieldData(in DynamicBuffer<AoeTarget> targets, in LightShieldBuff buff, int index, Entity selfEntity)
+            {
+                var count = 0;
+                for (var i = targets.Length - 1; i >= 0; i--)
                 {
+                    if (count >= buff.MaxDefendCount)
+                    {
+                        break; // Already reached max defend count
+                    }
+
+                    var target = targets[i];
+                    if (!LightShieldUnderDefendLookup.HasComponent(target.Entity)
+                        || LightShieldUnderDefendLookup.IsComponentEnabled(target.Entity))
+                    {
+                        if (LightShieldUnderDefendLookup.TryGetComponent(target.Entity, out var defenderData) &&
+                            defenderData.DefendBy == selfEntity)
+                        {
+                            count++; // Target is already defended by self, then skip and add count, otherwise not add count
+                        }
+
+                        continue; // Cur ally unit is dead or current unit is not defendable
+                    }
+
+                    ECB.SetComponentEnabled<LightShieldUnderDefend>(index, target.Entity, true);
+                    ECB.SetComponent(index, target.Entity, new LightShieldUnderDefend
+                    {
+                        DefendBy = selfEntity,
+                        DefendTime = Config.DefendTime
+                    });
                     var shieldVfx = ECB.CreateEntity(index);
                     ECB.AddComponent<GameplayEntityTag>(index, shieldVfx);
                     ECB.AddComponent(index, shieldVfx, new VFXRequest
                     {
-                        Filter = new VFXSubFilter
-                        {
-                            FactionFilterEnable = true,
-                            Faction = generalAttr.FactionTag
-                        },
                         KeepDuration = float.MaxValue,
-                        SpawnPosition = transform.Position,
-                        TargetPosition = transform.Position,
-                        StatChangeRequest = default,
+                        SpawnPosition = TransformLookup[target.Entity].Position,
                         RequestType = VFXRequestType.Spawn,
                         VFXName = VFXName.LightShield,
-                        VFXTrackTarget = selfEntity
+                        VFXTrackTarget = target.Entity
                     });
+                    count++;
                 }
-                else
+            }
+        }
+
+        [BurstCompile]
+        public partial struct LightShieldDefendBuffTimerJob : IJobEntity
+        {
+            [ReadOnly] public float DeltaTime;
+            public EntityCommandBuffer.ParallelWriter ECB;
+
+            private void Execute([ChunkIndexInQuery] int index, ref LightShieldUnderDefend underDefend,
+                Entity selfEntity)
+            {
+                underDefend.DefendTime -= DeltaTime;
+                if (underDefend.DefendTime <= 0)
                 {
+                    underDefend.DefendTime = 0;
+                    underDefend.DefendBy = Entity.Null;
+                    ECB.SetComponentEnabled<LightShieldUnderDefend>(index, selfEntity, false);
                     var shieldVfx = ECB.CreateEntity(index);
                     ECB.AddComponent<GameplayEntityTag>(index, shieldVfx);
                     ECB.AddComponent(index, shieldVfx, new VFXRequest
                     {
-                        Filter = default,
-                        KeepDuration = float.MaxValue,
-                        SpawnPosition = transform.Position,
-                        TargetPosition = transform.Position,
-                        StatChangeRequest = default,
                         RequestType = VFXRequestType.Kill,
                         VFXName = VFXName.LightShield,
                         VFXTrackTarget = selfEntity
                     });
-                }
-            }
-        }
-
-
-        [BurstCompile]
-        public partial struct ShieldBuffJob : IJobEntity
-        {
-            [ReadOnly] public float CurTime;
-            [ReadOnly] public ComponentLookup<ExpData> ExpData;
-            [NativeDisableParallelForRestriction] public BufferLookup<LightShieldDefenderData> DefenderLookup;
-            [ReadOnly] public ComponentLookup<BasicStateData> StateData;
-
-            private void Execute(ref DynamicBuffer<AoeTarget> targets,
-                ref LightShieldBuffData data, ref DynamicBuffer<PreviousAoeTarget> previousAoeTargets)
-            {
-                if (!StateData.TryGetComponent(data.Defender, out var stateData) ||
-                    stateData.CurState != InteractState.Attacking)
-                {
-                    if (previousAoeTargets.Length != 0)
-                    {
-                        RemoveOutOfRange(ref targets, data, ref previousAoeTargets, true);
-                    }
-
-                    return; // General buff system will remove this buff
-                }
-
-                if (CurTime < data.TriggerTime) return;
-
-                data.TriggerTime = CurTime + data.CheckDuration;
-                var ifTier3 = ExpData[data.Defender].CurTier == Tier.Tier3;
-
-                // Remove old, out of range defender
-                RemoveOutOfRange(ref targets, data, ref previousAoeTargets, false);
-                // Add new defender
-                AddNewShieldData(ref targets, data, ref previousAoeTargets, ifTier3);
-            }
-
-            private void AddNewShieldData(ref DynamicBuffer<AoeTarget> targets, in LightShieldBuffData data,
-                ref DynamicBuffer<PreviousAoeTarget> previousAoeTargets,
-                bool ifTier3)
-            {
-                for (var i = targets.Length - 1; i >= 0; i--)
-                {
-                    var target = targets[i];
-                    if (!DefenderLookup.TryGetBuffer(target.Entity, out var buffer))
-                    {
-                        continue; // Cur ally is dead
-                    }
-
-                    var find = false;
-                    foreach (var defender in buffer)
-                    {
-                        if (defender.Entity == data.Defender)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-
-                    if (!find)
-                    {
-                        buffer.Add(new LightShieldDefenderData
-                        {
-                            Entity = data.Defender,
-                            SelfGetDamageScale = data.SelfGetDamageScale,
-                            GetDamageScale = data.GetDamageScale,
-                            IfTier3 = ifTier3
-                        });
-                    }
-                }
-
-                previousAoeTargets.Clear();
-                foreach (var target in targets)
-                {
-                    previousAoeTargets.Add(new PreviousAoeTarget
-                    {
-                        Entity = target.Entity
-                    });
-                }
-            }
-
-            private void RemoveOutOfRange(ref DynamicBuffer<AoeTarget> targets, in LightShieldBuffData data,
-                ref DynamicBuffer<PreviousAoeTarget> previousAoeTargets, bool ifRemoveAll)
-            {
-                for (var i = previousAoeTargets.Length - 1; i >= 0; i--)
-                {
-                    var previousTarget = previousAoeTargets[i];
-                    if (!DefenderLookup.TryGetBuffer(previousTarget.Entity, out var previousDefenderData))
-                        continue;
-                    var outOfRange = true;
-                    if (!ifRemoveAll)
-                    {
-                        foreach (var curTarget in targets)
-                        {
-                            if (curTarget.Entity == previousTarget.Entity)
-                            {
-                                outOfRange = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (!outOfRange) continue;
-                    for (int j = previousDefenderData.Length - 1; j >= 0; j--)
-                    {
-                        var defender = previousDefenderData[j];
-                        // This defender is dead or out of range, should be removed
-                        if (defender.Entity == data.Defender)
-                        {
-                            previousDefenderData.RemoveAt(j);
-                        }
-                    }
                 }
             }
         }

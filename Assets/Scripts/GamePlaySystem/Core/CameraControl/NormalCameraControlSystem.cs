@@ -27,9 +27,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
         // private bool _preFlyMode;
         private Camera _camera;
 
-        // Limit
-        private float _minPos;
-        private float _maxPos;
 
         // Cache
         private NormalCameraControlConfig _config;
@@ -48,10 +45,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
         protected override void OnStartRunning()
         {
             _config = SystemAPI.GetSingleton<NormalCameraControlConfig>();
-            var mapInitInfo = SystemAPI.GetSingleton<MapInitInfo>();
-            var mapInfo = SystemAPI.GetSingleton<MapInfo>();
-            _minPos = -mapInitInfo.tileSize / 2f - _config.LimitPosBias;
-            _maxPos = -mapInitInfo.tileSize / 2f + mapInfo.OuterSquareSize + _config.LimitPosBias;
         }
 
         protected override void OnUpdate()
@@ -63,8 +56,8 @@ namespace SparFlame.GamePlaySystem.CameraControl
                 _rigTransform = _camera!.transform.parent;
                 _cameraTransform = _camera.transform;
                 _zoomHeight = _cameraTransform.localPosition.y;
-                _rigTransform.position = SystemAPI.GetSingleton<PlayerFirstBasePos>().Value;
-                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerFirstBasePos>());
+                var posX = SystemAPI.GetSingleton<MapInfo>().outerSquareSize * 0.5f - SystemAPI.GetSingleton<MapInfo>().tileSize * 0.5f;
+                _rigTransform.position =new Vector3(posX,0f , posX);
                 return;
             }
             if (gameStatus != GameStatus.Gaming)
@@ -96,14 +89,6 @@ namespace SparFlame.GamePlaySystem.CameraControl
             var cameraData = SystemAPI.GetSingleton<CameraData>();
             cameraData.CameraRigPosition = _rigTransform.position;
             SystemAPI.SetSingleton(cameraData);
-        }
-
-        private void LimitCamera()
-        {
-            var position = _cameraTransform.position;
-            position.x = math.clamp(position.x, _minPos, _maxPos);
-            position.z = math.clamp(position.z, _minPos, _maxPos);
-            _cameraTransform.position = position;
         }
 
         private void LookAt()

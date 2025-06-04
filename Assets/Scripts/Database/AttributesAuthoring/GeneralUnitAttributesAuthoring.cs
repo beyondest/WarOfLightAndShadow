@@ -68,7 +68,6 @@ namespace SparFlame.Database
                 }
                 BakeMovementAttr( item,entity,authoring);
                 BakeSelectableAttr(item,entity);
-                BakeAttunerAttr( item,entity);
             }
             
             
@@ -120,19 +119,7 @@ namespace SparFlame.Database
                 SetComponentEnabled<LockSelectedWorkForDrag>(entity, false);
             }
 
-            private void BakeAttunerAttr( UnitDataItem item,Entity entity)
-            {
-                if (item is WorkerData workerData)
-                {
-                    if (workerData.workerType == WorkerType.Attuner)
-                    {
-                        AddComponent(entity, new AttunerAttr
-                        {
-                            GenerateSpeedBonus = workerData.generateSpeedBonus
-                        });
-                    }
-                }
-            }
+          
         }
     }
 }

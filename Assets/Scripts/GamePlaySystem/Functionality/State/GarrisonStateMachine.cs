@@ -1,4 +1,5 @@
 ﻿using SparFlame.GamePlaySystem.Building;
+using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
@@ -52,7 +53,7 @@ namespace SparFlame.GamePlaySystem.State
             _oocTagLookup = state.GetComponentLookup<OocTag>(true);
             _constructingTagLookup = state.GetComponentLookup<ConstructingData>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
-            _selectedAttrLookup = state.GetComponentLookup<Selected>(true);
+            _selectedAttrLookup = state.GetComponentLookup<Selected>();
         }
 
         [BurstCompile]
@@ -246,7 +247,7 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public BufferLookup<AllowGarrisonUnit> AllowGarrisonUnitLookup;
             [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
             [ReadOnly] public ComponentLookup<ConstructingData> ConstructingTagLookup;
-            [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
+            [NativeDisableParallelForRestriction] public ComponentLookup<Selected> SelectedLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
 
 
@@ -318,17 +319,16 @@ namespace SparFlame.GamePlaySystem.State
                     TransformLookup[inGarrison.BuildingEntity], ref physicsMass, Config);
 
                 ECB.AddComponent(index, selfEntity, inGarrison);
-                if (SelectedLookup.IsComponentEnabled(selfEntity))
+                SelectedLookup.SetComponentEnabled(selfEntity, false);
+                var killSelectedVfx = ECB.CreateEntity(index);
+                ECB.AddComponent<GameplayEntityTag>(index, killSelectedVfx);
+                ECB.AddComponent(index, killSelectedVfx, new VFXRequest
                 {
-                    // var reduceSelectedUnitRequest = ECB.CreateEntity(index);
-                    // ECB.AddComponent(index, reduceSelectedUnitRequest, new UnitSelectReduceRequest
-                    // {
-                    //     IsDead = false,
-                    //     SelectedEntity = selfEntity
-                    // });
-                    // ECB.AddComponent<GameplayEntityTag>(index,reduceSelectedUnitRequest);
-                }
-
+                    VFXName = VFXName.SelectionIndicator,
+                    RequestType = VFXRequestType.Kill,
+                    VFXTrackTarget = selfEntity,
+                });
+                
                 var request = ECB.CreateEntity(index);
                 ECB.AddComponent(index, request, new GarrisonInBuildingRequest
                 {

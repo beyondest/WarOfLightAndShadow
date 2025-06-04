@@ -4,7 +4,6 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.PopNumber;
 using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -16,33 +15,41 @@ namespace SparFlame.GamePlaySystem.Generate
     public partial struct GenerateSystem : ISystem
     {
         private ComponentLookup<GeneratingTag> _generatingTagLookup;
-        private ComponentLookup<AttunerAttr> _attunerAttrLookup;
+        private ComponentLookup<HarvestAbility> _harvestAbilityLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<BuildingGenerateSystemConfig>();
             state.RequireForUpdate<GamingTag>();
             _generatingTagLookup = state.GetComponentLookup<GeneratingTag>();
-            _attunerAttrLookup = state.GetComponentLookup<AttunerAttr>();
+            _harvestAbilityLookup = state.GetComponentLookup<HarvestAbility>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _generatingTagLookup.Update(ref state);
-            _attunerAttrLookup.Update(ref state);
+            _harvestAbilityLookup.Update(ref state);
             var config = SystemAPI.GetSingleton<BuildingGenerateSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new GenerateJob
+             new ResourceMineGenerateJob
             {
                 ECB = ecb,
                 GeneratingTagLookup = _generatingTagLookup,
-                AttunerAttrLookup = _attunerAttrLookup,
+                HarvestAbilityLookup = _harvestAbilityLookup,
                 Config = config,
-                ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
+            }.ScheduleParallel();
+
+            new PlantGenerateJob
+            {
+                ECB = ecb,
+                Config = config,
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
             }.ScheduleParallel();
         }
 
@@ -50,41 +57,16 @@ namespace SparFlame.GamePlaySystem.Generate
         [BurstCompile]
         [WithNone(typeof(OocTag))]
         [WithNone(typeof(ConstructingData))]
-        private partial struct GenerateJob : IJobEntity
+        [WithAll(typeof(PlayerTag))]
+        private partial struct PlantGenerateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
-            [ReadOnly] public ComponentLookup<AttunerAttr> AttunerAttrLookup;
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public BuildingGenerateSystemConfig Config;
 
-            private void Execute([ChunkIndexInQuery] int index, ref GenerateAttr generateAttr, ref GenerateData data,
-                in DynamicBuffer<GarrisonEntity> entities, in BuildingAttr buildingAttr, in GeneralAttr generalAttr,
-                in LocalTransform transform,
-                Entity entity)
+            private void Execute([ChunkIndexInQuery] int index, ref PlantGenerateAttr plantGenerateAttr, ref GenerateData data,
+               in BuildingAttr buildingAttr, in GeneralAttr generalAttr, in LocalTransform transform)
             {
-                // Not enough workers
-                if (entities.Length < generateAttr.MinCultivatorsRequireToGenerate)
-                {
-                    generateAttr.CurGenerateSpeed = 0f;
-                    if (GeneratingTagLookup.HasComponent(entity))
-                        ECB.RemoveComponent<GeneratingTag>(index, entity);
-                    return;
-                }
-
-                // Generating
-                if (!GeneratingTagLookup.HasComponent(entity))
-                    ECB.AddComponent<GeneratingTag>(index, entity);
-                // Calculate speed
-                var speedMultiplier = 1f;
-                foreach (var garrisonEntity in entities)
-                {
-                    var attunerAttr = AttunerAttrLookup[garrisonEntity.Value];
-                    speedMultiplier += attunerAttr.GenerateSpeedBonus;
-                }
-
-                generateAttr.CurGenerateSpeed = math.clamp(speedMultiplier * generateAttr.GenerateInitialSpeed,
-                    generateAttr.GenerateInitialSpeed, generateAttr.MaxGenerateSpeed);
                 // Generate resource
                 if (ElapsedTime > data.GenerateTime)
                 {
@@ -94,9 +76,9 @@ namespace SparFlame.GamePlaySystem.Generate
                     ECB.AddComponent<GameplayEntityTag>(index, request);
                     ECB.AddComponent(index, request, new ResourceChangeRequest
                     {
-                        Type = generateAttr.GenerateResourceType,
+                        Type = plantGenerateAttr.GenerateResourceType,
                         FromFaction = generalAttr.FactionTag,
-                        AbsAmount = math.abs((int)generateAttr.CurGenerateSpeed),
+                        AbsAmount = math.abs((int)plantGenerateAttr.GenerateSpeed),
                         RequestType = ResourceRequestType.Generate
                     });
                     // Generate Pop Number VFX
@@ -109,7 +91,75 @@ namespace SparFlame.GamePlaySystem.Generate
                             : (int)PopNumberType.DarkGenerate,
                         Position = transform.Position,
                         Scale = 1f,
-                        Value = math.abs((int)generateAttr.CurGenerateSpeed),
+                        Value = math.abs((int)plantGenerateAttr.GenerateSpeed),
+                    });
+                }
+            }
+        }
+         [BurstCompile]
+        [WithNone(typeof(OocTag))]
+        [WithNone(typeof(ConstructingData))]
+        [WithAll(typeof(PlayerTag))]
+        private partial struct ResourceMineGenerateJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter ECB;
+            [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
+            [ReadOnly] public ComponentLookup<HarvestAbility> HarvestAbilityLookup;
+            [ReadOnly] public float ElapsedTime;
+            [ReadOnly] public BuildingGenerateSystemConfig Config;
+
+            private void Execute([ChunkIndexInQuery] int index, ref ResourceMineGenerateAttr resourceMineGenerateAttr, ref GenerateData data,
+                in DynamicBuffer<GarrisonEntity> entities, in BuildingAttr buildingAttr, in GeneralAttr generalAttr,
+                in LocalTransform transform,
+                Entity entity)
+            {
+         
+                // Not enough workers
+                if (entities.Length < resourceMineGenerateAttr.MinCultivatorsRequireToGenerate)
+                {
+                    resourceMineGenerateAttr.CurGenerateSpeed = 0f;
+                    if (GeneratingTagLookup.HasComponent(entity))
+                        ECB.RemoveComponent<GeneratingTag>(index, entity);
+                    return;
+                }
+
+                // Generating
+                if (!GeneratingTagLookup.HasComponent(entity))
+                    ECB.AddComponent<GeneratingTag>(index, entity);
+                // Calculate speed
+                var speed = 0f;
+                foreach (var garrisonEntity in entities)
+                {
+                    var harvestAbility = HarvestAbilityLookup[garrisonEntity.Value];
+                    speed += harvestAbility.Amount * harvestAbility.Speed;
+                }
+                resourceMineGenerateAttr.CurGenerateSpeed = speed;
+                
+                // Generate resource
+                if (ElapsedTime > data.GenerateTime)
+                {
+                    data.GenerateTime = ElapsedTime + Config.GenerateIntervalSeconds;
+                    // Generate resource
+                    var request = ECB.CreateEntity(index);
+                    ECB.AddComponent<GameplayEntityTag>(index, request);
+                    ECB.AddComponent(index, request, new ResourceChangeRequest
+                    {
+                        Type = resourceMineGenerateAttr.GenerateResourceType,
+                        FromFaction = generalAttr.FactionTag,
+                        AbsAmount = math.abs((int)resourceMineGenerateAttr.CurGenerateSpeed),
+                        RequestType = ResourceRequestType.Generate
+                    });
+                    // Generate Pop Number VFX
+                    var popNumberRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<GameplayEntityTag>(index, popNumberRequest);
+                    ECB.AddComponent(index, popNumberRequest, new PopNumberRequest
+                    {
+                        ColorId = generalAttr.FactionTag == FactionTag.Ally
+                            ? (int)PopNumberType.LightGenerate
+                            : (int)PopNumberType.DarkGenerate,
+                        Position = transform.Position,
+                        Scale = 1f,
+                        Value = math.abs((int)resourceMineGenerateAttr.CurGenerateSpeed),
                     });
                 }
             }

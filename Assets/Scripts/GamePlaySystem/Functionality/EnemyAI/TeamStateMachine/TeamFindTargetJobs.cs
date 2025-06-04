@@ -104,7 +104,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 
     [BurstCompile]
     [WithAll(typeof(PlayerTag))]
-    [WithAll(typeof(CoreCrystalTag))]
+    [WithAll(typeof(CrystalDef))]
     public partial struct FindCrystalToBaseJob : IJobEntity
     {
         // Although disable the restriction, but this job CANNOT parallel because many crystals may have same value type

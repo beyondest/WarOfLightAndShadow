@@ -1,8 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
-using SparFlame.GamePlaySystem.Garrison;
+﻿using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Hints;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.PopNumber;
 using SparFlame.GamePlaySystem.Resource;
@@ -15,12 +12,7 @@ namespace SparFlame.GamePlaySystem.Interact
 {
     public struct StatUtils
     {
-        public static void GenerateUpdateLightLineRequest(int index, EntityCommandBuffer.ParallelWriter ecb)
-        {
-            var updateLightLineRequest = ecb.CreateEntity(index);
-            ecb.AddComponent<GameplayEntityTag>(index, updateLightLineRequest);
-            ecb.AddComponent<UpdateLightLineRequest>(index, updateLightLineRequest);
-        }
+
         public static void GenerateRemoveFromTeamRequest(EntityCommandBuffer.ParallelWriter ecb, int index, Entity interacteeEntity, InTeamTag inTeamTag, ComponentLookup<UnitAttr> unitAttrLookup)
         {
             var request = ecb.CreateEntity(index);
@@ -127,18 +119,7 @@ namespace SparFlame.GamePlaySystem.Interact
             ecb.AddComponent<GameplayEntityTag>(index, releasePopulationRequest);
         }
 
-        public static void GenerateChangeOccupiedTagRequest(in GeneralAttr interacteeAttr, float3 crystalPos,
-            EntityCommandBuffer.ParallelWriter ecb, int index)
-        {
-            var request = ecb.CreateEntity(index);
-            ecb.AddComponent(index, request, new ChangeOccupiedTagRequest
-            {
-                CrystalFaction = interacteeAttr.FactionTag,
-                CrystalPos = crystalPos,
-                IsDestroyed = true
-            });
-            ecb.AddComponent<GameplayEntityTag>(index, request);
-        }
+
 
 
         public static void GenerateDwellingDestroyResourceChangeRequest(Entity interacteeEntity, int index,

@@ -1,4 +1,5 @@
-﻿using Sirenix.OdinInspector;
+﻿using System;
+using Sirenix.OdinInspector;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -10,7 +11,8 @@ namespace SparFlame.GamePlaySystem.Map
         public Color playerColor;
         public Color enemyColor;
         [SerializeField] private LayerMask miniMapLayerMask;
-
+        public MapInfo mapInfo;
+        
         
         private class MiniMapSystemBaker : Baker<MiniMapSystemAuthoring>
         {
@@ -23,6 +25,7 @@ namespace SparFlame.GamePlaySystem.Map
                     EnemyColor = new float4(authoring.enemyColor.r, authoring.enemyColor.g, authoring.enemyColor.b, authoring.enemyColor.a),
                     Layer = (int)math.log2(authoring.miniMapLayerMask.value)
                 });
+                AddComponent(entity, authoring.mapInfo);
             }
         }
     }
@@ -37,6 +40,13 @@ namespace SparFlame.GamePlaySystem.Map
     public struct MiniMapInitCompleteTag : IComponentData
     {
         
+    }
+
+    [Serializable]
+    public struct MapInfo : IComponentData
+    {
+        public float outerSquareSize;
+        public float tileSize;
     }
     
 }

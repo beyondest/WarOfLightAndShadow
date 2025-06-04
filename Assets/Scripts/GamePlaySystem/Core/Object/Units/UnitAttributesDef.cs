@@ -47,10 +47,7 @@ namespace SparFlame.GamePlaySystem.Units
     public struct WorkerTag : IComponentData{}
     public struct MageTag : IComponentData{}
         
-    public struct AttunerAttr : IComponentData
-    {
-        public float GenerateSpeedBonus;
-    }
+
     
     public enum UnitType
     {

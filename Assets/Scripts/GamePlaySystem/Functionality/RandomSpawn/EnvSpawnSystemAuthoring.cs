@@ -1,14 +1,16 @@
 ﻿using System;
-using SparFlame.GamePlaySystem.Map;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.RandomSpawn
 {
+    
+    
     public class EnvSpawnSystemAuthoring : MonoBehaviour
     {
         public EnvSpawnSystemConfig config;
+
         private class EnvSpawnSystemAuthoringBaker : Baker<EnvSpawnSystemAuthoring>
         {
             public override void Bake(EnvSpawnSystemAuthoring authoring)
@@ -18,6 +20,47 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
             }
         }
     }
+
+
+    [Serializable]
+    public struct EnvSpawnSystemConfig : IComponentData
+    {
+    }
+
+
+    public struct EnvSpawnTypeTotalAmount : IBufferElementData
+    {
+        public EnvType Type;
+        public int Amount;
+    }
+
+    public struct EnvSpawnPrefabData : IBufferElementData
+    {
+        public EnvType Type;
+        public float Prob;
+        public int Amount;
+        public Entity Prefab;
+    }
+
+    [Serializable]
+    public struct EnvTileTypeSpecialData : IBufferElementData
+    {
+        public EnvType type;
+        public FixedList128Bytes<TileTypeToSpawnWeight> spawnableTiles;
+    }
+    public enum TileType
+    {
+        None = 0,
+        GrassLike = 1,
+        WoodsLike = 2,
+        SandLike = 3,
+        RockLike = 4,
+        Five = 5,
+        Six = 6,
+        Seven = 7,
+        Eight = 8,
+    }
+
 
     public enum EnvType
     {
@@ -49,38 +92,10 @@ namespace SparFlame.GamePlaySystem.RandomSpawn
         // Flame types
         ObsidianFlame = 17,
         RiftFlame = 18,
-        
+
         // Extension
         StoneWood = 19
     }
-
-    [Serializable]
-    public struct EnvSpawnSystemConfig : IComponentData
-    {
-    }
-
-
-    public struct EnvSpawnTypeTotalAmount : IBufferElementData
-    {
-        public EnvType Type;
-        public int Amount;
-    }
-
-    public struct EnvSpawnPrefabData : IBufferElementData
-    {
-        public EnvType Type;
-        public float Prob;
-        public int Amount;
-        public Entity Prefab;
-    }
-
-    [Serializable]
-    public struct EnvTileTypeSpecialData : IBufferElementData
-    {
-        public EnvType type;
-        public FixedList128Bytes<TileTypeToSpawnWeight> spawnableTiles;
-    }
-
 
     [Serializable]
     public struct TileTypeToSpawnWeight

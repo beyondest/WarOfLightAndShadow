@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
-using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Burst;
@@ -23,23 +20,19 @@ namespace SparFlame.GamePlaySystem.Building
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct ConstructSystem : ISystem
     {
-        private ComponentLookup<OccupiedTag> _constructableLookup;
 
         private BufferLookup<CostList> _costLookup;
 
         private EntityQuery _buildingQuery;
         private EntityQuery _playerBaseQuery;
         private NativeList<Entity> _grids;
+        private ComponentLookup<ConstructableTag> _constructableLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<GameTimeData>();
-            state.RequireForUpdate<MousePositionFowTag>();
-            state.RequireForUpdate<ConstructGridSize>();
             state.RequireForUpdate<ConstructSystemConfig>();
-            state.RequireForUpdate<CrystalAffectMapRadiusSq>();
-            state.RequireForUpdate<LightLineConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EnemyResourceDataTag>();
             state.RequireForUpdate<AllyResourceDataTag>();
@@ -48,11 +41,11 @@ namespace SparFlame.GamePlaySystem.Building
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<ConstructSystemPrefabs>();
             state.RequireForUpdate<ConstructCommandData>();
-            _constructableLookup = state.GetComponentLookup<OccupiedTag>(true);
+            _constructableLookup = state.GetComponentLookup<ConstructableTag>(true);
             _costLookup = state.GetBufferLookup<CostList>(true);
 
             _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<PlayerTag>()
-                .WithAll<CoreCrystalTag>().Build();
+                .WithAll<CrystalDef>().Build();
             _buildingQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<BuildingAttr>()
                 .WithAll<GeneralAttr>()
                 .WithAll<PlayerTag>().Build();
@@ -109,31 +102,12 @@ namespace SparFlame.GamePlaySystem.Building
             ecb.Dispose();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool CheckIfInCrystalRange(float3 position, in NativeArray<LocalTransform> trans,
-            float radiusSq)
-        {
-            var inRadius = false;
-            foreach (var transform in trans)
-            {
-                if (math.distancesq(position, transform.Position) < radiusSq)
-                {
-                    inRadius = true;
-                    break;
-                }
-            }
-
-            return inRadius;
-        }
-
         private void CheckConstructionCommand(ref SystemState state,
             EntityCommandBuffer ecb,
             in NativeArray<LocalTransform> playerBaseTrans)
         {
-            var gridSize = SystemAPI.GetSingleton<ConstructGridSize>().Value;
+            var gridSize = SystemAPI.GetSingleton<ConstructSystemConfig>().ConstructionGridSize;
             var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
-            var lightLineAffectRadiusSq = SystemAPI.GetSingleton<LightLineConfig>().LightLineMaxDisSq;
-            var constructableRadiusSq = SystemAPI.GetSingleton<CrystalAffectMapRadiusSq>().Value;
             var customInputData = SystemAPI.GetSingleton<InputMouseData>();
             var allyResourceData =
                 SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
@@ -144,21 +118,11 @@ namespace SparFlame.GamePlaySystem.Building
             var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
             var generalAttr = SystemAPI.GetComponent<GeneralAttr>(data.TargetBuilding);
             var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
-            var isCrystal = buildingAttr is
-                { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
-            var isBeacon = buildingAttr is
-            {
-                Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon
-            };
+     
             var curFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
 
             // Light faction can only build buildings in light ness, including beacon
-            var mouseCheckNotPass = false;
-            if (curFaction == FactionTag.Ally)
-            {
-                mouseCheckNotPass =
-                    SystemAPI.IsComponentEnabled<InDarknessTag>(SystemAPI.GetSingletonEntity<MousePositionFowTag>());
-            }
+       
             
             switch (data.CommandType)
             {
@@ -190,32 +154,14 @@ namespace SparFlame.GamePlaySystem.Building
                     // Dark crystal can construct anywhere except for light faction tile
 
                     // If not on constructable plane or this place is occupied by enemy then not constructable
-                    if (!_constructableLookup.TryGetComponent(customInputData.HitEntity, out var constructable) ||
-                        constructable.Faction == ~data.Faction
-                        || (!isBeacon && !isCrystal && (constructable.Faction != data.Faction || !CheckIfInCrystalRange(
-                            customInputData.HitPosition,
-                            playerBaseTrans, constructableRadiusSq)))
-                       )
+                    if (!_constructableLookup.HasComponent(customInputData.HitEntity))
                     {
                         SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
                             false);
                         valid = false;
                     }
-                    // When player is light, only is constructable alongside the beacons
-                    if (valid && isBeacon &&
-                        !CheckIfInCrystalRange(customInputData.HitPosition, playerBaseTrans, lightLineAffectRadiusSq))
-                    {
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
-                            false);
-                        valid = false;
-                    }
-                    if (valid && mouseCheckNotPass)
-                    {
-                        SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
-                            false);
-                        valid = false;
-                    }
-
+                  
+             
                     if (valid)
                         SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabs, false);
 
@@ -357,12 +303,7 @@ namespace SparFlame.GamePlaySystem.Building
                             VFXTrackTarget = Entity.Null
                         });
 
-                        if (isBeacon)
-                        {
-                            var updateLightLineRequest = ecb.CreateEntity();
-                            ecb.AddComponent<GameplayEntityTag>(updateLightLineRequest);
-                            ecb.AddComponent<UpdateLightLineRequest>(updateLightLineRequest);
-                        }
+                     
                     }
                     else
                     {
@@ -468,7 +409,7 @@ namespace SparFlame.GamePlaySystem.Building
         private void VisualizeGrid(ref SystemState state)
         {
             var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
-            var gridSize = SystemAPI.GetSingleton<ConstructGridSize>().Value;
+            var gridSize = SystemAPI.GetSingleton<ConstructSystemConfig>().ConstructionGridSize;
             var trans = _buildingQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             var generalAttrs = _buildingQuery.ToComponentDataArray<GeneralAttr>(Allocator.Temp);
 

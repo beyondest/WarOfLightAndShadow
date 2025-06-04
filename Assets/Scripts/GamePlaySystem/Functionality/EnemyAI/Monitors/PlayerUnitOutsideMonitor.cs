@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             state.RequireForUpdate<PlayerUnitOutsideMonitorConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GamingTag>();
-            _crystalQuery = SystemAPI.QueryBuilder().WithAll<CoreCrystalTag>().WithAll<LocalTransform>().Build();
+            _crystalQuery = SystemAPI.QueryBuilder().WithAll<CrystalDef>().WithAll<LocalTransform>().Build();
             _outsideTagLookup = state.GetComponentLookup<OutsideTag>(true);
             _playerCrystalPositions = new NativeList<float3>(Allocator.Persistent);
         }
@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             _outsideTagLookup.Update(ref state);
             if (_crystalQuery.IsEmpty) return;
             _playerCrystalPositions.Clear();
-            var crystalTags = _crystalQuery.ToComponentDataArray<CoreCrystalTag>(Allocator.Temp);
+            var crystalTags = _crystalQuery.ToComponentDataArray<CrystalDef>(Allocator.Temp);
             var locations = _crystalQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             for (var i = 0; i < crystalTags.Length; i++)
             {

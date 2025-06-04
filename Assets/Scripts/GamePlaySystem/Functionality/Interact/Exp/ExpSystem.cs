@@ -8,7 +8,7 @@ namespace SparFlame.GamePlaySystem.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-        
+            
         }
 
         [BurstCompile]

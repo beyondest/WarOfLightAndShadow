@@ -422,9 +422,10 @@ namespace SparFlame.GamePlaySystem.State
                         InteractType.Attack => StatChangeType.Attack,
                         InteractType.Heal => StatChangeType.Heal,
                         InteractType.Harvest => StatChangeType.Harvest,
-                        _ => StatChangeType.None // This should never happen
+                        _ => StatChangeType.None // This should never happen,
                     },
-                    InteractorGeneralAttr = selfGeneralAttr
+                    InteractorGeneralAttr = selfGeneralAttr,
+                    IsMagicDamage = true
                 };
 
                 var buildingAttr = BuildingAttrLookup[selfEntity];

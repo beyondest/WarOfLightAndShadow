@@ -1,11 +1,8 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact.ShieldDefense;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
@@ -140,15 +137,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         MaxStackCount = 1
                     });
                     break;
-                case BuffType.LightShieldBuffType:
-                    buff = state.EntityManager.Instantiate(pair.Prefab);
-                    var shieldBuffData = SystemAPI.GetComponent<LightShieldBuffData>(pair.Prefab);
-                    shieldBuffData.Defender = request.TrackTarget;
-                    ecb.SetComponent(buff, shieldBuffData);
-                    break;
-                case BuffType.DarkShieldBuffType:
-                        
-                    break;
+      
             }
 
             if (buff == Entity.Null) return;

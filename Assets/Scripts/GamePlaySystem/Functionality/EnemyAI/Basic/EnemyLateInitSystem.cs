@@ -1,7 +1,6 @@
 ﻿using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Waves;
 using Unity.Burst;
 using Unity.Collections;
@@ -12,7 +11,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 {
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     [UpdateAfter(typeof(EnemyInitDistinguishSystem))]
-    [UpdateBefore(typeof(OccupiedTagManageSystem))]
     public partial struct EnemyLateInitSystem : ISystem
     {
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
@@ -63,7 +61,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         private void AddMonitorToNoMonitorPlayerCrystal(ref SystemState state, FactionTag playerFaction,
             EntityCommandBuffer ecb)
         {
-            foreach (var (coreCrystal, entity) in SystemAPI.Query<RefRO<CoreCrystalTag>>().WithNone<UnderMonitorTag>()
+            foreach (var (coreCrystal, entity) in SystemAPI.Query<RefRO<CrystalDef>>().WithNone<UnderMonitorTag>()
                          .WithAll<PlayerTag>().WithEntityAccess())
             {
                 if (coreCrystal.ValueRO.Faction != playerFaction) continue;

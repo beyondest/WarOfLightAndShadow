@@ -18,9 +18,9 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         {
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<GamingTag>();
-            _enemyCrystal = SystemAPI.QueryBuilder().WithAll<AITag>().WithAll<CoreCrystalTag>().WithAll<StatData>().Build();
+            _enemyCrystal = SystemAPI.QueryBuilder().WithAll<AITag>().WithAll<CrystalDef>().WithAll<StatData>().Build();
             
-            _playerCrystal = SystemAPI.QueryBuilder().WithAll<PlayerTag>().WithAll<CoreCrystalTag>().WithAll<StatData>().Build();
+            _playerCrystal = SystemAPI.QueryBuilder().WithAll<PlayerTag>().WithAll<CrystalDef>().WithAll<StatData>().Build();
             state.EntityManager.CreateSingleton(new EnemyCrystalInfo());
             state.EntityManager.CreateSingleton(new PlayerCrystalInfo());
 

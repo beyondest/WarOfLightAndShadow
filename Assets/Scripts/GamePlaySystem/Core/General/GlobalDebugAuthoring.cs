@@ -3,7 +3,6 @@ using Sirenix.OdinInspector;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SparFlame.GamePlaySystem.General
 {
@@ -12,8 +11,6 @@ namespace SparFlame.GamePlaySystem.General
         [Title("General Debug Switch")] [GUIColor(1, 0.7f, 0.2f)]
         public bool globalDebugEnable;
 
-        [FoldoutGroup("Random Spawn Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
-        public RandomSpawnDebug randomSpawn;
 
         [FoldoutGroup("Movement Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public MovementDebug movement;
@@ -37,8 +34,6 @@ namespace SparFlame.GamePlaySystem.General
                 if (authoring.globalDebugEnable)
                 {
                     AddComponent<DebugTag>(entity);
-                    if (authoring.randomSpawn.enabled)
-                        AddComponent(entity, authoring.randomSpawn);
                     if (authoring.movement.enabled)
                         AddComponent(entity, authoring.movement);
                     if (authoring.stat.enabled)

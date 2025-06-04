@@ -7,7 +7,6 @@ namespace SparFlame.GamePlaySystem.Garrison
 {
     public class GarrisonSystemAuthoring : MonoBehaviour
     {
-        public int minCountToTriggerDefenceBuff;
         public float3 hidePositionBias;
         public float garrisonRadius;
         private class GarrisonSystemAuthoringBaker : Baker<GarrisonSystemAuthoring>
@@ -17,7 +16,6 @@ namespace SparFlame.GamePlaySystem.Garrison
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new GarrisonSystemConfig
                 {
-                    MinCountToTriggerDefenceBuff = authoring.minCountToTriggerDefenceBuff,
                     HidePositionBias = authoring.hidePositionBias,
                     GarrisonRadiusSq = authoring.garrisonRadius * authoring.garrisonRadius,
                 });
@@ -28,7 +26,6 @@ namespace SparFlame.GamePlaySystem.Garrison
     
     public struct GarrisonSystemConfig : IComponentData
     {
-        public int MinCountToTriggerDefenceBuff;
         public float3 HidePositionBias;
         public float GarrisonRadiusSq;
     }
@@ -64,7 +61,7 @@ namespace SparFlame.GamePlaySystem.Garrison
 
     /// <summary>
     /// The only way to Garrison count--
-    /// This command is for player control move out from building detail window, and for ai move out unit when base is under attack
+    /// This command is for player control move out from building detail window, and for AI move out unit when base is under attack
     /// </summary>
     public struct GarrisonMoveOutCommand : IComponentData
     {

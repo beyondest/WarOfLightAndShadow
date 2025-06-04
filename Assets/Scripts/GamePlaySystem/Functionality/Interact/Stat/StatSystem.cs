@@ -2,24 +2,18 @@
 using System.Runtime.CompilerServices;
 using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.CustomParticleSystem.LightLine;
-using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.Garrison;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact.Blindness;
-using SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Ooc;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Transforms;
-using UnityEngine;
 
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 
@@ -45,8 +39,9 @@ namespace SparFlame.GamePlaySystem.Interact
         private BufferLookup<CostList> _costListLookup;
         private ComponentLookup<DarkShieldTauntBuff> _tauntBuffLookup;
         private ComponentLookup<DarkShieldTauntedBuff> _tauntedBuffLookup;
-        private ComponentLookup<BlindnessLastData> _blindnessLastDataLookup;
-        private ComponentLookup<BlindnessAttackBuff> _blindnessAttackLookup;
+        private ComponentLookup<LightShieldBuff> _lightShieldBuffLookup;
+        private ComponentLookup<LightShieldUnderDefend> _lightShieldUnderDefendLookup;
+
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -76,9 +71,9 @@ namespace SparFlame.GamePlaySystem.Interact
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
             _dwellingAttrLookup = state.GetComponentLookup<DwellingAttr>(true);
             _tauntBuffLookup = state.GetComponentLookup<DarkShieldTauntBuff>(true);
-            _blindnessLastDataLookup = state.GetComponentLookup<BlindnessLastData>(true);
-            _blindnessAttackLookup = state.GetComponentLookup<BlindnessAttackBuff>(true);
             _tauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
+            _lightShieldBuffLookup = state.GetComponentLookup<LightShieldBuff>(true);
+            _lightShieldUnderDefendLookup = state.GetComponentLookup<LightShieldUnderDefend>(true);
         }
 
         [BurstCompile]
@@ -99,9 +94,9 @@ namespace SparFlame.GamePlaySystem.Interact
             _unitAttrLookup.Update(ref state);
             _dwellingAttrLookup.Update(ref state);
             _tauntBuffLookup.Update(ref state);
-            _blindnessLastDataLookup.Update(ref state);
-            _blindnessAttackLookup.Update(ref state);
             _tauntedBuffLookup.Update(ref state);
+            _lightShieldBuffLookup.Update(ref state);
+            _lightShieldUnderDefendLookup.Update(ref state);
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             var oocSystemConfig = SystemAPI.GetSingleton<OocSystemConfig>();
             // var config = SystemAPI.GetSingleton<StatSystemConfig>();
@@ -149,9 +144,9 @@ namespace SparFlame.GamePlaySystem.Interact
 
                 DarkShieldTauntBuffLookup = _tauntBuffLookup,
                 DarkShieldTauntedBuffLookup = _tauntedBuffLookup,
-                BlindnessLastData = _blindnessLastDataLookup,
-                BlindnessAttackBuff = _blindnessAttackLookup,
-                CurTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                LightShieldUnderDefendLookup = _lightShieldUnderDefendLookup,
+                LightShieldBuffLookup = _lightShieldBuffLookup,
+                
             }.Schedule();
         }
 
@@ -165,7 +160,6 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public SightSystemConfig SightConfig;
             [ReadOnly] public OocSystemConfig OocConfig;
             [ReadOnly] public StatDebug StatDebug;
-            [ReadOnly] public float CurTime;
 
             [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetListLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatLookup;
@@ -187,8 +181,8 @@ namespace SparFlame.GamePlaySystem.Interact
             // Buff Lookup
             [ReadOnly] public ComponentLookup<DarkShieldTauntBuff> DarkShieldTauntBuffLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
-            [ReadOnly] public ComponentLookup<BlindnessLastData> BlindnessLastData;
-            [ReadOnly] public ComponentLookup<BlindnessAttackBuff> BlindnessAttackBuff;
+            [ReadOnly] public ComponentLookup<LightShieldUnderDefend> LightShieldUnderDefendLookup;
+            [ReadOnly] public ComponentLookup<LightShieldBuff> LightShieldBuffLookup;
 
             private void Execute([ChunkIndexInQuery] int index, in StatChangeRequest request, Entity entity)
             {
@@ -199,18 +193,19 @@ namespace SparFlame.GamePlaySystem.Interact
                 ref var statInteractee = ref StatLookup.GetRefRW(request.Interactee).ValueRW;
                 if (statInteractee.CurValue <= 0) return;
 
-
+                var absAmount = request.AbsAmount;
+                PriorApplyBuff(ref absAmount,  request,index);
                 switch (request.Type)
                 {
                     case StatChangeType.None:
                         break;
                     case StatChangeType.Heal:
                         statInteractee.CurValue = math.min(statInteractee.MaxValue,
-                            statInteractee.CurValue + request.AbsAmount);
+                            statInteractee.CurValue + absAmount);
                         break;
                     case StatChangeType.Attack:
                     case StatChangeType.Harvest:
-                        statInteractee.CurValue = math.max(0, statInteractee.CurValue - request.AbsAmount);
+                        statInteractee.CurValue = math.max(0, statInteractee.CurValue - absAmount);
                         break;
                     case StatChangeType.UnNormalKill:
                     case StatChangeType.SimpleCleanUsedAsUpgrade:
@@ -240,14 +235,41 @@ namespace SparFlame.GamePlaySystem.Interact
                 if (!StatLookup.TryGetComponent(request.Interactor, out var statInteractor)
                     || statInteractor.CurValue <= 0) return;
 
-                ApplyBuff(index, request, statInteractee);
+                LateApplyBuff(index, request, statInteractee);
             }
 
-            private void ApplyBuff(int index,in StatChangeRequest request,in StatData statInteractee)
+            private void PriorApplyBuff(ref int absAmount, in StatChangeRequest request,int index)
             {
-                // Apply taunt buff reflect damage
-                if (
-                    DarkShieldTauntedBuffLookup.HasComponent(request.Interactor) &&   // Only attackers that have taunted buff will get reflected damage
+                if (request.Type == StatChangeType.Attack)
+                {
+                    // Apply light shield damage reduction
+                    if (LightShieldUnderDefendLookup.TryGetComponent(request.Interactee, out var underDefend)
+                        && LightShieldUnderDefendLookup.IsComponentEnabled(request.Interactee))
+                    {
+                        if (LightShieldBuffLookup.TryGetComponent(underDefend.DefendBy, out var defend))
+                        {
+                            var selfScale = request.IsMagicDamage ? defend.SelfGetMagicDamageScale : defend.SelfGetPhysicalDamageScale;
+                            var shieldScale = request.IsMagicDamage ? defend.ShieldGetMagicDamageScale : defend.ShieldGetPhysicalDamageScale;
+                            absAmount = (int)(absAmount * selfScale);
+                            var lightShieldPassDamage = ECB.CreateEntity(index);
+                            ECB.AddComponent(index,lightShieldPassDamage, new StatChangeRequest
+                            {
+                                AbsAmount = (int)(absAmount * shieldScale),
+                                Type = StatChangeType.Attack,
+                                Interactee = underDefend.DefendBy,
+                                Interactor = request.Interactor,
+                                InteractorGeneralAttr = request.InteractorGeneralAttr,
+                                IsMagicDamage = request.IsMagicDamage,
+                            });
+                        }
+                    }
+                }
+            }
+
+            private void LateApplyBuff(int index,in StatChangeRequest request,in StatData statInteractee)
+            {
+                // Apply dark shield reflect damage
+                if (DarkShieldTauntedBuffLookup.HasComponent(request.Interactor) &&   // Only attackers that have taunted buff will get reflected damage
                     DarkShieldTauntedBuffLookup.IsComponentEnabled(request.Interactor) &&
                     DarkShieldTauntBuffLookup.TryGetComponent(request.Interactee, out var tauntBuff) &&
                     request is { Type: StatChangeType.Attack, AbsAmount: > 0 } &&
@@ -257,52 +279,14 @@ namespace SparFlame.GamePlaySystem.Interact
                     ECB.AddComponent(index, reflectDamage, new StatChangeRequest
                     {
                         Type = StatChangeType.Attack,
-                        AbsAmount = (int)(request.AbsAmount * tauntBuff.ReflectDamageScale),
+                        AbsAmount = (int)(request.AbsAmount * tauntBuff.ReflectPhysicalDamageScale),
                         Interactee = request.Interactor,
                         Interactor = request.Interactee,
                         InteractorGeneralAttr = shieldUnit,
                     });
                     ECB.AddComponent<GameplayEntityTag>(index, reflectDamage);
                 }
-
-                // Apply blindness buff
-                if (BlindnessLastData.HasComponent(request.Interactee) &&
-                    BlindnessAttackBuff.TryGetComponent(request.Interactor, out var attackBuff)
-                    && GeneralAttrLookup.TryGetComponent(request.Interactee, out var tower))
-                {
-                    var position = TransformLookup[request.Interactor].Position;
-                    ECB.SetComponentEnabled<ContributeSightTag>(index, request.Interactee, false);
-                    ECB.SetComponent(index, request.Interactee, new BlindnessLastData
-                    {
-                        StopTime = attackBuff.LastDuration + CurTime
-                    });
-                    var selfBurn = ECB.CreateEntity(index);
-                    ECB.AddComponent(index, selfBurn, new StatChangeRequest
-                    {
-                        Type = StatChangeType.Attack,
-                        AbsAmount = (int)(statInteractee.CurValue * attackBuff.ReduceCurrentHpRatio),
-                        Interactee = request.Interactor,
-                        Interactor = request.Interactee,
-                        InteractorGeneralAttr = tower,
-                    });
-                    ECB.AddComponent<GameplayEntityTag>(index, selfBurn);
-                    var vfxRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent<GameplayEntityTag>(index, vfxRequest);
-                    ECB.AddComponent(index, vfxRequest, new VFXRequest
-                    {
-                        Filter = default,
-                        SpawnPosition = position,
-                        KeepDuration = 3,
-                        RequestType = VFXRequestType.Spawn,
-                        StatChangeRequest = default,
-                        TargetPosition = position,
-                        VFXName = VFXName.DarkSelfBurn,
-                        VFXTrackTarget = request.Interactor,
-                    });
-                    var updateLightLineRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent<GameplayEntityTag>(index, updateLightLineRequest);
-                    ECB.AddComponent<UpdateLightLineRequest>(index, updateLightLineRequest);
-                }
+                
             }
 
             private void CheckInteractType(in StatChangeRequest request, in StatData statInteractee,
@@ -415,16 +399,6 @@ namespace SparFlame.GamePlaySystem.Interact
                         }
 
                         var buildingAttr = BuildingAttrLookup[interacteeEntity];
-                        if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
-                            or { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon })
-                        {
-                            StatUtils.GenerateChangeOccupiedTagRequest(in interacteeAttr,
-                                TransformLookup[interacteeEntity].Position, ECB, index);
-                            if (buildingAttr.SubTypeIndex == (int)OrnamentType.Beacon)
-                            {
-                                StatUtils.GenerateUpdateLightLineRequest(index, ECB);
-                            }
-                        }
 
                         if (buildingAttr.Type == BuildingType.Dwellings)
                         {
@@ -489,12 +463,6 @@ namespace SparFlame.GamePlaySystem.Interact
                 ref var oocInteractor = ref OocTagLookup.GetRefRW(request.Interactor).ValueRW;
                 oocInteractor.Seconds = interactorSeconds;
                 OocTagLookup.SetComponentEnabled(request.Interactor, true);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static float CalStatChangeValue(float requestAmount, in SightSystemConfig config)
-            {
-                return requestAmount * config.StatValueChangeMultiplier;
             }
 
             private void DebugCheck(in StatChangeRequest request, in GeneralAttr interacteeAttr,
@@ -595,6 +563,12 @@ namespace SparFlame.GamePlaySystem.Interact
                 ECB.RemoveComponent<StatData>(index, unit);
                 ECB.RemoveComponent<MovableData>(index, unit);
                 ECB.RemoveComponent<Selected>(index, unit);
+            }
+            
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float CalStatChangeValue(float requestAmount, in SightSystemConfig config)
+            {
+                return requestAmount * config.StatValueChangeMultiplier;
             }
         }
     }

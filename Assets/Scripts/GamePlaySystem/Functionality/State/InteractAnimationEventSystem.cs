@@ -1,7 +1,6 @@
 ﻿using System;
 using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Animation;
-using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
@@ -10,7 +9,6 @@ using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.State
@@ -197,7 +195,16 @@ namespace SparFlame.GamePlaySystem.State
                                 InteractState.Harvesting => StatChangeType.Harvest,
                                 _ => StatChangeType.None // This should never happen
                             },
-                            InteractorGeneralAttr = generalAttr
+                            InteractorGeneralAttr = generalAttr,
+                            IsMagicDamage = unitAttr.Type switch
+                            {
+                                UnitType.Cavalry => false,
+                                UnitType.Shield => false,
+                                UnitType.Ranged => false,
+                                UnitType.Magic => true,
+                                UnitType.Worker => false,
+                                _ => throw new ArgumentOutOfRangeException()
+                            }
                         };
 
                         statChangeRequest.AbsAmount = (int)(statChangeRequest.AbsAmount * eventInfo.amountMultiplier);

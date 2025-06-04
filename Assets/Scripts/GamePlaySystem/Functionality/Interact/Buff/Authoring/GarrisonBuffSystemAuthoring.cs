@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring
+namespace SparFlame.GamePlaySystem.Interact
 {
     public class GarrisonBuffSystemAuthoring : MonoBehaviour
     {

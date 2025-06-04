@@ -6,7 +6,6 @@ using System.Reflection;
 using GamePlaySystem.Database;
 using SparFlame.Database.Database.DatabaseDefination;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Resource;
 using UnityEngine;
 using UnityEditor;
 
@@ -19,11 +18,9 @@ namespace SparFlame.Database
         private static BuildingDatabaseSo _buildingDatabaseSo;
         private static UnitDatabaseSo _unitDatabaseSo;
         private static ResourceDatabaseSo _resourceDatabaseSo;
-        private static ResourceWaveSpawnDatabaseSo _resourceWaveSpawnDatabaseSo;
         private static EnvDatabaseSo _envDatabaseSo;
         private static EnvTypeSpawnDatabaseSo _envTypeSpawnDatabaseSo;
         private static EnemyAIDatabaseSo _enemyAIDatabaseSo;
-        private static ResourceTypeSpawnDatabaseSo _resourceTypeSpawnDatabaseSo;
         private static VFXDatabaseSo _vfxDatabaseSo;
         private static BuffDatabaseSo _buffDatabaseSo;
         private static HintDatabaseSo _hintDatabaseSo;
@@ -37,8 +34,6 @@ namespace SparFlame.Database
         public static ResourceDatabaseSo ResourceDatabaseSo =>
             _resourceDatabaseSo ??= LoadAndMergeDatabase<ResourceDatabaseSo, ResourceDataItem>("items");
 
-        public static ResourceWaveSpawnDatabaseSo ResourceWaveSpawnDatabaseSo =>
-            _resourceWaveSpawnDatabaseSo ??= LoadAndMergeDatabase<ResourceWaveSpawnDatabaseSo, ResourceWaveSpawnDataItem>("items");
 
         public static EnvDatabaseSo EnvDatabaseSo =>
             _envDatabaseSo ??= LoadAndMergeDatabase<EnvDatabaseSo, EnvDataItem>("items");
@@ -46,9 +41,7 @@ namespace SparFlame.Database
         public static EnvTypeSpawnDatabaseSo EnvTypeSpawnDatabaseSo =>
             _envTypeSpawnDatabaseSo ??= LoadAndMergeDatabase<EnvTypeSpawnDatabaseSo, EnvDatabaseItem>("items");
         
-        public static ResourceTypeSpawnDatabaseSo ResourceTypeSpawnDatabaseSo =>
-            _resourceTypeSpawnDatabaseSo ??= LoadAndMergeDatabase<ResourceTypeSpawnDatabaseSo, ResourceTypeSpawnDatabaseItem>("items");
-        
+
         public static EnemyAIDatabaseSo EnemyAIDatabaseSo =>
             _enemyAIDatabaseSo ??= LoadAndMergeDatabase<EnemyAIDatabaseSo, EnemyAIWaveDataItem>("items");
 
@@ -240,22 +233,18 @@ namespace SparFlame.Database
             _buildingDatabaseSo = null;
             _unitDatabaseSo = null;
             _resourceDatabaseSo = null;
-            _resourceWaveSpawnDatabaseSo = null;
             _envDatabaseSo = null;
             _enemyAIDatabaseSo = null;
             _envTypeSpawnDatabaseSo = null;
-            _resourceTypeSpawnDatabaseSo = null;
             _vfxDatabaseSo = null;
             _buffDatabaseSo = null;
             _hintDatabaseSo = null;
             _ = BuildingDatabaseSo;
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
-            _ = ResourceWaveSpawnDatabaseSo;
             _ = EnvDatabaseSo;
             _ = EnemyAIDatabaseSo;
             _ = EnvTypeSpawnDatabaseSo;
-            _ = ResourceTypeSpawnDatabaseSo;
             _ = VFXDatabaseSo;
             _ = BuffDatabaseSo;
             _ = HintDatabaseSo;

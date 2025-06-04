@@ -1,11 +1,7 @@
 ﻿using System;
 using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Fow;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Interact.Blindness;
-using SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring;
-using SparFlame.GamePlaySystem.Interact.ShieldDefense;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
@@ -15,15 +11,14 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.EnemyAI
 {
+    // TODO : Move this system to a more appropriate place
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(EnemyBuildingPackSpawnSystem))]
     public partial struct EnemyInitDistinguishSystem : ISystem
     {
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private BufferLookup<LinkedEntityGroup> _linkedEntityGroupLookup;
         private ComponentLookup<UnitAttr> _unitAttrLookup;
         private ComponentLookup<ExpData> _expLookup;
-        private ComponentLookup<FowAgentData> _fowAgentLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -38,7 +33,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             _linkedEntityGroupLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
             _expLookup = state.GetComponentLookup<ExpData>(true);
-            _fowAgentLookup = state.GetComponentLookup<FowAgentData>();
         }
 
         [BurstCompile]
@@ -49,7 +43,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             _linkedEntityGroupLookup.Update(ref state);
             _unitAttrLookup.Update(ref state);
             _expLookup.Update(ref state);
-            _fowAgentLookup.Update(ref state);
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
@@ -62,9 +55,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 UnitAttrLookup = _unitAttrLookup,
                 ExpDataLookup = _expLookup,
                 DarkShieldBuffConfigs = SystemAPI.GetSingletonBuffer<DarkShieldBuffConfig>(),
-                BlindnessConfigs = SystemAPI.GetSingletonBuffer<BlindnessConfigs>(),
-                LightCavalryBuffConfigs = SystemAPI.GetSingletonBuffer<LightCavalryBuffConfigs>(),
-                FowAgentLookup = _fowAgentLookup
+                LightShieldBuffConfigs = SystemAPI.GetSingletonBuffer<LightShieldBuffConfig>(),
+                LightShieldBuffGeneralConfig = SystemAPI.GetSingleton<LightShieldBuffGeneralConfig>(),
             }.ScheduleParallel(state.Dependency);
 
             job.Complete();
@@ -86,14 +78,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             [ReadOnly] public EnemyInitDistinguishConfig DistinguishConfig;
             [ReadOnly] public FactionTag EnemyFaction;
             [ReadOnly] public DynamicBuffer<DarkShieldBuffConfig> DarkShieldBuffConfigs;
-            [ReadOnly] public DynamicBuffer<BlindnessConfigs> BlindnessConfigs;
-            [ReadOnly] public DynamicBuffer<LightCavalryBuffConfigs> LightCavalryBuffConfigs;
-            [NativeDisableParallelForRestriction] public ComponentLookup<FowAgentData> FowAgentLookup;
+            [ReadOnly] public DynamicBuffer<LightShieldBuffConfig> LightShieldBuffConfigs;
+            [ReadOnly] public LightShieldBuffGeneralConfig LightShieldBuffGeneralConfig;
 
             private void Execute([ChunkIndexInQuery] int index, in GeneralAttr attr,
                 in LocalTransform transform, Entity selfEntity)
             {
-                var fowAgent = new FowAgentData();
 
                 // Apply buff
                 if (attr is { FactionTag: FactionTag.Ally, BaseTag: BaseTag.Units })
@@ -103,23 +93,23 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     if (unitAttr.Type != UnitType.Shield)
                     {
                         // Only light units except shield can be defended by light shield
-                        ECB.AddBuffer<LightShieldDefenderData>(index, selfEntity); 
+                        ECB.AddComponent<LightShieldUnderDefend>(index, selfEntity);
+                        ECB.SetComponentEnabled<LightShieldUnderDefend>(index, selfEntity, false);
                     }
                     else
                     {
-                        var shieldBuffRequest = ECB.CreateEntity(index);
-                        ECB.AddComponent<GameplayEntityTag>(index, shieldBuffRequest);
-                        ECB.AddComponent(index, shieldBuffRequest, new BuffRequest
+                        ECB.AddComponent(index, selfEntity, new AoeTriggerRequest
                         {
-                            Filter = new BuffFilter
-                            {
-                                tierFilterEnabled = true,
-                                tier = ExpDataLookup[selfEntity].CurTier,
-                            },
-                            TrackTarget = selfEntity,
-                            Name = BuffName.LightShield,
-                            SpawnPosition = transform.Position,
-                            SpawnRotation = transform.Rotation,
+                            Prefab = LightShieldBuffGeneralConfig.LightShieldAoeTriggerPrefab
+                        });
+                        ECB.AddBuffer<AoeTarget>(index, selfEntity);
+                        ECB.AddComponent(index, selfEntity, new LightShieldBuff
+                        {
+                            ShieldGetPhysicalDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].shieldGetPhysicalDamageScale,
+                            SelfGetPhysicalDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].selfGetPhysicalDamageScale,
+                            ShieldGetMagicDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].shieldGetMagicDamageScale,
+                            SelfGetMagicDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].selfGetMagicDamageScale,
+                            MaxDefendCount = LightShieldBuffConfigs[(int)expData.CurTier - 3].maxDefendCount
                         });
                     }
 
@@ -131,17 +121,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         ECB.SetComponentEnabled<DarkShieldTauntedBuff>(index, selfEntity, false);
                     }
                     
-
-                    if (unitAttr.Type == UnitType.Cavalry)
-                    {
-                        ECB.AddComponent(index, selfEntity, new LightCavalryBuffData
-                        {
-                            LastDuration = LightCavalryBuffConfigs[(int)expData.CurTier - 3].LastDuration,
-                            ReduceCurrentHpRatio =
-                                LightCavalryBuffConfigs[(int)expData.CurTier - 3].ReduceCurrentHpRatio,
-                            StopTime = 0
-                        });
-                    }
                 }
                 else if (attr is { FactionTag: FactionTag.Enemy, BaseTag: BaseTag.Units })
                 {
@@ -151,19 +130,12 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     {
                         ECB.AddComponent(index, selfEntity, new DarkShieldTauntBuff
                         {
-                            ReflectDamageScale = DarkShieldBuffConfigs[(int)expData.CurTier - 3].reflectDamageScale,
+                            ReflectPhysicalDamageScale = DarkShieldBuffConfigs[(int)expData.CurTier - 3].reflectPhysicalDamageScale,
                             MaxTauntCount = DarkShieldBuffConfigs[(int)expData.CurTier - 3].maxTauntCount,
+                            ReflectMagicDamageScale = DarkShieldBuffConfigs[(int)expData.CurTier - 3].reflectMagicDamageScale
                         });
                     }
-
-                    if (unitAttr.Type == UnitType.Cavalry)
-                    {
-                        ECB.AddComponent(index, selfEntity, new BlindnessAttackBuff
-                        {
-                            LastDuration = BlindnessConfigs[(int)expData.CurTier - 3].LastDuration,
-                            ReduceCurrentHpRatio = BlindnessConfigs[(int)expData.CurTier - 3].ReduceCurrentHpRatio,
-                        });
-                    }
+      
                 }
 
 
@@ -183,49 +155,16 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             {
                                 Value = 0f
                             });
-                            // Only light crystal and beacon can contribute to sight, no matter what player faction is
-                            if (attr.FactionTag == FactionTag.Ally)
-                            {
-                                ECB.AddComponent<ContributeSightTag>(index, selfEntity);
-                                ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity, true);
-                                ECB.AddComponent<BlindnessLastData>(index, selfEntity);
-                            }
+                     
                         }
                     }
-                    else
-                    {
-                        var unitAttr = UnitAttrLookup[selfEntity];
-                        if (attr.FactionTag == FactionTag.Ally)
-                        {
-                            if (unitAttr.Type == UnitType.Cavalry)
-                            {
-                                ECB.AddComponent<ContributeSightTag>(index, selfEntity);
-                                // Only light cavalry can contribute to light, other light unit may have light by cavalry buff
-                                ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity, false);
-                            }
-                        }
-                    }
-
-                    if (FowAgentLookup.HasComponent(selfEntity))
-                        FowAgentLookup.GetRefRW(selfEntity).ValueRW.IsInsight = true;
+                  
 
                     return;
                 }
 
                 ECB.AddComponent<AITag>(index, selfEntity);
-                if (EnemyFaction == FactionTag.Ally)
-                {
-                    fowAgent.IsInsight =
-                        true; // When first spawn, enemy unit or building is visible when it is light faction
-                }
-                else
-                {
-                    fowAgent.IsInsight = false;
-                    ECB.AddComponent(index, selfEntity, new HideFowAgentRequest
-                    {
-                        Hide = true
-                    });
-                }
+               
 
                 // Detail distinguishes
                 switch (attr.BaseTag)
@@ -256,20 +195,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                                 });
                             }
 
-                            // var request = ECB.CreateEntity(index);
-                            // ECB.AddComponent(index, request, new ChangeOccupiedTagRequest
-                            // {
-                            //     CrystalFaction = EnemyFaction,
-                            //     CrystalPos = new float3(transform.Position.x, 0f, transform.Position.z),
-                            //     IsDestroyed = false
-                            // });
-                            // ECB.AddComponent<GameplayEntityTag>(index, selfEntity);
-                            if (attr.FactionTag == FactionTag.Ally)
-                            {
-                                ECB.AddComponent<ContributeSightTag>(index, selfEntity);
-                                ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity, true);
-                                ECB.AddComponent<BlindnessLastData>(index, selfEntity);
-                            }
                         }
 
                         break;
@@ -279,20 +204,13 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         ECB.AddComponent<EnemyUnitCommandUpdate>(index, selfEntity);
                         ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, selfEntity, false);
 
-                        if (attr.FactionTag == FactionTag.Ally && UnitAttrLookup[selfEntity].Type == UnitType.Cavalry)
-                        {
-                            ECB.AddComponent<ContributeSightTag>(index, selfEntity);
-                            ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity, false);
-                        }
-
                         break;
                     case BaseTag.Resources:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                if (FowAgentLookup.HasComponent(selfEntity))
-                    FowAgentLookup.GetRefRW(selfEntity).ValueRW.IsInsight = fowAgent.IsInsight;
+         
             }
         }
     }

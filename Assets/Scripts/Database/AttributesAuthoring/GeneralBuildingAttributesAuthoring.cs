@@ -1,12 +1,11 @@
-﻿using SparFlame.GamePlaySystem.Building;
+﻿using System;
+using SparFlame.GamePlaySystem.Building;
 using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Generate;
-using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace SparFlame.Database
 {
@@ -80,15 +79,27 @@ namespace SparFlame.Database
             private void BakeGenerateAttr(BuildingDataItem item, Entity entity)
             {
                 if (item is not GeneratorData generatorData) return;
-                AddComponent(entity, new GenerateAttr
-                {
-                    GenerateResourceType = generatorData.generateResourceType,
-                    GenerateInitialSpeed = generatorData.initGenerateSpeed,
-                    MaxGenerateSpeed = generatorData.maxGenerateSpeed,
-                    CurGenerateSpeed = generatorData.initGenerateSpeed,
-                    MinCultivatorsRequireToGenerate = generatorData.minCultivatorCounts
-                });
                 AddComponent<GenerateData>(entity);
+                switch (generatorData.generatorType)
+                {
+                    case GeneratorType.PlantGenerator:
+                        AddComponent(entity, new PlantGenerateAttr
+                        {
+                            GenerateResourceType = generatorData.generateResourceType,
+                            GenerateSpeed = generatorData.generateSpeed
+                        });
+                        break;
+                    case GeneratorType.ResourceMine:
+                        AddComponent(entity, new ResourceMineGenerateAttr
+                        {
+                            GenerateResourceType = generatorData.generateResourceType,
+                            CurGenerateSpeed = generatorData.generateSpeed,
+                            MinCultivatorsRequireToGenerate = generatorData.minWorkersCount < 1 ? 1 : generatorData.minWorkersCount
+                        });
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
 
             private void BakeConjureAttr(BuildingDataItem item, Entity entity)
@@ -123,16 +134,11 @@ namespace SparFlame.Database
                 }
                 if (ornamentData.ornamentType is OrnamentType.Crystal or OrnamentType.Beacon)
                 {
-                    AddComponent(entity, new CoreCrystalTag
+                    AddComponent(entity, new CrystalDef
                     {
                         Faction = item.factionTag
                     });
-                    AddComponent(entity, new ChangeOccupiedTagRequest
-                    {
-                        CrystalFaction = item.factionTag,
-                        IsDestroyed = false,
-                        CrystalPos = float3.zero
-                    });
+           
                 }
                 if (item.factionTag == FactionTag.Ally && ornamentData.ornamentType == OrnamentType.Crystal)
                 {

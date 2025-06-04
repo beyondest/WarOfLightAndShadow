@@ -1,4 +1,6 @@
-﻿using Unity.Entities;
+﻿using System;
+using System.Collections.Generic;
+using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Resource
@@ -6,7 +8,7 @@ namespace SparFlame.GamePlaySystem.Resource
     public class RegeneratingSystemAuthoring : MonoBehaviour
     {
         public float regeneratingTimeScale = 1.0f;
-       
+        public List<RenewableResourceType> renewableResourceTypes;
         private class RegeneratingSystemAuthoringBaker : Baker<RegeneratingSystemAuthoring>
         {
             public override void Bake(RegeneratingSystemAuthoring authoring)
@@ -16,7 +18,11 @@ namespace SparFlame.GamePlaySystem.Resource
                 {
                     RegeneratingTimeScale = authoring.regeneratingTimeScale,
                 });
-              
+                var buffer = AddBuffer<RenewableResourceType>(entity);
+                foreach (var type in authoring.renewableResourceTypes)
+                {
+                    buffer.Add(type);
+                }
             }
         }
     }
@@ -26,9 +32,10 @@ namespace SparFlame.GamePlaySystem.Resource
         public float RegeneratingTimeScale;
     }
 
+    [Serializable]
     public struct RenewableResourceType : IBufferElementData
     {
-        public ResourceType ResourceType;
+        public ResourceType resourceType;
     }
     
 }

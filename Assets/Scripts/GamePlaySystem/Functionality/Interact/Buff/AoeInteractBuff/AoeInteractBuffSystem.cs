@@ -1,6 +1,4 @@
-﻿using System;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact.ShieldDefense;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -10,7 +8,7 @@ namespace SparFlame.GamePlaySystem.Interact
     public partial struct AoeInteractBuffSystem : ISystem
     {
         private ComponentLookup<GeneralAttr> _generalAttrLookup;
-        private BufferLookup<LightShieldDefenderData> _lightShieldDefenderLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -19,40 +17,36 @@ namespace SparFlame.GamePlaySystem.Interact
             state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<AoeInteractData>();
             _generalAttrLookup = state.GetComponentLookup<GeneralAttr>(true);
-            _lightShieldDefenderLookup = state.GetBufferLookup<LightShieldDefenderData>(false);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _generalAttrLookup.Update(ref state);
-            _lightShieldDefenderLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            var job =new AoeInteractJob
+            var job = new AoeInteractJob
             {
                 ECB = ecb,
                 GeneralAttrLookup = _generalAttrLookup,
                 CurTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
-                DefenderDataLookup = _lightShieldDefenderLookup,
             }.Schedule(state.Dependency);
             job.Complete();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
-            
         }
-
-   
     }
-    
+
     [BurstCompile]
     public partial struct AoeInteractJob : IJobEntity
     {
         [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookup;
+
         [ReadOnly] public float CurTime;
-        [NativeDisableParallelForRestriction] public BufferLookup<LightShieldDefenderData> DefenderDataLookup;
+
+        // [NativeDisableParallelForRestriction] public BufferLookup<LightShieldUnderDefend> DefenderDataLookup;
         public EntityCommandBuffer ECB;
 
-        private void Execute([ChunkIndexInQuery]int index,ref AoeInteractData data, Entity selEntity, ref DynamicBuffer<AoeTarget> targets)
+        private void Execute(ref AoeInteractData data, Entity selEntity, ref DynamicBuffer<AoeTarget> targets)
         {
             if (CurTime > data.TriggerTime)
             {
@@ -68,7 +62,8 @@ namespace SparFlame.GamePlaySystem.Interact
                     }
 
                     var underDefendTargetGetDamageScale = 1f;
-                    var ifDefendByTier3 = false;
+                    // var ifDefendByTier3 = false;
+                    /*
                     // When this is attack aoe and this unit can be defended. Shield cannot be defended by shield.
                     if (data.StatChangeRequest.Type == StatChangeType.Attack && DefenderDataLookup.TryGetBuffer(target.Entity, out var buffer))
                     {
@@ -79,7 +74,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         {
                             var defender = buffer[j];
                             // Invalid defender, defender is already dead
-                            if (!GeneralAttrLookup.HasComponent(defender.Entity))
+                            if (!GeneralAttrLookup.HasComponent(defender.DefendBy))
                             {
                                 buffer.RemoveAt(j);
                                 continue;
@@ -91,30 +86,30 @@ namespace SparFlame.GamePlaySystem.Interact
                             var shieldDamageRequest = ECB.CreateEntity();
                             ECB.AddComponent<GameplayEntityTag>(shieldDamageRequest);
                             var shieldDamageRequestData = data.StatChangeRequest;
-                            shieldDamageRequestData.Interactee = defender.Entity;
+                            shieldDamageRequestData.Interactee = defender.DefendBy;
                             shieldDamageRequestData.AbsAmount = (int)thisShieldGetDamage;
                             ECB.AddComponent( shieldDamageRequest,shieldDamageRequestData);
                         }
                     }
+                    */
 
                     // When this unit is defended by tier3, it will not get damage until tier 3 shield dead
-                    if (!ifDefendByTier3 || data.StatChangeRequest.Type != StatChangeType.Attack)
-                    {
-                        var request = ECB.CreateEntity();
-                        ECB.AddComponent<GameplayEntityTag>(request);
-                        var requestData = data.StatChangeRequest;
-                        requestData.Interactee = target.Entity;
-                        requestData.AbsAmount = (int)(requestData.AbsAmount * underDefendTargetGetDamageScale);                        
-                        ECB.AddComponent( request,requestData);
-                    }
+                    // if (!ifDefendByTier3 || data.StatChangeRequest.Type != StatChangeType.Attack)
+                    var request = ECB.CreateEntity();
+                    ECB.AddComponent<GameplayEntityTag>(request);
+                    var requestData = data.StatChangeRequest;
+                    requestData.Interactee = target.Entity;
+                    requestData.AbsAmount = (int)(requestData.AbsAmount * underDefendTargetGetDamageScale);
+                    ECB.AddComponent(request, requestData);
                 }
+
                 data.CurrentTriggerCount++;
-                data.TriggerTime =CurTime +  data.TriggerDuration;
+                data.TriggerTime = CurTime + data.TriggerDuration;
             }
 
             if (data.CurrentTriggerCount >= data.MaxTriggerCount)
             {
-                ECB.DestroyEntity( selEntity);
+                ECB.DestroyEntity(selEntity);
             }
         }
     }

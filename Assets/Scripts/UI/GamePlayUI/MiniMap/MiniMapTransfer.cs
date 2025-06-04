@@ -14,14 +14,12 @@ namespace SparFlame.UI.GamePlay
         private RectTransform _squareTransform;
         private float _camMin;
         private float _camMax;
-        private MapInfo _mapInfo;
         private bool _isDragging = false;
+        private MapInfo _mapInfo;
 
         protected override void OnCreate()
         {
             RequireForUpdate<GamingTag>();
-            RequireForUpdate<MapInfo>();
-            RequireForUpdate<MapInitInfo>();
             RequireForUpdate<MiniMapControlData>();
         }
 
@@ -33,8 +31,8 @@ namespace SparFlame.UI.GamePlay
                 MiniMapWindow.Instance.OnEcsOnSquareDrag += MiniMapMoveCamera;
                 _miniMapTransform = MiniMapWindow.Instance.miniMapRect;
                 _squareTransform = MiniMapWindow.Instance.miniMapSquareRect;
-                _camMin = -SystemAPI.GetSingleton<MapInitInfo>().tileSize;
-                _camMax = _camMin + SystemAPI.GetSingleton<MapInfo>().OuterSquareSize;
+                _camMin = -SystemAPI.GetSingleton<MapInfo>().tileSize;
+                _camMax = _camMin + SystemAPI.GetSingleton<MapInfo>().outerSquareSize;
                 _mapInfo = SystemAPI.GetSingleton<MapInfo>();
             }
         }
@@ -50,7 +48,7 @@ namespace SparFlame.UI.GamePlay
             }
             var data = SystemAPI.GetSingleton<MiniMapControlData>();
             var local = data.CameraRigWorldPos - new float3(_camMin, 0f, _camMin);
-            local /= _mapInfo.OuterSquareSize;
+            local /= _mapInfo.outerSquareSize;
             local = math.saturate(local);
             var squareTargetPos = new float2(local.x * _miniMapTransform.rect.width,
                 local.z * _miniMapTransform.rect.height);
@@ -67,8 +65,8 @@ namespace SparFlame.UI.GamePlay
             var local = new float2(_squareTransform.anchoredPosition.x / _miniMapTransform.rect.width,
                 _squareTransform.anchoredPosition.y / _miniMapTransform.rect.height);
             data.ValueRW.MiniMapRequestPos = new float3
-            (_camMin + local.x * _mapInfo.OuterSquareSize,
-                0f, _camMin + local.y * _mapInfo.OuterSquareSize);
+            (_camMin + local.x * _mapInfo.outerSquareSize,
+                0f, _camMin + local.y * _mapInfo.outerSquareSize);
             var dataEntity = SystemAPI.GetSingletonEntity<MiniMapControlData>();
             SystemAPI.SetComponentEnabled<DraggingTag>(dataEntity, true);
         }

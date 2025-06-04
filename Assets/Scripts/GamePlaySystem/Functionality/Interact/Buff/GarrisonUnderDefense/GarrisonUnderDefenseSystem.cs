@@ -1,14 +1,13 @@
 ﻿using SparFlame.GamePlaySystem.CustomParticleSystem;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace SparFlame.GamePlaySystem.Interact.GarrisonUnderDefense
+namespace SparFlame.GamePlaySystem.Interact
 {
     // [UpdateBefore(typeof(StatSystem))]
     public partial struct GarrisonUnderDefenseSystem : ISystem
@@ -16,6 +15,7 @@ namespace SparFlame.GamePlaySystem.Interact.GarrisonUnderDefense
         public struct GarrisonBuffRegenerationTimeData : IComponentData
         {
             public float Value;
+            
         }
 
         private ComponentLookup<ExpData> _expLookup;

@@ -201,7 +201,7 @@ namespace SparFlame.GamePlaySystem.Resource
 
             foreach (var type in buffer2)
             {
-                _renewableResources.Add((int)type.ResourceType);
+                _renewableResources.Add((int)type.resourceType);
             }
 
             foreach (var type in config.PopulationResourceTypes)

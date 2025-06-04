@@ -33,15 +33,7 @@ namespace SparFlame.GamePlaySystem.General
         public int ID;
     }
     
-    public struct AITag : IComponentData
-    {
-        
-    }
 
-    public struct PlayerTag : IComponentData
-    {
-        
-    }
     public struct InTeamTag : IComponentData
     {
         public Entity BelongsToTeam;
@@ -54,49 +46,12 @@ namespace SparFlame.GamePlaySystem.General
     {
         
     }
-    
-    public struct EnemyCrystalInfo : IComponentData
-    {
-        public int TotalCount;
-        /// <summary>
-        /// This only counts in sight crystal, and if enemy is light, only count single crystal
-        /// </summary>
-        public int InSightValidCount;
-        public float CurTotalHp;
-        public float MaxTotalHp;
-    }
-    public struct PlayerCrystalInfo : IComponentData
-    {
-        public int TotalCount;
-        public float CurTotalHp;
-        public float MaxTotalHp;
-    }
-    
-    
-    /// <summary>
-    /// This request is handled by stat system
-    /// AbsAmount is always positive
-    /// If Upgrade, kill by unnormal must be true
-    /// </summary>
-    public struct StatChangeRequest : IComponentData
-    {
-        public Entity Interactor;
-        public Entity Interactee;
-        public int AbsAmount;
-        public StatChangeType Type;
-        public GeneralAttr InteractorGeneralAttr;
-    }
 
-    public enum StatChangeType
-    {
-        None = 0,
-        Attack = 1,
-        Heal = 2,
-        Harvest = 3,
-        UnNormalKill = 4,
-        SimpleCleanUsedAsUpgrade = 5
-    }
     
+    
+
+
+
     public enum Tier
     {
         Tier1 = 3,

@@ -7,14 +7,16 @@ using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.EnemyAI
 {
-
     public struct AoeTriggerRequest : IComponentData
     {
+        
         public Entity Prefab;
     }
+
     public partial struct AoeTriggerManageSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transformLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -47,15 +49,16 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             public EntityCommandBuffer.ParallelWriter ECB;
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
 
-            private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,in AoeTriggerRequest request)
+            private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in AoeTriggerRequest request)
             {
-                ECB.RemoveComponent<AoeTriggerRequest> (index,selfEntity);
+                ECB.RemoveComponent<AoeTriggerRequest>(index, selfEntity);
+
                 // Safety check
-                if(!TransformLookup.TryGetComponent(selfEntity, out var transform))return;
+                if (!TransformLookup.TryGetComponent(selfEntity, out var transform)) return;
                 // This should not happen, only for safety
                 var prefab = request.Prefab;
-                var monitor = ECB.Instantiate(index,prefab);
-                ECB.AddComponent<GameplayEntityTag>(index,monitor);
+                var monitor = ECB.Instantiate(index, prefab);
+                ECB.AddComponent<GameplayEntityTag>(index, monitor);
                 ECB.AddComponent(index, monitor, new AoeTriggerData
                 {
                     BelongsTo = selfEntity
@@ -63,13 +66,14 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 ECB.SetComponent(index, monitor, transform);
             }
         }
-        
-        
+
+
         [BurstCompile]
         public partial struct SyncAoeTriggerJob : IJobEntity
         {
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
+
             private void Execute([ChunkIndexInQuery] int index, in AoeTriggerData data, Entity entity)
             {
                 // Buff is dead and should be removed
@@ -78,6 +82,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                     ECB.DestroyEntity(index, entity);
                     return;
                 }
+
                 ref var transform = ref LocalTransformLookup.GetRefRW(entity).ValueRW;
                 transform.Position = localTransform.Position;
                 transform.Rotation = localTransform.Rotation;

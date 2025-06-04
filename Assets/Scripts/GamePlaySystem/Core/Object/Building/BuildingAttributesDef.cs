@@ -80,8 +80,8 @@ namespace SparFlame.GamePlaySystem.Building
 
     public enum GeneratorType
     {
-        Converter = 0,     // Seedling Converter（幼芽转化器）, Core Converter（核心转化器）, Arcane Forge（奥术熔炉）
-        BloomSpire = 1,    // Bloom Pod（花蕾囊）, Bloom Spire（绽放尖塔）, Bloom Throne（盛放王座）
+        ResourceMine = 0,
+        PlantGenerator = 1,
     }
 
 

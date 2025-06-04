@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

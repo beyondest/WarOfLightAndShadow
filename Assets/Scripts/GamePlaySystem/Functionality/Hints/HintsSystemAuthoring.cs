@@ -39,6 +39,8 @@ namespace SparFlame.GamePlaySystem.Hints
         CrystalCannotRecycle = 15,
         CannotRecycleWhenUnderAttack = 16,
         CannotRecycleWhenConstructing = 17,
+        
+        TargetNotGarrisonable = 18,
     }
 
     public enum HintType

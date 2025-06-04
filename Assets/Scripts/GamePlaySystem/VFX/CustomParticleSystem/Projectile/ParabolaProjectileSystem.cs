@@ -1,11 +1,11 @@
 ﻿using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.CustomParticleSystem
 {

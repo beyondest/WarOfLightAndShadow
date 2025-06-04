@@ -141,7 +141,8 @@ namespace SparFlame.GamePlaySystem.Building
             return type switch
             {
                 BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower,
-                BuildingType.Generators => true,
+                BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine=> true,
+                BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
                 BuildingType.ConjuringShrines or BuildingType.Dwellings or BuildingType.Ornaments => false,
                 _ => throw new ArgumentOutOfRangeException()
             };
@@ -177,18 +178,16 @@ namespace SparFlame.GamePlaySystem.Building
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("generator type")]
         public GeneratorType generatorType;
 
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/0"),HideLabel, Tooltip("generate resource type")] 
+        [FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/0"),HideLabel, Tooltip("generate resource type")] 
         public ResourceType generateResourceType;
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/1")] 
-        public int minCultivatorCounts;
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/2"),Tooltip("All the cultivator generate speed bonus multiply this initial speed to " +
+        [ShowIf(nameof(IsPlantGenerator)),FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/2"),Tooltip("All the cultivator generate speed bonus multiply this initial speed to " +
              "calculate the cur speed, not the cur speed")] 
-        public float initGenerateSpeed;
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/3")] 
-        public float maxGenerateSpeed;
+        public float generateSpeed;
+        [ShowIf(nameof(IsResourceMine)),FoldoutGroup("Gameplay/Generator"),HorizontalGroup("Gameplay/Generator/1")] 
+        public int minWorkersCount = 1;
 
-        [ShowIf(nameof(IsConvertor)), FoldoutGroup("Gameplay/Convertor"), HorizontalGroup("Gameplay/Convertor/0")]
-        public ResourceType convertToType;
+        
+       
         public override int GetSubtypeIndex() => (int)generatorType;
         protected override void InitDefaults()
         {
@@ -197,8 +196,8 @@ namespace SparFlame.GamePlaySystem.Building
                 type = BuildingType.Generators;
         }
 
-        private bool IsBloom() => generatorType == GeneratorType.BloomSpire;
-        private bool IsConvertor() => generatorType == GeneratorType.Converter;
+        private bool IsPlantGenerator() => generatorType == GeneratorType.PlantGenerator;
+        private bool IsResourceMine() => generatorType == GeneratorType.ResourceMine;
     }
 
     [Serializable]

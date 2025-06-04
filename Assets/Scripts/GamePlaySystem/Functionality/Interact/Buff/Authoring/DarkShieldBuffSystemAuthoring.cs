@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring
+namespace SparFlame.GamePlaySystem.Interact
 {
     
     
@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interac
                 {
                     buffer.Add(new DarkShieldBuffConfig
                     {
-                        reflectDamageScale = config.reflectDamageScale,
+                        reflectPhysicalDamageScale = config.reflectPhysicalDamageScale,
                         maxTauntCount = config.maxTauntCount
                     });
                     
@@ -38,7 +38,8 @@ namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interac
     [Serializable]
     public struct DarkShieldBuffConfig : IBufferElementData
     {
-        public float reflectDamageScale;
+        public float reflectPhysicalDamageScale;
+        public float reflectMagicDamageScale;
         public int maxTauntCount;
     }
 
@@ -48,7 +49,8 @@ namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interac
     }
     public struct DarkShieldTauntBuff : IComponentData
     {
-        public float ReflectDamageScale;
+        public float ReflectPhysicalDamageScale;
+        public float ReflectMagicDamageScale;
         public int MaxTauntCount;
     }
 

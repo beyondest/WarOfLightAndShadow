@@ -36,8 +36,8 @@ namespace SparFlame.GamePlaySystem.Garrison
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             
             DealGarrisonInBuildingRequest(ref state, ecb, config);
-            DealGarrisonMoveOutCommand(ref state, ecb, config);
-            DealGarrisonUnitDieRequest(ref state, ecb, config);
+            DealGarrisonMoveOutCommand(ref state, ecb);
+            DealGarrisonUnitDieRequest(ref state, ecb);
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
             _garrisonAttrLookup.Update(ref state);
@@ -59,8 +59,7 @@ namespace SparFlame.GamePlaySystem.Garrison
         }
 
         [BurstCompile]
-        private void DealGarrisonUnitDieRequest(ref SystemState state, EntityCommandBuffer ecb,
-            GarrisonSystemConfig config)
+        private void DealGarrisonUnitDieRequest(ref SystemState state, EntityCommandBuffer ecb)
         {
             foreach (var (reqRo, entity) in SystemAPI.Query<RefRO<GarrisonUnitDieRequest>>().WithEntityAccess())
             {
@@ -114,8 +113,7 @@ namespace SparFlame.GamePlaySystem.Garrison
         }
 
         [BurstCompile]
-        private void DealGarrisonMoveOutCommand(ref SystemState state, EntityCommandBuffer ecb,
-            GarrisonSystemConfig config)
+        private void DealGarrisonMoveOutCommand(ref SystemState state, EntityCommandBuffer ecb)
         {
             _alreadyTagged.Clear();
             foreach (var (commandRo, entity) in SystemAPI.Query<RefRO<GarrisonMoveOutCommand>>().WithEntityAccess())
@@ -233,7 +231,6 @@ namespace SparFlame.GamePlaySystem.Garrison
                     continue;
                 }
 
-                var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(inRequest.BuildingEntity);
                 var garrisonDatas = SystemAPI.GetBuffer<GarrisonTypeData>(inRequest.BuildingEntity);
                 var garrisonEntities = SystemAPI.GetBuffer<GarrisonEntity>(inRequest.BuildingEntity);
                 int i;
@@ -271,17 +268,7 @@ namespace SparFlame.GamePlaySystem.Garrison
                     Value = inRequest.UnitEntity
                 });
 
-                // // Fortification building will gain under defence buff if count exceeds
-                // if (garrisonEntities.Length >= config.MinCountToTriggerDefenceBuff
-                //     && buildingAttr.Type == BuildingType.Fortifications
-                //     && !SystemAPI.HasComponent<UnderDefence>(inRequest.BuildingEntity))
-                // {
-                //     var attackAbility = SystemAPI.GetComponent<AttackAbility>(inRequest.BuildingEntity);
-                //     ecb.AddComponent(entity, new UnderDefence
-                //     {
-                //         RangeSq = attackAbility.RangeSq
-                //     });
-                // }
+              
                 ecb.DestroyEntity(entity);
             }
         }

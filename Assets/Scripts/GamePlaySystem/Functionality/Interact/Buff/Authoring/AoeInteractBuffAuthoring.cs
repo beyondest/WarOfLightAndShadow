@@ -18,6 +18,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 AddBuffer<AoeTarget>(entity);
                 AddComponent(entity, new AoeTriggerRequest
                 {
+                    
                     Prefab = GetEntity(authoring.aoeTriggerPrefab, TransformUsageFlags.Dynamic)
                 });
                 AddComponent(entity, new AoeInteractData

@@ -35,6 +35,7 @@ namespace SparFlame.GamePlaySystem.Building
         public float3 hideBuildingLocation  = new float3(0, -100, 0);
         public float rotateSpeed = 2f;
         public float recycleScale = 0.5f;
+        public float constructionGridSize = 2f;
         
         private class PlaceSystemAuthoringBaker : Baker<ConstructSystemAuthoring>
         {
@@ -46,6 +47,7 @@ namespace SparFlame.GamePlaySystem.Building
                     HideBuildingLocation = authoring.hideBuildingLocation,
                     RotateSpeed = authoring.rotateSpeed,
                     RecycleScale = authoring.recycleScale,
+                    ConstructionGridSize = authoring.constructionGridSize,
                 });
 
                 
@@ -105,6 +107,7 @@ namespace SparFlame.GamePlaySystem.Building
         public float3 HideBuildingLocation;
         public float RotateSpeed;
         public float RecycleScale;
+        public float ConstructionGridSize;
     }
 
     public enum ConstructCommandType
@@ -136,6 +139,11 @@ namespace SparFlame.GamePlaySystem.Building
         public Entity PreviewAttackRangeEntity;
         public Entity PreviewCube;
 
+    }
+
+    public struct ConstructableTag : IComponentData
+    {
+        
     }
 
 
