@@ -12,7 +12,7 @@
 //     [BurstCompile]
 //     public partial struct SqueezeSystem : ISystem
 //     {
-//         private ComponentLookup<InteractableAttr> _interactAttrLookup;
+//         private ComponentLookup<InteractableAttr> _generalAttrLookup;
 //
 //         [BurstCompile]
 //         public void OnCreate(ref SystemState state)
@@ -20,17 +20,17 @@
 //             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
 //             state.RequireForUpdate<MovementConfig>();
 //             state.RequireForUpdate<PhysicsWorldSingleton>();
-//             state.RequireForUpdate<NotPauseTag>();
+//             state.RequireForUpdate<GameBasicStatus>();
 //             state.RequireForUpdate<AutoGiveWaySystemConfig>();
 //             state.RequireForUpdate<SqueezeSystemConfig>();
-//             _interactAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
+//             _generalAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
 //         }
 //
 //         [BurstCompile]
 //         public void OnUpdate(ref SystemState state)
 //         {
 //             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-//             _interactAttrLookup.Update(ref state);
+//             _generalAttrLookup.Update(ref state);
 //             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
 //             var config = SystemAPI.GetSingleton<AutoGiveWaySystemConfig>();
 //             var movementConfig = SystemAPI.GetSingleton<MovementConfig>();
@@ -38,7 +38,7 @@
 //             var squeezeJobHandle =new SqueezeJob
 //             {
 //                 PhysicsWorld = physicsWorld,
-//                 InteractAttrLookup = _interactAttrLookup,
+//                 generalAttrLookup = _generalAttrLookup,
 //                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
 //                 ObstacleLayerMask = movementConfig.ObstacleLayerMask,
 //                 DetectRayBelongsTo = movementConfig.DetectRaycasstBelongsTo,
@@ -52,7 +52,7 @@
 //         public partial struct SqueezeJob : IJobEntity
 //         {
 //             [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
-//             [ReadOnly] public ComponentLookup<InteractableAttr> InteractAttrLookup;
+//             [ReadOnly] public ComponentLookup<InteractableAttr> generalAttrLookup;
 //             public EntityCommandBuffer.ParallelWriter ECB;
 //             [ReadOnly] public uint ObstacleLayerMask;
 //             [ReadOnly] public uint DetectRayBelongsTo;
@@ -77,7 +77,7 @@
 //                         moveDelta, out var hitEntity))
 //                 {
 //                     // Can only pass squeeze data to ally unit 
-//                     if (InteractAttrLookup.TryGetComponent(hitEntity, out var interactableAttr)
+//                     if (generalAttrLookup.TryGetComponent(hitEntity, out var interactableAttr)
 //                         && interactableAttr is { FactionTag: FactionTag.Ally, BaseTag: BaseTag.Units }
 //                        )
 //                     {

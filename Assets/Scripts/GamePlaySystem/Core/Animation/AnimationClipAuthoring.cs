@@ -30,7 +30,7 @@ namespace SparFlame.GamePlaySystem.Animation
             public bool Bake(AnimationClipAuthoring authoring, IBaker baker)
             {
                 var entity = baker.GetEntity(TransformUsageFlags.Dynamic);
-                baker.AddComponent<SingleClip>(entity);
+                baker.AddComponent<ClipBlobData>(entity);
 
                 var clips = new NativeArray<SkeletonClipConfig>(1, Allocator.Temp);
                 var events = authoring.clip.ExtractKinemationClipEvents(Allocator.Temp);
@@ -50,7 +50,7 @@ namespace SparFlame.GamePlaySystem.Animation
                         settings = SkeletonClipCompressionSettings.kDefaultSettings,
                         events = events
                     };
-                    baker.AddBuffer<AnimationEventRequest>(entity);
+                    baker.AddBuffer<AnimationEventData>(entity);
                 }
 
                 _blob = baker.RequestCreateBlobAsset(baker.GetComponent<Animator>(), clips);
@@ -59,19 +59,19 @@ namespace SparFlame.GamePlaySystem.Animation
 
             public void PostProcessBlobRequests(EntityManager entityManager, Entity entity)
             {
-                entityManager.SetComponentData(entity, new SingleClip { Blob = _blob.Resolve(entityManager) });
+                entityManager.SetComponentData(entity, new ClipBlobData { Blob = _blob.Resolve(entityManager) });
             }
         }
 
     }
 
 
-    public struct SingleClip : IComponentData
+    public struct ClipBlobData : IComponentData
     {
         public BlobAssetReference<SkeletonClipSetBlob> Blob;
     }
 
-    public struct AnimationEventRequest : IBufferElementData
+    public struct AnimationEventData : IBufferElementData
     {
         public int NameHash;
         public int Parameter;

@@ -14,23 +14,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7293732220354928293, guid: c53313c8da104304fb9ecd9e2f665618, type: 3}
       propertyPath: m_SphereRadius
-      value: 13
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 7293732220354928293, guid: c53313c8da104304fb9ecd9e2f665618, type: 3}
       propertyPath: m_Capsule.Radius
-      value: 13
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 7293732220354928293, guid: c53313c8da104304fb9ecd9e2f665618, type: 3}
       propertyPath: m_Cylinder.Radius
-      value: 13
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 7293732220354928293, guid: c53313c8da104304fb9ecd9e2f665618, type: 3}
       propertyPath: m_PrimitiveSize.x
-      value: 26
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 7293732220354928293, guid: c53313c8da104304fb9ecd9e2f665618, type: 3}
       propertyPath: m_PrimitiveSize.y
-      value: 26
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 7868432660347791835, guid: c53313c8da104304fb9ecd9e2f665618, type: 3}
       propertyPath: m_LocalPosition.x

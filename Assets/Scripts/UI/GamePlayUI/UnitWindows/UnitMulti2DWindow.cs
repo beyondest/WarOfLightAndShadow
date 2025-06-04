@@ -1,4 +1,6 @@
 ﻿using System;
+using SparFlame.GamePlaySystem.Interact;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using Unity.Collections;
 using Unity.Entities;
@@ -8,14 +10,15 @@ using UnityEngine;
 
 namespace SparFlame.UI.GamePlay
 {
-    public class UnitMulti2DWindow : UIUtils.MultiSlotsWindow<Unit2DSlot>
+    public class UnitMulti2DWindow : MultiSlotWindowUtils.MultiSlotsWindow<Unit2DSlot>
     {
         // Config
         [Header("Custom Config")] [SerializeField]
         private GameObject pageUpButton;
 
+        [SerializeField] private Tier maxTier;
         [SerializeField] private GameObject pageDownButton;
-
+        
 
         // Interface
         public static UnitMulti2DWindow Instance;
@@ -31,6 +34,10 @@ namespace SparFlame.UI.GamePlay
             InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
         }
 
+        public bool HasTarget()
+        {
+            return _currentSelectCounts > 0;
+        }
 
         public override void Hide()
         {
@@ -42,10 +49,12 @@ namespace SparFlame.UI.GamePlay
         {
             _currentSelectCounts = curSelectCount;
             _targetEntity = target;
+            
         }
 
-        public void UpdateSelectedUnitView(NativeList<UnitRealTimeInfo> unitInfos)
+        public void UpdateSelectedUnitView(NativeList<UnitRealTimeInfo> unitInfos, FactionTag faction)
         {
+            _currentSelectFaction = faction;
             if (!UnitWindowResourceManager.Instance.IsResourceLoaded() || !SlotPrefabHandle.IsDone) return;
             var startIdx = _currentPage * _slotsMaxCountPerPage;
             var count = Mathf.Min(_slotsMaxCountPerPage, unitInfos.Length - startIdx);
@@ -57,9 +66,14 @@ namespace SparFlame.UI.GamePlay
                     Slots[i].SetActive(true);
                     var unitShowSlot = SlotComponents[i];
                     var unitInfo = unitInfos[startIdx + i];
-                    unitShowSlot.button.image.sprite =
-                        UnitWindowResourceManager.Instance.UnitSprites[unitInfo.UnitType];
-                    unitShowSlot.hp.value = unitInfo.HpRatio;
+                    unitShowSlot.SetTarget(unitInfo, _currentSelectFaction,
+                        _maxTierF
+                        );
+                    // unitShowSlot.button.image.sprite =
+                    //     UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitInfo.UnitType];
+                    // unitShowSlot.hpFilled.fillAmount = unitInfo.HpRatio;
+                    // var tier = (int)unitInfo.Tier - 2;
+                    // unitShowSlot.tierImage.fillAmount = tier / _maxTierF;
                 }
                 else
                 {
@@ -75,7 +89,6 @@ namespace SparFlame.UI.GamePlay
 
 
         #region ButtonMethods
-
         public void OnPageRightClicked()
         {
             _currentPage++;
@@ -88,10 +101,14 @@ namespace SparFlame.UI.GamePlay
 
         #endregion
 
+        
+        // Internal Data
         private int _slotsMaxCountPerPage;
         private int _currentPage;
         private int _currentSelectIndex = -1;
         private int _currentSelectCounts;
+        private float _maxTierF;
+        private FactionTag _currentSelectFaction;
         private Entity _targetEntity;
         
         #region EventFunction
@@ -104,11 +121,12 @@ namespace SparFlame.UI.GamePlay
                 Destroy(gameObject);
         }
 
-        protected override void OnEnable()
+        public override void LoadResources()
         {
-            base.OnEnable();
+            base.LoadResources();
             _slotsMaxCountPerPage = config.rows * config.cols;
             _currentSelectIndex = -1;
+             _maxTierF = (int)maxTier - 2;
         }
 
         #endregion

@@ -1,6 +1,6 @@
-﻿using SparFlame.GamePlaySystem.State;
+﻿using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.State;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Physics.Systems;
 using UnityEngine;
@@ -14,6 +14,7 @@ namespace Unity.Physics.Stateful
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<SimulationSingleton>();
             state.RequireForUpdate<TestTriggerAuthoring.EnableOriginalEvent>();
         }
@@ -21,14 +22,14 @@ namespace Unity.Physics.Stateful
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new test
+            new Test
             {
-                ElapsedTime = (float)SystemAPI.Time.ElapsedTime
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
             }.Schedule(SystemAPI.GetSingleton<SimulationSingleton>(), state.Dependency);
         }
     }
     [BurstCompile]
-    public struct test : ITriggerEventsJob
+    public struct Test : ITriggerEventsJob
     {
         public float ElapsedTime;
         public void Execute(TriggerEvent triggerEvent)

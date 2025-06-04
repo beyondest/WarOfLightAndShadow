@@ -65,7 +65,7 @@
 //                 NavMeshQueries = _navMeshQueries,
 //                 NavAgentLookup = _navAgentLookup,
 //                 WaypointLookup = _waypointLookup,
-//                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
+//                 ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
 //                 Iterations = config.ValueRO.MaxIterations,
 //                 MaxPathSize = config.ValueRO.MaxPathSize
 //             }.Schedule(entities.Length, config.ValueRO.ParallelJobBatchSize);

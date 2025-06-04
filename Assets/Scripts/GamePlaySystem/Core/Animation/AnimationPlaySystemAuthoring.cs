@@ -1,11 +1,12 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.Animation
 {
     public class AnimationPlaySystemAuthoring : MonoBehaviour
     {
-        
+        public AnimationPlayConfig config;
         private class Baker : Baker<AnimationPlaySystemAuthoring>
         {
             public override void Bake(AnimationPlaySystemAuthoring authoring)
@@ -15,13 +16,23 @@ namespace SparFlame.GamePlaySystem.Animation
                 {
                     
                 });
+                AddComponent(entity, authoring.config);
             }
         }
     }
 
     public struct AnimationPlayData : IComponentData
     {
+        // Only for check animation events
         public float LastEt;
     }
+
+    [Serializable]
+    public struct AnimationPlayConfig : IComponentData
+    {
+        public float blendDuration;
+    }
+
+
     
 }

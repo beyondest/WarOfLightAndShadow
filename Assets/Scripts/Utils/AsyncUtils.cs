@@ -13,7 +13,7 @@ namespace SparFlame.Utils
             private readonly float _denominator;
             public LoadingProgress(float denominator = 1f)
             {
-                this._denominator = denominator;
+                _denominator = denominator;
             }
             
             public void Report(float value)
@@ -50,9 +50,9 @@ namespace SparFlame.Utils
     
             public bool IsDone => _handles.All(o => o.IsDone);
 
-            public bool IsHandleCreated(int targetCount)
+            public bool IsHandleCreated()
             {
-                return targetCount >= _handles.Count;
+                 return _handles.Count >0;
             }
 
 

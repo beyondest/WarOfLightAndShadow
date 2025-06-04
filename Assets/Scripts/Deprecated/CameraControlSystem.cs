@@ -14,7 +14,7 @@
 //         protected override void OnCreate()
 //         {
 //             base.OnCreate();
-//             RequireForUpdate<NotPauseTag>();
+//             RequireForUpdate<GameBasicStatus>();
 //             RequireForUpdate<CameraData>();
 //             RequireForUpdate<CameraControlConfig>();
 //             RequireForUpdate<CameraControlData>();

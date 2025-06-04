@@ -1,10 +1,9 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Burst;
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(InputMouseSystem))]
     public partial struct InputCameraNormalModeSystem : ISystem
@@ -12,11 +11,10 @@ namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.I
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<InputCameraNormalData>();
         }
 
-        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var customInputActions = InputListener.Instance.GetCustomInputActions();

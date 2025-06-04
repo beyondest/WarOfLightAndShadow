@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using SparFlame.GamePlaySystem.CustomInput;
-using SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Map;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,20 +11,25 @@ using UnityEngine.InputSystem;
 
 namespace SparFlame.GamePlaySystem.CameraControl
 {
-    [UpdateAfter(typeof(InputCameraNormalModeSystem))]
     public partial class NormalCameraControlSystem : SystemBase
     {
-        // Internal Data
+        // Internal Dynamic Data
 
         private Transform _cameraTransform;
         private Transform _rigTransform;
-        private float3 _targetPosition;
+        private float3 _targetRigPosDelta;
         private float _zoomHeight;
         private float3 _horizontalVelocity;
         private float3 _lastPosition;
-        private float3 _startDrag;
-        private bool _preFlyMode;
 
+        private float3 _startDrag;
+
+        // private bool _preFlyMode;
+        private Camera _camera;
+
+        // Limit
+        private float _minPos;
+        private float _maxPos;
 
         // Cache
         private NormalCameraControlConfig _config;
@@ -32,28 +37,52 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GameStatusData>();
             RequireForUpdate<NormalCameraControlConfig>();
             RequireForUpdate<InputMouseData>();
             RequireForUpdate<InputCameraNormalData>();
+            // RequireForUpdate<PlayerFirstBasePos>();
+            RequireForUpdate<MapInfo>();
+        }
+
+        protected override void OnStartRunning()
+        {
+            _config = SystemAPI.GetSingleton<NormalCameraControlConfig>();
+            var mapInitInfo = SystemAPI.GetSingleton<MapInitInfo>();
+            var mapInfo = SystemAPI.GetSingleton<MapInfo>();
+            _minPos = -mapInitInfo.tileSize / 2f - _config.LimitPosBias;
+            _maxPos = -mapInitInfo.tileSize / 2f + mapInfo.OuterSquareSize + _config.LimitPosBias;
         }
 
         protected override void OnUpdate()
         {
-            if (Camera.main == null) return;
-            var cam = Camera.main;
-            _config = SystemAPI.GetSingleton<NormalCameraControlConfig>();
-            _inputData = SystemAPI.GetSingleton<InputCameraNormalData>();
-            if (!_inputData.Enabled)
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if (gameStatus == GameStatus.Init)
             {
-                _preFlyMode = true;
+                _camera = Camera.main;
+                _rigTransform = _camera!.transform.parent;
+                _cameraTransform = _camera.transform;
+                _zoomHeight = _cameraTransform.localPosition.y;
+                _rigTransform.position = SystemAPI.GetSingleton<PlayerFirstBasePos>().Value;
+                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerFirstBasePos>());
                 return;
             }
-            InitCameraData(cam, _preFlyMode);
-            _preFlyMode = false;
-            
+            if (gameStatus != GameStatus.Gaming)
+                return;
+            _inputData = SystemAPI.GetSingleton<InputCameraNormalData>();
+            // var flyModeData = SystemAPI.GetSingleton<InputCameraFlyData>();
+            // if (flyModeData.Enabled)
+            // {
+            //     _preFlyMode = true;
+            //     return;
+            // }
+
+            LookAt();
+            // _preFlyMode = false;
+
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             ref var cameraMovementState = ref SystemAPI.GetSingletonRW<CameraMovementState>().ValueRW;
+            GetMiniMapSquarePos();
             GetKeyboardMovement();
             RotateCamera();
             ZoomCamera(ref cameraMovementState);
@@ -63,27 +92,36 @@ namespace SparFlame.GamePlaySystem.CameraControl
             UpdateRigTranslationVelocity();
             UpdateRigPosition();
             UpdateCameraZoomPosition();
+            // LimitCamera();
+            var cameraData = SystemAPI.GetSingleton<CameraData>();
+            cameraData.CameraRigPosition = _rigTransform.position;
+            SystemAPI.SetSingleton(cameraData);
         }
 
-        private void InitCameraData(Camera cam, bool preFlyMode)
+        private void LimitCamera()
         {
-            if (preFlyMode)
+            var position = _cameraTransform.position;
+            position.x = math.clamp(position.x, _minPos, _maxPos);
+            position.z = math.clamp(position.z, _minPos, _maxPos);
+            _cameraTransform.position = position;
+        }
+
+        private void LookAt()
+        {
+            /*if (_preFlyMode)
             {
-                _rigTransform = cam.transform.GetChild(0);
+                _rigTransform = _camera.transform.GetChild(1);
                 _rigTransform.SetParent(null);
-                cam.transform.SetParent(_rigTransform);
+                _camera.transform.SetParent(_rigTransform);
                 var rigNewPos = _rigTransform.position;
                 rigNewPos.y = 0f;
                 _rigTransform.position = rigNewPos;
                 _rigTransform.rotation = quaternion.identity;
                 _zoomHeight = 0.5f * (_config.MinHeight + _config.MaxHeight);
-            }
-            else
-            {
-                _rigTransform = cam.transform.parent;
-                _cameraTransform = cam.transform;
-                _zoomHeight = _cameraTransform.localPosition.y;
-            }
+            }*/
+            // else
+            
+
             _cameraTransform.LookAt(_rigTransform);
             _lastPosition = _rigTransform.position;
         }
@@ -91,13 +129,31 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
         #region CameraControl Methods
 
+        private void GetMiniMapSquarePos()
+        {
+            var dataEntity = SystemAPI.GetSingletonEntity<MiniMapControlData>();
+            var data = SystemAPI.GetSingletonRW<MiniMapControlData>();
+            if (SystemAPI.IsComponentEnabled<DraggingTag>(dataEntity))
+            {
+                _targetRigPosDelta = data.ValueRW.MiniMapRequestPos - (float3)_rigTransform.position;
+                // _rigTransform.position = data.ValueRW.MiniMapRequestPos;
+                SystemAPI.SetComponentEnabled<DraggingTag>(dataEntity, false);
+            }
+            
+            data.ValueRW.CameraRigWorldPos = _rigTransform.position;
+            var forward = _rigTransform.forward;
+            forward.y = 0f;
+            forward.Normalize();
+            data.ValueRW.Angle = math.degrees(math.atan2(forward.x, forward.z));
+        }
+
         private void GetKeyboardMovement()
         {
             var inputValue = _inputData.Movement.x * GetCameraRight()
                              + _inputData.Movement.y * GetCameraForward();
             if (!(math.length(inputValue) > 0.1f)) return;
             inputValue = math.normalize(inputValue);
-            _targetPosition += inputValue;
+            _targetRigPosDelta += inputValue;
         }
 
         private void RotateCamera()
@@ -110,7 +166,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
                 : _config.MaxRotationSpeed;
 
             quaternion deltaRotation = quaternion.RotateY(
-                math.radians(inputValue * speed * SystemAPI.Time.DeltaTime)
+                math.radians(inputValue * speed * SystemAPI.GetSingleton<GameTimeData>().DeltaTime)
             );
 
             _rigTransform.rotation = math.mul(
@@ -151,7 +207,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             if (_inputData.DraggingCamera)
             {
                 cameraMovementState.IsDragging = true;
-                _targetPosition += _startDrag - inputMouseData.HitPosition;
+                _targetRigPosDelta += _startDrag - inputMouseData.HitPosition;
             }
             else
             {
@@ -172,21 +228,21 @@ namespace SparFlame.GamePlaySystem.CameraControl
             // Move Right
             if (Mouse.current.position.x.ReadValue() > Screen.width * (1 - _config.EdgeTolerance))
             {
-                _targetPosition += GetCameraRight() * speed;
+                _targetRigPosDelta += GetCameraRight() * speed;
                 cameraMovementState.EState = EdgeMoveState.Right;
             }
 
             // Move Left
             else if (Mouse.current.position.x.ReadValue() < _config.EdgeTolerance * Screen.width)
             {
-                _targetPosition += GetCameraRight() * -speed;
+                _targetRigPosDelta += GetCameraRight() * -speed;
                 cameraMovementState.EState = EdgeMoveState.Left;
             }
 
             // Move Up
             if (Mouse.current.position.y.ReadValue() > Screen.height * (1 - _config.EdgeTolerance))
             {
-                _targetPosition += GetCameraForward() * speed;
+                _targetRigPosDelta += GetCameraForward() * speed;
                 cameraMovementState.EState = cameraMovementState.EState switch
                 {
                     EdgeMoveState.Right => EdgeMoveState.RightUp,
@@ -198,7 +254,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
             // Move Down
             else if (Mouse.current.position.y.ReadValue() < _config.EdgeTolerance * Screen.height)
             {
-                _targetPosition += GetCameraForward() * -speed;
+                _targetRigPosDelta += GetCameraForward() * -speed;
                 cameraMovementState.EState = cameraMovementState.EState switch
                 {
                     EdgeMoveState.Right => EdgeMoveState.RightDown,
@@ -215,31 +271,38 @@ namespace SparFlame.GamePlaySystem.CameraControl
 
         private void UpdateRigTranslationVelocity()
         {
-            _horizontalVelocity = ((float3)_rigTransform.transform.position - _lastPosition) / SystemAPI.Time.DeltaTime;
+            _horizontalVelocity = ((float3)_rigTransform.transform.position - _lastPosition) /
+                                  SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             _horizontalVelocity.y = 0f;
             _lastPosition = _rigTransform.transform.position;
         }
 
         private void UpdateRigPosition()
         {
-            if (math.length(_targetPosition) > 0.1f)
+            if (math.length(_targetRigPosDelta) > 0.1f)
             {
                 //create a ramp up or acceleration
                 var speed = math.lerp(_config.TranslationSpeed, _config.TranslationMaxSpeed,
-                    SystemAPI.Time.DeltaTime * _config.TranslationAcceleration);
-                if (_inputData.SpeedUp) speed *= _config.SpeedUpFactor;
-                _rigTransform.position += (Vector3)_targetPosition * speed * SystemAPI.Time.DeltaTime;
+                    SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.TranslationAcceleration);
+                if (_inputData is { SpeedUp: true, DraggingCamera: false }) speed *= _config.SpeedUpFactor;
+                _rigTransform.position +=
+                    (Vector3)_targetRigPosDelta * speed * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             }
             else
             {
                 //create smooth slow down
                 _horizontalVelocity = math.lerp(_horizontalVelocity, float3.zero,
-                    SystemAPI.Time.DeltaTime * _config.TranslationDamping);
-                _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.Time.DeltaTime;
+                    SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.TranslationDamping);
+                if (!math.any(math.isnan(_horizontalVelocity)))
+                {
+                    _rigTransform.position +=
+                        (Vector3)_horizontalVelocity * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+                }
+                // _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
             }
 
             //reset for next frame
-            _targetPosition = float3.zero;
+            _targetRigPosDelta = float3.zero;
         }
 
 
@@ -251,7 +314,8 @@ namespace SparFlame.GamePlaySystem.CameraControl
             //add float for forward/backward zoom
             zoomTarget -= _config.ZoomSpeed * (_zoomHeight - _cameraTransform.localPosition.y) * math.forward();
             _cameraTransform.localPosition =
-                math.lerp(_cameraTransform.localPosition, zoomTarget, SystemAPI.Time.DeltaTime * _config.ZoomDamping);
+                math.lerp(_cameraTransform.localPosition, zoomTarget,
+                    SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.ZoomDamping);
             _cameraTransform.LookAt(_rigTransform.transform);
         }
 

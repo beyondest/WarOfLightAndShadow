@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace SparFlame.UI.General
+namespace SparFlame.Utils
 {
     /// <summary>
     /// Custom Resource Loader, provide simple helper functions
@@ -154,12 +154,12 @@ namespace SparFlame.UI.General
 
             foreach (T type in Enum.GetValues(typeof(T)))
             {
-                string fullName = type.ToString();
+                var fullName = type.ToString();
                 if (!string.IsNullOrEmpty(prefix))
                     fullName = prefix + fullName;
 
-                string fullPath = $"{path}/{fullName}";
-                Sprite sprite = Resources.Load<Sprite>(fullPath);
+                var fullPath = $"{path}/{fullName}";
+                var sprite = Resources.Load<Sprite>(fullPath);
 
                 if (sprite != null)
                 {
@@ -178,8 +178,5 @@ namespace SparFlame.UI.General
     }
 
 
-    public abstract class CustomResourceManager : MonoBehaviour
-    {
-        public abstract bool IsResourceLoaded();
-    }
+  
 }

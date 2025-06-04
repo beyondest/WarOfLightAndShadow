@@ -1,8 +1,7 @@
-﻿using System;
-using SparFlame.GamePlaySystem.CustomInput;
+﻿using SparFlame.Utils;
 using UnityEngine;
 
-namespace SparFlame.BootStrapper
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     public class InputListener : MonoBehaviour
     {
@@ -13,7 +12,7 @@ namespace SparFlame.BootStrapper
         {
             return _customInputActions;
         }
-        
+
         #region MapSwitch Methods
 
         public void ToggleConstructMap()
@@ -31,6 +30,27 @@ namespace SparFlame.BootStrapper
                 _customInputActions.ModeSwitch.Enable();
             }
         }
+
+        public void DisableAllMaps()
+        {
+            _customInputActions.ModeSwitch.Disable();
+            _customInputActions.UnitControl.Disable();
+            _customInputActions.Construct.Disable();
+            _customInputActions.InfoWindow.Disable();
+            _customInputActions.Conjure.Disable();
+            _customInputActions.CameraFlyMode.Disable();
+            _customInputActions.CameraNormalMode.Disable();
+        }
+
+        public void EnableNecessaryMaps()
+        {
+            _customInputActions.UnitControl.Enable();
+            _customInputActions.CameraNormalMode.Enable();
+            _customInputActions.ModeSwitch.Enable();
+            _customInputActions.InfoWindow.Enable();
+            _customInputActions.Conjure.Enable();
+        }
+
         #endregion
 
 
@@ -44,13 +64,8 @@ namespace SparFlame.BootStrapper
                 Destroy(gameObject);
             _customInputActions = new CustomInputActions();
         }
+        
 
-        private void OnEnable()
-        {
-            _customInputActions.UnitControl.Enable();
-            _customInputActions.CameraNormalMode.Enable();
-            _customInputActions.ModeSwitch.Enable();
-            _customInputActions.InfoWindow.Enable();
-        }
+
     }
 }

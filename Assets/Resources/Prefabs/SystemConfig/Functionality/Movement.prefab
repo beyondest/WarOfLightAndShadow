@@ -48,6 +48,7 @@ MonoBehaviour:
   maxIterations: 1000
   pathNodePoolSize: 1000
   initialNavMeshQueriesCapacity: 100
+  differentAgents: []
 --- !u!1 &2522237880660318616
 GameObject:
   m_ObjectHideFlags: 0
@@ -74,11 +75,11 @@ Transform:
   m_GameObject: {fileID: 2522237880660318616}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.4870768, y: -0.8261566, z: 0.04685211}
+  m_LocalPosition: {x: 17.468363, y: -5.736472, z: 21.62055}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1741402932615709689}
+  m_Father: {fileID: 1911779609514190803}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &4339926398825761814
 NavMeshAgent:
@@ -131,9 +132,7 @@ Transform:
   m_LocalPosition: {x: 15.981286, y: -4.9103155, z: 21.573698}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 3525032933593744987}
-  - {fileID: 7009223822474799606}
+  m_Children: []
   m_Father: {fileID: 1911779609514190803}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &985842789531767193
@@ -197,6 +196,8 @@ Transform:
   m_Children:
   - {fileID: 1741402932615709689}
   - {fileID: 6971489879881657382}
+  - {fileID: 3525032933593744987}
+  - {fileID: 7009223822474799606}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4728478559861292444
@@ -310,11 +311,11 @@ Transform:
   m_GameObject: {fileID: 8586399891074166242}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.2800808, y: -0.82615614, z: 1.5642376}
+  m_LocalPosition: {x: 14.701205, y: -5.7364717, z: 23.137936}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1741402932615709689}
+  m_Father: {fileID: 1911779609514190803}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &7770733894343983979
 NavMeshAgent:

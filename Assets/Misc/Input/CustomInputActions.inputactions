@@ -356,6 +356,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "MoveOutSameIdUnits",
+                    "type": "Button",
+                    "id": "39d8e8c8-184b-4a78-a1ba-575eeaee96b9",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -418,7 +427,7 @@
                     "name": "",
                     "id": "db049c82-4ca2-472f-9ee5-7aaac8db9fda",
                     "path": "<Mouse>/leftButton",
-                    "interactions": "MultiTap",
+                    "interactions": "MultiTap(tapDelay=0.3)",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "ClassSelect",
@@ -444,6 +453,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Focus",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "37dfc8dc-e5bc-4cc5-9302-ab743c7cd661",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "MoveOutSameIdUnits",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -1929,17 +1949,6 @@
                 },
                 {
                     "name": "",
-                    "id": "de421bad-6a0f-47f5-b7c9-e1d957667252",
-                    "path": "<Keyboard>/escape",
-                    "interactions": "Tap",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
-                    "action": "Exit",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "7527592a-3be8-40f6-92fa-df2aafdb0a94",
                     "path": "<Keyboard>/capsLock",
                     "interactions": "MultiTap",
@@ -2031,6 +2040,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "CloseWindow",
+                    "type": "Button",
+                    "id": "488a5faa-f392-49ce-812c-24a8a0b9aef5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -2042,6 +2060,153 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "CheckInfo",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "544f9f6d-f174-4592-8248-e5b00dadfe41",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "CloseWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Conjure",
+            "id": "65939e12-82f2-4ef8-b029-99e557408f8c",
+            "actions": [
+                {
+                    "name": "FullConjure",
+                    "type": "Button",
+                    "id": "cd9f4a71-5fcb-489e-8442-5d26ad1ebec8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ConjureHotKey",
+                    "type": "Button",
+                    "id": "eb0eccef-8f8f-4034-b388-2343251410a6",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Press",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "589eb753-3e74-4505-bf05-e05d642a9ee6",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "FullConjure",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5f666adb-fb23-4155-8031-4f6f125f7945",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "35d42c09-a073-4521-b890-924cba5f47a3",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4990639f-0c34-4f77-b83e-897a6dedc696",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a99a9fe5-8ebc-422e-82bb-fb8e674b188f",
+                    "path": "<Keyboard>/4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b7f48a7c-0903-48c3-8123-94c9e901e9ba",
+                    "path": "<Keyboard>/5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "01782cb3-2207-48b2-8ee1-0be86f655de7",
+                    "path": "<Keyboard>/6",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0431d22b-bf15-4329-8744-cd5fd46bdae8",
+                    "path": "<Keyboard>/7",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f345dc0a-1bd7-46d4-a633-075f0ed8fdf7",
+                    "path": "<Keyboard>/8",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c70c2746-8e94-4939-bb16-34c9b7966f48",
+                    "path": "<Keyboard>/9",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ConjureHotKey",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

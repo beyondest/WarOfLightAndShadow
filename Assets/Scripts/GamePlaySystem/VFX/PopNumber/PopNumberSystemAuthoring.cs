@@ -23,11 +23,14 @@ namespace SparFlame.GamePlaySystem.PopNumber
         
         
         
+        [FormerlySerializedAs("glyphZOffset")]
         [Header("PopNumber Show Config")]
         [Tooltip("The only reason to adjust this, is when camera has offset in y or z axis and that will cause number not horizontal")]
-        public float glyphZOffset = 0.001f;
+        public float glyphDeepOffset = 0.001f;
         [Tooltip("Will affect the pop number wide space within each number")]
         public float glyphWidth = 0.07f;
+
+        public float scale = 10f;
         
         // public Color[] popNumberColors;
         public PopNumberTypeToColor[] popNumberTypeToColors;
@@ -44,8 +47,9 @@ namespace SparFlame.GamePlaySystem.PopNumber
                     VerticalMovementOffset = authoring.verticalMovementOffset,
                     ZMovementOffset = authoring.zMovementOffset,
                     MovementTime = authoring.movementTime,
-                    GlyphZOffset = authoring.glyphZOffset,
-                    GlyphWidth = authoring.glyphWidth
+                    GlyphDeepOffset = authoring.glyphDeepOffset,
+                    GlyphWidth = authoring.glyphWidth,
+                    Scale = authoring.scale,
                 });
 
                 var buffer = AddBuffer<PopNumberColorConfig>(entity);
@@ -79,7 +83,10 @@ namespace SparFlame.GamePlaySystem.PopNumber
         AllyHealed = 2,
         EnemyHealed = 3,
         AllyHarvest= 4,
-        EnemyHarvest = 5
+        EnemyHarvest = 5,
+        UnNormalKill = 6,
+        LightGenerate = 7,
+        DarkGenerate = 8,
     }
     
     public struct PopNumberConfig : IComponentData
@@ -89,8 +96,9 @@ namespace SparFlame.GamePlaySystem.PopNumber
         public float MovementTime;
         public float ZMovementOffset;
         public float ScaleOffset;
-        public float GlyphZOffset;
+        public float GlyphDeepOffset;
         public float GlyphWidth;
+        public float Scale;
     }
 
     public struct PopNumberColorConfig : IBufferElementData
@@ -110,5 +118,6 @@ namespace SparFlame.GamePlaySystem.PopNumber
     {
         public float SpawnTime;
         public float OriginalY;
+        public float3 OriginalPosition;
     }
 }

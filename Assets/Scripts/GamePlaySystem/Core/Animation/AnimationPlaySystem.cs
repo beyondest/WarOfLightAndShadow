@@ -9,35 +9,41 @@ namespace SparFlame.GamePlaySystem.Animation
 {
     public partial struct SingleClipPlayerSystem : ISystem
     {
-        private BufferLookup<AnimationEventRequest> _bufferLookup;
+        private BufferLookup<AnimationEventData> _bufferLookup;
+        private ComponentLookup<AnimationStateData> _stateLookup;
 
         public void OnCreate(ref SystemState state)
         {
+            // state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AnimationPlayData>();
 
-            _bufferLookup = state.GetBufferLookup<AnimationEventRequest>();
+            _bufferLookup = state.GetBufferLookup<AnimationEventData>();
+            _stateLookup = state.GetComponentLookup<AnimationStateData>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
             _bufferLookup.Update(ref state);
+            _stateLookup.Update(ref state);
             var data = SystemAPI.GetSingletonRW<AnimationPlayData>();
             // var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var curTime = (float)SystemAPI.Time.ElapsedTime;
             new ExposedJob
                 {
-                    ClipLookup = SystemAPI.GetComponentLookup<SingleClip>(true),
+                    ClipLookup = SystemAPI.GetComponentLookup<ClipBlobData>(true),
                     Et = curTime,
                     LastEt = data.ValueRW.LastEt,
-                    BufferLookup = _bufferLookup
+                    BufferLookup = _bufferLookup,
+                    StateLookup = _stateLookup
                 }
                 .ScheduleParallel();
 
             new OptimizedJob
             {
                 Et = curTime,
+                PreClipTime = data.ValueRW.LastEt
             }.ScheduleParallel();
             data.ValueRW.LastEt = curTime;
             ecb.Playback(state.EntityManager);
@@ -48,13 +54,43 @@ namespace SparFlame.GamePlaySystem.Animation
         private partial struct OptimizedJob : IJobEntity
         {
             [ReadOnly] public float Et;
+            [ReadOnly] public float PreClipTime;
 
-            private void Execute(OptimizedSkeletonAspect skeleton, in SingleClip singleClip)
+            private void Execute(OptimizedSkeletonAspect skeleton, in ClipBlobData clipBlobData,
+                in AnimationStateData stateData, ref DynamicBuffer<AnimationEventData> buffer)
             {
-                ref var clip = ref singleClip.Blob.Value.clips[0];
-                var clipTime = clip.LoopToClipTime(Et * 10);
+                skeleton.ForceInitialize();
+                if (!stateData.Blending)
+                {
+                    ref var clip = ref clipBlobData.Blob.Value.clips[stateData.ClipAIndex];
+                    var clipTime = clip.LoopToClipTime((Et - stateData.ClipAStartTime) * stateData.PlaySpeed);
+                    var preClipTime = clip.LoopToClipTime((PreClipTime - stateData.ClipAStartTime) * stateData.PlaySpeed);
+                    clip.SamplePose(ref skeleton, clipTime, 1f);
 
-                clip.SamplePose(ref skeleton, clipTime, 1f);
+                    clip.events.TryGetEventsRange(preClipTime, clipTime, out var firstEventIndex, out var eventCount);
+                    if (eventCount > 0)
+                    {
+                        var eventsIndices = clip.events.GetEventIndicesInRange(preClipTime, true, clipTime, false, 0);
+                        foreach (var i in eventsIndices)
+                        {
+                            buffer.Add(new AnimationEventData
+                            {
+                                NameHash = clip.events.nameHashes[i],
+                                Parameter = clip.events.parameters[i],
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    ref var clipA = ref clipBlobData.Blob.Value.clips[stateData.ClipAIndex];
+                    ref var clipB = ref clipBlobData.Blob.Value.clips[stateData.ClipBIndex];
+                    var clipATime = clipA.LoopToClipTime(stateData.PlaySpeed * (Et - stateData.ClipAStartTime));
+                    var clipBTime = clipB.LoopToClipTime(stateData.PlaySpeed * (Et - stateData.ClipBStartTime));
+                    clipA.SamplePose(ref skeleton, clipATime, stateData.ClipAWeight);
+                    clipB.SamplePose(ref skeleton, clipBTime, stateData.ClipBWeight);
+                }
+
 
                 skeleton.EndSamplingAndSync();
             }
@@ -62,8 +98,9 @@ namespace SparFlame.GamePlaySystem.Animation
 
         partial struct ExposedJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction] public BufferLookup<AnimationEventRequest> BufferLookup;
-            [ReadOnly] public ComponentLookup<SingleClip> ClipLookup;
+            [NativeDisableParallelForRestriction] public BufferLookup<AnimationEventData> BufferLookup;
+            [ReadOnly] public ComponentLookup<AnimationStateData> StateLookup;
+            [ReadOnly] public ComponentLookup<ClipBlobData> ClipLookup;
             [ReadOnly] public float Et;
             [ReadOnly] public float LastEt;
 
@@ -75,7 +112,9 @@ namespace SparFlame.GamePlaySystem.Animation
                 if (!has)
                     return;
 
-                ref var clip = ref ClipLookup[skeletonRef.skeletonRoot].Blob.Value.clips[0];
+                var state = StateLookup[skeletonRef.skeletonRoot];
+
+                ref var clip = ref ClipLookup[skeletonRef.skeletonRoot].Blob.Value.clips[(int)state.State];
                 var preClipTime = clip.LoopToClipTime(LastEt);
                 var clipTime = clip.LoopToClipTime(Et);
 
@@ -89,7 +128,7 @@ namespace SparFlame.GamePlaySystem.Animation
                     for (var i = 0; i < eventCount; i++)
                     {
                         var buffer = BufferLookup[skeletonRef.skeletonRoot];
-                        buffer.Add(new AnimationEventRequest
+                        buffer.Add(new AnimationEventData
                         {
                             NameHash = clip.events.nameHashes[i],
                             Parameter = clip.events.parameters[i],
@@ -118,7 +157,7 @@ namespace SparFlame.GamePlaySystem.Animation
 //     [BurstCompile]
 //     public void OnUpdate(ref SystemState state)
 //     {
-//         float t = (float)SystemAPI.Time.ElapsedTime;
+//         float t = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
 //
 //         foreach ((var bones, var singleClip) in Query<DynamicBuffer<BoneReference>, RefRO<SingleClip>>())
 //         {

@@ -1,10 +1,8 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.General;
-using Unity.Burst;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(InputMouseSystem))]
     public partial class InputCameraFlyModeSystem : SystemBase
@@ -12,7 +10,7 @@ namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.I
         private CustomInputActions _customInputActions;
         protected override void OnCreate()
         {
-            RequireForUpdate<NotPauseTag>();
+            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputCameraNormalData>();
         }
         protected override void OnStartRunning()

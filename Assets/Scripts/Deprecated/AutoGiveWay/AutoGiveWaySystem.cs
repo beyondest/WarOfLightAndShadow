@@ -13,7 +13,7 @@
 //     [UpdateBefore(typeof(TransformSystemGroup))]
 //     public partial struct AutoGiveWaySystem : ISystem
 //     {
-//         private ComponentLookup<InteractableAttr> _interactAttrLookup;
+//         private ComponentLookup<InteractableAttr> _generalAttrLookup;
 //         private ComponentLookup<Selected> _selectedLookup;
 //
 //         [BurstCompile]
@@ -22,9 +22,9 @@
 //             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
 //             state.RequireForUpdate<MovementConfig>();
 //             state.RequireForUpdate<PhysicsWorldSingleton>();
-//             state.RequireForUpdate<NotPauseTag>();
+//             state.RequireForUpdate<GameBasicStatus>();
 //             state.RequireForUpdate<AutoGiveWaySystemConfig>();
-//             _interactAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
+//             _generalAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
 //             _selectedLookup = state.GetComponentLookup<Selected>(true);
 //         }
 //
@@ -32,7 +32,7 @@
 //         public void OnUpdate(ref SystemState state)
 //         {
 //             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-//             _interactAttrLookup.Update(ref state);
+//             _generalAttrLookup.Update(ref state);
 //             _selectedLookup.Update(ref state);
 //             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
 //             var config = SystemAPI.GetSingleton<AutoGiveWaySystemConfig>();
@@ -42,11 +42,11 @@
 //             new AutoGiveWayJob
 //             {
 //                 PhysicsWorld = physicsWorld,
-//                 InteractAttrLookup = _interactAttrLookup,
+//                 generalAttrLookup = _generalAttrLookup,
 //                 SelectedLookup = _selectedLookup,
 //                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
 //                 Duration = config.Duration,
-//                 DeltaTime = SystemAPI.Time.DeltaTime,
+//                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
 //                 ObstacleLayerMask = movementConfig.ObstacleLayerMask,
 //                 DetectRayBelongsTo = movementConfig.DetectRaycasstBelongsTo,
 //                 RotationSpeed = movementSystemConfig.RotationSpeed
@@ -62,7 +62,7 @@
 //         public partial struct AutoGiveWayJob : IJobEntity
 //         {
 //             [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
-//             [ReadOnly] public ComponentLookup<InteractableAttr> InteractAttrLookup;
+//             [ReadOnly] public ComponentLookup<InteractableAttr> generalAttrLookup;
 //             [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
 //             public EntityCommandBuffer.ParallelWriter ECB;
 //             [ReadOnly] public float Duration;
@@ -108,7 +108,7 @@
 //                             moveDelta, out var hitEntity))
 //                     {
 //                         // Try pass data to unselected ally unit in the way
-//                         if (InteractAttrLookup.TryGetComponent(hitEntity, out var interactableAttr)
+//                         if (generalAttrLookup.TryGetComponent(hitEntity, out var interactableAttr)
 //                             && interactableAttr is { FactionTag: FactionTag.Ally, BaseTag: BaseTag.Units }
 //                             && !SelectedLookup.IsComponentEnabled(hitEntity))
 //                         {

@@ -1,46 +1,43 @@
-﻿using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.General;
-using Unity.Burst;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
+using Unity.Mathematics;
 
-namespace SparFlame.GamePlaySystem.CustomInput.GamePlaySystem.Core.CustomInput.InputDataSystems
+namespace SparFlame.GamePlaySystem.CustomInput
 {
     [UpdateAfter(typeof(InputMouseSystem))]
-    public partial struct InputUnitControlSystem : ISystem
+    public partial class InputUnitControlSystem : SystemBase
     {
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
+        private CustomInputActions _customInputActions;
+        
+        protected override void OnCreate()
         {
-            state.RequireForUpdate<InputMouseData>();
-            state.RequireForUpdate<NotPauseTag>();
-            state.RequireForUpdate<InputUnitControlData>();
+            RequireForUpdate<InputMouseData>();
+            RequireForUpdate<GamingTag>();
+            RequireForUpdate<InputUnitControlData>();
         }
 
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        protected override void OnStartRunning()
         {
-            var customInputActions = InputListener.Instance.GetCustomInputActions();
+            _customInputActions = InputListener.Instance.GetCustomInputActions();
+        }
+
+        protected override void OnUpdate()
+        {
             var isOverUi = SystemAPI.GetSingleton<InputMouseData>().IsOverUI;
             SystemAPI.SetSingleton(new InputUnitControlData
             {
-                Enabled = customInputActions.UnitControl.enabled,
-                AddUnit = customInputActions.UnitControl.Add.ReadValue<float>() > 0,
-                DragSelectStart = customInputActions.UnitControl.DraggingSelect.WasPressedThisFrame() && !isOverUi,
-                DraggingSelect = customInputActions.UnitControl.DraggingSelect.ReadValue<float>() > 0 && !isOverUi,
-                DragSelectEnd = customInputActions.UnitControl.DraggingSelect.WasReleasedThisFrame(),
-                SingleSelect = customInputActions.UnitControl.SingleSelect.WasPerformedThisFrame() && !isOverUi,
-                ChangeFaction = customInputActions.UnitControl.ChangeFaction.WasPerformedThisFrame(),
-                Focus = customInputActions.UnitControl.Focus.ReadValue<float>() > 0,
-                Command = customInputActions.UnitControl.Command.WasPerformedThisFrame() && !isOverUi,
+                Enabled = _customInputActions.UnitControl.enabled,
+                AddUnit = _customInputActions.UnitControl.Add.ReadValue<float>() > 0,
+                DragSelectStart = _customInputActions.UnitControl.DraggingSelect.WasPressedThisFrame() && !isOverUi,
+                DraggingSelect = _customInputActions.UnitControl.DraggingSelect.ReadValue<float>() > 0 && !isOverUi,
+                DragSelectEnd = _customInputActions.UnitControl.DraggingSelect.WasReleasedThisFrame(),
+                SingleSelect = _customInputActions.UnitControl.SingleSelect.WasPerformedThisFrame() && !isOverUi,
+                ChangeFaction = _customInputActions.UnitControl.ChangeFaction.WasPerformedThisFrame(),
+                Focus = _customInputActions.UnitControl.Focus.ReadValue<float>() > 0,
+                Command = _customInputActions.UnitControl.Command.WasPerformedThisFrame() && !isOverUi,
+                MoveOutSameIdUnits = _customInputActions.UnitControl.MoveOutSameIdUnits.ReadValue<float>() >0,
+                ClassSelection = _customInputActions.UnitControl.ClassSelect.WasPerformedThisFrame() && !isOverUi,
             });
-        }
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state)
-        {
-
         }
     }
 }

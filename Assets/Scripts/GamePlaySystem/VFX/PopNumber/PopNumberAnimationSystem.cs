@@ -2,7 +2,10 @@ using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
 using System.Runtime.CompilerServices;
+using SparFlame.GamePlaySystem.CameraControl;
 using SparFlame.GamePlaySystem.General;
+using Unity.Collections;
+using Unity.Mathematics;
 
 namespace SparFlame.GamePlaySystem.PopNumber
 {
@@ -12,8 +15,9 @@ namespace SparFlame.GamePlaySystem.PopNumber
     {
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<NotPauseTag>();
+            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<PopNumberConfig>();
         }
 
@@ -22,14 +26,16 @@ namespace SparFlame.GamePlaySystem.PopNumber
         {
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var config = SystemAPI.GetSingleton<PopNumberConfig>();
+            var cameraData = SystemAPI.GetSingleton<CameraData>();
             new MoveJob
             {
-                ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
+                ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 ECBWriter = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 LifeTime = config.MovementTime,
                 VerticalMovementOffset = config.VerticalMovementOffset,
                 ZMovementOffset = config.ZMovementOffset,
                 ScaleOffset = config.ScaleOffset,
+                CameraData = cameraData
             }.ScheduleParallel();
         }
         
@@ -42,6 +48,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
             public float VerticalMovementOffset;
             public float ZMovementOffset;
             public float ScaleOffset;
+            [ReadOnly]public CameraData CameraData;
 
             private void Execute(Entity entity, [ChunkIndexInQuery] int chunkIndex, ref LocalTransform transform,
                 in PopNumberData data)
@@ -54,8 +61,11 @@ namespace SparFlame.GamePlaySystem.PopNumber
                 }
 
                 var easing = EaseOutQuad(timeAlive / LifeTime);
-                transform.Position.y = data.OriginalY + VerticalMovementOffset * easing;
-                transform.Position.z +=ZMovementOffset * easing ;
+                // transform.Position.y = data.OriginalY + VerticalMovementOffset * easing;
+                transform.Position = data.OriginalPosition + easing * VerticalMovementOffset * CameraData.CameraUp;
+                // transform.Position.z +=ZMovementOffset * easing ;
+                // var forward =math.normalizesafe( data.OriginalPosition - CameraData.CameraPosition);
+                transform.Position +=easing * ZMovementOffset *CameraData.CameraForward;
                 transform.Scale *= 1 + ScaleOffset * easing;
             }
             /// <summary>

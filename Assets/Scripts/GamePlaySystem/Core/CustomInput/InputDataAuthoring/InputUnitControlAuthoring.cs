@@ -26,6 +26,8 @@ namespace SparFlame.GamePlaySystem.CustomInput
         public bool ChangeFaction;
         public bool Focus;
         public bool Command;
+        public bool MoveOutSameIdUnits;
+        public bool ClassSelection;
     }
 
 }
