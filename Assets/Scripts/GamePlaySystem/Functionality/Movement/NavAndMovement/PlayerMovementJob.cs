@@ -22,14 +22,14 @@ namespace SparFlame.GamePlaySystem.Movement
         private void Execute(
             ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
             ref Surroundings surroundings, ref PhysicsVelocity physicsVelocity,in PhysicsMass mass,
-            in DynamicBuffer<WaypointBuffer> waypointBuffer
+            in DynamicBuffer<WaypointBuffer> waypointBuffer,InteractAbilityBonus bonus
         )
         {
             navAgent.TargetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
             var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
             var curPos2D = new float2(transform.Position.x, transform.Position.z);
             var curPosY0 = new float3(transform.Position.x, 0f, transform.Position.z);
-            var interactiveRangeSq = movableData.InteractiveRangeSq;
+            var interactiveRangeSq = math.square(movableData.InteractRange + bonus.RangeBonus);
             var shouldMove = false;
             DetectSurrounding(ref surroundings, in transform, in movableData);
 
@@ -201,7 +201,8 @@ namespace SparFlame.GamePlaySystem.Movement
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
                 TryMove(ref transform, ref movableData, ref surroundings, navAgent,
-                    idealDirection, curPosY0 , ref physicsVelocity, mass
+                    idealDirection, curPosY0 , ref physicsVelocity, mass,
+                    bonus
                 );
                 // surroundings.IdealDirection = idealDirection;
             }
@@ -225,11 +226,11 @@ namespace SparFlame.GamePlaySystem.Movement
             in NavAgentComponent navAgent,
             in float3 idealFront, in float3 curPosY0,
             ref PhysicsVelocity velocity,
-            in PhysicsMass mass
-        )
+            in PhysicsMass mass,in InteractAbilityBonus bonus
+            )
         {
             var scale = Debug.enabled ? Debug.playerMovementScale : 1f;
-            var moveLength = DeltaTime * movableData.MoveSpeed * scale;
+            var moveLength = DeltaTime * (movableData.MoveSpeed + bonus.MoveSpeedBonus) * scale;
             // Record Pos for checking stuck
             if (ElapsedTime > surroundings.RecordPosTime)
             {

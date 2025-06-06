@@ -1,11 +1,9 @@
-using SparFlame.BootStrapper;
 using SparFlame.GamePlaySystem.Command;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.UnitSelection;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SparFlame.UI.GamePlay
 {
@@ -89,7 +87,7 @@ namespace SparFlame.UI.GamePlay
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -170,9 +168,13 @@ namespace SparFlame.UI.GamePlay
                 if (!UnitMulti2DWindow.Instance.IsOpened())
                 {
                     UnitMulti2DWindow.Instance.Show();
+                    UnitMulti2DWindow.Instance.DisableClickRoutine();
                     UnitMulti2DWindow.Instance
                         .OnClickSlot(
                             0);
+                    UnitDetailWindow.Instance.Hide();
+                    InteractAbilityWindow.Instance.Hide();
+                    UnitMulti2DWindow.Instance.EnableClickRoutine();
                 }
             }
             else
@@ -198,10 +200,14 @@ namespace SparFlame.UI.GamePlay
             }
             else
             {
-                if (InteractAbilityWindow.Instance.IsOpened())
-                    InteractAbilityWindow.Instance.Hide();
-                if (UnitDetailWindow.Instance.IsOpened())
-                    UnitDetailWindow.Instance.Hide();
+                if (selectedData.CurrentSelectCount<=1)
+                {
+                    if (InteractAbilityWindow.Instance.IsOpened())
+                        InteractAbilityWindow.Instance.Hide();
+                    if (UnitDetailWindow.Instance.IsOpened())
+                        UnitDetailWindow.Instance.Hide();
+                }
+                
                 if (BuildingDetailWindow.Instance.IsOpened())
                     BuildingDetailWindow.Instance.Hide();
                 if (ResourceDetailWindow.Instance.IsOpened())
@@ -219,15 +225,21 @@ namespace SparFlame.UI.GamePlay
                                            && !CloseUpWindow.Instance.HasTarget());
             if (shouldHideInfoWindow)
             {
-                if (_minimizeWindow)
-                    maximizeButton.SetActive(false);
-                else if (!_minimizeWindow && infoPanel.activeSelf)
-                    Hide();
-                if(closeByEsc) _ifLastTimePlayerCloseByEsc = true;
-                ClearCloseUpTarget();
+                if (closeByEsc && UnitMulti2DWindow.Instance.IsOpened() && UnitDetailWindow.Instance.IsOpened())
+                {
+                    UnitDetailWindow.Instance.Hide();
+                    InteractAbilityWindow.Instance.Hide();
+                }
+                else
+                {
+                    if (_minimizeWindow)
+                        maximizeButton.SetActive(false);
+                    else if (!_minimizeWindow && infoPanel.activeSelf)
+                        Hide();
+                    if(closeByEsc) _ifLastTimePlayerCloseByEsc = true;
+                    ClearCloseUpTarget();
+                }
             }
-
-            
         }
 
         public void Show()

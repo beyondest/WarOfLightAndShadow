@@ -1,6 +1,7 @@
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 using UnityEngine;
+using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.GamePlaySystem.Units
 {
@@ -37,7 +38,7 @@ namespace SparFlame.GamePlaySystem.Units
         public UnitType Type;
         public int SubTypeIndex;
         public float ConjureSpeedSecondPerUnit;
-        public int AnimatedModelIndex;
+        public Random Rnd;
     }
 
     public struct ShieldTag : IComponentData{}

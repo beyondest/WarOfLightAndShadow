@@ -8,7 +8,7 @@ namespace SparFlame.GamePlaySystem.Interact
     {
         public int MaxValue;
         public float CurValue;
-        
+        public int Bonus;
     }
         
     /// <summary>
@@ -23,7 +23,7 @@ namespace SparFlame.GamePlaySystem.Interact
         public int AbsAmount;
         public StatChangeType Type;
         public GeneralAttr InteractorGeneralAttr;
-        public bool IsMagicDamage;
+        public DamageType DamageType;
     }
     
     public enum StatChangeType
@@ -36,5 +36,12 @@ namespace SparFlame.GamePlaySystem.Interact
         SimpleCleanUsedAsUpgrade = 5
     }
 
+    public enum DamageType
+    {
+        None = 0,
+        Physical = 1,
+        Magic = 2,
+        BuffDamage = 3,
+    }
  
 }

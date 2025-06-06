@@ -60,46 +60,10 @@ namespace SparFlame.GamePlaySystem.Interact
                         targets.RemoveAt(i);
                         continue;
                     }
-
-                    var underDefendTargetGetDamageScale = 1f;
-                    // var ifDefendByTier3 = false;
-                    /*
-                    // When this is attack aoe and this unit can be defended. Shield cannot be defended by shield.
-                    if (data.StatChangeRequest.Type == StatChangeType.Attack && DefenderDataLookup.TryGetBuffer(target.Entity, out var buffer))
-                    {
-                        var totalDamage = targets.Length * data.StatChangeRequest.AbsAmount;
-                        // Split the damage to all shields
-                        var defenderGetDamage = buffer.Length == 0 ? 0 : totalDamage / buffer.Length;
-                        for (int j = buffer.Length - 1; j >=0; j--)
-                        {
-                            var defender = buffer[j];
-                            // Invalid defender, defender is already dead
-                            if (!GeneralAttrLookup.HasComponent(defender.DefendBy))
-                            {
-                                buffer.RemoveAt(j);
-                                continue;
-                            }
-
-                            if (underDefendTargetGetDamageScale > defender.GetDamageScale) underDefendTargetGetDamageScale = defender.GetDamageScale;
-                            var thisShieldGetDamage = defenderGetDamage * defender.SelfGetDamageScale;
-                            if(defender.IfTier3) ifDefendByTier3 = true;
-                            var shieldDamageRequest = ECB.CreateEntity();
-                            ECB.AddComponent<GameplayEntityTag>(shieldDamageRequest);
-                            var shieldDamageRequestData = data.StatChangeRequest;
-                            shieldDamageRequestData.Interactee = defender.DefendBy;
-                            shieldDamageRequestData.AbsAmount = (int)thisShieldGetDamage;
-                            ECB.AddComponent( shieldDamageRequest,shieldDamageRequestData);
-                        }
-                    }
-                    */
-
-                    // When this unit is defended by tier3, it will not get damage until tier 3 shield dead
-                    // if (!ifDefendByTier3 || data.StatChangeRequest.Type != StatChangeType.Attack)
                     var request = ECB.CreateEntity();
                     ECB.AddComponent<GameplayEntityTag>(request);
                     var requestData = data.StatChangeRequest;
                     requestData.Interactee = target.Entity;
-                    requestData.AbsAmount = (int)(requestData.AbsAmount * underDefendTargetGetDamageScale);
                     ECB.AddComponent(request, requestData);
                 }
 

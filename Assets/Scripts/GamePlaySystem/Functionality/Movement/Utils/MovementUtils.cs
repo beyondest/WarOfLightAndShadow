@@ -26,15 +26,15 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <param name="targetPos"></param>
         /// <param name="targetColliderSize"></param>
         /// <param name="commandType"></param>
-        /// <param name="interactRangeSq"></param>
+        /// <param name="interactRange"></param>
         public static void SetMoveTarget(ref MovableData movableData, float3 targetPos, float3 targetColliderSize,
-            MovementCommandType commandType, float interactRangeSq)
+            MovementCommandType commandType, float interactRange)
         {
             movableData.ForceCalculate = true;
             movableData.TargetCenterPos = targetPos;
             movableData.TargetColliderShapeXZ = new float2(targetColliderSize.x, targetColliderSize.z);
             movableData.MovementCommandType = commandType;
-            movableData.InteractiveRangeSq = interactRangeSq;
+            movableData.InteractRange = interactRange;
             movableData.MovementState = MovementState.NotMoving;
             movableData.DetailInfo = DetailInfo.None;
         }

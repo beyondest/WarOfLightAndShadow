@@ -90,7 +90,7 @@ namespace SparFlame.GamePlaySystem.State
 
             private void Execute(in BasicStateData basicStateData,
                 in DynamicBuffer<InsightTarget> targets, in DynamicBuffer<LinkedEntityGroup> groups,
-                Entity selfEntity, in MovableData movableData, in UnitAttr unitAttr)
+                Entity selfEntity, in MovableData movableData, in UnitAttr unitAttr, in InteractAbilityBonus bonus)
             {
                 for (int i = 1; i < groups.Length; i++)
                 {
@@ -122,12 +122,12 @@ namespace SparFlame.GamePlaySystem.State
                             data.State = UnitAnimationState.Attack;
 
                             var attackAbility = AttackLookup[selfEntity];
-                            data.PlaySpeed = attackAbility.Speed * targetPair.speedScale;
+                            data.PlaySpeed = (attackAbility.Speed + bonus.SpeedBonus) * targetPair.speedScale;
                             break;
                         case InteractState.Moving:
                             data.State = targets.IsEmpty ? UnitAnimationState.March : UnitAnimationState.AlertMarch;
 
-                            data.PlaySpeed = movableData.MoveSpeed * targetPair.speedScale;
+                            data.PlaySpeed = (movableData.MoveSpeed + bonus.MoveSpeedBonus) * targetPair.speedScale;
                             break;
                         case InteractState.Garrison:
                             data.State = UnitAnimationState.Idle;
@@ -137,12 +137,12 @@ namespace SparFlame.GamePlaySystem.State
                         case InteractState.Harvesting:
                             data.State = UnitAnimationState.Attack;
 
-                            data.PlaySpeed = HarvestLookup[selfEntity].Speed * targetPair.speedScale;
+                            data.PlaySpeed = (HarvestLookup[selfEntity].Speed + bonus.SpeedBonus) * targetPair.speedScale;
                             break;
                         case InteractState.Healing:
                             data.State = UnitAnimationState.Attack;
 
-                            data.PlaySpeed = HealLookup[selfEntity].Speed * targetPair.speedScale;
+                            data.PlaySpeed = (HealLookup[selfEntity].Speed + bonus.SpeedBonus) * targetPair.speedScale;
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();

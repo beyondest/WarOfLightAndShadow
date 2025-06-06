@@ -55,8 +55,12 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         GarrisonUnderDefense = 23,
         GarrisonUnderDefenseTier4 = 24,
         DarkShield = 25,
-        LightSelfBurn = 26,
-        DarkSelfBurn = 27,
+        LightCavalryGain = 26,
+        DarkCavalryAttackGain = 27,
+        CavalryMoveDamageReduction = 28,
+        DarkClericAttackGain = 29,
+        LightMagicDamageDebuff = 30,
+        DarkMagicDamageDebuff = 31,
     }
 
     public enum VFXType
@@ -107,7 +111,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         /// </summary>
         public float3 SpawnPosition;
         
-        public float3 TargetPosition;
+        public float3 ParabolaTargetPosition;
         
         /// <summary>
         /// Specify which vfx prefab to use in prefab database 

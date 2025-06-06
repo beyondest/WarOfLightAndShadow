@@ -340,13 +340,29 @@ namespace SparFlame.UI.GamePlay
             {
                 case BuildingType.Generators:
                     generatePanel.SetActive(true);
-                    var generateAttribute = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
+                    var generateResourceType = ResourceType.SoulPact;
+                    var generateSpeed = 0f;
+                    var minRequiredUnit = 0;
+                    
+                    if (_buildingAttr.SubTypeIndex == (int)GeneratorType.PlantGenerator)
+                    {
+                        var plantAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
+                        generateResourceType = plantAttr.GenerateResourceType;
+                        generateSpeed = plantAttr.GenerateSpeed;
+                    }
+                    else if (_buildingAttr.SubTypeIndex == (int)GeneratorType.ResourceMine)
+                    {
+                        var resourceMineAttr = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
+                        generateResourceType = resourceMineAttr.GenerateResourceType;
+                        generateSpeed = resourceMineAttr.CurGenerateSpeed;
+                        minRequiredUnit = resourceMineAttr.MinCultivatorsRequireToGenerate;
+                    }
                     generateResourceIcon.sprite =
-                        BasicUIResourceManager.Instance.ResourceSprites[generateAttribute.GenerateResourceType];
-                    generateTypeText.text = generateAttribute.GenerateResourceType.ToString();
-                    generateMinRequireUnitsText.text = generateAttribute.MinCultivatorsRequireToGenerate.ToString();
+                        BasicUIResourceManager.Instance.ResourceSprites[generateResourceType];
+                    generateTypeText.text = generateResourceType.ToString();
+                    generateMinRequireUnitsText.text = minRequiredUnit.ToString();
                     if (!isMainInfoSingleton)
-                        generateSpeedText.text = $"{generateAttribute.MinCultivatorsRequireToGenerate}/s";
+                        generateSpeedText.text = $"{generateSpeed}";
                     break;
                 case BuildingType.Fortifications:
                     interactAbilityPanel.SetActive(true);
@@ -482,7 +498,7 @@ namespace SparFlame.UI.GamePlay
                         var plantGenerateAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
                         generateSpeed = plantGenerateAttr.GenerateSpeed;
                     }
-                    generateSpeedText.text = $"GenerateSpeed : {generateSpeed}";
+                    generateSpeedText.text = $"{generateSpeed}";
                    
                     break;
                 }

@@ -1,5 +1,7 @@
 ﻿using System;
+using SparFlame.GamePlaySystem.EnemyAI;
 using SparFlame.GamePlaySystem.General;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Movement;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.GamePlaySystem.Units;
@@ -8,6 +10,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
 using UnityEngine.AI;
+using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.Database
 {
@@ -21,17 +24,22 @@ namespace SparFlame.Database
                 {
                     return;
                 }
+                
                 var item = DatabaseManager.UnitDatabaseSo.GetItemById(authoring.globalIdx);
+                var unixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var seed = (uint)(unixTimeMs ^ (item.id * 0x9E3779B9)); 
+                
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 BakeGeneralDataItem(entity,item);
                 AddComponent<GarrisonStateTag>(entity);
                 SetComponentEnabled<GarrisonStateTag>(entity, false);
+                
                 AddComponent(entity, new UnitAttr
                 {
                     Type = item.type,
                     SubTypeIndex = item.GetSubtypeIndex(),
                     ConjureSpeedSecondPerUnit = item.conjureSpeedSecondPerUnit,
-                    AnimatedModelIndex = item.animatedRootIndex
+                    Rnd = new Random(seed)
                 });
                 switch (item.type)
                 {
@@ -40,7 +48,6 @@ namespace SparFlame.Database
                         break;
                     case UnitType.Ranged:
                         AddComponent<RangedTag>(entity);
-
                         break;
                     case UnitType.Magic:
                         if(item.GetSubtypeIndex() == (int)MagicType.Cleric)
@@ -67,7 +74,9 @@ namespace SparFlame.Database
                     });
                 }
                 BakeMovementAttr( item,entity,authoring);
-                BakeSelectableAttr(item,entity);
+                BakeSelectableAttr(entity);
+                BakeBuff(item,entity);
+                
             }
             
             
@@ -93,7 +102,7 @@ namespace SparFlame.Database
                     TargetCenterPos = float3.zero,
                     TargetColliderShapeXZ = float2.zero,
                     MovementCommandType = MovementCommandType.None,
-                    InteractiveRangeSq = 0f,
+                    InteractRange = 0f,
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
@@ -111,12 +120,116 @@ namespace SparFlame.Database
                 SetComponentEnabled<MovingStateTag>(entity, false);
             }
 
-            private void BakeSelectableAttr(UnitDataItem item,Entity entity)
+            private void BakeSelectableAttr(Entity entity)
             {
                 AddComponent<Selected>(entity);
                 SetComponentEnabled<Selected>(entity, false);
                 AddComponent<LockSelectedWorkForDrag>(entity);
                 SetComponentEnabled<LockSelectedWorkForDrag>(entity, false);
+            }
+
+            // Buff can only be added to units that is not tier 1, debuff can be added to all
+            private void BakeBuff(UnitDataItem item,Entity entity)
+            {
+                // Bake light circle
+                if (item.HasLightGroupBuff() && item.curTier != Tier.Tier1)
+                {
+                    AddComponent(entity, new AoeTriggerRequest
+                    {
+                        Prefab = GetEntity(item.lightGroupAoeTrigger,TransformUsageFlags.Dynamic)
+                    });
+                    AddBuffer<AoeTarget>(entity);
+                }
+
+                // Bake cavalry move buff
+                if (item.type == UnitType.Cavalry)
+                {
+                    AddComponent<CavalryMoveBuff>(entity);
+                    SetComponentEnabled<CavalryMoveBuff>(entity, false);
+                }
+                
+                if (item.factionTag == FactionTag.Ally)
+                {
+                    // Bake dark debuffs
+                    AddComponent<DarkMagicDamageBuff>(entity);
+                    SetComponentEnabled<DarkMagicDamageBuff>(entity,false);
+                    if (item.IsAttackable() && item.attackAmount != 0)
+                    {
+                        AddComponent<DarkShieldTauntedBuff>(entity);
+                        SetComponentEnabled<DarkShieldTauntedBuff>(entity, false);
+                    }
+                    // Bake light shield buff
+                    if (item.type == UnitType.Shield && item.curTier != Tier.Tier1)
+                    {
+                        AddComponent<LightShieldBuff>(entity);
+                    }
+                    if(item.type != UnitType.Shield)
+                    {
+                        AddComponent<LightShieldUnderDefend>( entity);
+                        SetComponentEnabled<LightShieldUnderDefend>(entity, false);
+                    }
+                    // Bake light cavalry buff
+                    if (item.type == UnitType.Cavalry && item.curTier != Tier.Tier1)
+                    {
+                       AddComponent<LightCavalryBuff>(entity);
+                    }
+                    if(item.type != UnitType.Cavalry)
+                    {
+                        AddComponent<LightCavalryUnderBonus>(entity);
+                        SetComponentEnabled<LightCavalryUnderBonus>(entity, false);
+                    }
+                    // Bake light cleric buff
+                    if(item.type == UnitType.Magic && item.GetSubtypeIndex() == (int)MagicType.Cleric && item.curTier != Tier.Tier1)
+                    {
+                        AddComponent<LightClericBuff>(entity);
+                    }
+                    // Bake light archer buff
+                    if (item.type == UnitType.Ranged && item.curTier != Tier.Tier1)
+                    {
+                        AddComponent<LightArcherBuff>(entity);
+                    }
+                }
+                
+                else if (item.factionTag == FactionTag.Enemy)
+                {
+                    // Bake light debuffs
+                    AddComponent<LightMagicDamageBuff>(entity);
+                    SetComponentEnabled<LightMagicDamageBuff>(entity, false);
+                    // Bake dark shield buff
+                    if(item.type == UnitType.Shield && item.curTier != Tier.Tier1)
+                        AddComponent<DarkShieldTauntBuff>(entity);
+                    // Bake dark cavalry buff
+                    if (item.type == UnitType.Cavalry && item.curTier != Tier.Tier1)
+                    {
+                        AddComponent<DarkCavalryBuff>(entity);
+                    }
+                    // Bake dark cleric buff
+                    if (item.IsAttackable() && item.type != UnitType.Cavalry && item.type != UnitType.Shield )
+                    {
+                        AddComponent<DarkClericBuff>(entity);
+                        SetComponentEnabled<DarkClericBuff>(entity, false);
+                    }
+                    // Bake dark archer buff
+                    if (item.type == UnitType.Ranged && item.curTier != Tier.Tier1)
+                    {
+                        AddComponent<DarkArcherBuff>(entity);
+                    }
+                }
+                
+                // Bake neutral unit buffs
+                else if (item.factionTag == FactionTag.Neutral)
+                {
+                    AddComponent<LightMagicDamageBuff>(entity);
+                    SetComponentEnabled<LightMagicDamageBuff>(entity, false);
+                    AddComponent<DarkMagicDamageBuff>(entity);
+                    SetComponentEnabled<DarkMagicDamageBuff>(entity,false);
+                    if(item.IsAttackable() && item.attackAmount != 0)
+                    {
+                        AddComponent<DarkShieldTauntedBuff>(entity);
+                        SetComponentEnabled<DarkShieldTauntedBuff>(entity, false);
+                    }
+                }
+                
             }
 
           

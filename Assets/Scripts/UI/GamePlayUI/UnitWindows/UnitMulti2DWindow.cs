@@ -1,5 +1,5 @@
 ﻿using System;
-using SparFlame.GamePlaySystem.Interact;
+using System.Collections;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.UI.General;
 using Unity.Collections;
@@ -23,16 +23,33 @@ namespace SparFlame.UI.GamePlay
         // Interface
         public static UnitMulti2DWindow Instance;
         public Action<int> GetTargetEntityByIndex;
+        public Action<Entity> DeselectAllExceptOne;
+
+        public void DisableClickRoutine()
+        {
+            _ifClickRoutineRunning = true;
+        }
+
+        public void EnableClickRoutine()
+        {
+            _ifClickRoutineRunning = false;
+            _clickCount = 0;
+        }
 
         public override void OnClickSlot(int slotIndex)
         {
+            _clickCount++;
+            if(_ifClickRoutineRunning)return;
+            
             var trueIndex = _currentPage * _slotsMaxCountPerPage + slotIndex;
             if (_currentSelectIndex == trueIndex) return;
             // Set close up target 
             GetTargetEntityByIndex?.Invoke(trueIndex);
             if (_currentSelectCounts <= trueIndex) return;
             InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
+            StartCoroutine(ClickRoutine());
         }
+        
 
         public bool HasTarget()
         {
@@ -110,12 +127,14 @@ namespace SparFlame.UI.GamePlay
         private float _maxTierF;
         private FactionTag _currentSelectFaction;
         private Entity _targetEntity;
+        private int _clickCount;
+        private bool _ifClickRoutineRunning;
         
         #region EventFunction
 
         private void Awake()
         {
-            if(Instance == null)
+            if(!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -130,5 +149,25 @@ namespace SparFlame.UI.GamePlay
         }
 
         #endregion
+
+        private IEnumerator ClickRoutine()
+        {
+            _ifClickRoutineRunning = true;
+            yield return new WaitForSeconds(UIGeneralController.Instance.doubleClickThreshold);
+            if (_clickCount == 1)
+            {
+                UnitDetailWindow.Instance.Show();
+                InteractAbilityWindow.Instance.Show();
+            }
+            else if (_clickCount >= 2)
+            {
+                UnitDetailWindow.Instance.Show();
+                InteractAbilityWindow.Instance.Show();
+                Hide();
+                DeselectAllExceptOne?.Invoke(_targetEntity);
+            }
+            _ifClickRoutineRunning = false;
+            _clickCount = 0;
+        }
     }
 }

@@ -55,8 +55,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 var entity = enemyEntities[i];
                 if(playerFaction == FactionTag.Enemy && !SystemAPI.HasComponent<LightSingleCrystalTag>(entity))continue;
                 if(!SystemAPI.IsComponentEnabled<InCameraView>(entity))continue;
-                enemyMaxHp += data.MaxValue;
-                enemyCurHp += data.CurValue;
+                enemyMaxHp += data.MaxValue + data.Bonus;
+                enemyCurHp += data.CurValue + data.Bonus;
                 enemyCrystalValidCount ++;
             }
 

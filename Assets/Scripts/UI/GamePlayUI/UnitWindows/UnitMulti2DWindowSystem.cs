@@ -1,4 +1,5 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.CustomParticleSystem;
+using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Units;
 using SparFlame.GamePlaySystem.UnitSelection;
@@ -30,6 +31,7 @@ namespace SparFlame.UI.GamePlay
                     var targetEntity = index < _unitInfos.Length ? _unitInfos[index].Entity : Entity.Null;
                     UnitMulti2DWindow.Instance.GetUnitData(_unitInfos.Length, targetEntity
                     );
+                    UnitMulti2DWindow.Instance.DeselectAllExceptOne += DeselectAllExceptOne;
                 };
             }
         }
@@ -52,12 +54,31 @@ namespace SparFlame.UI.GamePlay
                 _unitInfos.Add(new UnitRealTimeInfo
                 {
                     Entity = entity,
-                    HpRatio = statData.ValueRO.CurValue / statData.ValueRO.MaxValue,
+                    HpRatio = statData.ValueRO.CurValue / (statData.ValueRO.MaxValue + statData.ValueRO.Bonus),
                     UnitType = unitAttr.ValueRO.Type,
                     Tier = expData.ValueRO.CurTier
                 });
             }
             UnitMulti2DWindow.Instance.UpdateSelectedUnitView(_unitInfos, unitSelectionData.CurrentSelectFaction);
+        }
+        private void DeselectAllExceptOne(Entity targetEntity)
+        {
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            foreach (var (_,entity) in SystemAPI.Query<RefRO<Selected>>().WithEntityAccess())
+            {
+                if(entity == targetEntity)continue;
+                ecb.SetComponentEnabled<Selected>(entity,false);
+                var vfxRequest = ecb.CreateEntity();
+                ecb.AddComponent<GameplayEntityTag>(vfxRequest);
+                ecb.AddComponent(vfxRequest,new VFXRequest
+                {
+                    VFXName = VFXName.SelectionIndicator,
+                    RequestType = VFXRequestType.Kill,
+                    VFXTrackTarget = entity
+                });
+            }
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
         }
 
 

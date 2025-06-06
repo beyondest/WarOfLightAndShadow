@@ -14,6 +14,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
     public partial struct EnemyLateInitSystem : ISystem
     {
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
+        private ComponentLookup<GeneralAttr> _generalAttrLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -22,6 +23,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<GameStatusData>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
+            _generalAttrLookup = state.GetComponentLookup<GeneralAttr>(true);
         }
 
         [BurstCompile]
@@ -39,6 +41,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             }
             if(gameStatus != GameStatus.Gaming)return;
             _buildingAttrLookup.Update(ref state);
+            _generalAttrLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             var ecbP = ecb.AsParallelWriter();
@@ -48,6 +51,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                 SeedBias = SystemAPI.GetSingletonRW<GeneralRandom>().ValueRW.Rnd.NextInt(),
                 BuildingAttrLookup = _buildingAttrLookup,
+                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                GeneralAttrLookup = _generalAttrLookup,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = job;
             job.Complete();
@@ -98,8 +103,10 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         {
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public int SeedBias;
+            [ReadOnly] public FactionTag PlayerFaction;
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
+            [ReadOnly] public ComponentLookup<GeneralAttr> GeneralAttrLookup;
 
             private void Execute([EntityIndexInQuery] int index, Entity selfEntity,
                 in DynamicBuffer<LinkedEntityGroup> children)
@@ -110,9 +117,11 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                 {
                     var group = children[i];
                     var child = group.Value;
-
+                    
                     if (BuildingAttrLookup.TryGetComponent(child, out var buildingAttr))
                     {
+                        if(GeneralAttrLookup. TryGetComponent(child, out var generalAttr)
+                           && generalAttr.FactionTag == PlayerFaction)return;
                         if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
                             or {Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon})
                         {

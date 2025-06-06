@@ -104,12 +104,11 @@ namespace SparFlame.Database
         [FoldoutGroup("Gameplay/Cost"), HorizontalGroup("Gameplay/Cost/2")]
         public float conjureSpeedSecondPerUnit;
 
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/Animation"),
-         HorizontalGroup("Additional/Animation/1"),Tooltip("This is the index of go which has a animator in linked entity group of " +
-                                                           "basic go. Due to the physics shape will count as one entity in the first place," +
-                                                           "indicator will be placed at seconde place, this root should be 3")]
-        public int animatedRootIndex = 3; 
+     
  
+        [ShowIf(nameof(HasLightGroupBuff)),FoldoutGroup("Additional/Buff"),
+        AssetsOnly, Tooltip("Light shield and light cavalry will raise buff by aoe trigger")]
+        public GameObject lightGroupAoeTrigger;
         
         public override int GetGeneralTypeIndex()
         {
@@ -124,6 +123,12 @@ namespace SparFlame.Database
             if(factionTag == default)
                 factionTag = FactionTag.Ally;
         }
+
+        public bool HasLightGroupBuff()
+        {
+            return factionTag == FactionTag.Ally && type is UnitType.Shield or UnitType.Cavalry;
+        }
+        
     }
 
     [Serializable]

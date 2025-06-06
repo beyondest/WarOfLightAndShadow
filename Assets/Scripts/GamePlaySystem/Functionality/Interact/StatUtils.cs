@@ -13,12 +13,13 @@ namespace SparFlame.GamePlaySystem.Interact
     public struct StatUtils
     {
 
-        public static void GenerateRemoveFromTeamRequest(EntityCommandBuffer.ParallelWriter ecb, int index, Entity interacteeEntity, InTeamTag inTeamTag, ComponentLookup<UnitAttr> unitAttrLookup)
+        public static void GenerateRemoveFromTeamRequest(EntityCommandBuffer.ParallelWriter ecb, int index, Entity interacteeEntity, InTeamTag inTeamTag,
+            in UnitAttr unitAttr)
         {
             var request = ecb.CreateEntity(index);
             ecb.AddComponent(index, request, new RemoveFromTeamRequest
             {
-                UnitAttr = unitAttrLookup[interacteeEntity],
+                UnitAttr =unitAttr,
                 BelongsToTeam = inTeamTag.BelongsToTeam,
                 UnitToRemove = interacteeEntity
             });
@@ -27,13 +28,14 @@ namespace SparFlame.GamePlaySystem.Interact
 
         public static void GenerateHarvestResourceRequest(in StatChangeRequest request,
             in GeneralAttr interactorAttr,
-            in ResourceAttr resourceAttr, int index, EntityCommandBuffer.ParallelWriter ecb)
+            in ResourceAttr resourceAttr, int index, EntityCommandBuffer.ParallelWriter ecb,
+            int absAmount)
         {
             var entity = ecb.CreateEntity(index);
             ecb.AddComponent(index, entity, new ResourceChangeRequest
             {
                 Type = resourceAttr.Type,
-                AbsAmount = math.abs(request.AbsAmount),
+                AbsAmount = absAmount,
                 FromFaction = interactorAttr.FactionTag,
                 RequestType = ResourceRequestType.Harvest
             });
@@ -42,8 +44,10 @@ namespace SparFlame.GamePlaySystem.Interact
 
         public static void GeneratePopNumberRequest(ref ComponentLookup<LocalTransform> transformLookup,
             in StatChangeRequest request,
-            in GeneralAttr generalAttr, int index, EntityCommandBuffer.ParallelWriter ecb)
+            in GeneralAttr generalAttr, int index, EntityCommandBuffer.ParallelWriter ecb,
+            int absAmount)
         {
+            if(absAmount <= 0)return;
             var interactorFaction = generalAttr.FactionTag;
             var popNumberType = (request.Type, interactorFaction) switch
             {
@@ -64,7 +68,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 ColorId = (int)popNumberType,
                 Position = interacteePos,
                 Scale = 1f,
-                Value = request.AbsAmount
+                Value = absAmount
             });
             ecb.AddComponent<GameplayEntityTag>(index, popNumberRequest);
         }

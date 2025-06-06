@@ -96,15 +96,15 @@ namespace SparFlame.GamePlaySystem.Interact
                         KeepDuration = float.MaxValue,
                         RequestType = VFXRequestType.Spawn,
                         SpawnPosition = transform.Position,
-                        TargetPosition = transform.Position,
+                        ParabolaTargetPosition = transform.Position,
                         StatChangeRequest = default,
                         VFXName = hasExp ? VFXName.GarrisonUnderDefense : VFXName.GarrisonUnderDefenseTier4,
                         VFXTrackTarget = selfEntity,
                     });
                     if (ShouldRecover)
                     {
-                        statData.CurValue = math.min(statData.MaxValue,
-                            statData.CurValue + Config.HpRegenerationAmountRatio * statData.MaxValue);
+                        statData.CurValue = math.min(statData.MaxValue + statData.Bonus,
+                            statData.CurValue + Config.HpRegenerationAmountRatio * (statData.MaxValue + statData.Bonus));
                     }
                 }
                 else
@@ -122,7 +122,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         KeepDuration = float.MaxValue,
                         RequestType = VFXRequestType.Kill,
                         SpawnPosition = transform.Position,
-                        TargetPosition = transform.Position,
+                        ParabolaTargetPosition = transform.Position,
                         StatChangeRequest = default,
                         VFXName = hasExp ? VFXName.GarrisonUnderDefense : VFXName.GarrisonUnderDefenseTier4,
                         VFXTrackTarget = selfEntity,

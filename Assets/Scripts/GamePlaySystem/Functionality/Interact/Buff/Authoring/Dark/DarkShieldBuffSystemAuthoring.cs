@@ -22,6 +22,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     buffer.Add(new DarkShieldBuffConfig
                     {
                         reflectPhysicalDamageScale = config.reflectPhysicalDamageScale,
+                        reflectMagicDamageScale = config.reflectMagicDamageScale,
                         maxTauntCount = config.maxTauntCount
                     });
                     
@@ -49,9 +50,6 @@ namespace SparFlame.GamePlaySystem.Interact
     }
     public struct DarkShieldTauntBuff : IComponentData
     {
-        public float ReflectPhysicalDamageScale;
-        public float ReflectMagicDamageScale;
-        public int MaxTauntCount;
     }
 
 

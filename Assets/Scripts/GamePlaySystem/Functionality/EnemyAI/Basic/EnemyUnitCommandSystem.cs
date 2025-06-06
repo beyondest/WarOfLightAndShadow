@@ -104,7 +104,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                         {
                             MovementUtils.SetMoveTarget(ref movableData, targetPos,
                                 targetColliderShape,
-                                MovementCommandType.Interactive, attackAbility.RangeSq);
+                                MovementCommandType.Interactive, attackAbility.Range);
                             basicStateData.TargetState = InteractState.Moving;
                             StateUtils.SwitchState(ref basicStateData, ECB, commandData.TargetEntity, index);
                             basicStateData.Focus = commandData.Focus;

@@ -72,7 +72,7 @@ namespace SparFlame.UI.GamePlay
             var curScale = speedUpScaleConfigList[_currentSpeedUpIndex];
             Time.timeScale = curScale;
             scale.ValueRW.Value = curScale;
-            timeScaleText.text = "x" + curScale.ToString("F2");
+            timeScaleText.text = "x" + curScale.ToString("F1");
         }
 
         public void OnClickTutorial()

@@ -83,7 +83,7 @@ namespace SparFlame.GamePlaySystem.Movement
         /// <summary>
         /// This range is attack range for attack movement, garrison range for garrison movement...
         /// </summary>
-        public float InteractiveRangeSq;
+        public float InteractRange;
         public bool ForceCalculate;
         /// <summary>
         /// This is the collider of object itself, used for raycast for obstacle avoidance 

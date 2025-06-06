@@ -21,7 +21,7 @@ namespace SparFlame.GamePlaySystem.Interact
             if (targetGeneralAttr.FactionTag == selfFactionTag)
             {
                 if (!canHeal) return false;
-                return targetStatData.CurValue < targetStatData.MaxValue;
+                return targetStatData.CurValue < targetStatData.MaxValue + targetStatData.Bonus;
             }
             // Harvest target
             if (targetGeneralAttr.BaseTag == BaseTag.Resources)

@@ -120,8 +120,9 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         // Check if target is tracked by same name vfx, if so, reset the ttl and continue
                         if (request.VFXTrackTarget != Entity.Null)
                         {
-                            var buffer = SystemAPI.GetBuffer<TrackedByVFX>(request.VFXTrackTarget);
                             var findSame = false;
+                            var buffer = SystemAPI.GetBuffer<TrackedByVFX>(request.VFXTrackTarget);
+                       
                             foreach (var vfxExist in buffer)
                             {
                                 if (vfxExist.Name == request.VFXName)
@@ -158,7 +159,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         // Projectile vfx need to be dealt separately
                         if (targetPair.VFXType != VFXType.Projectile)
                         {
-                            ecb.AddComponent(vfx, new VFXData
+                            EntityManager.AddComponent<VFXData>(vfx);
+                            EntityManager.SetComponentData(vfx, new VFXData
                             {
                                 VFXType = targetPair.VFXType,
                                 Tracker = request.VFXTrackTarget,
@@ -192,7 +194,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                             }
                             
                             var isTargetAlive = false;
-                            var targetLastPos = request.TargetPosition;
+                            var targetLastPos = request.ParabolaTargetPosition;
                             if (SystemAPI.HasComponent<LocalTransform>(request.StatChangeRequest.Interactee))
                             {
                                 isTargetAlive = true;

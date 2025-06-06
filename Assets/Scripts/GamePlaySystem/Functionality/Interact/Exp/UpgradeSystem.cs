@@ -84,7 +84,7 @@ namespace SparFlame.GamePlaySystem.Interact
                         TierFilterEnable = false
                     },
                     StatChangeRequest = default,
-                    TargetPosition = default,
+                    ParabolaTargetPosition = default,
                 });
                 AudioUtils.PlayAudioClip(AudioName.Upgrade, trans.Position,ecb);
                 

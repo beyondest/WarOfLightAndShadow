@@ -22,7 +22,7 @@ namespace SparFlame.UI.General
         {
             foreach (var extraInfoText in extraInfoTexts)
             {
-                extraInfoText.gameObject.SetActive(false);
+                extraInfoText.gameObject.SetActive(true);
             }
         }
 

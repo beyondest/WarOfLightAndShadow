@@ -180,7 +180,7 @@ namespace SparFlame.GamePlaySystem.Conjure
                     ECB.AddComponent<GameplayEntityTag>(index, vfxRequest);
                     ECB.AddComponent(index, vfxRequest, new VFXRequest
                     {
-                        TargetPosition = default,
+                        ParabolaTargetPosition = default,
                         Filter = new VFXSubFilter
                         {
                             Faction = generalAttr.FactionTag,

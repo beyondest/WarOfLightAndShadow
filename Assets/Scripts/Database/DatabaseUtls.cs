@@ -104,6 +104,7 @@ namespace SparFlame.Database
                     });
                     AddComponent<IdleStateTag>(entity);
                     SetComponentEnabled<IdleStateTag>(entity, true);
+                    AddComponent<InteractAbilityBonus>(entity);
                 }
 
                 // Interact Ability 
@@ -115,7 +116,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.attackAmount,
                         Speed = item.attackSpeed,
-                        RangeSq = item.attackRange * item.attackRange,
+                        Range = item.attackRange ,
                         Targets = item.attackTargets,
                         InteractType = InteractType.Attack
                     });
@@ -129,7 +130,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.healAmount,
                         Speed = item.healSpeed,
-                        RangeSq = item.healRange * item.healRange,
+                        Range = item.healRange ,
                         Targets = item.healTargets,
                         InteractType = InteractType.Heal
                     });
@@ -143,7 +144,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.harvestAmount,
                         Speed = item.harvestSpeed,
-                        RangeSq = item.harvestRange * item.harvestRange,
+                        Range = item.harvestRange ,
                         Targets = item.harvestTargets,
                         InteractType = InteractType.Harvest
                     });
@@ -155,16 +156,9 @@ namespace SparFlame.Database
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
             {
-                // if (item.IsAttackable())
-                // {
-                //     volumeRadius = item.attackRange;
-                //     areaType = (AreaType)((int)item.curTier + 10);
-                // }
-                // else
-                // {
+              
                 const float volumeRadius = 0f;
                 var areaType = (AreaType)item.curTier;
-                // }
                 var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();
                 AddComponent<VolumeObstacleTag>(entity);
                 AddComponent(entity, new VolumeObstacleSpawnRequest

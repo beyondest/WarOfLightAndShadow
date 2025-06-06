@@ -32,6 +32,7 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<StatData> _statLookup;
         private ComponentLookup<AITag> _aiTagLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
+        private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -50,6 +51,7 @@ namespace SparFlame.GamePlaySystem.State
             _harvestabilityLookup = state.GetComponentLookup<HarvestAbility>(true);
             _regeneratingTag = state.GetComponentLookup<RegeneratingTag>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
+            _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
 
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _movableLookup = state.GetComponentLookup<MovableData>();
@@ -78,6 +80,7 @@ namespace SparFlame.GamePlaySystem.State
             _regeneratingTag.Update(ref state);
             _aiTagLookup.Update(ref state);
             _inGarrisonLookup.Update(ref state);
+            _darkShieldTauntedBuffLookup.Update(ref state);
             // _squeezeLookup.Update(ref state);
             // _autoGiveWayLookup.Update(ref state);
             new CheckMovingState
@@ -97,7 +100,8 @@ namespace SparFlame.GamePlaySystem.State
                 Config = config,
                 RegeneratingTagLookup = _regeneratingTag,
                 SightSystemConfig = sightConfig,
-                GarrisonSystemConfig = garrisonSystemConfig
+                GarrisonSystemConfig = garrisonSystemConfig,
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
             }.ScheduleParallel();
         }
 
@@ -117,6 +121,7 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
             [ReadOnly] public ComponentLookup<AITag> AITagLookup;
             [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
+            [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
 
 
             // Resolve self stuck will modify transform and lookup random transform for squeeze direction
@@ -186,6 +191,20 @@ namespace SparFlame.GamePlaySystem.State
             )
             {
                 var shouldChangeTarget = false;
+                if(DarkShieldTauntedBuffLookup.TryGetComponent(selfEntity, out var tauntedBuff)
+                   && DarkShieldTauntedBuffLookup.IsComponentEnabled(selfEntity)
+                   && TransLookup.TryGetComponent(tauntedBuff.TauntedBy, out var targetTrans)
+                   && GeneralLookup.TryGetComponent(tauntedBuff.TauntedBy, out var tauntedGeneralAttr))
+                {
+                    if (stateData.TargetEntity == tauntedBuff.TauntedBy) return false;
+                    // If taunted, should change target to taunted target
+                    stateData.TargetEntity = tauntedBuff.TauntedBy;
+                    stateData.TargetState = InteractState.Attacking;
+                    MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, tauntedGeneralAttr.BoxColliderSize,
+                        MovementCommandType.Interactive, AttackLookup[selfEntity].Range);
+                    return true;
+                }
+                
                 var isAi = AITagLookup.HasComponent(selfEntity);
 
                 GeneralAttr targetGeneralAttr;
@@ -252,25 +271,7 @@ namespace SparFlame.GamePlaySystem.State
                                 return false;
                         }
 
-                        // This may happen when command a cleric to attack someone or to heal someone with full hp . Then cleric should march to that position rather then attack someone
-                        /*if (!canAttack)
-                        {
-                            MovementUtils.SetMoveTarget(ref movableData, TransLookup[stateData.TargetEntity].Position,
-                                float3.zero,
-                                MovementCommandType.March, 0f);
-                            stateData.TargetState = InteractState.Moving;
-                            StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                            // Remove target so that player command it to move than it will move
-                            if (stateData.TargetEntity != Entity.Null)
-                            {
-                                InteractUtils.Remove(ref targets, stateData.TargetEntity);
-                            }
-                            stateData.TargetEntity = Entity.Null;
-                            stateData.TargetState = InteractState.Idle;
-                            stateData.Focus = false;
-                            return true;
-                        }*/
-
+                  
                         // Garrison unit Drop aggro， if Ai, should focus go back and regenerating hp
                         if (garrisonUnitOutOfDefendRange)
                         {
@@ -304,25 +305,25 @@ namespace SparFlame.GamePlaySystem.State
                 targetGeneralAttr = GeneralLookup[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
                 var targetColliderSize = targetGeneralAttr.BoxColliderSize;
-                float rangSq;
+                float range;
                 if (targetGeneralAttr.FactionTag == selfFactionTag)
                 {
                     stateData.TargetState = InteractState.Healing;
-                    rangSq = HealLookup[selfEntity].RangeSq;
+                    range = HealLookup[selfEntity].Range;
                 }
                 else if (targetGeneralAttr.BaseTag == BaseTag.Resources)
                 {
                     stateData.TargetState = InteractState.Harvesting;
-                    rangSq = HarvestLookup[selfEntity].RangeSq;
+                    range = HarvestLookup[selfEntity].Range;
                 }
                 else
                 {
                     stateData.TargetState = InteractState.Attacking;
-                    rangSq = AttackLookup[selfEntity].RangeSq;
+                    range = AttackLookup[selfEntity].Range;
                 }
 
                 MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderSize,
-                    MovementCommandType.Interactive, rangSq);
+                    MovementCommandType.Interactive, range);
                 return true;
             }
 
@@ -462,37 +463,7 @@ namespace SparFlame.GamePlaySystem.State
                     && stateData.CurState == InteractState.Idle;
             }
 
-            /// <summary>
-            /// This function has bugs, cleric has no attack state, so cleric should never be taunted
-            /// </summary>
-            /// <param name="surroundings"></param>
-            /// <param name="movableData"></param>
-            /// <param name="stateData"></param>
-            /// <param name="targets"></param>
-            /// <param name="entity"></param>
-            /// <param name="index"></param>
-            /// <returns></returns>
-            private bool CheckTaunted(ref Surroundings surroundings, ref MovableData movableData,
-                ref BasicStateData stateData, ref DynamicBuffer<InsightTarget> targets, Entity entity, int index)
-            {
-                if (surroundings.MoveSuccess) return false;
-                if (!GeneralLookup.TryGetComponent(surroundings.FrontEntity, out var generalAttr)) return false;
-                if (generalAttr is not { FactionTag: FactionTag.Enemy, BaseTag: BaseTag.Units }) return false;
-                if (stateData.Focus)
-                {
-                    InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
-                        SightSystemConfig.MemoryTargetWhenFocus);
-                }
-
-                // Turn to Attacking State
-                stateData.TargetState = InteractState.Attacking;
-                stateData.TargetEntity = surroundings.FrontEntity;
-                surroundings.MoveSuccess = true;
-                surroundings.FrontEntity = surroundings.LeftEntity = surroundings.RightEntity = Entity.Null;
-                MovementUtils.ResetMovableData(ref movableData);
-                StateUtils.SwitchState(ref stateData, ECB, entity, index);
-                return true;
-            }
+         
 
 
             // // Use surrounding information to try to find another way

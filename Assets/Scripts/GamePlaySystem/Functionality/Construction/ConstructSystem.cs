@@ -218,7 +218,7 @@ namespace SparFlame.GamePlaySystem.Building
                         var ability = SystemAPI.GetComponent<AttackAbility>(data.TargetBuilding);
                         state.EntityManager.SetComponentData(data.PreviewAttackRangeEntity, new LocalTransform
                         {
-                            Scale = math.sqrt(ability.RangeSq)
+                            Scale = math.sqrt(ability.Range)
                         });
                     }
                     else data.PreviewAttackRangeEntity = Entity.Null;
@@ -287,7 +287,7 @@ namespace SparFlame.GamePlaySystem.Building
                         ecb.AddComponent<GameplayEntityTag>(vfxRequest);
                         ecb.AddComponent(vfxRequest, new VFXRequest
                         {
-                            TargetPosition = default,
+                            ParabolaTargetPosition = default,
                             Filter = new VFXSubFilter
                             {
                                 Faction = curFaction,

@@ -73,6 +73,8 @@ namespace SparFlame.GamePlaySystem.Animation
                         var eventsIndices = clip.events.GetEventIndicesInRange(preClipTime, true, clipTime, false, 0);
                         foreach (var i in eventsIndices)
                         {
+                            if (i < 0 || i >= clip.events.nameHashes.Length)
+                                continue; 
                             buffer.Add(new AnimationEventData
                             {
                                 NameHash = clip.events.nameHashes[i],

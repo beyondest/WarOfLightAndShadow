@@ -55,7 +55,7 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public ComponentLookup<AITag> AITagLookup;
             private void Execute(ref StatData statData, in GeneralAttr generalAttr,Entity selfEntity)
             {
-                if(statData.CurValue >= statData.MaxValue)return;
+                if(statData.CurValue >= statData.MaxValue + statData.Bonus)return;
                 var isAi = AITagLookup.HasComponent(selfEntity);
                 var speedBoost = isAi ? Config.AiBoostRate : 1f;
                 var speed = generalAttr.BaseTag == BaseTag.Units
@@ -64,7 +64,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 speed *= speedBoost;
                 
                 statData.CurValue += DeltaTime * speed;
-                if(statData.CurValue >= statData.MaxValue)statData.CurValue = statData.MaxValue;
+                if(statData.CurValue >= statData.MaxValue + statData.Bonus)statData.CurValue = statData.MaxValue;
             }
         }
         
@@ -79,7 +79,7 @@ namespace SparFlame.GamePlaySystem.Interact
             [ReadOnly] public ComponentLookup<AITag> AITagLookup;
             private void Execute(ref StatData statData, in GeneralAttr generalAttr,Entity selfEntity)
             {
-                if(statData.CurValue >= statData.MaxValue)return;
+                if(statData.CurValue >= statData.MaxValue + statData.Bonus)return;
                 var isAi = AITagLookup.HasComponent(selfEntity);
                 var speedBoost = isAi ? Config.NormalHpRegenerationRate : 1f;
                 var speed = generalAttr.BaseTag == BaseTag.Units
@@ -87,7 +87,7 @@ namespace SparFlame.GamePlaySystem.Interact
                     : Config.BuildingHpRegenerationRate;
                 speed *= speedBoost;
                 statData.CurValue += DeltaTime * speed;
-                if(statData.CurValue >= statData.MaxValue)statData.CurValue = statData.MaxValue;
+                if(statData.CurValue >= statData.MaxValue + statData.Bonus)statData.CurValue = statData.MaxValue;
             }
         }
     }

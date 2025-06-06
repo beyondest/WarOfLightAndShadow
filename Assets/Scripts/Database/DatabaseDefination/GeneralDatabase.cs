@@ -161,18 +161,7 @@ namespace GamePlaySystem.Database
 
         [VerticalGroup("Additional")] public bool enableAdditionalConfig;
 
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-         HorizontalGroup("Additional/FogOfWar/0")]
-        public float fogSightRange = 30;
-        
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-         HorizontalGroup("Additional/FogOfWar/1")]
-        public float fogSightAngle = 360;
-        
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-         HorizontalGroup("Additional/FogOfWar/2")]
-        public float disappearAlphaThreshold = 0.1f;
-        
+   
         
         
         #endregion

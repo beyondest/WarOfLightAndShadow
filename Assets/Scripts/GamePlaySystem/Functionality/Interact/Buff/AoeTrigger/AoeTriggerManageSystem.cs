@@ -9,7 +9,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
 {
     public struct AoeTriggerRequest : IComponentData
     {
-        
         public Entity Prefab;
     }
 
@@ -52,7 +51,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in AoeTriggerRequest request)
             {
                 ECB.RemoveComponent<AoeTriggerRequest>(index, selfEntity);
-
                 // Safety check
                 if (!TransformLookup.TryGetComponent(selfEntity, out var transform)) return;
                 // This should not happen, only for safety

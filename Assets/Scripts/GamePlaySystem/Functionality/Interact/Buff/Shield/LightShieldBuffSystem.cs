@@ -35,6 +35,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 LightShieldUnderDefendLookup = _defenderData,
                 TransformLookup = _transformLookup,
                 Config = SystemAPI.GetSingleton<LightShieldBuffGeneralConfig>(),
+                LightShieldBuffConfigs = SystemAPI.GetSingletonBuffer<LightShieldBuffConfig>(),
                 ECB = ecbP
             }.ScheduleParallel();
             new LightShieldDefendBuffTimerJob
@@ -46,6 +47,7 @@ namespace SparFlame.GamePlaySystem.Interact
 
 
         [BurstCompile]
+        [WithAll(typeof(LightShieldBuff))]
         public partial struct LightShieldBuffJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -55,25 +57,27 @@ namespace SparFlame.GamePlaySystem.Interact
 
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public LightShieldBuffGeneralConfig Config;
+            [ReadOnly] public DynamicBuffer<LightShieldBuffConfig> LightShieldBuffConfigs;
 
             private void Execute([ChunkIndexInQuery] int index,
-                in DynamicBuffer<AoeTarget> targets,
-                ref LightShieldBuff data, in BasicStateData stateData, Entity selfEntity)
+                in DynamicBuffer<AoeTarget> targets, in BasicStateData stateData, Entity selfEntity,
+                in ExpData expData)
             {
                 if (stateData.CurState != InteractState.Attacking && stateData.TargetState != InteractState.Attacking)
                 {
                     return; // General buff system will remove this buff
                 }
-
-                AddNewShieldData(targets, data, index, selfEntity);
+                AddNewShieldData(targets, index, selfEntity,
+                    LightShieldBuffConfigs[(int)expData.CurTier - 3].maxDefendCount);
             }
 
-            private void AddNewShieldData(in DynamicBuffer<AoeTarget> targets, in LightShieldBuff buff, int index, Entity selfEntity)
+            private void AddNewShieldData(in DynamicBuffer<AoeTarget> targets, int index, Entity selfEntity,
+                int maxDefendCount)
             {
                 var count = 0;
                 for (var i = targets.Length - 1; i >= 0; i--)
                 {
-                    if (count >= buff.MaxDefendCount)
+                    if (count >= maxDefendCount)
                     {
                         break; // Already reached max defend count
                     }
@@ -85,6 +89,11 @@ namespace SparFlame.GamePlaySystem.Interact
                         if (LightShieldUnderDefendLookup.TryGetComponent(target.Entity, out var defenderData) &&
                             defenderData.DefendBy == selfEntity)
                         {
+                            ECB.SetComponent(index, target.Entity, new LightShieldUnderDefend
+                            {
+                                DefendBy = selfEntity,
+                                DefendTime = Config.DefendTime
+                            });
                             count++; // Target is already defended by self, then skip and add count, otherwise not add count
                         }
 

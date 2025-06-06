@@ -23,6 +23,7 @@ namespace SparFlame.GamePlaySystem.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<LightShieldBuffGeneralConfig>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<EnemyInitDistinguishConfig>();
@@ -84,61 +85,6 @@ namespace SparFlame.GamePlaySystem.EnemyAI
             private void Execute([ChunkIndexInQuery] int index, in GeneralAttr attr,
                 in LocalTransform transform, Entity selfEntity)
             {
-
-                // Apply buff
-                if (attr is { FactionTag: FactionTag.Ally, BaseTag: BaseTag.Units })
-                {
-                    var unitAttr = UnitAttrLookup[selfEntity];
-                    var expData = ExpDataLookup[selfEntity];
-                    if (unitAttr.Type != UnitType.Shield)
-                    {
-                        // Only light units except shield can be defended by light shield
-                        ECB.AddComponent<LightShieldUnderDefend>(index, selfEntity);
-                        ECB.SetComponentEnabled<LightShieldUnderDefend>(index, selfEntity, false);
-                    }
-                    else
-                    {
-                        ECB.AddComponent(index, selfEntity, new AoeTriggerRequest
-                        {
-                            Prefab = LightShieldBuffGeneralConfig.LightShieldAoeTriggerPrefab
-                        });
-                        ECB.AddBuffer<AoeTarget>(index, selfEntity);
-                        ECB.AddComponent(index, selfEntity, new LightShieldBuff
-                        {
-                            ShieldGetPhysicalDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].shieldGetPhysicalDamageScale,
-                            SelfGetPhysicalDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].selfGetPhysicalDamageScale,
-                            ShieldGetMagicDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].shieldGetMagicDamageScale,
-                            SelfGetMagicDamageScale = LightShieldBuffConfigs[(int)expData.CurTier - 3].selfGetMagicDamageScale,
-                            MaxDefendCount = LightShieldBuffConfigs[(int)expData.CurTier - 3].maxDefendCount
-                        });
-                    }
-
-                    if (unitAttr.Type != UnitType.Shield && (unitAttr.Type != UnitType.Magic ||
-                                                             unitAttr.SubTypeIndex != (int)MagicType.Cleric))
-                    {
-                        // Only light units except shield and cleric can be taunted by dark shield
-                        ECB.AddComponent<DarkShieldTauntedBuff>(index, selfEntity);
-                        ECB.SetComponentEnabled<DarkShieldTauntedBuff>(index, selfEntity, false);
-                    }
-                    
-                }
-                else if (attr is { FactionTag: FactionTag.Enemy, BaseTag: BaseTag.Units })
-                {
-                    var unitAttr = UnitAttrLookup[selfEntity];
-                    var expData = ExpDataLookup[selfEntity];
-                    if (unitAttr.Type == UnitType.Shield)
-                    {
-                        ECB.AddComponent(index, selfEntity, new DarkShieldTauntBuff
-                        {
-                            ReflectPhysicalDamageScale = DarkShieldBuffConfigs[(int)expData.CurTier - 3].reflectPhysicalDamageScale,
-                            MaxTauntCount = DarkShieldBuffConfigs[(int)expData.CurTier - 3].maxTauntCount,
-                            ReflectMagicDamageScale = DarkShieldBuffConfigs[(int)expData.CurTier - 3].reflectMagicDamageScale
-                        });
-                    }
-      
-                }
-
-
                 // General distinguish
                 if (attr.FactionTag != EnemyFaction)
                 {
@@ -155,11 +101,8 @@ namespace SparFlame.GamePlaySystem.EnemyAI
                             {
                                 Value = 0f
                             });
-                     
                         }
                     }
-                  
-
                     return;
                 }
 

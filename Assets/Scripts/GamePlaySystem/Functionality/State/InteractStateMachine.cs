@@ -36,6 +36,8 @@ namespace SparFlame.GamePlaySystem.State
         private ComponentLookup<AttackStateTag> _attackTag;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<ExpData> _expDataLookup;
+        private ComponentLookup<InteractAbilityBonus> _abilityBonusLookup;
+        private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
 
         private EntityQuery _attackEntityQuery;
         private EntityQuery _healEntityQuery;
@@ -72,6 +74,8 @@ namespace SparFlame.GamePlaySystem.State
             _regeneratingTag = state.GetComponentLookup<RegeneratingTag>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
+            _abilityBonusLookup = state.GetComponentLookup<InteractAbilityBonus>(true);
+            _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
         }
 
         [BurstCompile]
@@ -94,6 +98,8 @@ namespace SparFlame.GamePlaySystem.State
             _attackTag.Update(ref state);
             _buildingAttrLookup.Update(ref state);
             _expDataLookup.Update(ref state);
+            _abilityBonusLookup.Update(ref state);
+            _darkShieldTauntedBuffLookup.Update(ref state);
             var attackAbilities = _attackEntityQuery.ToComponentDataArray<AttackAbility>(Allocator.TempJob);
             var attackEntities = _attackEntityQuery.ToEntityArray(Allocator.TempJob);
             state.Dependency.Complete();
@@ -118,7 +124,10 @@ namespace SparFlame.GamePlaySystem.State
                 InteractTurnSpeed = config.InteractTurnSpeed,
                 BuildingAttrLookup = _buildingAttrLookup,
                 Config = sightSystemConfig,
-                ExpDataLookup = _expDataLookup
+                ExpDataLookup = _expDataLookup,
+                AbilityBonusLookup = _abilityBonusLookup,
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
+
             }.Schedule(attackEntities.Length, config.AttackJobBatchCount, state.Dependency);
             state.Dependency = attackJob;
 
@@ -145,7 +154,10 @@ namespace SparFlame.GamePlaySystem.State
                 InteractTurnSpeed = config.InteractTurnSpeed,
                 Config = sightSystemConfig,
                 BuildingAttrLookup = _buildingAttrLookup,
-                ExpDataLookup = _expDataLookup
+                ExpDataLookup = _expDataLookup,
+                AbilityBonusLookup = _abilityBonusLookup,
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
+
             }.Schedule(healEntities.Length, config.HealJobBatchCount, state.Dependency);
             state.Dependency = healJob;
 
@@ -172,7 +184,9 @@ namespace SparFlame.GamePlaySystem.State
                 InteractTurnSpeed = config.InteractTurnSpeed,
                 Config = sightSystemConfig,
                 BuildingAttrLookup = _buildingAttrLookup,
-                ExpDataLookup = _expDataLookup
+                ExpDataLookup = _expDataLookup,
+                AbilityBonusLookup = _abilityBonusLookup,
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
             }.Schedule(harvestEntities.Length, config.HarvestJobBatchCount, state.Dependency);
             state.Dependency = harvestJob;
 
@@ -206,6 +220,8 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public BufferLookup<InsightTarget> InsightTarget;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
+            [ReadOnly] public ComponentLookup<InteractAbilityBonus> AbilityBonusLookup;
+            [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
             [ReadOnly] public float InteractTurnSpeed;
 
             // Turn rotation to target
@@ -283,9 +299,12 @@ namespace SparFlame.GamePlaySystem.State
                 if (ShouldChangeTarget(ref selfStateData, HealLookup.HasComponent(selfEntity),
                         in targetList, selfEntity))
                 {
-                    StateUtils.SetTargetStateViaTargetType(in selfFactionTag,
-                        GeneralAttrLookup[selfStateData.TargetEntity], ref selfStateData);
-                    StateUtils.SwitchState(ref selfStateData, ECB, selfEntity, index);
+                    if (GeneralAttrLookup.TryGetComponent(selfStateData.TargetEntity, out var newTargetGeneralAttr))
+                    {
+                        StateUtils.SetTargetStateViaTargetType(in selfFactionTag,
+                            newTargetGeneralAttr, ref selfStateData);
+                        StateUtils.SwitchState(ref selfStateData, ECB, selfEntity, index);
+                    }
                     return;
                 }
 
@@ -294,11 +313,10 @@ namespace SparFlame.GamePlaySystem.State
                 var curPos = transform.Position;
                 var targetPos = TransformLookup[selfStateData.TargetEntity].Position;
 
-
                 // Check if target in range
                 /*As long as target is valid, movable unit will never change target in interact state.
                  The target can only be changed while moving*/
-                if (!IsTargetInRange(ability.RangeSq, in curPos, in targetPos, in targetGeneralAttr))
+                if (!IsTargetInRange(math.square(ability.Range + AbilityBonusLookup[selfEntity].RangeBonus), in curPos, in targetPos, in targetGeneralAttr))
                 {
                     // Interacter is movable
                     if (MovableLookup.HasComponent(selfEntity))
@@ -349,13 +367,20 @@ namespace SparFlame.GamePlaySystem.State
             private bool ShouldChangeTarget(ref BasicStateData selfStateData, bool heal,
                 in DynamicBuffer<InsightTarget> targets, Entity selfEntity)
             {
+                var originalTarget = selfStateData.TargetEntity;
+
+                if (DarkShieldTauntedBuffLookup.TryGetComponent(selfEntity, out var taunted) &&
+                    DarkShieldTauntedBuffLookup.IsComponentEnabled(selfEntity))
+                {
+                    selfStateData.TargetEntity = taunted.TauntedBy;
+                    return originalTarget != selfStateData.TargetEntity;
+                }
                 // Focus mode cannot switch target unless this is a healer and healer heal first
                 if (selfStateData.Focus && (!heal || !Config.HealerAlwaysHealFirst)) return false;
 
                 var selfStatData = StatDataLookup[selfEntity];
-                var originalTarget = selfStateData.TargetEntity;
                 // Heal self first
-                if (heal && selfStatData.CurValue < selfStatData.MaxValue)
+                if (heal && selfStatData.CurValue < selfStatData.MaxValue + selfStatData.Bonus)
                 {
                     selfStateData.TargetEntity = selfEntity;
                     return originalTarget != selfStateData.TargetEntity;
@@ -379,7 +404,7 @@ namespace SparFlame.GamePlaySystem.State
                 var tarColliderShape = GeneralAttrLookup[stateData.TargetEntity].BoxColliderSize;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
-                    ability.RangeSq
+                    ability.Range
                 );
                 stateData.TargetState = InteractState.Moving;
                 StateUtils.SwitchState(ref stateData, ECB, entity, index);
@@ -425,7 +450,7 @@ namespace SparFlame.GamePlaySystem.State
                         _ => StatChangeType.None // This should never happen,
                     },
                     InteractorGeneralAttr = selfGeneralAttr,
-                    IsMagicDamage = true
+                    DamageType = DamageType.Magic
                 };
 
                 var buildingAttr = BuildingAttrLookup[selfEntity];
@@ -467,7 +492,7 @@ namespace SparFlame.GamePlaySystem.State
                     RequestType = VFXRequestType.Spawn,
                     KeepDuration = 0,
                     VFXTrackTarget = Entity.Null,
-                    TargetPosition = targetPos
+                    ParabolaTargetPosition = targetPos
                 });
 
                 

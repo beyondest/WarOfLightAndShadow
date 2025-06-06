@@ -37,6 +37,7 @@ namespace SparFlame.GamePlaySystem.Interact
                 ECB = ecb,
                 DarkShieldReflectDamageLookup = _darkShieldReflectDamagaLookup,
                 TransformLookup = _transformLookup,
+                Configs = SystemAPI.GetSingletonBuffer<DarkShieldBuffConfig>(),
                 Config = SystemAPI.GetSingleton<DarkShieldBuffGeneralConfig>()
             }.ScheduleParallel();
 
@@ -49,21 +50,23 @@ namespace SparFlame.GamePlaySystem.Interact
 
 
         [BurstCompile]
-        [WithAll(typeof(AttackStateTag))]
         public partial struct DarkShieldTauntBuffApplyJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldReflectDamageLookup;
             [ReadOnly] public DarkShieldBuffGeneralConfig Config;
+            [ReadOnly] public DynamicBuffer<DarkShieldBuffConfig> Configs;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in DarkShieldTauntBuff buff,
-                in DynamicBuffer<InsightTarget> targets)
+                in DynamicBuffer<InsightTarget> targets, in ExpData expData, in BasicStateData stateData)
             {
+                if(!(stateData.CurState == InteractState.Attacking || stateData.TargetState == InteractState.Attacking))return;
                 var count = 0;
+                var maxTauntCount = Configs[(int)expData.CurTier - 3].maxTauntCount;
                 for (int i = 0; i < targets.Length; i++)
                 {
-                    if (count > buff.MaxTauntCount - 1) break;
+                    if (count >= maxTauntCount) break;
                     var target = targets[i].Entity;
 
                     if (!DarkShieldReflectDamageLookup.HasComponent(target)
@@ -74,6 +77,11 @@ namespace SparFlame.GamePlaySystem.Interact
                         if (DarkShieldReflectDamageLookup.TryGetComponent(target, out var reflectDamage) &&
                             reflectDamage.TauntedBy == selfEntity)
                         {
+                            ECB.SetComponent(index, target, new DarkShieldTauntedBuff
+                            {
+                                TauntedBy = selfEntity,
+                                TauntTime = Config.DarkShieldReflectDamageDuration
+                            });
                             count++;
                         }
 

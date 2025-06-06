@@ -171,7 +171,7 @@ namespace SparFlame.GamePlaySystem.Command
                 SpawnPosition = spawnPos,
                 VFXName = name,
                 StatChangeRequest = default,
-                TargetPosition = default,
+                ParabolaTargetPosition = default,
                 VFXTrackTarget = Entity.Null,
             });
         }
@@ -197,7 +197,7 @@ namespace SparFlame.GamePlaySystem.Command
             Entity entity)
         {
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, attackAbility.RangeSq);
+                MovementCommandType.Interactive, attackAbility.Range);
             basicStateData.TargetState = InteractState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.Focus = Focus;
@@ -227,7 +227,7 @@ namespace SparFlame.GamePlaySystem.Command
         {
 
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, healingAbility.RangeSq);
+                MovementCommandType.Interactive, healingAbility.Range);
             basicStateData.TargetState = InteractState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.TargetEntity = TargetEntity;
@@ -258,7 +258,7 @@ namespace SparFlame.GamePlaySystem.Command
         {
 
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
-                MovementCommandType.Interactive, harvestAbility.RangeSq);
+                MovementCommandType.Interactive, harvestAbility.Range);
             basicStateData.TargetState = InteractState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
             basicStateData.TargetEntity = TargetEntity;

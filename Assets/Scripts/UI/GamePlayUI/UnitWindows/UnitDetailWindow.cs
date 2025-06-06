@@ -26,15 +26,23 @@ namespace SparFlame.UI.GamePlay
 
         [Header("Unit Detail")]
         [SerializeField] private TMP_Text unitMoveSpeed;
-        
-        
+
+        [SerializeField] private TMP_Text moveSpeedBonusText;
         // Interface
         public static UnitDetailWindow Instance;
+
+        public override void Show(Vector2? pos = null)
+        {
+            base.Show(pos);
+            if(pos != null)
+                _panelRectTransform.anchoredPosition = pos.Value;
+        }
 
         public override void Hide()
         {
             base.Hide();
             TargetEntity = Entity.Null;
+            _panelRectTransform.anchoredPosition = _originalPanelPos;
         }
         public void ClearCloseUpTarget()
         {
@@ -60,8 +68,13 @@ namespace SparFlame.UI.GamePlay
             return TargetEntity != Entity.Null;
         }
 
+    
+
+       
         // Internal Data
         protected Entity TargetEntity = Entity.Null;
+        private Vector2 _originalPanelPos;
+        private RectTransform _panelRectTransform;
 
         // ECS
         protected EntityManager Em;
@@ -71,7 +84,7 @@ namespace SparFlame.UI.GamePlay
 
         protected virtual void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -84,6 +97,8 @@ namespace SparFlame.UI.GamePlay
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _gamingTag = Em.CreateEntityQuery(typeof(GamingTag));
             panel.SetActive(false);
+            _originalPanelPos = panel.GetComponent<RectTransform>().anchoredPosition;
+            _panelRectTransform = panel.GetComponent<RectTransform>();
         }
 
 
@@ -137,8 +152,20 @@ namespace SparFlame.UI.GamePlay
         private void UpdateDynamicInfo()
         {
             var movableData = Em.GetComponentData<MovableData>(TargetEntity);
+            var bonus = Em.GetComponentData<InteractAbilityBonus>(TargetEntity);
             // Visualize these attributes
-            unitMoveSpeed.text = movableData.MoveSpeed.ToString(CultureInfo.InvariantCulture);
+            if (bonus.MoveSpeedBonus == 0)
+            {
+                moveSpeedBonusText.enabled = false;
+            }
+            else
+            {
+                moveSpeedBonusText.enabled = true;
+                var signal = bonus.MoveSpeedBonus >= 0 ? "+" : "-";
+                moveSpeedBonusText.text = $"({signal}{bonus.MoveSpeedBonus})";
+                moveSpeedBonusText.color = bonus.MoveSpeedBonus > 0 ? Color.green : Color.red;
+            }
+            unitMoveSpeed.text = (movableData.MoveSpeed + bonus.MoveSpeedBonus).ToString("F1") ;
         }
     }
 }

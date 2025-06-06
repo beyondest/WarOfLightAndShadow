@@ -5,9 +5,7 @@ using Unity.Entities;
 using UnityEngine;
 using SparFlame.UI.General;
 using TMPro;
-using Unity.Mathematics;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.GamePlay
@@ -28,16 +26,20 @@ namespace SparFlame.UI.GamePlay
 
         [SerializeField] private TMP_Text amountLabelText;
         [SerializeField] private TMP_Text amountValueText;
+        [SerializeField] private TMP_Text amountBonusText;
         [SerializeField] private Image amountIcon;
         [SerializeField] private TMP_Text rangeLabelText;
         [SerializeField] private TMP_Text rangeValueText;
+        [SerializeField] private TMP_Text rangeBonusText;
         [SerializeField] private Image rangeIcon;
         [SerializeField] private TMP_Text speedLabelText;
         [SerializeField] private TMP_Text speedValueText;
+        [SerializeField] private TMP_Text speedBonusText;
         [SerializeField] private Image speedIcon;
         [SerializeField] private TMP_Text targetsLabelText;
         [SerializeField] private TMP_Text targetsValueText;
-        [FormerlySerializedAs("targetIcon")] [SerializeField] private Image targetsIcon;
+        [SerializeField] private TMP_Text targetsBonusText;
+        [SerializeField] private Image targetsIcon;
 
         // Interface
         public static InteractAbilityWindow Instance;
@@ -45,12 +47,17 @@ namespace SparFlame.UI.GamePlay
         public void Show(Vector2? pos = null)
         {
             panel.SetActive(true);
+            if (pos != null)
+            {
+                _rectTransform.anchoredPosition = pos.Value;
+            }
         }
 
         public void Hide()
         {
             panel.SetActive(false);
             _targetEntity = Entity.Null;
+            _rectTransform.anchoredPosition = _originalPos;
         }
 
         public bool IsOpened()
@@ -121,6 +128,8 @@ namespace SparFlame.UI.GamePlay
         private GameObject _attrSlotPrefab;
         private InteractType _currentBar;
         private AsyncOperationHandle<GameObject> _slotHandle;
+        private Vector2 _originalPos;
+        private RectTransform _rectTransform;
 
         private Entity _targetEntity;
         protected EntityManager Em;
@@ -128,7 +137,7 @@ namespace SparFlame.UI.GamePlay
 
         protected virtual void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -146,6 +155,7 @@ namespace SparFlame.UI.GamePlay
                         "InteractAbility Window parameters wrong, color pairs must match the sequence of " +
                         "Interact type enum");
             }
+            _rectTransform = GetComponent<RectTransform>();
             Hide();
         }
 
@@ -178,6 +188,7 @@ namespace SparFlame.UI.GamePlay
 
         private void UpdateInteractAbilityInfo(IInteractAbility interactAbility)
         {
+            var bonus = Em.GetComponentData<InteractAbilityBonus>(_targetEntity);
             var prefix = interactAbility.InteractType switch
             {
                 InteractType.Attack => "Attack",
@@ -185,14 +196,62 @@ namespace SparFlame.UI.GamePlay
                 InteractType.Harvest => "Harvest",
                 _ => throw new ArgumentOutOfRangeException()
             };
+            
             amountLabelText.text = prefix + " AbsAmount";
-            amountValueText.text = interactAbility.Amount.ToString();
+            amountValueText.text = (interactAbility.Amount + bonus.AmountBonus).ToString() ;
+            if (bonus.AmountBonus == 0)
+            {
+                amountBonusText.enabled = false;
+            }
+            else
+            {
+                amountBonusText.enabled = true;
+                var signal = bonus.AmountBonus > 0 ? "+" : "-";
+                amountBonusText.text = $"({signal}{bonus.AmountBonus})";
+                amountBonusText.color = bonus.AmountBonus > 0 ? Color.green : Color.red;
+            }
+            
             rangeLabelText.text = prefix + " Range";
-            rangeValueText.text = math.sqrt(interactAbility.RangeSq).ToString("F2");
+            rangeValueText.text = (interactAbility.Range + bonus.RangeBonus).ToString("F1") ;
+            if (bonus.RangeBonus == 0)
+            {
+                rangeBonusText.enabled = false;
+            }
+            else
+            {
+                rangeBonusText.enabled = true;
+                var signal = bonus.RangeBonus > 0 ? "+" : "-";
+                rangeBonusText.text =$"({signal}{bonus.RangeBonus:F1})";
+                rangeBonusText.color = bonus.RangeBonus > 0 ? Color.green : Color.red;
+            }
+            
             speedLabelText.text = prefix + " Speed";
-            speedValueText.text = interactAbility.Speed.ToString("F2");
+            speedValueText.text = (interactAbility.Speed + bonus.SpeedBonus).ToString("F1");
+            if (bonus.SpeedBonus == 0)
+            {
+                speedBonusText.enabled = false;
+            }
+            else
+            {
+                speedBonusText.enabled = true;
+                var signal = bonus.RangeBonus > 0 ? "+" : "-";
+                speedBonusText.text =$"({signal}{bonus.SpeedBonus:F1})";
+                speedBonusText.color = bonus.SpeedBonus > 0 ? Color.green : Color.red;
+            }
+            
             targetsLabelText.text = prefix + " Targets";
-            targetsValueText.text = ((int)interactAbility.Targets).ToString();
+            targetsValueText.text = (interactAbility.Targets + bonus.TargetsBonus).ToString() ;
+            if (bonus.TargetsBonus == 0)
+            {
+                targetsBonusText.enabled = false;
+            }
+            else
+            {
+                targetsBonusText.enabled = true;
+                var signal = bonus.TargetsBonus > 0 ? "+" : "-";
+                targetsBonusText.text = $"({signal}{bonus.TargetsBonus})";
+                targetsBonusText.color = bonus.TargetsBonus > 0 ? Color.green : Color.red;
+            }
         }
 
         private void ChangeColorGradually()

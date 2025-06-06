@@ -9,7 +9,9 @@ using SparFlame.GamePlaySystem.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
+using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.GamePlaySystem.State
 {
@@ -24,6 +26,7 @@ namespace SparFlame.GamePlaySystem.State
         private BufferLookup<AnimationEventData> _eventsLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<AnimationStateData> _animationStateLookup;
+        private ComponentLookup<DarkArcherBuff> _darkArcherBuffLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -39,6 +42,7 @@ namespace SparFlame.GamePlaySystem.State
             _eventsLookup = state.GetBufferLookup<AnimationEventData>();
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _animationStateLookup = state.GetComponentLookup<AnimationStateData>();
+            _darkArcherBuffLookup = state.GetComponentLookup<DarkArcherBuff>(true);
         }
 
         [BurstCompile]
@@ -54,6 +58,7 @@ namespace SparFlame.GamePlaySystem.State
             _eventsLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _animationStateLookup.Update(ref state);
+            _darkArcherBuffLookup.Update(ref state);
             var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             new CheckAnimationEventJob
             {
@@ -65,6 +70,8 @@ namespace SparFlame.GamePlaySystem.State
                 EventsLookup = _eventsLookup,
                 HashStringToEventInfos = _hashStringToEventInfos,
                 LocalTransformLookup = _transformLookup,
+                DarkArcherBuffConfigs = SystemAPI.GetSingletonBuffer<DarkArcherBuffConfig>(),
+                DarkArcherBuffLookup = _darkArcherBuffLookup
             }.ScheduleParallel();
             new UnitDeadJob
             {
@@ -103,7 +110,7 @@ namespace SparFlame.GamePlaySystem.State
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,
                 in DynamicBuffer<LinkedEntityGroup> groups
-                )
+            )
             {
                 for (int i = 1; i < groups.Length; i++)
                 {
@@ -124,7 +131,7 @@ namespace SparFlame.GamePlaySystem.State
                             stateData.ClipBStartTime = CurTime;
                             stateData.PlaySpeed = 1f;
                             buffer.Clear();
-                            
+
                             return;
                         }
 
@@ -151,12 +158,15 @@ namespace SparFlame.GamePlaySystem.State
             [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public DynamicBuffer<DarkArcherBuffConfig> DarkArcherBuffConfigs;
+            [ReadOnly] public ComponentLookup<DarkArcherBuff> DarkArcherBuffLookup;
 
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<LinkedEntityGroup> children,
-                in BasicStateData stateData,in LocalTransform transform,
-                in GeneralAttr generalAttr, in UnitAttr unitAttr, in ExpData expData, Entity selfEntity
+                in BasicStateData stateData, in LocalTransform transform,
+                in GeneralAttr generalAttr, ref UnitAttr unitAttr, in ExpData expData, Entity selfEntity,
+                in InteractAbilityBonus bonus, in DynamicBuffer<InsightTarget> targets
             )
             {
                 if (stateData.CurState != InteractState.Attacking
@@ -183,9 +193,9 @@ namespace SparFlame.GamePlaySystem.State
                             Interactee = stateData.TargetEntity,
                             AbsAmount = stateData.CurState switch
                             {
-                                InteractState.Attacking => AttackLookup[selfEntity].Amount,
-                                InteractState.Healing => HealLookup[selfEntity].Amount,
-                                InteractState.Harvesting => HarvestLookup[selfEntity].Amount,
+                                InteractState.Attacking => AttackLookup[selfEntity].Amount + bonus.AmountBonus,
+                                InteractState.Healing => HealLookup[selfEntity].Amount + bonus.AmountBonus,
+                                InteractState.Harvesting => HarvestLookup[selfEntity].Amount + bonus.AmountBonus,
                                 _ => 0 // This should never happen
                             },
                             Type = stateData.CurState switch
@@ -196,14 +206,18 @@ namespace SparFlame.GamePlaySystem.State
                                 _ => StatChangeType.None // This should never happen
                             },
                             InteractorGeneralAttr = generalAttr,
-                            IsMagicDamage = unitAttr.Type switch
+                            DamageType = unitAttr.Type switch
                             {
-                                UnitType.Cavalry => false,
-                                UnitType.Shield => false,
-                                UnitType.Ranged => false,
-                                UnitType.Magic => true,
-                                UnitType.Worker => false,
-                                _ => throw new ArgumentOutOfRangeException()
+                                UnitType.Cavalry when stateData.CurState == InteractState.Attacking => DamageType
+                                    .Physical,
+                                UnitType.Shield when stateData.CurState == InteractState.Attacking => DamageType
+                                    .Physical,
+                                UnitType.Ranged when stateData.CurState == InteractState.Attacking => DamageType
+                                    .Physical,
+                                UnitType.Magic when stateData.CurState == InteractState.Attacking => DamageType.Magic,
+                                UnitType.Worker when stateData.CurState == InteractState.Attacking => DamageType
+                                    .Physical,
+                                _ => DamageType.None
                             }
                         };
 
@@ -234,9 +248,52 @@ namespace SparFlame.GamePlaySystem.State
                                 RequestType = VFXRequestType.Spawn,
                                 VFXName = eventInfo.sendVfxName,
                                 VFXTrackTarget = Entity.Null,
-                                TargetPosition = targetTransform.Position
+                                ParabolaTargetPosition = targetTransform.Position
                             };
                             ECB.AddComponent(index, vfxRequest, vfx);
+
+                            // Apply dark archer buff
+                            if (DarkArcherBuffLookup.HasComponent(selfEntity))
+                            {
+                                var config = DarkArcherBuffConfigs[(int)expData.CurTier - 3];
+                                var count = 0;
+                                if (unitAttr.Rnd.NextFloat(0f, 1f) < config.extraArrowTriggerChance)
+                                {
+                                    foreach (var target in targets)
+                                    {
+                                        if (count >= config.extraArrowCount) break;
+                                        // Target is main target, skip
+                                        if (target.Entity == stateData.TargetEntity) continue;
+                                        // Target is invalid, skip
+                                        if (!LocalTransformLookup.TryGetComponent(target.Entity,
+                                                out var newTargetTransform)) continue;
+                                        // Target not in range, skip
+                                        if (math.distance(newTargetTransform.Position, selfTransform.Position) >
+                                            bonus.RangeBonus + AttackLookup[selfEntity].Range) continue;
+
+                                        count++;
+                                        var newStatChangeRequest = statChangeRequest;
+                                        newStatChangeRequest.Interactee = target.Entity;
+                                        newStatChangeRequest.AbsAmount =
+                                            (int)(statChangeRequest.AbsAmount * config.extraArrowDamageScale);
+
+                                        var extraArrowVfxRequest = ECB.CreateEntity(index);
+                                        ECB.AddComponent<GameplayEntityTag>(index, extraArrowVfxRequest);
+                                        var extraArrowVfx = new VFXRequest
+                                        {
+                                            SpawnPosition = selfTransform.Position,
+                                            Filter = vfx.Filter,
+                                            KeepDuration = vfx.KeepDuration,
+                                            StatChangeRequest = newStatChangeRequest,
+                                            RequestType = VFXRequestType.Spawn,
+                                            VFXName = eventInfo.sendVfxName,
+                                            VFXTrackTarget = Entity.Null,
+                                            ParabolaTargetPosition = newTargetTransform.Position
+                                        };
+                                        ECB.AddComponent(index, extraArrowVfxRequest, extraArrowVfx);
+                                    }
+                                }
+                            }
                         }
 
                         if (eventInfo.animationInteractType == AnimationInteractType.AoeBuffChangeStat)
@@ -284,7 +341,7 @@ namespace SparFlame.GamePlaySystem.State
                             ECB.AddComponent<GameplayEntityTag>(index, statChangeRequestEntity);
                             ECB.AddComponent(index, statChangeRequestEntity, statChangeRequest);
                         }
-                        
+
                         // Generate audio request
                         var name = AudioName.None;
                         switch (unitAttr.Type)
@@ -295,8 +352,9 @@ namespace SparFlame.GamePlaySystem.State
                                 name = AudioName.ArrowShoot;
                                 break;
                             case UnitType.Magic:
-                                name = stateData.CurState == InteractState.Healing?
-                                    AudioName.ClericHealCircle : AudioName.MagicSwordSplash;
+                                name = stateData.CurState == InteractState.Healing
+                                    ? AudioName.ClericHealCircle
+                                    : AudioName.MagicSwordSplash;
                                 break;
                             case UnitType.Cavalry:
                                 name = AudioName.Spear;
@@ -307,19 +365,17 @@ namespace SparFlame.GamePlaySystem.State
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }
+
                         if (name != AudioName.None)
                         {
-                            AudioUtils.PlayAudioClip(name, transform.Position,ECB, index);
+                            AudioUtils.PlayAudioClip(name, transform.Position, ECB, index);
                         }
-
                     }
 
                     // Only check one event in models
                     break;
                 }
             }
-
-            
         }
     }
 }

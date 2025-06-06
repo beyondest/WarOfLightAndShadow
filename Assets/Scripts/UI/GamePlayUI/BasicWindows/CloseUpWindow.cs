@@ -41,6 +41,7 @@ namespace SparFlame.UI.GamePlay
         [SerializeField] private TMP_Text expValueText;
         [SerializeField] private TMP_Text statLabelText;
         [SerializeField] private TMP_Text closeUpTargetName;
+        [SerializeField] private TMP_Text statBonusText;
 
         // [SerializeField] private List<TierImagePair> tierImagePairs;
         [SerializeField] private Image tierIcon;
@@ -176,8 +177,19 @@ namespace SparFlame.UI.GamePlay
         {
             // Update Hp
             var statData = _em.GetComponentData<StatData>(_targetEntity);
-            _statFilled.fillAmount = statData.CurValue / statData.MaxValue;
-            statValueText.text = (int)statData.CurValue + " / " + statData.MaxValue;
+            _statFilled.fillAmount = statData.CurValue / (statData.MaxValue + statData.Bonus);
+            if (statData.Bonus == 0)
+            {
+                statBonusText.enabled = false;
+            }
+            else
+            {
+                statBonusText.enabled = true;
+                var signal = statData.Bonus > 0 ? "+" : "-";
+                statBonusText.text = $"({signal}{statData.Bonus})";
+                statBonusText.color = statData.Bonus > 0 ? Color.green : Color.red;
+            }
+            statValueText.text = (int)statData.CurValue + " / " + (statData.MaxValue + statData.Bonus) ;
             // Update Exp
             if (_targetHasExp)
             {
