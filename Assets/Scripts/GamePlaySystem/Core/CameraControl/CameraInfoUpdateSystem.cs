@@ -11,16 +11,16 @@ namespace SparFlame.GamePlaySystem.CameraControl
         private bool _initialized;
         protected override void OnCreate()
         {
-            RequireForUpdate<GamingTag>();
+            RequireForUpdate<GameStatusData>();
             RequireForUpdate<CameraData>();
         }
 
-        protected override void OnStartRunning()
-        {
-            _mainCamera = Camera.main;
-        }
+     
         protected override void OnUpdate()
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus!= GameStatus.SubGaming)return;
+            _mainCamera = gameStatus == GameStatus.MainGaming ? CameraController.Instance.mainGameCamera : CameraController.Instance.subGameCamera;
             var cameraData = SystemAPI.GetSingletonRW<CameraData>();
             UpdateCameraData(ref cameraData.ValueRW);
         }

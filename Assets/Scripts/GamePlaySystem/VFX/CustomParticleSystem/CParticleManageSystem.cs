@@ -16,7 +16,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
 
         protected override void OnCreate()
         {
-            RequireForUpdate<GamingTag>();
+            RequireForUpdate<GameStatusData>();
             RequireForUpdate<CParticleSystemConfig>();
             RequireForUpdate<VFXConfigData>();
             _requestQuery = SystemAPI.QueryBuilder().WithAll<VFXRequest>().Build();
@@ -61,6 +61,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
 
         protected override void OnUpdate()
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
             if (_requestQuery.IsEmpty) return;
             CheckVFXRequest();
         }
@@ -140,7 +142,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                         }
 
                         var vfx = EntityManager.Instantiate(targetPair.Prefab);
-                        ecb.AddComponent<GameplayEntityTag>(vfx);
+                        ecb.AddComponent<SubGameplayEntityTag>(vfx);
 
                         var trans = SystemAPI.GetComponent<LocalTransform>(targetPair.Prefab);
                         trans.Position = request.SpawnPosition;

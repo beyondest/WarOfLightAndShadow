@@ -26,6 +26,9 @@ namespace SparFlame.GamePlaySystem.General
 
         [FoldoutGroup("WaveDebug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public WaveDebug waveDebug;
+        
+        [FoldoutGroup("Exp Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public ExpDebug expDebug;
         private class GlobalDebugAuthoringBaker : Baker<GlobalDebugAuthoring>
         {
             public override void Bake(GlobalDebugAuthoring authoring)
@@ -44,10 +47,14 @@ namespace SparFlame.GamePlaySystem.General
                         AddComponent(entity, authoring.aiDebug);
                     if(authoring.waveDebug.enabled)
                         AddComponent(entity, authoring.waveDebug);
+                    if(authoring.expDebug.enabled)
+                        AddComponent(entity, authoring.expDebug);
                 }
             }
         }
     }
+
+    
 
     public struct DebugTag : IComponentData
     {
@@ -73,6 +80,8 @@ namespace SparFlame.GamePlaySystem.General
 
         [ShowIf(nameof(enabled))] public float playerMovementScale;
         [ShowIf(nameof(enabled))] public float aiMovementScale;
+        [ShowIf(nameof(enabled))] public float playerArmyGroupMovementScale;
+        [ShowIf(nameof(enabled))] public float enemyArmyGroupMovementScale;
     }
 
 
@@ -163,5 +172,14 @@ namespace SparFlame.GamePlaySystem.General
         [ShowIf(nameof(enabled))] public float waveSpeedUpScale;
         
         
+    }
+
+
+    [Serializable]
+    public struct ExpDebug : IComponentData
+    {
+        public bool enabled;
+        [ShowIf(nameof(enabled))] public float playerExpGainScale;
+        [ShowIf(nameof(enabled))] public float aiExpGainScale;
     }
 }

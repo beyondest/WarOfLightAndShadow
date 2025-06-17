@@ -12,7 +12,6 @@ namespace SparFlame.GamePlaySystem.CustomInput
         protected override void OnCreate()
         {
             RequireForUpdate<InputMouseData>();
-            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputUnitControlData>();
         }
 
@@ -23,6 +22,11 @@ namespace SparFlame.GamePlaySystem.CustomInput
 
         protected override void OnUpdate()
         {
+            if (!_customInputActions.Construct.enabled)
+            {
+                SystemAPI.SetSingleton(new InputUnitControlData());
+                return;
+            }
             var isOverUi = SystemAPI.GetSingleton<InputMouseData>().IsOverUI;
             SystemAPI.SetSingleton(new InputUnitControlData
             {

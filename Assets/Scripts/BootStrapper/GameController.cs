@@ -16,7 +16,8 @@ namespace SparFlame.BootStrapper
         public event Action<FactionTag> OnPlayerChooseFaction;
         // float is start elapsed time
 
-        public event Action OnGameStart; 
+        public event Action OnSubGameStart;
+        public event Action OnMainGameStart;
         
         public void GameOver(FactionTag winnerFaction)
         {
@@ -51,9 +52,14 @@ namespace SparFlame.BootStrapper
             OnPlayerChooseFaction?.Invoke(playerFaction);
         }
 
-        public void GameStart()
+        public void SubGameStart()
         {
-            OnGameStart?.Invoke();
+            OnSubGameStart?.Invoke();
+        }
+
+        public void MainGameStart()
+        {
+            OnMainGameStart?.Invoke();
         }
 
         private void Awake()

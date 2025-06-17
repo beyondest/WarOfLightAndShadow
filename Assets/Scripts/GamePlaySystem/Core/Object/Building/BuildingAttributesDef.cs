@@ -75,6 +75,7 @@ namespace SparFlame.GamePlaySystem.Building
     {
         Wall = 0,          // Fence（木栅栏）, Rampart（防坡墙）, Bastion（棱堡）
         Tower = 1,         // Watchpost（瞭望哨）, Guard Tower（守卫塔）, Keep（主堡楼）
+        BigTower = 2,
     }
 
 
@@ -82,6 +83,20 @@ namespace SparFlame.GamePlaySystem.Building
     {
         ResourceMine = 0,
         PlantGenerator = 1,
+    }
+
+    public enum ResourceMineType
+    {
+        Mine0 = 0,
+        Mine1 = 1,
+        Mine2 = 2,
+    }
+
+    public enum PlantGeneratorType
+    {
+        Plant0 = 0,
+        Plant1 = 1,
+        Plant2 = 2,
     }
 
 
@@ -120,6 +135,7 @@ namespace SparFlame.GamePlaySystem.Building
     {
         public Entity Prefab { get; set; }
         public BuildingType Type { get; set; }
+        public int GlobalIdx { get; set; }
     }
 
 

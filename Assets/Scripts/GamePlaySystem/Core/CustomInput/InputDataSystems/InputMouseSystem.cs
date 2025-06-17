@@ -1,3 +1,4 @@
+using SparFlame.GamePlaySystem.CameraControl;
 using UnityEngine;
 using Unity.Mathematics;
 using Unity.Entities;
@@ -31,15 +32,17 @@ namespace SparFlame.GamePlaySystem.CustomInput
         protected override void OnUpdate()
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            if (gameStatusData.Value == GameStatus.Init)
-            {
-                _camera = Camera.main;
-            }
-            if(gameStatusData.Value != GameStatus.Gaming)return;
+            _camera = gameStatusData.Value == GameStatus.MainGaming
+                ? CameraController.Instance.mainGameCamera
+                : CameraController.Instance.subGameCamera;
+            // if (gameStatusData.Value != GameStatus.SubGaming && gameStatusData.Value != GameStatus.MainGaming)
+            // {
+            //     SystemAPI.SetSingleton(new InputMouseData());
+            //     return;
+            // }
             CheckMouseEventAndRaycastHit();
-            
         }
-       
+
 
         /// <summary>
         /// Only Detect Clickable Layer = Terrain + other gameplay layers
@@ -48,7 +51,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private void CheckMouseEventAndRaycastHit()
         {
             _isDoubleClick = false;
-            
+
             var data = new InputMouseData
             {
                 ClickFlag = ClickFlag.None,
@@ -150,6 +153,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
                 data.ClickFlag = _isDoubleClick ? ClickFlag.DoubleClick : ClickFlag.Start;
                 _currentClickInterval = 0;
             }
+
             SystemAPI.SetSingleton(data);
         }
 

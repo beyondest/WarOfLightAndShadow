@@ -15,9 +15,10 @@ namespace SparFlame.GamePlaySystem.PopNumber
     {
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<PopNumberConfig>();
         }
 
@@ -29,7 +30,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
             var cameraData = SystemAPI.GetSingleton<CameraData>();
             new MoveJob
             {
-                ElapsedTime = (float)SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 ECBWriter = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 LifeTime = config.MovementTime,
                 VerticalMovementOffset = config.VerticalMovementOffset,

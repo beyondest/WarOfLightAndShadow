@@ -6,7 +6,7 @@ using SparFlame.GamePlaySystem.Interact;
 using SparFlame.Utils;
 using UnityEngine;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     public class
         BuildingWindowResourceManager : TypeResourceManager<BuildingType, BuildingDataItem, BuildingEntityPrefabData>

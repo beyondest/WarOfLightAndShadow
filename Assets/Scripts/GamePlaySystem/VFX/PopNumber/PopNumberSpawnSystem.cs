@@ -19,7 +19,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<PopNumberConfig>();
             state.RequireForUpdate<PopNumberColorConfig>();
             state.RequireForUpdate<PopNumberRequest>();
@@ -86,7 +86,7 @@ namespace SparFlame.GamePlaySystem.PopNumber
                     var digit = number % 10;
                     number /= 10;
                     var glyph = Ecb.Instantiate(chunkIndex, Config.GlyphPrefab);
-                    Ecb.AddComponent<GameplayEntityTag>(chunkIndex, glyph);
+                    Ecb.AddComponent<SubGameplayEntityTag>(chunkIndex, glyph);
                     // quaternion.LookRotationSafe(glyphPosition - CameraData.WorldPosition, math.up());
                     Ecb.SetComponent(chunkIndex, glyph, new LocalTransform
                     {

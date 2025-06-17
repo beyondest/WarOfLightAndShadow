@@ -1,31 +1,10 @@
 using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
-using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.GamePlaySystem.Units
 {
-    // public class UnitAttributesDef : MonoBehaviour
-    // {
-    //     
-    //     public UnitType unitType;
-    //     public int subTypeIndex;
-    //     
-    //     class UnitAttributesAuthoringBaker : Baker<UnitAttributesDef>
-    //     {
-    //         public override void Bake(UnitAttributesDef def)
-    //         {
-    //             var entity = GetEntity(TransformUsageFlags.Dynamic);
-    //             AddComponent(entity, new UnitAttr
-    //             {
-    //                 Type = def.unitType,
-    //                 SubTypeIndex = def.subTypeIndex,
-    //             });
-    //             AddComponent<GarrisonStateTag>(entity);
-    //             SetComponentEnabled<GarrisonStateTag>(entity, false);
-    //         }
-    //     }
-    // }
+
 
     public struct EnemyUnitBelongsTo : IComponentData
     {
@@ -110,6 +89,7 @@ namespace SparFlame.GamePlaySystem.Units
     {
         public Entity Prefab { get; set; }
         public UnitType Type { get; set; }
+        public int GlobalIdx { get; set; }
     }
     
     

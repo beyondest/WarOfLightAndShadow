@@ -10,12 +10,12 @@ namespace SparFlame.Database.Database.DatabaseDefination
     [CreateAssetMenu(fileName = "HintDatabase", menuName = "GameData/HintDatabase", order = 0)]
     public class HintDatabaseSo : ScriptableObject
     {
-        [TableList] public List<HintItem> items;
+        [TableList] public List<HintDataItem> items;
     }
 
 
     [Serializable]
-    public class HintItem
+    public class HintDataItem
     {
        public HintName name;
        public HintType hintType; 

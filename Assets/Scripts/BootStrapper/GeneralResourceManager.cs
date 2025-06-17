@@ -62,7 +62,6 @@ namespace SparFlame.BootStrapper
         {
             GameController.Instance.OnPlayerChooseFaction += faction =>
             {
-                SceneController.Instance._playerFaction = faction;
                 StartLoadResources();
             };
             GameController.Instance.OnBackToMainMenu += ReleaseAllResources;

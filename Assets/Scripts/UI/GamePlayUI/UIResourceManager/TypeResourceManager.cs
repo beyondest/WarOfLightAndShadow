@@ -10,7 +10,7 @@ using SparFlame.Utils;
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     // Here store the sprite resource and entity, with info used to filter entity
     public struct SpriteEntityInfo

@@ -75,11 +75,11 @@ namespace SparFlame.BootStrapper
             if (gameBasicState.ValueRW.Value == GameStatus.Init) // This is the time all systems init complete
             {
                 _alreadyToWin = false;
-                gameBasicState.ValueRW.Value = GameStatus.Gaming;
+                gameBasicState.ValueRW.Value = GameStatus.MainGaming;
                 var gaming = EntityManager.CreateEntity();
-                EntityManager.AddComponent<GamingTag>(gaming);
-                InputListener.Instance.EnableNecessaryMaps();
-                GameController.Instance.GameStart();
+                EntityManager.AddComponent<MainGamingTag>(gaming);
+                InputListener.Instance.EnableMainGameMaps();
+                GameController.Instance.MainGameStart();
             }
 
             _gameBasicConfig = SystemAPI.GetSingleton<GameBasicConfig>();
@@ -145,9 +145,9 @@ namespace SparFlame.BootStrapper
                 EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerFactionData>());
             }
 
-            if (SystemAPI.HasSingleton<GamingTag>())
+            if (SystemAPI.HasSingleton<SubGamingTag>())
             {
-                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<GamingTag>());
+                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SubGamingTag>());
             }
 
             var clearRequest = EntityManager.CreateEntity();
@@ -160,7 +160,7 @@ namespace SparFlame.BootStrapper
             if (isPausing)
             {
                 UnityEngine.Time.timeScale = 0;
-                var gamingTag = SystemAPI.GetSingletonEntity<GamingTag>();
+                var gamingTag = SystemAPI.GetSingletonEntity<SubGamingTag>();
                 SystemAPI.SetSingleton(new GameStatusData
                 {
                     Value = GameStatus.Pause
@@ -171,10 +171,10 @@ namespace SparFlame.BootStrapper
             else
             {
                 UnityEngine.Time.timeScale = 1;
-                EntityManager.CreateSingleton<GamingTag>();
+                EntityManager.CreateSingleton<SubGamingTag>();
                 SystemAPI.SetSingleton(new GameStatusData
                 {
-                    Value = GameStatus.Gaming
+                    Value = GameStatus.SubGaming
                 });
                 _isPaused = false;
             }

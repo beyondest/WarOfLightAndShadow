@@ -1,5 +1,4 @@
-﻿using SparFlame.GamePlaySystem.General;
-using Unity.Entities;
+﻿using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.GamePlaySystem.CustomInput
@@ -10,7 +9,6 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private CustomInputActions _customInputActions;
         protected override void OnCreate()
         {
-            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputCameraNormalData>();
         }
         protected override void OnStartRunning()
@@ -22,6 +20,11 @@ namespace SparFlame.GamePlaySystem.CustomInput
 
         protected override void OnUpdate()
         {
+            if (!_customInputActions.CameraFlyMode.enabled)
+            {
+                SystemAPI.SetSingleton(new InputCameraFlyData());
+                return;
+            }
             SystemAPI.SetSingleton(new InputCameraFlyData
             {
                 Enabled = _customInputActions.CameraFlyMode.enabled,

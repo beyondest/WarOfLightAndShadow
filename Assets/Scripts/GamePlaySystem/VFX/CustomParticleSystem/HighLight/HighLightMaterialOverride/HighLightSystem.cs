@@ -22,10 +22,9 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem.GamePlaySystem.VFX.Custo
         {
             state.RequireForUpdate<HighLightSystemConfig>();
             state.RequireForUpdate<HighLightData>();
-            state.RequireForUpdate<GeneralAttr>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<InputMouseData>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.EntityManager.CreateSingleton(new HighLightData
             {
                 PreHighLightEntity = Entity.Null
@@ -35,6 +34,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem.GamePlaySystem.VFX.Custo
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             var config = SystemAPI.GetSingleton<HighLightSystemConfig>();
@@ -46,8 +47,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem.GamePlaySystem.VFX.Custo
             {
                 data.PreHighLightEntity = inputMouseData.HitEntity;
                 if(!SystemAPI.HasBuffer<LinkedEntityGroup>(inputMouseData.HitEntity))return;
-                if(!SystemAPI.HasComponent<GeneralAttr>(inputMouseData.HitEntity))return;
-                var generalAttr = SystemAPI.GetComponent<GeneralAttr>(inputMouseData.HitEntity);
+                if(!SystemAPI.HasComponent<SubGameplayGeneralAttr>(inputMouseData.HitEntity))return;
+                var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(inputMouseData.HitEntity);
                 var groups = SystemAPI.GetBuffer<LinkedEntityGroup>(inputMouseData.HitEntity);
                 for (int i = 1; i < groups.Length; i++)
                 {
@@ -94,7 +95,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem.GamePlaySystem.VFX.Custo
             
             if(data.PreHighLightEntity == Entity.Null)return;
             // The entity is dead
-            if (!SystemAPI.HasComponent<GeneralAttr>(data.PreHighLightEntity))
+            if (!SystemAPI.HasComponent<SubGameplayGeneralAttr>(data.PreHighLightEntity))
             {
                 data.PreHighLightEntity = Entity.Null;
                 return;

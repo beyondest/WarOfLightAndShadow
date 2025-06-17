@@ -35,7 +35,7 @@ namespace SparFlame.GamePlaySystem.General
         }
 
         [BurstCompile]
-        [WithAll(typeof(GameplayEntityTag))]
+        [WithAll(typeof(SubGameplayEntityTag))]
         private partial struct DestroyGameplayEntityJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;

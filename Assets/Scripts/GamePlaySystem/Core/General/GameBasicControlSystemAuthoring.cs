@@ -31,8 +31,9 @@ namespace SparFlame.GamePlaySystem.General
     {
         NotStarted = 0, // Stay in main menu and no resource loaded
         Init = 1, // When all resource loaded, but systems not init
-        Gaming = 2, // Gaming
-        Pause = 3 // Gaming pause
+        SubGaming = 2, // Gaming
+        Pause = 3, // Gaming pause
+        MainGaming = 4,
     }
     public struct GeneralRandom : IComponentData
     {
@@ -42,10 +43,13 @@ namespace SparFlame.GamePlaySystem.General
     {
         public FactionTag Value;
     }
- 
 
+    public struct MainGamingTag : IComponentData
+    {
+        
+    }
     // For systems that do not need game status data, require for update this one only
-    public struct GamingTag : IComponentData
+    public struct SubGamingTag : IComponentData
     {
        
     }

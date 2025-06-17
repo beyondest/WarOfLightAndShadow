@@ -1,7 +1,7 @@
 ﻿
 using SparFlame.UI.General;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     public class BuffSlot : MultiShowSlot
     {

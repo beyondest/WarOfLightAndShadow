@@ -18,7 +18,7 @@ namespace SparFlame.BootStrapper
 
         protected override void OnStartRunning()
         {
-            if (SceneController.Instance == null) return;
+            // if (!SceneController.Instance) return;
             SceneController.Instance.EcsStartLoadScene += () => _isLoading = true;
         }
 

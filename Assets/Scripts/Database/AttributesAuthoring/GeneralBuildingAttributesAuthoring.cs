@@ -4,6 +4,7 @@ using SparFlame.GamePlaySystem.Conjure;
 using SparFlame.GamePlaySystem.Garrison;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Generate;
+using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
 
@@ -40,7 +41,7 @@ namespace SparFlame.Database
                     buffer.Add(new CostList
                     {
                         Amount = cost.amount,
-                        Type = cost.costResourceType
+                        Type = cost.type
                     });
                 }
 
@@ -73,6 +74,13 @@ namespace SparFlame.Database
                             SubTypeIndex = data.subTypeIndex
                         });
                     }
+
+                    if (item.type == BuildingType.Fortifications)
+                    {
+                        AddComponent<BuildingGarrisonBuff>(entity);
+                        SetComponentEnabled<BuildingGarrisonBuff>(entity, false);
+                    }
+                        
                 }
             }
 

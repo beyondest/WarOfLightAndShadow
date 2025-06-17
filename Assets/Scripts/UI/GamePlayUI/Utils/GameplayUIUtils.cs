@@ -3,7 +3,7 @@ using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Resource;
 using Unity.Entities;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     public static class GameplayUIUtils
     {

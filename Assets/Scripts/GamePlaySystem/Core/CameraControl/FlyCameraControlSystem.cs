@@ -18,7 +18,7 @@ namespace SparFlame.GamePlaySystem.CameraControl
         
         protected override void OnCreate()
         {
-            RequireForUpdate<GamingTag>();
+            RequireForUpdate<SubGamingTag>();
             RequireForUpdate<InputCameraFlyData>();
             RequireForUpdate<FlyCameraControlConfig>();
         }

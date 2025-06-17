@@ -25,7 +25,7 @@ namespace SparFlame.GamePlaySystem.General
     }
 
     
-    public struct GeneralAttr : IComponentData
+    public struct SubGameplayGeneralAttr : IComponentData
     {
         public BaseTag BaseTag;
         public FactionTag FactionTag;
@@ -42,7 +42,12 @@ namespace SparFlame.GamePlaySystem.General
     /// <summary>
     /// This tagged entity must be destroyed when game over
     /// </summary>
-    public struct GameplayEntityTag : IComponentData
+    public struct SubGameplayEntityTag : IComponentData
+    {
+        
+    }
+
+    public struct MainGameplayEntityTag : IComponentData
     {
         
     }
@@ -52,23 +57,6 @@ namespace SparFlame.GamePlaySystem.General
 
 
 
-    public enum Tier
-    {
-        Tier1 = 3,
-        Tier2 = 4,
-        Tier3 = 5,
-        // Tier4 = 6,
-        // Tier5 = 7,
-    }
-    
-    public struct ExpData : IComponentData
-    {
-        public Tier MaxTier;
-        public Tier CurTier;
-        public int MaxValue;
-        public float CurValue;
-        public Entity NextTierPrefab;
-    }
 
     public struct UnitDeadTag : IComponentData
     {

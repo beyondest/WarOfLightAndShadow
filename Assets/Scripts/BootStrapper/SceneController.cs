@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Sirenix.OdinInspector;
 using SparFlame.GamePlaySystem.General;
 using UnityEngine;
 using SparFlame.Utils;
@@ -10,21 +12,30 @@ namespace SparFlame.BootStrapper
 {
     public class SceneController : MonoBehaviour, CustomDs.IResourceManager
     {
-
-
-        [SerializeField] private SubScene lightSubscene ;
-        [SerializeField] private SubScene darkSubscene ;
-
-        [SerializeField] private string gamingGroupName = "GamingGroup";
-        [SerializeField] private SceneGroup[] sceneGroups;
         
+        [SerializeField] private string initGroupName = "Initialization";
         
+        [Header("General Scene Groups")]
+        [SerializeField,TableList] private List<SceneGroup> generalSceneGroups;
         
+        [Header("City Scene Groups")]
+        [SerializeField,TableList,HideLabel] private List<SceneGroup> citySceneGroups;
+        
+        [Header("Wild Scene Groups  ")]
+        [SerializeField,TableList,HideLabel] private List<SceneGroup> wildSceneGroups;
+
         // Interface
         public static SceneController Instance;
         public Action EcsStartLoadScene;
+        public readonly LoadingProgress Loading = new();
+        
+        
         public bool IsInitialized => _normalSceneLoaded && _subsceneLoaded;
-        public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) /2f;
+        public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) / 2f;
+
+  
+        
+        
         public void SetSubsceneLoadingProgress(float progress)
         {
             _subsceneLoadProgress = progress;
@@ -36,98 +47,120 @@ namespace SparFlame.BootStrapper
 
         public void LoadResources()
         {
-            LoadSceneGroup(gamingGroupName,_loading);
-
+            LoadSceneGroup(initGroupName, _gameInitLoading, LoadSceneGroupType.General);
         }
 
         public void UnloadResources()
         {
-            UnloadSceneGroup(gamingGroupName);
+            UnloadSceneGroup(initGroupName, LoadSceneGroupType.General);
             _subsceneLoaded = false;
             _normalSceneLoaded = false;
             _normalSceneLoadProgress = 0f;
             _subsceneLoadProgress = 0f;
         }
-        
+
+        public void LoadCitySceneGroup(int cityId)
+        {
+            LoadSceneGroup(CityIdToSceneGroupName.Instance.CityIdToSceneGroupNameDict[cityId], Loading,
+                LoadSceneGroupType.City);
+        }
+
+        public void LoadBattleFieldSceneGroup(BattleFieldType type)
+        {
+            LoadSceneGroup(type.ToString(), Loading, LoadSceneGroupType.Wild);
+        }
+
+        // Cache
         private bool _normalSceneLoaded;
         private float _normalSceneLoadProgress;
         private bool _subsceneLoaded;
         private float _subsceneLoadProgress;
-        public FactionTag _playerFaction;
 
-      
+       
+   
 
-        public event Action<SceneGroup> OnSceneGroupLoaded;
-        public event Action<SceneGroup> OnSceneGroupUnloaded;
-        
         // Internal data
         private readonly NormalSceneLoader _normalSceneLoader = new();
-        private readonly LoadingProgress _loading = new();
+        private readonly LoadingProgress _gameInitLoading = new();
+        private event Action<SceneGroup> OnSceneGroupLoaded;
+        private event Action<SceneGroup> OnSceneGroupUnloaded;
 
         private void Awake()
         {
-            if(Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(this);
-            _loading.ProgressChanged += (f => _normalSceneLoadProgress = f);
-            OnSceneGroupLoaded += _ => _normalSceneLoaded = true;
-            OnSceneGroupUnloaded += _ => _normalSceneLoaded = false;
+            _gameInitLoading.ProgressChanged += (f => _normalSceneLoadProgress = f);
             
         }
 
         private void Start()
         {
             GeneralResourceManager.Instance.Register(this);
-            // GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
+            
         }
 
-        public void LoadSceneGroup(string sceneGroupName, LoadingProgress progress = null)
+        private void LoadSceneGroup(string sceneGroupName, LoadingProgress progress, LoadSceneGroupType type)
         {
-            var sceneGroup = sceneGroups.FirstOrDefault(group => group.groupName == sceneGroupName);
+            var hash = sceneGroupName.GetHashCode();
+            var groups = type switch
+            {
+                LoadSceneGroupType.General => generalSceneGroups,
+                LoadSceneGroupType.City => citySceneGroups,
+                LoadSceneGroupType.Wild => wildSceneGroups,
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+            var sceneGroup = groups.FirstOrDefault(group => group.NameHash == hash);
             if (sceneGroup == null)
             {
-                Debug.LogWarning("Scene group not found: " + sceneGroupName);
+                Debug.LogError("Scene group not found: " + sceneGroupName);
                 return;
             }
-            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, progress,false, OnSceneGroupLoaded));
+
+            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, progress, false, OnSceneGroupLoaded));
             EcsStartLoadScene?.Invoke();
 
             foreach (var subsceneData in sceneGroup.subscenes)
             {
-                SceneSystem.LoadSceneAsync(World.DefaultGameObjectInjectionWorld.Unmanaged, subsceneData.sceneRef.SceneGUID);
+                SceneSystem.LoadSceneAsync(World.DefaultGameObjectInjectionWorld.Unmanaged,
+                    subsceneData.sceneRef.SceneGUID);
             }
-
-            SceneSystem.LoadSceneAsync(World.DefaultGameObjectInjectionWorld.Unmanaged,
-                _playerFaction == FactionTag.Ally ? lightSubscene.SceneGUID : darkSubscene.SceneGUID);
         }
 
-        public void UnloadSceneGroup(string sceneGroupName)
+        private void UnloadSceneGroup(string sceneGroupName, LoadSceneGroupType type)
         {
-            var sceneGroup = sceneGroups.FirstOrDefault(group => group.groupName == sceneGroupName);
+            var hash = sceneGroupName.GetHashCode();
+            var groups = type switch
+            {
+                LoadSceneGroupType.General => generalSceneGroups,
+                LoadSceneGroupType.City => citySceneGroups,
+                LoadSceneGroupType.Wild => wildSceneGroups,
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+            var sceneGroup = groups.FirstOrDefault(group => group.NameHash == hash);
             if (sceneGroup == null)
             {
                 Debug.LogWarning("Scene group not found: " + sceneGroupName);
                 return;
             }
+
             StartCoroutine(_normalSceneLoader.UnloadSceneGroupAsync(sceneGroup, OnSceneGroupUnloaded));
             foreach (var subsceneData in sceneGroup.subscenes)
             {
-                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged, subsceneData.sceneRef.SceneGUID);
+                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,
+                    subsceneData.sceneRef.SceneGUID);
             }
 
-            if (_playerFaction == FactionTag.Ally)
-            {
-                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,lightSubscene.SceneGUID);
 
-            }
-            else
-            {
-                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,darkSubscene.SceneGUID);
-
-            }
         }
+        private enum LoadSceneGroupType
+        {
+            General,
+            City,
+            Wild,
+        }
+       
     }
-
-    
+  
 }

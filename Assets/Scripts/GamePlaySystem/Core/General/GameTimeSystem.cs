@@ -32,7 +32,7 @@ namespace SparFlame.GamePlaySystem.General
                 return;
             }
 
-            if (gameStatus != GameStatus.Gaming) return;
+            if (gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming ) return;
             
             gameTimeData.ValueRW.DeltaTime = gameTimeScale.ValueRW.Value * realDeltaTime;
             gameTimeData.ValueRW.ElapsedTime += gameTimeData.ValueRO.DeltaTime;

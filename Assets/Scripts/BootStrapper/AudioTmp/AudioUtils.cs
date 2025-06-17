@@ -10,7 +10,7 @@ namespace SparFlame.BootStrapper
             EntityCommandBuffer.ParallelWriter ecbP, int index)
         {
             var request = ecbP.CreateEntity(index);
-            ecbP.AddComponent<GameplayEntityTag>(index, request);
+            ecbP.AddComponent<SubGameplayEntityTag>(index, request);
             ecbP.AddComponent(index, request, new AudioRequest
             {
                 Name = audioName,
@@ -21,7 +21,7 @@ namespace SparFlame.BootStrapper
             EntityCommandBuffer ecb)
         {
             var request = ecb.CreateEntity();
-            ecb.AddComponent<GameplayEntityTag>(request);
+            ecb.AddComponent<SubGameplayEntityTag>(request);
             ecb.AddComponent(request, new AudioRequest
             {
                 Name = audioName,
@@ -31,7 +31,7 @@ namespace SparFlame.BootStrapper
         public static void PlayAudioClip(AudioName audioName, float3 position, EntityManager manager)
         {
             var request = manager.CreateEntity();
-            manager.AddComponent<GameplayEntityTag>(request);
+            manager.AddComponent<SubGameplayEntityTag>(request);
             manager.AddComponentData(request, new AudioRequest
             {
                 Name = audioName,

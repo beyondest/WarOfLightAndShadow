@@ -22,7 +22,7 @@ namespace SparFlame.Database
             protected void BakeGeneralDataItem(Entity entity, GeneralDataItem item)
             {
                 // General
-                AddComponent(entity, new GeneralAttr
+                AddComponent(entity, new SubGameplayGeneralAttr
                 {
                     BaseTag = item.baseTag,
                     FactionTag = item.factionTag,
@@ -33,8 +33,8 @@ namespace SparFlame.Database
                 // Stat 
                 AddComponent(entity, new StatData
                 {
-                    MaxValue = item.stat,
-                    CurValue = item.stat
+                    maxValue = item.stat,
+                    curValue = item.stat
                 });
                 if (item.baseTag != BaseTag.Resources)
                 {
@@ -58,16 +58,16 @@ namespace SparFlame.Database
                 AddBuffer<TrackedByBuff>(entity);
 
                 // Exp
-                if (item.upgradable)
+                if (item.IsUpgradable())
                 {
                     AddComponent(entity, new ExpData
                     {
-                        CurTier = item.curTier,
-                        MaxTier = item.maxTier,
-                        CurValue = 0,
-                        MaxValue = item.statMaxValue,
-                        NextTierPrefab = GetEntity(item.nextTierPrefab, TransformUsageFlags.Dynamic)
+                        curTier = item.curTier,
+                        curValue = 0,
+                        maxValue = item.expMaxValue,
+                        curLevel = 0
                     });
+                    
                 }
 
                 // Sight
@@ -81,13 +81,6 @@ namespace SparFlame.Database
                     AddComponent(entity, new GenerateSightRequest
                     {
                         SightPrefab = GetEntity(item.sightPrefab, TransformUsageFlags.Dynamic),
-                        // SightRange = item.sightRange,
-                        // Filter = new CollisionFilter
-                        // {
-                        //     BelongsTo = item.sightBelongsTo.Value,
-                        //     CollidesWith = item.sightCollidesWith.Value,
-                        //     GroupIndex = 0
-                        // }
                     });
                 }
 

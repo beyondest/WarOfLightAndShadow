@@ -6,8 +6,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
     public class InputListener : MonoBehaviour
     {
         public static InputListener Instance;
-
-
+        
         public CustomInputActions GetCustomInputActions()
         {
             return _customInputActions;
@@ -42,13 +41,27 @@ namespace SparFlame.GamePlaySystem.CustomInput
             _customInputActions.CameraNormalMode.Disable();
         }
 
-        public void EnableNecessaryMaps()
+        public void EnableSubGameMaps()
         {
-            _customInputActions.UnitControl.Enable();
             _customInputActions.CameraNormalMode.Enable();
+            
+            _customInputActions.UnitControl.Enable();
             _customInputActions.ModeSwitch.Enable();
             _customInputActions.InfoWindow.Enable();
             _customInputActions.Conjure.Enable();
+            
+            _customInputActions.ArmyGroupControl.Disable();
+        }
+
+        public void EnableMainGameMaps()
+        {
+            _customInputActions.CameraNormalMode.Enable();
+            _customInputActions.ArmyGroupControl.Enable();
+            
+            _customInputActions.UnitControl.Disable();
+            _customInputActions.ModeSwitch.Disable();
+            _customInputActions.InfoWindow.Disable();
+            _customInputActions.Conjure.Disable();
         }
 
         #endregion
@@ -58,7 +71,7 @@ namespace SparFlame.GamePlaySystem.CustomInput
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);

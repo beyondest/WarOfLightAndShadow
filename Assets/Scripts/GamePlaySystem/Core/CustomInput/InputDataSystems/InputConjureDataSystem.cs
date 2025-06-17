@@ -11,13 +11,17 @@ namespace SparFlame.GamePlaySystem.CustomInput
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GamingTag>();
             state.RequireForUpdate<InputConjureData>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
             var customInputActions = InputListener.Instance.GetCustomInputActions();
+            if (!customInputActions.Conjure.enabled)
+            {
+                SystemAPI.SetSingleton(new InputConjureData());
+                return;
+            }
             var hotkeyPressed = customInputActions.Conjure.ConjureHotKey.WasPressedThisFrame();
             var hotKeyIndex = -1;
             if (hotkeyPressed)

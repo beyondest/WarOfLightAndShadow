@@ -17,6 +17,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameTimeData>();
             _vfxLookup = state.GetBufferLookup<TrackedByVFX>();
@@ -24,6 +25,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
 
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
             _vfxLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             PlayVFX(ref state, ecb);

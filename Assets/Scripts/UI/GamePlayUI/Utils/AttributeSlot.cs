@@ -2,7 +2,7 @@
 using TMPro;
 using UnityEngine.UI;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     public class AttributeSlot : MultiShowSlot
     {

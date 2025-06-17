@@ -70,7 +70,7 @@ namespace SparFlame.Database
                     buffer.Add(new CostList
                     {
                         Amount = cost.amount,
-                        Type = cost.costResourceType
+                        Type = cost.type
                     });
                 }
                 BakeMovementAttr( item,entity,authoring);
@@ -187,6 +187,13 @@ namespace SparFlame.Database
                     if (item.type == UnitType.Ranged && item.curTier != Tier.Tier1)
                     {
                         AddComponent<LightArcherBuff>(entity);
+                    }
+                    
+                    // Bake Unit Garrison Buff
+                    if (item.type != UnitType.Cavalry)
+                    {
+                        AddComponent<UnitGarrisonBuff>(entity);
+                        SetComponentEnabled<UnitGarrisonBuff>(entity, false);
                     }
                 }
                 

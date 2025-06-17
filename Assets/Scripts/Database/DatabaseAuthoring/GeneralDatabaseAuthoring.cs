@@ -19,7 +19,8 @@ namespace SparFlame.Database
                     buffer.Add(new BuildingEntityPrefabData
                     {
                         Type = buildingData.type,
-                        Prefab = GetEntity(buildingData.prefab, TransformUsageFlags.Dynamic)
+                        Prefab = GetEntity(buildingData.prefab, TransformUsageFlags.Dynamic),
+                        GlobalIdx = buildingData.id
                     });
                 }
           
@@ -30,7 +31,8 @@ namespace SparFlame.Database
                     buffer2.Add(new UnitEntityPrefabData
                     {
                         Type = unitData.type,
-                        Prefab = GetEntity(unitData.prefab, TransformUsageFlags.Dynamic)
+                        Prefab = GetEntity(unitData.prefab, TransformUsageFlags.Dynamic),
+                        GlobalIdx = unitData.id
                     });
                 }
                 
@@ -43,17 +45,11 @@ namespace SparFlame.Database
                         Type = resourceData.type,
                         Prefab = GetEntity(resourceData.prefab, TransformUsageFlags.Dynamic),
                         Probability = resourceData.prob,
-                        AmountRange = resourceData.amountRange
+                        AmountRange = resourceData.amountRange,
+                        GlobalIdx = resourceData.id
                     });
                 }
             }
         }
     }
-
-
-
-
-
-  
-
 }

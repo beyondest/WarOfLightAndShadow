@@ -37,7 +37,7 @@ namespace SparFlame.GamePlaySystem.Resource
                 return;
             }
 
-            if (gameStatusData.Value != GameStatus.Gaming) return;
+            if (gameStatusData.Value != GameStatus.SubGaming) return;
             // var config = SystemAPI.GetSingleton<ResourceSystemConfig>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var allyDataCenter = SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
@@ -53,7 +53,7 @@ namespace SparFlame.GamePlaySystem.Resource
             EntityCommandBuffer ecb)
         {
             foreach (var (generalAttr, dwellingAttr, entity) in SystemAPI
-                         .Query<RefRO<GeneralAttr>, RefRO<DwellingAttr>>()
+                         .Query<RefRO<SubGameplayGeneralAttr>, RefRO<DwellingAttr>>()
                          .WithAll<DwellingGeneratePopulationTag>().WithEntityAccess())
             {
                 ecb.RemoveComponent<DwellingGeneratePopulationTag>(entity);
@@ -65,7 +65,7 @@ namespace SparFlame.GamePlaySystem.Resource
                     Type = dwellingAttr.ValueRO.ResourceType
                 };
                 var request = ecb.CreateEntity();
-                ecb.AddComponent<GameplayEntityTag>(request);
+                ecb.AddComponent<SubGameplayEntityTag>(request);
                 ecb.AddComponent(request, dwellingGenerateRequest);
                 // var datas = generalAttr.ValueRO.FactionTag == FactionTag.Ally
                 //     ? SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(allyDataCenter)

@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.GamePlaySystem.General;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace SparFlame.BootStrapper
 {
@@ -14,7 +12,7 @@ namespace SparFlame.BootStrapper
         private EntityQuery _audioRequestQuery;
         protected override void OnCreate()
         {
-            RequireForUpdate<GamingTag>();
+            RequireForUpdate<SubGamingTag>();
             RequireForUpdate<AudioTransferConfig>();
             _audioRequestQuery = SystemAPI.QueryBuilder().WithAll<AudioRequest>().Build();
         }
@@ -66,8 +64,10 @@ namespace SparFlame.BootStrapper
         BuildingDestroyed = 15,
         WorkerHarvest = 16,
         Construct = 17,
-        Upgrade = 18,
+        NextTier = 18,
         Recycle = 19,
+        UnitUpgrade = 20,
+        ArmyGroupStartMoving = 21,
     }
     
     public struct AudioRequest : IComponentData

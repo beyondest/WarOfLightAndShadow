@@ -2,7 +2,7 @@
 using Unity.Entities;
 using UnityEngine;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     public class InteractAbilitySlot : InteractAbilityWindow
     {

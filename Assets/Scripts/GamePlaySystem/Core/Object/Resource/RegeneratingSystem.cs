@@ -12,7 +12,7 @@ namespace SparFlame.GamePlaySystem.Resource
         {
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<RegeneratingSystemConfig>();
         }
 

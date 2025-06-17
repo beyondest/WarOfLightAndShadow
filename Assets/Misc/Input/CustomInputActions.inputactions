@@ -470,6 +470,214 @@
             ]
         },
         {
+            "name": "ArmyGroupControl",
+            "id": "6503c0ae-9273-4dc1-ab3c-ca9a31b7370a",
+            "actions": [
+                {
+                    "name": "SingleSelect",
+                    "type": "Button",
+                    "id": "a6656839-8489-4957-8de2-ee1b0b8ca36f",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "DraggingSelect",
+                    "type": "Button",
+                    "id": "e6774f59-d02a-4e3b-967b-35416871b88f",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Add",
+                    "type": "Button",
+                    "id": "0de77313-9694-4718-b6ac-26f568c3c454",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ChangeFaction",
+                    "type": "Button",
+                    "id": "c4165644-818b-48f2-a8d0-9dce9cb894b8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "DraggingSelectStart",
+                    "type": "Button",
+                    "id": "8483e1b1-55f6-463c-9602-b7478bd12cf5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "StartMoving",
+                    "type": "Button",
+                    "id": "414a9d04-98ea-43eb-bc85-cb588b47365e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "EndMoving",
+                    "type": "Button",
+                    "id": "27e50dc9-42ab-4617-a18d-a8620658af5c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ResetAllTargets",
+                    "type": "Button",
+                    "id": "17e04a2a-7232-46a6-9553-4e9d635cd757",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SetTarget",
+                    "type": "Button",
+                    "id": "2ff55fe1-8d7e-4b1c-925a-eddb4ce48e92",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ResetOnlyTheLastTarget",
+                    "type": "Button",
+                    "id": "8546165a-d5f2-4925-aae9-731313e2e500",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "a0e8e523-4753-465a-a955-f8faca6eb016",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "SingleSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cd029225-3183-4585-8f75-aa55e0850731",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Press(behavior=2)",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "DraggingSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "eea5dba9-ffc1-425a-9556-94efa4934893",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Add",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a0609f9d-3219-4930-bf06-45fca5677b7d",
+                    "path": "<Keyboard>/c",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ChangeFaction",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9b2316b0-0dba-49bd-a66d-ceef33aa628e",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Hold",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "DraggingSelectStart",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fbe0d1d4-47c5-4943-9c51-e049a2c2ff93",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": "",
+                    "action": "StartMoving",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4781cb0a-cb7c-481f-8cfb-034b1cd24f9b",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "Hold(duration=1)",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ResetAllTargets",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "60b6d28b-0f68-4bcb-b5d3-5dc4e83a9e9d",
+                    "path": "<Keyboard>/x",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "EndMoving",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "04b5af9f-1688-47db-83f3-4ce4ce278ebc",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "SetTarget",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8e4ed872-1d38-4c52-bd1d-42b9512263b4",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ResetOnlyTheLastTarget",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
             "name": "Construct",
             "id": "ad838fd8-a093-4bc2-b5a9-208d51df6497",
             "actions": [

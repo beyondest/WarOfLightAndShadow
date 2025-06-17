@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
 using SparFlame.Database.Database.DatabaseDefination;
+using SparFlame.Database.Resources.Scripts.Database.DatabaseDefination;
 using SparFlame.GamePlaySystem.Building;
 using UnityEngine;
 using UnityEditor;
@@ -24,6 +25,7 @@ namespace SparFlame.Database
         private static VFXDatabaseSo _vfxDatabaseSo;
         private static BuffDatabaseSo _buffDatabaseSo;
         private static HintDatabaseSo _hintDatabaseSo;
+        private static CityDatabaseSo _cityDatabaseSo;
         
         public static BuildingDatabaseSo BuildingDatabaseSo =>
             _buildingDatabaseSo ??= LoadAndMergeDatabase<BuildingDatabaseSo, BuildingDataItem>("items");
@@ -52,7 +54,10 @@ namespace SparFlame.Database
         _buffDatabaseSo ??= LoadAndMergeDatabase<BuffDatabaseSo, BuffDataItem>("items");
         
         public static HintDatabaseSo HintDatabaseSo =>
-        _hintDatabaseSo ??= LoadAndMergeDatabase<HintDatabaseSo, HintItem>("items");
+        _hintDatabaseSo ??= LoadAndMergeDatabase<HintDatabaseSo, HintDataItem>("items");
+        
+        public static CityDatabaseSo CityDatabaseSo =>
+        _cityDatabaseSo ??= LoadAndMergeDatabase<CityDatabaseSo, CityDataItem>("items");
         
         // This method only works for general databases
         public static GeneralDatabase<TData> GetDatabaseSo<TData>() where TData : GeneralDataItem
@@ -71,83 +76,13 @@ namespace SparFlame.Database
 
     
         
-//         private static TDatabase LoadAndMergeDatabase<TDatabase, TItem>(string itemFieldName)
-//             where TDatabase : ScriptableObject, new()
-//         {
-// #if UNITY_EDITOR
-//             // 查找所有这个类型的SO
-//             string[] guids = AssetDatabase.FindAssets($"t:{typeof(TDatabase).Name}");
-//             List<TDatabase> databases = new List<TDatabase>();
-//
-//             foreach (var guid in guids)
-//             {
-//                 string path = AssetDatabase.GUIDToAssetPath(guid);
-//                 var asset = AssetDatabase.LoadAssetAtPath<TDatabase>(path);
-//                 if (asset != null)
-//                     databases.Add(asset);
-//             }
-// #else
-//             // 非编辑器模式下，从 Resources 里找
-//             TDatabase[] databases = Resources.LoadAll<TDatabase>("Database");
-// #endif
-//             if (databases == null || databases.Count == 0)
-//             {
-//                 Debug.LogError($"No database assets found for type {typeof(TDatabase).Name}!");
-//                 return null;
-//             }
-//
-//             // 有id的按照idStart排序，没id的，后来的排前面
-//             databases = databases.OrderBy(GetIdStartValue).ToList();
-//
-//             // 生成新的 database 实例
-//             TDatabase mergedDatabase = ScriptableObject.CreateInstance<TDatabase>();
-//
-//             // 设置 idStart 为最小值
-//             int minIdStart = databases.Min(GetIdStartValue);
-//             SetIdStartValue(mergedDatabase, minIdStart);
-//
-//             // 合并 items
-//             var mergedList = new List<TItem>();
-//
-//             foreach (var db in databases)
-//             {
-//                 var type = db.GetType();
-//                 var field = type.GetField(itemFieldName,
-//                     BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-//                 if (field != null && typeof(IEnumerable<TItem>).IsAssignableFrom(field.FieldType))
-//                 {
-//                     var items = (IEnumerable<TItem>)field.GetValue(db);
-//                     if (items != null)
-//                     {
-//                         mergedList.AddRange(items);
-//                     }
-//                 }
-//                 else
-//                 {
-//                     Debug.LogError($"Database {db.name} doesn't have a correct field named {itemFieldName}");
-//                 }
-//             }
-//             
-//             // 把 mergedList 赋回去
-//             var mergedField = mergedDatabase.GetType().GetField(itemFieldName,
-//                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-//             if (mergedField != null)
-//             {
-//                 mergedField.SetValue(mergedDatabase, mergedList);
-//             }
-//             else
-//             {
-//                 Debug.LogError($"Merged database does not have a field named {itemFieldName}");
-//             }
-//
-//             return mergedDatabase;
-//         }
+
 
         private static TDatabase LoadAndMergeDatabase<TDatabase, TItem>(string itemFieldName)
             where TDatabase : ScriptableObject, new()
         {
             // 从 Resources/Database 加载所有数据库资源
-            TDatabase[] databases = Resources.LoadAll<TDatabase>("Database");
+            TDatabase[] databases = UnityEngine.Resources.LoadAll<TDatabase>("Database");
 
             if (databases == null || databases.Length == 0)
             {
@@ -239,6 +174,7 @@ namespace SparFlame.Database
             _vfxDatabaseSo = null;
             _buffDatabaseSo = null;
             _hintDatabaseSo = null;
+            _cityDatabaseSo = null;
             _ = BuildingDatabaseSo;
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
@@ -248,6 +184,7 @@ namespace SparFlame.Database
             _ = VFXDatabaseSo;
             _ = BuffDatabaseSo;
             _ = HintDatabaseSo;
+            _ = CityDatabaseSo;
             Debug.Log(" All Databases reloaded successfully!");
         }
 #endif

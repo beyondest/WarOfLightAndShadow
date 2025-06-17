@@ -14,7 +14,7 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ScreenPos>();
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<CameraViewExtend>();
@@ -23,6 +23,8 @@ namespace SparFlame.GamePlaySystem.UnitSelection
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
             var cameraData = SystemAPI.GetSingleton<CameraData>();
             // Calculate VP Matrix First
             var vpMatrix = math.mul(cameraData.ProjectionMatrix, cameraData.ViewMatrix);

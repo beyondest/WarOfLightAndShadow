@@ -41,7 +41,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
             state.RequireForUpdate<ParabolaProjectileConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameTimeData>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ParabolaProjectileData>();
             _transformLookup = state.GetComponentLookup<LocalTransform>();
         }
@@ -49,6 +49,8 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus!= GameStatus.SubGaming)return;
             _transformLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -153,7 +155,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                 if (data.HitEffectPrefab != Entity.Null)
                 {
                     var hitVfx = ECB.Instantiate(index, data.HitEffectPrefab);
-                    ECB.AddComponent<GameplayEntityTag>(index, hitVfx);
+                    ECB.AddComponent<SubGameplayEntityTag>(index, hitVfx);
                     ECB.AddComponent(index, hitVfx, new VFXData
                     {
                         KeepDuration = 0,
@@ -176,7 +178,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
                 if (data.IsTargetAlive)
                 {
                     var request = ECB.CreateEntity(index);
-                    ECB.AddComponent<GameplayEntityTag>(index, request);
+                    ECB.AddComponent<SubGameplayEntityTag>(index, request);
                     ECB.AddComponent(index, request, data.Request);
                 }
 

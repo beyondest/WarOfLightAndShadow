@@ -30,7 +30,7 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
     public enum VFXName
     {
         None = 0,
-        Upgrade = 1,
+        NextTier = 1,
         ControlToAttack = 2,
         ControlToMarch = 3,
         TowerProjectile = 4,
@@ -61,6 +61,9 @@ namespace SparFlame.GamePlaySystem.CustomParticleSystem
         DarkClericAttackGain = 29,
         LightMagicDamageDebuff = 30,
         DarkMagicDamageDebuff = 31,
+        UnitUpgrade = 32,
+        UnitGarrisonBuff = 33,
+        ArmyGroupSelectionIndicator = 34,
     }
 
     public enum VFXType

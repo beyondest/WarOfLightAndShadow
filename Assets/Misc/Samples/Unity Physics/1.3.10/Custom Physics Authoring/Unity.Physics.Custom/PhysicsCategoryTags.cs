@@ -42,7 +42,7 @@ namespace Unity.Physics.Authoring
         public bool Category30;
         public bool Category31;
 
-        internal bool this[int i]
+        public bool this[int i]
         {
             get
             {

@@ -9,8 +9,8 @@ namespace SparFlame.GamePlaySystem.CustomInput
         private CustomInputActions _customInputActions;
         protected override void OnCreate()
         {
-            RequireForUpdate<GamingTag>();
             RequireForUpdate<InputConstructData>(); 
+            RequireForUpdate<InputMouseData>();
         }
 
         protected override void OnStartRunning()
@@ -20,6 +20,11 @@ namespace SparFlame.GamePlaySystem.CustomInput
 
         protected override void OnUpdate()
         {
+            if (!_customInputActions.Construct.enabled)
+            {
+                SystemAPI.SetSingleton(new InputConstructData());
+                return;
+            }
             var rotate = _customInputActions.Construct.Rotate.ReadValue<float>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             SystemAPI.SetSingleton(new InputConstructData

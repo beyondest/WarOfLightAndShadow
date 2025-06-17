@@ -11,13 +11,21 @@ namespace SparFlame.GamePlaySystem.CustomInput
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputCameraNormalData>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             var customInputActions = InputListener.Instance.GetCustomInputActions();
+
+            if ((gameStatus != GameStatus.SubGaming && gameStatus != GameStatus.MainGaming)
+                || !customInputActions.CameraNormalMode.enabled)
+            {
+                SystemAPI.SetSingleton(new InputCameraNormalData());
+                return;
+            }
             var oriMode = SystemAPI.GetSingleton<InputCameraNormalData>().EdgeScrolling;
             SystemAPI.SetSingleton(new InputCameraNormalData
             {

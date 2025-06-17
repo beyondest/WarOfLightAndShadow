@@ -1,15 +1,14 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using SparFlame.BootStrapper;
-using SparFlame.GamePlaySystem.Command;
+using SparFlame.GamePlaySystem.CustomInput;
 using SparFlame.GamePlaySystem.General;
 using SparFlame.GamePlaySystem.Interact;
 using SparFlame.GamePlaySystem.Resource;
 using SparFlame.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-namespace SparFlame.UI.GamePlay
+namespace SparFlame.UI.SubGameplay
 {
     public class BasicUIResourceManager : MonoBehaviour, CustomDs.IResourceManager
     {
@@ -37,7 +36,7 @@ namespace SparFlame.UI.GamePlay
         public readonly Dictionary<Tier, Sprite> TierSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionHpSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionGameOverSprites = new();
-        public readonly Dictionary<CursorType, Sprite> CursorSprites = new();
+        public readonly Dictionary<SubGameplayCursorType, Sprite> CursorSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionHpFillSprites = new();
         public readonly Dictionary<FactionTag, Sprite> FactionHpBlankSprites = new();
         public readonly Dictionary<UpRightButtonWindow.WaveColorType,Sprite> LightWaveColorTypeSprites = new();
@@ -82,7 +81,7 @@ namespace SparFlame.UI.GamePlay
             _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionHpSpriteSuffix,
                 result => CR.OnTypeSuffixLoadComplete(result, FactionHpSprites)));
 
-            _group.Add(CR.LoadTypeSuffix<CursorType, Sprite>(cursorTypeSuffix,
+            _group.Add(CR.LoadTypeSuffix<SubGameplayCursorType, Sprite>(cursorTypeSuffix,
                 result => { CR.OnTypeSuffixLoadComplete(result, CursorSprites); }));
 
             _group.Add(CR.LoadTypeSuffix<FactionTag, Sprite>(factionGameOverSpriteSuffix,

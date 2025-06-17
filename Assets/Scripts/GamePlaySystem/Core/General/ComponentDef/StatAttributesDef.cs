@@ -1,14 +1,16 @@
-﻿using SparFlame.GamePlaySystem.General;
+﻿using System;
+using SparFlame.GamePlaySystem.General;
 using Unity.Entities;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
   
+    [Serializable]
     public struct StatData : IComponentData
     {
-        public int MaxValue;
-        public float CurValue;
-        public int Bonus;
+        public int maxValue;
+        public float curValue;
+        public int bonus;
     }
         
     /// <summary>
@@ -22,7 +24,7 @@ namespace SparFlame.GamePlaySystem.Interact
         public Entity Interactee;
         public int AbsAmount;
         public StatChangeType Type;
-        public GeneralAttr InteractorGeneralAttr;
+        public SubGameplayGeneralAttr InteractorSubGameplayGeneralAttr;
         public DamageType DamageType;
     }
     

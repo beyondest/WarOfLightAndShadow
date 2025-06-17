@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using SparFlame.Database.Database.DatabaseDefination;
+using SparFlame.Database.Resources.Scripts.Database.DatabaseDefination;
 
 namespace Editor
 {
@@ -41,6 +42,8 @@ namespace Editor
         [Unity.Collections.ReadOnly, LabelText("Hint Databases"), ShowInInspector]
         public List<HintDatabaseSo> hintDatabases = new();
         
+        [Unity.Collections.ReadOnly, LabelText("City Databases"), ShowInInspector]
+        public List<CityDatabaseSo> cityDatabases = new();
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -54,6 +57,7 @@ namespace Editor
             vfxDatabases = FindAllAssets<VFXDatabaseSo>("VFX Database");
             buffDatabases = FindAllAssets<BuffDatabaseSo>("Buff Database");
             hintDatabases = FindAllAssets<HintDatabaseSo>("Hint Database");
+            cityDatabases = FindAllAssets<CityDatabaseSo>("City Database");
         }
 
         private List<T> FindAllAssets<T>(string label) where T : ScriptableObject

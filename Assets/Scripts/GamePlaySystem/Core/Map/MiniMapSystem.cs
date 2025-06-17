@@ -16,7 +16,7 @@ namespace SparFlame.GamePlaySystem.Map
             state.RequireForUpdate<MiniMapConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GamingTag>();
+            state.RequireForUpdate<SubGamingTag>();
             _miniMapMaterialLookup = state.GetComponentLookup<MiniMapMaterialTag>();
         }
 
@@ -36,7 +36,7 @@ namespace SparFlame.GamePlaySystem.Map
             // }.ScheduleParallel();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             
-            foreach (var (attr, entity) in SystemAPI.Query<RefRO<GeneralAttr>>().WithEntityAccess().WithNone<MiniMapInitCompleteTag>())
+            foreach (var (attr, entity) in SystemAPI.Query<RefRO<SubGameplayGeneralAttr>>().WithEntityAccess().WithNone<MiniMapInitCompleteTag>())
             {
                 var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
                 ecb.AddComponent<MiniMapInitCompleteTag>( entity);
