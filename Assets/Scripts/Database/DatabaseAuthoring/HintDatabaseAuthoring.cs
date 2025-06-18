@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SparFlame.GamePlaySystem.Hints;
+using SparFlame.Components.General;
 using Unity.Entities;
 using UnityEngine;
 

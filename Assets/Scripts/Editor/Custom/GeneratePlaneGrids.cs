@@ -1,5 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Map;
-using SparFlame.GamePlaySystem.Movement;
+﻿using SparFlame.Systems.Map;
+using SparFlame.Systems.SubGameplay.Movement;
 using UnityEditor;
 using UnityEngine;
 

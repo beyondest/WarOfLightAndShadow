@@ -1,6 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Movement;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using Unity.Physics.Authoring;
 using UnityEngine;

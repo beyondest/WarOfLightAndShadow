@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SparFlame.GamePlaySystem.RandomSpawn;
+using SparFlame.Components.SubGameplay;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;

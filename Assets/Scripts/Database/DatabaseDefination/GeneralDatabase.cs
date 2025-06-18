@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
-using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
 using Unity.Physics.Authoring;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -190,13 +189,12 @@ namespace GamePlaySystem.Database
         public int sightPriority;
 
         [ShowIf(nameof(HasSight)), FoldoutGroup("Additional/Sight", Expanded = false),
-         HorizontalGroup("Additional/Sight2"),
          OnValueChanged(nameof(OnSightPrefabChanged)), HideLabel]
         public GameObject sightPrefab;
 
         [FoldoutGroup("Additional/Sight", Expanded = false)]
         [ShowIf(nameof(HasSight))]
-        [HorizontalGroup("Additional/Sight3"), LabelText("Range"), ReadOnly,HideLabel]
+        [ LabelText("Range"), ReadOnly,HideLabel]
         public float sightRange;
 
         [VerticalGroup("Additional"), HideLabel, LabelText("ExtraConfig"),TableColumnWidth(200, false)] public bool enableAdditionalConfig;

@@ -1,4 +1,4 @@
-﻿// using SparFlame.GamePlaySystem.CustomParticleSystem;
+﻿// using SparFlame.GamePlaySystem.Particle;
 // using SparFlame.GamePlaySystem.Fow;
 // using SparFlame.GamePlaySystem.General;
 // using SparFlame.GamePlaySystem.Interact.Blindness;

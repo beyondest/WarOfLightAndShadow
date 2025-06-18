@@ -1,12 +1,8 @@
 ﻿using System;
-using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Conjure;
-using SparFlame.GamePlaySystem.Garrison;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Generate;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Resource;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
+using UnityEngine;
 
 namespace SparFlame.Database
 {
@@ -19,6 +15,8 @@ namespace SparFlame.Database
             public override void Bake(GeneralBuildingAttributesAuthoring authoring)
             {
                 if (authoring.globalIdx == 0) return;
+                if(DatabaseManager.BuildingDatabaseSo == null)return;
+            
                 var item = DatabaseManager.BuildingDatabaseSo.GetItemById(authoring.globalIdx);
                 var entity = GetEntity(authoring.ifInBuildingPack
                     ? TransformUsageFlags.WorldSpace

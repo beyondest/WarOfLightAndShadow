@@ -4,16 +4,14 @@ using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Mathematics;
 using UnityEngine;
 
 // ReSharper disable RedundantJumpStatement
 
-namespace SparFlame.GamePlaySystem.Building
+namespace SparFlame.Database
 {
     [CreateAssetMenu(fileName = "BuildingDatabase", menuName = "GameData/BuildingDatabase", order = 0)]
     public class BuildingDatabaseSo : GeneralDatabase<BuildingDataItem>
@@ -79,7 +77,6 @@ namespace SparFlame.GamePlaySystem.Building
                         item.attackRange = item.harvestRange = item.healRange = item.sightRange;
                     }
                 }
-                
             }
 
             _shouldCheckValid = false;
@@ -229,7 +226,7 @@ namespace SparFlame.GamePlaySystem.Building
         {
             return type switch
             {
-                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower || (FortificationType)GetSubSubTypeIndex()== FortificationType.BigTower,
+                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower || (FortificationType)GetSubtypeIndex()== FortificationType.BigTower,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
                 BuildingType.ConjuringShrines or BuildingType.Dwellings or BuildingType.Ornaments => false,

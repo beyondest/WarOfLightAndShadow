@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.GamePlaySystem.CustomParticleSystem;
+using SparFlame.Components.VFX;
 using Unity.Entities;
 using UnityEngine;
 

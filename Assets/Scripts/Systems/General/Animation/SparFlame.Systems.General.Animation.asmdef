@@ -1,0 +1,27 @@
+﻿{
+  "name": "SparFlame.Systems.General.Animation",
+  "rootNamespace": "SparFlame",
+  "references": [
+    "Unity.Burst",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.Entities.Hybrid",
+    "Unity.Collections",
+    "Unity.Transforms",
+    "Latios.Kinemation",
+    "Latios.Core",
+    "Latios.Transforms",
+    "SparFlame.Core",
+    "SparFlame.Components"
+   
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

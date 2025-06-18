@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using GamePlaySystem.Functionality.MainGameplay.City;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.General;
+using SparFlame.Components.General;
+using SparFlame.Core.Utils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SparFlame.Database.Resources.Scripts.Database.DatabaseDefination
+namespace SparFlame.Database
 {
     [CreateAssetMenu(fileName = "CityDatabase", menuName = "GameData/CityDatabase", order = 0)]
     public class CityDatabaseSo : ScriptableObject

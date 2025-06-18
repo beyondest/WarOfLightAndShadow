@@ -1,6 +1,5 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
+﻿/*using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using UnityEngine;
 
@@ -52,4 +51,4 @@ namespace SparFlame.Database
             }
         }
     }
-}
+}*/

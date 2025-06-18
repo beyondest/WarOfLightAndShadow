@@ -1,11 +1,9 @@
-﻿using GamePlaySystem.Database;
-using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CameraControl;
-using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Movement;
-using SparFlame.GamePlaySystem.Ooc;
+﻿using System.Collections.Generic;
+using GamePlaySystem.Database;
+using Sirenix.OdinInspector;
+using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Components.VFX;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
@@ -13,6 +11,15 @@ using UnityEngine;
 
 namespace SparFlame.Database
 {
+    // TODO Change all databases to this variant
+    public class BaseDatabase<TItem> : ScriptableObject
+    {
+        [TableList]
+        public List<TItem> items;
+        public int idStart;
+    }
+    
+    
     public class GeneralDataItemAuthoring : MonoBehaviour
     {
         [SerializeField] public int globalIdx;

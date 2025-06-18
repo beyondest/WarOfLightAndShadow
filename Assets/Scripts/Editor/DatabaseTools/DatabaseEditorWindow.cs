@@ -1,12 +1,9 @@
 ﻿using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using SparFlame.Database;
-using SparFlame.GamePlaySystem.Building;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
-using SparFlame.Database.Database.DatabaseDefination;
-using SparFlame.Database.Resources.Scripts.Database.DatabaseDefination;
 
 namespace Editor
 {

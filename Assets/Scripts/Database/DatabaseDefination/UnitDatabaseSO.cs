@@ -4,10 +4,8 @@ using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using UnityEngine;
 
 namespace SparFlame.Database

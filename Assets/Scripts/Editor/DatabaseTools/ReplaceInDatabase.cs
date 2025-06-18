@@ -1,6 +1,7 @@
 ﻿using PlasticGui;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
-using SparFlame.GamePlaySystem.RandomSpawn;
+using SparFlame.Systems.SubGameplay.RandomSpawn;
 
 namespace Editor
 {

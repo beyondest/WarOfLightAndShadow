@@ -1,0 +1,60 @@
+﻿using System;
+using Sirenix.OdinInspector;
+using SparFlame.Components.General;
+using Unity.Entities;
+using UnityEngine;
+
+namespace SparFlame.Systems.General.BasicControl
+{
+    public class GlobalDebugAuthoring : MonoBehaviour
+    {
+        [Title("General Debug Switch")] [GUIColor(1, 0.7f, 0.2f)]
+        public bool globalDebugEnable;
+
+
+        [FoldoutGroup("Movement Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public MovementDebug movement;
+
+        [FoldoutGroup("Stat Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public StatDebug stat;
+
+        [FoldoutGroup("Interact Ability Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public InteractAbilityDebug interactAbility;
+
+        [FoldoutGroup("EnemyAIDebug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public EnemyAIDebug aiDebug;
+
+        [FoldoutGroup("WaveDebug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public WaveDebug waveDebug;
+        
+        [FoldoutGroup("Exp Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public ExpDebug expDebug;
+        private class GlobalDebugAuthoringBaker : Baker<GlobalDebugAuthoring>
+        {
+            public override void Bake(GlobalDebugAuthoring authoring)
+            {
+                var entity = GetEntity(TransformUsageFlags.None);
+                if (authoring.globalDebugEnable)
+                {
+                    AddComponent<DebugTag>(entity);
+                    if (authoring.movement.enabled)
+                        AddComponent(entity, authoring.movement);
+                    if (authoring.stat.enabled)
+                        AddComponent(entity, authoring.stat);
+                    if (authoring.interactAbility.enabled)
+                        AddComponent(entity, authoring.interactAbility);
+                    if (authoring.aiDebug.enabled)
+                        AddComponent(entity, authoring.aiDebug);
+                    if(authoring.waveDebug.enabled)
+                        AddComponent(entity, authoring.waveDebug);
+                    if(authoring.expDebug.enabled)
+                        AddComponent(entity, authoring.expDebug);
+                }
+            }
+        }
+    }
+
+    
+
+   
+}

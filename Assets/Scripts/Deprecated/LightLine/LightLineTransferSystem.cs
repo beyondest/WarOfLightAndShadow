@@ -11,7 +11,7 @@
 // using UnityEngine;
 // using Object = UnityEngine.Object;
 //
-// namespace SparFlame.GamePlaySystem.CustomParticleSystem.LightLine
+// namespace SparFlame.GamePlaySystem.Particle.LightLine
 // {
 //     public struct UpdateLightLineRequest : IComponentData
 //     {

@@ -1,0 +1,238 @@
+﻿using SparFlame.Components.General;
+using SparFlame.Components.Input;
+using SparFlame.Components.MainGameplay;
+using SparFlame.Systems.General.Input;
+using Unity.Entities;
+using UnityEngine;
+
+namespace SparFlame.UI.MainGameplay
+{
+    /// <summary>
+    /// This controller control all sub controllers about unit info, including :
+    /// Unit2DShow, UnitInteractAbilityShow, UnitDetailShow, 
+    /// </summary>
+    public class MainGameplayInfoWindowController : MonoBehaviour
+    {
+        // public static InfoWindowController Instance;
+
+
+        [Header("Custom config")] public GameObject infoPanel;
+        [SerializeField] private GameObject maximizeButton;
+
+        public static MainGameplayInfoWindowController Instance;
+
+        public void OnMinimizeClick()
+        {
+            _minimizeWindow = !_minimizeWindow;
+            ClearCloseUpTarget();
+            Hide();
+        }
+
+        public void OnMaximizeClick()
+        {
+            _minimizeWindow = !_minimizeWindow;
+            maximizeButton.SetActive(false);
+            Show();
+        }
+
+        /// <summary>
+        /// Will close all incorrect opened detail windows for target entity
+        /// But WILL NOT OPEN correct detail window, you have to open it manually before calling this methods
+        /// </summary>
+        /// <param name="target"></param>
+        public void UpdateCloseUpTarget(Entity target)
+        {
+            _closeUpTarget = target;
+            if (CityDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
+            {
+                if (!CityDetailWindow.Instance.IsOpened()) CityDetailWindow.Instance.Show();
+            }
+        }
+
+        private bool _minimizeWindow;
+        private CustomInputActions _customInputActions;
+        private bool _ifLastTimePlayerCloseByEsc;
+
+        private Entity _closeUpTarget;
+        private EntityManager _em;
+        private EntityQuery _gamingTag;
+        private EntityQuery _customMouseDataQuery;
+        private EntityQuery _cursorData;
+        private EntityQuery _selectedData;
+
+        private void Awake()
+        {
+            if (!Instance)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
+
+        private void Start()
+        {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _gamingTag = _em.CreateEntityQuery(typeof(MainGamingTag));
+            _customMouseDataQuery = _em.CreateEntityQuery(typeof(InputMouseData));
+            _cursorData = _em.CreateEntityQuery(typeof(MainGameplayCursorData));
+            _selectedData = _em.CreateEntityQuery(typeof(ArmyGroupSelectionData));
+            _customInputActions = InputListener.Instance.GetCustomInputActions();
+            infoPanel.SetActive(false);
+        }
+
+        private void Update()
+        {
+            if (_gamingTag.IsEmpty) return;
+            if (!_em.Exists(_closeUpTarget))
+                _closeUpTarget = Entity.Null;
+
+            var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
+            var cursorData = _cursorData.GetSingleton<MainGameplayCursorData>();
+            var selectedData = _selectedData.GetSingleton<ArmyGroupSelectionData>();
+              
+            // Check left click event
+            // Valid when left click on interactable entity
+            var leftClickOnValid = !inputMouseData.IsOverUI
+                                   && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
+                                   && cursorData.Type is not MainGameplayCursorType.None and MainGameplayCursorType.March;
+            var leftClickOnInvalid = !inputMouseData.IsOverUI
+                                     && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
+                                     && cursorData.Type is MainGameplayCursorType.None or MainGameplayCursorType.March;
+
+            // Check should switch close up target
+            if (leftClickOnValid)
+            {
+                UpdateCloseUpTarget(inputMouseData.HitEntity);
+            }
+
+            // Check should show or hide info window
+            // show info window when select some units or left click on valid
+            var shouldShowInfoWindow = selectedData.CurrentSelectCount > 0 || leftClickOnValid;
+            if (selectedData.DragSelectStart)
+                _ifLastTimePlayerCloseByEsc = false;
+
+            if (shouldShowInfoWindow)
+            {
+                if(leftClickOnValid || !_ifLastTimePlayerCloseByEsc )
+                {
+                    _ifLastTimePlayerCloseByEsc = false;
+                    if (!_minimizeWindow && !infoPanel.activeSelf)
+                        Show();
+                    else if (_minimizeWindow)
+                        maximizeButton.SetActive(true);
+                    if (!MainGameplayCloseUpWindow.Instance.HasTarget())
+                    {
+                        ArmyGroupMulti2DWindow.Instance.OnClickSlot(0);
+                    }
+                }
+            }
+
+            // Check should show or hide Unit multi 2D , interact , detail window
+            // Show multi unit window when select count > 1
+            // Show interact and detail when select count <= 1 and closeUpTarget not null
+            var shouldShowUnitMulti2D = infoPanel.activeSelf && selectedData.CurrentSelectCount > 1;
+            var shouldShowInteractAndDetail = infoPanel.activeSelf && selectedData.CurrentSelectCount <= 1 &&
+                                              _closeUpTarget != Entity.Null;
+            if (shouldShowUnitMulti2D)
+            {
+                if (!ArmyGroupMulti2DWindow.Instance.IsOpened())
+                {
+                    ArmyGroupMulti2DWindow.Instance.Show();
+                    ArmyGroupMulti2DWindow.Instance.DisableClickRoutine();
+                    ArmyGroupMulti2DWindow.Instance
+                        .OnClickSlot(
+                            0);
+                    ArmyGroupDetailWindow.Instance.Hide();
+                    ArmyGroupMulti2DWindow.Instance.EnableClickRoutine();
+                }
+            }
+            else
+            {
+                if (ArmyGroupMulti2DWindow.Instance.IsOpened())
+                    ArmyGroupMulti2DWindow.Instance.Hide();
+            }
+
+            if (shouldShowInteractAndDetail)
+            {
+                
+                if (!ArmyGroupDetailWindow.Instance.IsOpened() &&
+                    ArmyGroupDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
+                    ArmyGroupDetailWindow.Instance.Show();
+                if (!CityDetailWindow.Instance.IsOpened() &&
+                    CityDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
+                    CityDetailWindow.Instance.Show();
+                
+            }
+            else
+            {
+                if (selectedData.CurrentSelectCount<=1)
+                {
+                    
+                    if (ArmyGroupDetailWindow.Instance.IsOpened())
+                        ArmyGroupDetailWindow.Instance.Hide();
+                }
+                
+                if (CityDetailWindow.Instance.IsOpened())
+                    CityDetailWindow.Instance.Hide();
+                
+            }
+
+            var closeByEsc = _customInputActions.InfoWindow.CloseWindow.WasPerformedThisFrame();
+            var shouldHideInfoWindow = leftClickOnInvalid
+                                       || closeByEsc
+                                       || (!ArmyGroupDetailWindow.Instance.HasTarget()
+                                           && !CityDetailWindow.Instance.HasTarget()
+                                           && !ArmyGroupMulti2DWindow.Instance.HasTarget()
+                                           && !MainGameplayCloseUpWindow.Instance.HasTarget());
+            if (shouldHideInfoWindow)
+            {
+                if (closeByEsc && ArmyGroupMulti2DWindow.Instance.IsOpened() && ArmyGroupDetailWindow.Instance.IsOpened())
+                {
+                    ArmyGroupDetailWindow.Instance.Hide();
+                }
+                else
+                {
+                    if (_minimizeWindow)
+                        maximizeButton.SetActive(false);
+                    else if (!_minimizeWindow && infoPanel.activeSelf)
+                        Hide();
+                    if(closeByEsc) _ifLastTimePlayerCloseByEsc = true;
+                    ClearCloseUpTarget();
+                }
+            }
+        }
+
+        public void Show()
+        {
+            infoPanel.SetActive(true);
+            // Close up window should always open with unit info window and should never be blank
+            // Only when unit info closed , it is allowed to be blank, but it will close at the same time
+            MainGameplayCloseUpWindow.Instance.Show();
+        }
+
+        public void Hide()
+        {
+            infoPanel.SetActive(false);
+            MainGameplayCloseUpWindow.Instance.Hide();
+        }
+
+        private void ClearCloseUpTarget()
+        {
+            MainGameplayCloseUpWindow.Instance.ClearCloseUpTarget();
+            ArmyGroupDetailWindow.Instance.ClearCloseUpTarget();
+            CityDetailWindow.Instance.ClearCloseUpTarget();
+            MainGameplayGarrisonInfoWindow.Instance.ClearCloseUpTarget();
+            // ConjureQueueWindow.Instance.ClearCloseUpTarget();
+            // MiniConjureWindow.Instance.ClearCloseUpTarget();
+            // ConjureWindow.Instance.ClearCloseUpTarget();
+        }
+
+
+        private void ScrollUpWindow()
+        {
+        }
+
+        private void ScrollDownWindow()
+        {
+        }
+    }
+}

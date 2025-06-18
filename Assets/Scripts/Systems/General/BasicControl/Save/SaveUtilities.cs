@@ -1,0 +1,224 @@
+﻿using System;
+using System.IO;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+using BinaryReader = Unity.Entities.Serialization.BinaryReader;
+using BinaryWriter = Unity.Entities.Serialization.BinaryWriter;
+
+namespace SparFlame.Systems.General.BasicControl
+{
+
+
+    [AttributeUsage(AttributeTargets.Struct)]
+    public class SavableAttribute : Attribute
+    {
+        
+    }
+    
+    
+    
+  
+
+    [GenerateTestsForBurstCompatibility]
+    public unsafe struct BurstableMemoryBinaryWriter : BinaryWriter
+    {
+        private readonly byte* buffer;
+        private readonly int capacity;
+        private long position;
+
+        public long Position
+        {
+            get => position;
+            set
+            {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
+                if (value < 0 || value > capacity)
+                    throw new ArgumentOutOfRangeException($"Position out of range.");
+#endif
+                position = value;
+            }
+        }
+
+        public long Length => position;
+
+        public BurstableMemoryBinaryWriter(void* buffer, int capacity)
+        {
+            this.buffer = (byte*)buffer;
+            this.capacity = capacity;
+            this.position = 0;
+        }
+
+        public void WriteBytes(void* data, int bytes)
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
+            if (position + bytes > capacity)
+                throw new InvalidOperationException("Buffer overflow in BurstableMemoryBinaryWriter");
+#endif
+            UnsafeUtility.MemCpy(buffer + position, data, bytes);
+            position += bytes;
+        }
+
+        public void Dispose()
+        {
+            // Nothing to dispose. Caller must manage memory.
+        }
+
+        public void GetData(out byte* ptr, out int length)
+        {
+            ptr = buffer;
+            length = (int)position;
+        }
+    }
+
+    
+    public unsafe class StreamBinaryWriter : BinaryWriter
+    {
+        private readonly Stream stream;
+        private readonly byte[] buffer;
+
+        public long Position
+        {
+            get => stream.Position;
+            set => stream.Position = value;
+        }
+
+        public StreamBinaryWriter(string fileName, int bufferSize = 65536)
+        {
+            stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
+            buffer = new byte[bufferSize];
+        }
+
+        public void Dispose()
+        {
+            stream.Dispose();
+        }
+
+        public void WriteBytes(void* data, int bytes)
+        {
+            int remaining = bytes;
+            int bufferSize = buffer.Length;
+
+            fixed (byte* fixedBuffer = buffer)
+            {
+                while (remaining != 0)
+                {
+                    int bytesToWrite = math.min(remaining, bufferSize);
+                    UnsafeUtility.MemCpy(fixedBuffer, data, bytesToWrite);
+                    stream.Write(buffer, 0, bytesToWrite);
+                    data = (byte*)data + bytesToWrite;
+                    remaining -= bytesToWrite;
+                }
+            }
+        }
+
+        public long Length => stream.Length;
+    }
+
+
+    public unsafe class StreamBinaryReader : BinaryReader
+    {
+#if UNITY_EDITOR
+        private readonly Stream stream;
+        private readonly byte[] buffer;
+        public long Position
+        {
+            get => stream.Position;
+            set => stream.Position = value;
+        }
+#else
+        public long Position { get; set; }
+#endif
+
+        public StreamBinaryReader(string filePath, long bufferSize = 65536)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                throw new ArgumentException("The filepath can neither be null nor empty", nameof(filePath));
+
+#if UNITY_EDITOR
+            stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            buffer = new byte[bufferSize];
+#else
+            Position = 0;
+#endif
+        }
+
+        public void Dispose()
+        {
+#if UNITY_EDITOR
+            stream.Dispose();
+#endif
+        }
+
+        public void ReadBytes(void* data, int bytes)
+        {
+#if UNITY_EDITOR
+            int remaining = bytes;
+            int bufferSize = buffer.Length;
+
+            fixed (byte* fixedBuffer = buffer)
+            {
+                while (remaining != 0)
+                {
+                    int read = stream.Read(buffer, 0, Math.Min(remaining, bufferSize));
+                    remaining -= read;
+                    UnsafeUtility.MemCpy(data, fixedBuffer, read);
+                    data = (byte*)data + read;
+                }
+            }
+#else
+            var readCmd = new ReadCommand
+            {
+                Size = bytes, Offset = Position, Buffer = data
+            };
+            Assert.IsFalse(string.IsNullOrEmpty(FilePath));
+#if ENABLE_PROFILER
+            // When AsyncReadManagerMetrics are available, mark up the file read for more informative IO metrics.
+            // Metrics can be retrieved by AsyncReadManagerMetrics.GetMetrics
+            var readHandle =
+ AsyncReadManager.Read(FilePath, &readCmd, 1, subsystem: AssetLoadingSubsystem.EntitiesStreamBinaryReader);
+#else
+            var readHandle = AsyncReadManager.Read(FilePath, &readCmd, 1);
+#endif
+            readHandle.JobHandle.Complete();
+
+            if (readHandle.Status != ReadStatus.Complete)
+            {
+                throw new IOException($"Failed to read from {FilePath}!");
+            }
+            Position += bytes;
+#endif
+        }
+    }
+    
+    public struct SaveUtilities
+    {
+ 
+        
+        public static long GetTmpIdForSaving(Entity entity)
+        {
+            // Index 占低位（0~31），Version 占高位（32~63）
+            return ((long)entity.Version << 32) | (uint)entity.Index;
+        }
+
+        public static string GetCitySavePath(int cityId)
+        {
+            string folder = Path.Combine(Application.persistentDataPath, "SaveData");
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            return Path.Combine(folder, $"CityData{cityId}.sav");
+        }
+
+    }
+    
+    
+
+    public struct IdData : IComponentData
+    {
+        public int Value;
+    }
+    
+}

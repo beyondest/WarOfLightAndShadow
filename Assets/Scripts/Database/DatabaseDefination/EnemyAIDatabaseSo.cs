@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.EnemyAI;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Units;
-using SparFlame.Utils;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using UnityEditor;
 using UnityEngine;
+using Range = SparFlame.Core.Structs.Range;
 
 namespace SparFlame.Database
 {
@@ -227,7 +226,34 @@ namespace SparFlame.Database
         VerticalGroup("Prob")]
         public float probability;
         [VerticalGroup("AmountRange"),HideLabel, TableColumnWidth(120,false),Tooltip("This prefab spawn count range each time when random picks it")]
-        public CustomDs.Range amountRange;
+        public Range amountRange;
+    }
+    
+    [Serializable]
+    public struct TeamSpecialDataInspector
+    {
+        [HideLabel, TableColumnWidth(150,false),VerticalGroup("Team")]
+        public AITeamType teamType;
+        
+        [Tooltip("To avoid units split in many teams, and population exceed, so that all enemy units remain idle,\n " +
+                 " you have to manage the balance between team max count, team composition, dwelling counts in enemy buildings pack"),
+         VerticalGroup("Team"),HideLabel, LabelText("TeamMaxCount")]
+        public int teamsMaxCount;
+        [Sirenix.OdinInspector.ReadOnly,Tooltip("Auto calculated by code")
+         , VerticalGroup("Team"), HideLabel,LabelText("UnitMaxCount")]
+        public int unitMaxCount;
+        
+        [HideLabel,TableColumnWidth(150,false),Tooltip("SpecialUnitType"),VerticalGroup("SpecialUnit")]
+        public UnitType specialUnitType;
+        [Tooltip("Special Unit Sub type index filter : -1 means no filter on subType")
+         ,HideLabel,LabelText("SUSubIdx"),
+         VerticalGroup("SpecialUnit")]
+        public int specialUnitSubIndex;
+        [Tooltip("SpecialUnitMinCount"), HideLabel, LabelText("SUMin"),
+         VerticalGroup("SpecialUnit")]
+        public int specialUnitMinCount;
+        [HideLabel, VerticalGroup("Team composition"),TableList,TableColumnWidth(220, false)]
+        public List<MemberCountEntry> maxMemberCountEntries;
     }
 
 

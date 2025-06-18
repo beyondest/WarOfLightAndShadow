@@ -1,11 +1,6 @@
 ﻿using System;
-using SparFlame.GamePlaySystem.EnemyAI;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Movement;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
-using SparFlame.GamePlaySystem.UnitSelection;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
@@ -20,10 +15,8 @@ namespace SparFlame.Database
         {
             public override void Bake(GeneralUnitAttributesAuthoring authoring)
             {
-                if (authoring.globalIdx == 0)
-                {
-                    return;
-                }
+                if (authoring.globalIdx == 0)return;
+                if(DatabaseManager.UnitDatabaseSo == null)return;
                 
                 var item = DatabaseManager.UnitDatabaseSo.GetItemById(authoring.globalIdx);
                 var unixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

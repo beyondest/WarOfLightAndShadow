@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.GamePlaySystem.EnemyAI;
-using SparFlame.GamePlaySystem.General;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -56,7 +57,7 @@ namespace SparFlame.Database
                             {
                                 WavePoint = item.wavePoint,
                                 UnitType = unitTypeSpawnData.type,
-                                ProbabilityPrefab = new ProbabilityPrefabEntry
+                                ProbabilityPrefab = new PrefabEntryUtils.ProbabilityPrefabEntry
                                 {
                                     Prefab = GetEntity(entry.prefab, TransformUsageFlags.Dynamic),
                                     Probability = entry.probability,
@@ -132,7 +133,7 @@ namespace SparFlame.Database
                         buffer6.Add(new EnemyBuildingPackData
                         {
                             WavePoint = item.wavePoint,
-                            ProbabilityPrefab = new ProbabilityPrefabEntry
+                            ProbabilityPrefab = new PrefabEntryUtils.ProbabilityPrefabEntry
                             {
                                 Prefab = GetEntity(entry.prefab, TransformUsageFlags.Dynamic),
                                 Probability = entry.probability,

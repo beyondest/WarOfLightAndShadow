@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
-using SparFlame.Database.Database.DatabaseDefination;
-using SparFlame.Database.Resources.Scripts.Database.DatabaseDefination;
-using SparFlame.GamePlaySystem.Building;
 using UnityEngine;
 using UnityEditor;
 
@@ -74,8 +71,16 @@ namespace SparFlame.Database
             throw new ArgumentException("This method only works for BuildingDataItem, UnitDataItem, and ResourceDataItem.");
         }
 
-    
-        
+        //
+        // public static TItem GetItemByID<TDatabase, TItem>(int id) 
+        // {
+        //     if (typeof(TDatabase) == typeof(CityDatabaseSo))
+        //     {
+        //         var idStart = _cityDatabaseSo.idStart;
+        //         var item = _cityDatabaseSo.items[idStart + id];
+        //         return item;
+        //     }
+        // }
 
 
         private static TDatabase LoadAndMergeDatabase<TDatabase, TItem>(string itemFieldName)

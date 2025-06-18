@@ -2,7 +2,7 @@
 // using Unity.Entities;
 // using UnityEngine;
 //
-// namespace SparFlame.GamePlaySystem.CustomParticleSystem.LightLine
+// namespace SparFlame.GamePlaySystem.Particle.LightLine
 // {
 //     public class LightLineSystemAuthoring : MonoBehaviour
 //     {
