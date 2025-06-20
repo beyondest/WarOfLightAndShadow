@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace SparFlame.UI.General
 {
-    public class UIButtonHoverScaler : MonoBehaviour
+    public class GlobalUIScaler : MonoBehaviour
     {
         public float scaleMultiplier = 1.1f;
         public float scaleDuration = 0.2f;

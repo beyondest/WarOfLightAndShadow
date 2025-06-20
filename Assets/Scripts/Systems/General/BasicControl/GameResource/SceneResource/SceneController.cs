@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
@@ -9,24 +10,21 @@ using Unity.Scenes;
 
 namespace SparFlame.Systems.General.BasicControl
 {
-    public class SceneController : MonoBehaviour,IResourceManager
+    public class SceneController : MonoBehaviour, IResourceManager
     {
-
-
         [SerializeField] private SceneGroup initSceneGroup;
         [SerializeField] private SceneGroup mainWorldSceneGroup;
-       
-      
+        [SerializeField] private SceneGroup generalSubWorldSceneGroup;
+        
+        [SerializeField] private float checkInterval = 0.1f;
         // Interface
         public static SceneController Instance;
         public Action EcsStartLoadScene;
-        
-        
+        public Action<ResourceLoadingUtils.LoadingProgress> OnSceneSwitchGameplay;
+
         public bool IsInitialized => _normalSceneLoaded && _subsceneLoaded;
         public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) / 2f;
-        
-        
-        
+
         public void SetSubsceneLoadingProgress(float progress)
         {
             _subsceneLoadProgress = progress;
@@ -50,18 +48,21 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void EnterCityGameplay(int cityId)
         {
+            OnSceneSwitchGameplay?.Invoke(_totalSceneLoadingProgress);
             LoadSceneGroup(SceneGroupLoadType.City, cityId);
             UnloadSceneGroup(SceneGroupLoadType.MainWorld);
         }
 
         public void EnterBattleField(BattleFieldType type)
         {
-            LoadSceneGroup( SceneGroupLoadType.BattleField, fieldType: type);
+            OnSceneSwitchGameplay?.Invoke(_totalSceneLoadingProgress);
+            LoadSceneGroup(SceneGroupLoadType.BattleField, fieldType: type);
             UnloadSceneGroup(SceneGroupLoadType.MainWorld);
         }
 
         public void ReturnToMainGameplayFromSubGameplay()
         {
+            OnSceneSwitchGameplay?.Invoke(_totalSceneLoadingProgress);
             LoadSceneGroup(SceneGroupLoadType.MainWorld);
             // Battlefield is also ok
             UnloadSceneGroup(SceneGroupLoadType.City);
@@ -73,12 +74,15 @@ namespace SparFlame.Systems.General.BasicControl
         private bool _subsceneLoaded;
         private float _subsceneLoadProgress;
         private readonly ResourceLoadingUtils.LoadingProgress _loading = new();
+        private readonly ResourceLoadingUtils.LoadingProgress _totalSceneLoadingProgress = new();
 
         // Internal data
         private SceneGroup _currentLoadingSubGameplaySceneGroup;
         private bool _ifSubGameplaySceneLoaded;
         private readonly NormalSceneLoader _normalSceneLoader = new();
-
+        private Action<SceneGroup> _onNormalSceneLoaded;
+        
+        
         private void Awake()
         {
             if (!Instance)
@@ -86,6 +90,11 @@ namespace SparFlame.Systems.General.BasicControl
             else
                 Destroy(this);
             _loading.ProgressChanged += (f => _normalSceneLoadProgress = f);
+            _onNormalSceneLoaded+= _ =>
+            {
+                _normalSceneLoaded = true;
+                _normalSceneLoadProgress = 1f;
+            };
         }
 
         private void Start()
@@ -93,14 +102,24 @@ namespace SparFlame.Systems.General.BasicControl
             GeneralResourceManager.Instance.Register(this);
         }
 
-        private void LoadSceneGroup(SceneGroupLoadType sceneGroupLoadType, int cityId = -1, BattleFieldType fieldType = BattleFieldType.Forest)
+        private IEnumerator CheckTotalLoadingProgress()
+        {
+            while (!IsInitialized)
+            {
+                _totalSceneLoadingProgress.Report(InitProgress);
+                yield return new WaitForSeconds(checkInterval);
+            }
+        }
+
+        private void LoadSceneGroup(SceneGroupLoadType sceneGroupLoadType, int cityId = -1,
+            BattleFieldType fieldType = BattleFieldType.Forest)
         {
             // Reset Loading Progress
             _subsceneLoaded = false;
             _normalSceneLoaded = false;
             _normalSceneLoadProgress = 0f;
             _subsceneLoadProgress = 0f;
-            
+
             SceneGroup sceneGroup;
             switch (sceneGroupLoadType)
             {
@@ -116,21 +135,25 @@ namespace SparFlame.Systems.General.BasicControl
                 // This happens when player enter city gameplay
                 case SceneGroupLoadType.City:
                     _ifSubGameplaySceneLoaded = true;
+                    sceneGroup = new SceneGroup();
                     var idStart = DatabaseManager.CityDatabaseSo.idStart;
-                    sceneGroup = DatabaseManager.CityDatabaseSo.items[idStart + cityId].sceneGroup;
+                    sceneGroup.AddSceneGroup(DatabaseManager.CityDatabaseSo.items[idStart + cityId].sceneGroup);
+                    sceneGroup.AddSceneGroup(generalSubWorldSceneGroup);
                     _currentLoadingSubGameplaySceneGroup = sceneGroup;
                     break;
                 // This happens when player enter wild gameplay
                 case SceneGroupLoadType.BattleField:
                     _ifSubGameplaySceneLoaded = true;
                     sceneGroup = new SceneGroup();
+                    sceneGroup.AddSceneGroup(generalSubWorldSceneGroup);
                     _currentLoadingSubGameplaySceneGroup = sceneGroup;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(sceneGroupLoadType), sceneGroupLoadType, null);
             }
-            
-            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading));
+
+            StartCoroutine(CheckTotalLoadingProgress());
+            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading, onSceneGroupLoaded:_onNormalSceneLoaded));
             EcsStartLoadScene?.Invoke();
 
             foreach (var subsceneData in sceneGroup.subscenes)
@@ -139,7 +162,7 @@ namespace SparFlame.Systems.General.BasicControl
                     subsceneData.sceneRef.SceneGUID);
             }
         }
-        
+
         private void UnloadSceneGroup(SceneGroupLoadType sceneGroupLoadType)
         {
             SceneGroup sceneGroup;
@@ -154,6 +177,7 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         sceneGroup.AddSceneGroup(_currentLoadingSubGameplaySceneGroup);
                     }
+
                     break;
                 // This happens when player enter sub gameplay
                 case SceneGroupLoadType.MainWorld:
@@ -168,15 +192,15 @@ namespace SparFlame.Systems.General.BasicControl
                 default:
                     throw new ArgumentOutOfRangeException(nameof(sceneGroupLoadType), sceneGroupLoadType, null);
             }
+
             StartCoroutine(_normalSceneLoader.UnloadSceneGroupAsync(sceneGroup));
             foreach (var subsceneData in sceneGroup.subscenes)
             {
                 SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,
                     subsceneData.sceneRef.SceneGUID);
             }
-
-
         }
+
         private enum SceneGroupLoadType
         {
             Init,
@@ -184,7 +208,5 @@ namespace SparFlame.Systems.General.BasicControl
             City,
             BattleField,
         }
-       
     }
-  
 }

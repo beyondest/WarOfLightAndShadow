@@ -12,7 +12,8 @@
     "Unity.Physics.Custom",
     "Unity.AI.Navigation",
     "SparFlame.Core",
-    "SparFlame.Components"
+    "SparFlame.Components",
+    "SparFlame.Systems.General.BasicControl"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

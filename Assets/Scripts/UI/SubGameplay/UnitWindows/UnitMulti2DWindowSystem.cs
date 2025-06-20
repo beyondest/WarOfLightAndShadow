@@ -6,6 +6,14 @@ using Unity.Entities;
 
 namespace SparFlame.UI.SubGameplay
 {
+    public struct UnitRealTimeInfo
+    {
+        public UnitType UnitType;
+        public float HpRatio;
+        public Entity Entity;
+        public Tier Tier;
+        public int Level;
+    }
     public partial class UnitMulti2DWindowSystem : SystemBase
     {
         private NativeList<UnitRealTimeInfo> _unitInfos;
@@ -88,12 +96,5 @@ namespace SparFlame.UI.SubGameplay
         }
     }
 
-    public struct UnitRealTimeInfo
-    {
-        public UnitType UnitType;
-        public float HpRatio;
-        public Entity Entity;
-        public Tier Tier;
-        public int Level;
-    }
+
 }

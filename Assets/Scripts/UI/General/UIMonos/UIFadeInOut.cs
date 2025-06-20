@@ -12,7 +12,7 @@ namespace SparFlame.UI.General
         public bool useCanvasGroup;
         public bool fadeAllChildren;
         public bool fadeSelf = true;
-
+        public bool ifStartShow;
         private CanvasGroup _canvasGroup;
         private Coroutine _currentFade;
 
@@ -57,6 +57,23 @@ namespace SparFlame.UI.General
 
                 foreach (var text in _texts)
                     _textStartAlpha.Add(text.color.a);
+            }
+
+            if (!ifStartShow)
+            {
+                foreach (var image in _images)
+                {
+                    var color = image.color;
+                    color.a = 0;
+                    image.color = color;
+                }
+
+                foreach (var text in _texts)
+                {
+                    var color = text.color;
+                    color.a = 0;
+                    text.color = color;
+                }
             }
         }
 

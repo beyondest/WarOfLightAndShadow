@@ -57,10 +57,10 @@ namespace SparFlame.Systems.General.Input
         {
             _customInputActions.CameraNormalMode.Enable();
             _customInputActions.ArmyGroupControl.Enable();
-            
+            _customInputActions.InfoWindow.Enable();
+
             _customInputActions.UnitControl.Disable();
             _customInputActions.ModeSwitch.Disable();
-            _customInputActions.InfoWindow.Disable();
             _customInputActions.Conjure.Disable();
         }
 

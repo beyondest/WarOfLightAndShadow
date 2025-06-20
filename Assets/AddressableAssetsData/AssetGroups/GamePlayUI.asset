@@ -14,12 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: GamePlayUI
   m_GUID: 1a0891b1fa76ef94bad09a964e90d557
-  m_SerializeEntries:
-  - m_GUID: 0ac1f1ea54e884f48a336f9a00f58c46
-    m_Address: Assets/Resources_moved/Prefabs/UI/GamePlay/UpGradeCostPopup.prefab
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
   m_SchemaSet:

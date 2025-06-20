@@ -4,6 +4,8 @@ using Unity.Entities;
 using System.Collections;
 using SparFlame.Components.General;
 using Unity.Collections;
+using UnityEngine.AI;
+using UnityEngine.Experimental.AI;
 
 namespace SparFlame.Systems.SubGameplay.Movement
 {

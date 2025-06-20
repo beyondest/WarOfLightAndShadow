@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.SubGameplay;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Entities.Serialization;
@@ -8,18 +9,22 @@ namespace SparFlame.Systems.General.BasicControl
 {
     public partial class SaveSystemPlus : SystemBase
     {
+        public struct SaveTmpTag : IComponentData
+        {
+            public bool Value;
+        }
         private BufferLookup<GarrisonEntity> _garrisonEntitiesLookup;
         private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<PhysicsMass> _physicsMassLookup;
 
-        private bool _initialized ;
+        private bool _initialized;
 
         protected override void OnCreate()
         {
             RequireForUpdate<SaveConfig>();
             RequireForUpdate<SaveData>();
-
+            RequireForUpdate<PlayerSaveSlot>();
             _garrisonEntitiesLookup = GetBufferLookup<GarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
             _inGarrisonLookup = GetComponentLookup<InGarrison>(true);
@@ -30,7 +35,7 @@ namespace SparFlame.Systems.General.BasicControl
         {
             if (!_initialized)
             {
-                GameController.Instance.EcsSaveSityData += SaveCity;
+                GameController.Instance.OnEcsSaveCityData += SaveCity;
             }
         }
 
@@ -44,27 +49,29 @@ namespace SparFlame.Systems.General.BasicControl
             _garrisonTypeDataLookup.Update(this);
             _inGarrisonLookup.Update(this);
             _physicsMassLookup.Update(this);
-            var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            var ecbP = ecb.AsParallelWriter();
-            var saveJob = new SaveSubGameplayJob
-            {
-                ECB = ecbP,
-                GarrisonEntitiesLookup = _garrisonEntitiesLookup,
-                GarrisonTypeDataLookup = _garrisonTypeDataLookup,
-                InGarrisonLookup = _inGarrisonLookup,
-                PhysicsMassLookup = _physicsMassLookup,
-            }.ScheduleParallel(Dependency);
-            saveJob.Complete();
+            // var ecb = new EntityCommandBuffer(Allocator.TempJob);
+            // var ecbP = ecb.AsParallelWriter();
+            // var saveJob = new SaveSubGameplayJob
+            // {
+            //     ECB = ecbP,
+            //     GarrisonEntitiesLookup = _garrisonEntitiesLookup,
+            //     GarrisonTypeDataLookup = _garrisonTypeDataLookup,
+            //     InGarrisonLookup = _inGarrisonLookup,
+            //     PhysicsMassLookup = _physicsMassLookup,
+            // }.ScheduleParallel(Dependency);
+            // saveJob.Complete();
             using (var serializeWorld = new World("Serialization World"))
             {
                 EntityManager seEm = serializeWorld.EntityManager;
-                ecb.Playback(seEm);
-                ecb.Dispose();
+                // ecb.Playback(seEm);
+                // ecb.Dispose();
+                seEm.CreateSingleton(new SaveTmpTag());
                 seEm.RemoveComponent<SceneTag>(seEm.UniversalQuery);
                 seEm.RemoveComponent<SceneSection>(seEm.UniversalQuery);
                 // Save
                 using (var writer =
-                       new StreamBinaryWriter(SaveUtilities.GetCitySavePath(cityId)))
+                       new StreamBinaryWriter(SaveUtilities.GetCitySavePath(cityId,
+                           SystemAPI.GetSingleton<PlayerSaveSlot>().Value)))
                 {
                     SerializeUtility.SerializeWorld(seEm, writer);
                 }

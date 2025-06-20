@@ -31,7 +31,7 @@ namespace SparFlame.Systems.General.Camera
                     IsDragging = false,
                     ZState = CameraZoomState.Nothing,
                 });
-                AddComponent(entity,new CameraViewExtend
+                AddComponent(entity,new CameraViewExtendConfig
                 {
                     Value = authoring.cameraViewExtend
                 });

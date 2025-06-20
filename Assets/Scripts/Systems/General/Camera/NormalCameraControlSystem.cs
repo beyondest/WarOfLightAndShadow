@@ -17,6 +17,10 @@ namespace SparFlame.Systems.General.Camera
 
         private Transform _cameraTransform;
         private Transform _rigTransform;
+        private Vector3 _preMainGameplayCameraLocalPosition;
+        private Quaternion _preMainGameplayCameraLocalRotation;
+        private Vector3 _preMainGameplayRigPosition;
+        private Quaternion _preMainGameplayRigRotation;
         private float3 _targetRigPosDelta;
         private float _zoomHeight;
         private float3 _horizontalVelocity;
@@ -31,6 +35,7 @@ namespace SparFlame.Systems.General.Camera
         // Cache
         private NormalCameraControlConfig _config;
         private InputCameraNormalData _inputData;
+        private GameStatus _preGameStatus ;
 
         protected override void OnCreate()
         {
@@ -49,23 +54,38 @@ namespace SparFlame.Systems.General.Camera
             {
                 _config = SystemAPI.GetComponent<NormalCameraControlConfig>(
                     SystemAPI.GetSingletonEntity<MainGameCameraTag>());
-
+                _preGameStatus = GameStatus.MainGaming;
                 // _camera = CameraController.Instance.mainGameCamera;
                 _camera = UnityEngine.Camera.main;
                 _rigTransform = _camera!.transform.parent;
                 _cameraTransform = _camera.transform;
                 _zoomHeight = _cameraTransform.localPosition.y;
-                var startPos = SystemAPI.GetSingleton<CameraStartPos>();
+                var startPos = SystemAPI.GetSingleton<CameraStartPosData>();
                 _rigTransform.position = SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
-                    ? startPos.Light
-                    : startPos.Dark;
+                    ? startPos.LightInitStartPos
+                    : startPos.DarkInitStartPos;
                 return;
             }
 
             if (gameStatus != GameStatus.SubGaming && gameStatus != GameStatus.MainGaming)
                 return;
-            _camera = UnityEngine.Camera.main;
-
+            GetSetCamera();
+            
+            if (_preGameStatus != gameStatus)
+            {
+                InitCameraPosAfterGameplaySwitch(gameStatus);
+            }
+            else
+            {
+                if (gameStatus == GameStatus.MainGaming)
+                {
+                    _preMainGameplayCameraLocalPosition = _cameraTransform.localPosition;
+                    _preMainGameplayCameraLocalRotation = _cameraTransform.localRotation;
+                    _preMainGameplayRigPosition = _rigTransform.position;
+                    _preMainGameplayRigRotation = _rigTransform.rotation;
+                }
+            }
+            _preGameStatus = gameStatus;
             if (gameStatus == GameStatus.MainGaming)
             {
                 _config = SystemAPI.GetComponent<NormalCameraControlConfig>(
@@ -92,7 +112,7 @@ namespace SparFlame.Systems.General.Camera
 
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             ref var cameraMovementState = ref SystemAPI.GetSingletonRW<CameraMovementState>().ValueRW;
-            GetMiniMapSquarePos();
+            // GetMiniMapSquarePos();
             GetKeyboardMovement();
             RotateCamera();
             ZoomCamera(ref cameraMovementState);
@@ -108,6 +128,30 @@ namespace SparFlame.Systems.General.Camera
             SystemAPI.SetSingleton(cameraData);
         }
 
+        private void GetSetCamera()
+        {
+            _camera = UnityEngine.Camera.main;
+            _rigTransform = _camera!.transform.parent;
+            _cameraTransform = _camera.transform;
+        }
+
+        private void InitCameraPosAfterGameplaySwitch(GameStatus switchTo)
+        {
+            var cameraStartPosData = SystemAPI.GetSingleton<CameraStartPosData>();
+            if (switchTo == GameStatus.MainGaming)
+            {
+                _rigTransform.position = _preMainGameplayRigPosition;
+                _rigTransform.rotation = _preMainGameplayRigRotation;
+                _cameraTransform.localPosition = _preMainGameplayCameraLocalPosition;
+                _cameraTransform.localRotation = _preMainGameplayCameraLocalRotation;
+            }
+            else if (switchTo == GameStatus.SubGaming)
+            {
+                _rigTransform.position = cameraStartPosData.InitSubGameplayRigPosition;
+                _cameraTransform.localPosition = cameraStartPosData.InitSubGameplayCameraLocalPosition;
+            }
+            _zoomHeight = _cameraTransform.localPosition.y;
+        }
         private void LookAt()
         {
             /*if (_preFlyMode)

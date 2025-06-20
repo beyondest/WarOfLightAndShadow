@@ -6,28 +6,15 @@ using UnityEngine;
 
 namespace SparFlame.Systems.General.Audio
 {
+    [RequireComponent(typeof(AudioListener))]
     public class AudioManager : MonoBehaviour
     {
-        public static AudioManager Instance;
-        [TableList]
-        public List<AudioClipConfig> audioClips;
         
-        private readonly Dictionary<AudioName, AudioClipConfig> audioClipDict = new();
-        private void Awake()
-        {
-            if (!Instance) Instance = this;
-            else Destroy(gameObject);
-        }
-        private void Start()
-        {
-            foreach (var audioClipConfig in audioClips)
-            {
-                if (!audioClipDict.TryAdd(audioClipConfig.name, audioClipConfig))
-                {
-                    Debug.LogError("AudioManager: Duplicate audio clip name found: " + audioClipConfig.name);
-                }
-            }
-        }
+        [TableList, SerializeField]
+        private List<AudioClipConfig> audioClips;
+        
+        // Interface
+        public static AudioManager Instance;
 
         public void PlayAtPosition(AudioName audioName, Vector3 position)
         {
@@ -38,6 +25,44 @@ namespace SparFlame.Systems.General.Audio
             }
             AudioSource.PlayClipAtPoint(config.clip, position, config.volume);
         }
+
+        public void EnableGlobalAudioListener(bool setEnabled)
+        {
+            if(!_listener)return;
+            _listener.enabled = setEnabled;
+        }
+        
+        // Internal Data
+        private readonly Dictionary<AudioName, AudioClipConfig> audioClipDict = new();
+        private AudioListener _listener;
+        #region EventFunctinos
+
+        
+
+        
+        private void Awake()
+        {
+            if (!Instance) Instance = this;
+            else Destroy(gameObject);
+            _listener = GetComponent<AudioListener>();
+            _listener.enabled = true;
+        }
+        private void Start()
+        {
+            foreach (var audioClipConfig in audioClips)
+            {
+                if (!audioClipDict.TryAdd(audioClipConfig.name, audioClipConfig))
+                {
+                    Debug.LogError("AudioManager: Duplicate audio clip name found: " + audioClipConfig.name);
+                }
+            }
+            
+        }
+
+ 
+        #endregion
+
+        
     }
     [Serializable]
     public class AudioClipConfig

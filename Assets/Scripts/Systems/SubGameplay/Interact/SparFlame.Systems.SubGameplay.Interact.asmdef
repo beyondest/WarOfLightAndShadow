@@ -14,7 +14,8 @@
     "SparFlame.Core",
     "SparFlame.Components",
     "SparFlame.Systems.General.Audio",
-    "SparFlame.Systems.SubGameplay.Ooc"
+    "SparFlame.Systems.SubGameplay.Ooc",
+    "SparFlame.Systems.SubGameplay.Garrison"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

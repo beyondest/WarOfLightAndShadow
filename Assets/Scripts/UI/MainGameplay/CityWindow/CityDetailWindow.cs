@@ -39,6 +39,7 @@ namespace SparFlame.UI.MainGameplay
         public void Hide()
         {
             panel.SetActive(false);
+            _targetEntity = Entity.Null;
         }
 
         public bool IsOpened()
@@ -56,12 +57,12 @@ namespace SparFlame.UI.MainGameplay
 
         public bool HasTarget()
         {
-            throw new System.NotImplementedException();
+            return _targetEntity!= Entity.Null;
         }
 
         public void ClearCloseUpTarget()
         {
-            throw new System.NotImplementedException();
+            _targetEntity = Entity.Null;
         }
 
         #endregion
@@ -71,8 +72,7 @@ namespace SparFlame.UI.MainGameplay
         public void OnClickEnterCity()
         {
             var cityAttr = _em.GetComponentData<CityAttr>(_targetEntity);
-            SceneController.Instance.EnterCityGameplay(cityAttr.ID);
-            
+            GameController.Instance.EnterPlayerCity(cityAttr.ID);
         }
         
 
@@ -104,6 +104,7 @@ namespace SparFlame.UI.MainGameplay
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
+            Hide();
         }
 
         #endregion

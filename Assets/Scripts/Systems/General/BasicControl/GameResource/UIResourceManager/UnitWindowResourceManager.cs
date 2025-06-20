@@ -20,7 +20,7 @@ namespace SparFlame.Systems.General.BasicControl
         // Interface
         public static UnitWindowResourceManager Instance;
         public readonly Dictionary<UnitType, Sprite> UnitGeneralTypeSprites = new();
-
+        
 
         public override void LoadResources()
         {

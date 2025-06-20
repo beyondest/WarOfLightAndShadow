@@ -14,7 +14,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
     [UpdateAfter(typeof(IdleStateMachine))]
     [UpdateAfter(typeof(InteractStateMachine))]
     [UpdateAfter(typeof(MovingStateMachine))]
-    // [UpdateBefore(typeof(UpgradeSystem))]
+    [UpdateBefore(typeof(StatSystem))]
     public partial struct GarrisonStateMachine : ISystem
     {
         private ComponentLookup<GarrisonAttr> _garrisonAttrLookup;

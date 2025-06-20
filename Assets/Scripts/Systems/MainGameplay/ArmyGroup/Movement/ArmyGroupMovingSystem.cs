@@ -16,6 +16,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<ArmyGroupMovingSystemConfig>();
@@ -37,6 +38,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
                 Debug = debug,
+                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
             }.ScheduleParallel();
         }
 

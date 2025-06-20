@@ -47,6 +47,7 @@ namespace SparFlame.UI.SubGameplay
             GetTargetEntityByIndex?.Invoke(trueIndex);
             if (_currentSelectCounts <= trueIndex) return;
             InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
+            UnitDetailWindow.Instance.TrySwitchTarget(_targetEntity);
             StartCoroutine(ClickRoutine());
         }
         
@@ -152,7 +153,7 @@ namespace SparFlame.UI.SubGameplay
         private IEnumerator ClickRoutine()
         {
             _ifClickRoutineRunning = true;
-            yield return new WaitForSeconds(UIGeneralController.Instance.doubleClickThreshold);
+            yield return new WaitForSeconds(GlobalUIDoubleClicker.Instance.doubleClickThreshold);
             if (_clickCount == 1)
             {
                 UnitDetailWindow.Instance.Show();

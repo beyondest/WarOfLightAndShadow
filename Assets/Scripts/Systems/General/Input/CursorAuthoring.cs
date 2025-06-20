@@ -17,6 +17,10 @@ namespace SparFlame.Systems.SubGameplay.Command
                     LeftCursorType = SubGameplayCursorType.UI,
                     RightCursorType = SubGameplayCursorType.None
                 });
+                AddComponent(entity, new MainGameplayCursorData
+                {
+                    Type = MainGameplayCursorType.None
+                });
                 AddComponent<CircleCursorData>(entity);
             }
         }

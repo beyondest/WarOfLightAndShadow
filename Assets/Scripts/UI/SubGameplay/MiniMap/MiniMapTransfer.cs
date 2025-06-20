@@ -19,6 +19,7 @@ namespace SparFlame.UI.SubGameplay
 
         protected override void OnCreate()
         {
+            RequireForUpdate<MapInfo>();
             RequireForUpdate<SubGamingTag>();
             RequireForUpdate<MiniMapControlData>();
         }

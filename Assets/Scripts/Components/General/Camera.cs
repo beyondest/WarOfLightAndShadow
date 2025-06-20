@@ -3,8 +3,6 @@ using Unity.Mathematics;
 
 namespace SparFlame.Components.MainGameplay
 {
-   
-   
     public struct CameraData : IComponentData
     {
         public float4x4 ViewMatrix;
@@ -36,7 +34,7 @@ namespace SparFlame.Components.MainGameplay
         Nothing
     }
 
-    public struct CameraViewExtend : IComponentData
+    public struct CameraViewExtendConfig : IComponentData
     {
         public float2 Value;
     }
@@ -72,10 +70,12 @@ namespace SparFlame.Components.MainGameplay
     
     
     
-    public struct CameraStartPos : IComponentData
+    public struct CameraStartPosData : IComponentData
     {
-        public float3 Light;
-        public float3 Dark;
+        public float3 LightInitStartPos;
+        public float3 DarkInitStartPos;
+        public float3 InitSubGameplayCameraLocalPosition;
+        public float3 InitSubGameplayRigPosition;
     }
 
     public struct MiniMapControlData : IComponentData

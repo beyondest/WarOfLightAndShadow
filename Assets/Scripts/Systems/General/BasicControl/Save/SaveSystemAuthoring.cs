@@ -6,7 +6,6 @@ namespace SparFlame.Systems.General.BasicControl
 {
     public class SaveSystemAuthoring : MonoBehaviour
     {
-        public string savePath;
         private class SaveSystemAuthoringBaker : Baker<SaveSystemAuthoring>
         {
             public override void Bake(SaveSystemAuthoring authoring)
@@ -14,7 +13,6 @@ namespace SparFlame.Systems.General.BasicControl
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity,new SaveConfig
                 {
-                    SavePath = authoring.savePath,
                 });
                 AddComponent(entity, new SaveData
                 {
@@ -33,7 +31,6 @@ namespace SparFlame.Systems.General.BasicControl
 
     public struct SaveConfig : IComponentData
     {
-        public FixedString32Bytes SavePath;
     }
     public enum SaveLoadType
     {

@@ -28,6 +28,8 @@ namespace SparFlame.Systems.General.BasicControl
         [SerializeField] private string generalFactionCitySpriteSuffix;
         [SerializeField] private string subFactionCitySpriteSuffix;
 
+        
+        // Interfaces
         public static BasicUIResourceManager Instance;
 
         // public readonly Dictionary<BuffType, Sprite> BuffSprites = new();
@@ -48,6 +50,7 @@ namespace SparFlame.Systems.General.BasicControl
         public readonly Dictionary<FactionTag, Sprite> GeneralFactionIconSprites = new();
         public readonly Dictionary<SubFaction, Sprite> SubFactionIconSprites = new();
         
+        // Internal Data
         private readonly ResourceLoadingUtils.AddressableResourceGroup _group = new();
 
         public bool IsResourceLoaded()

@@ -58,7 +58,7 @@ namespace SparFlame.Systems.SubGameplay.Interact.MagicDamage
                 }
 
                 bonus.SpeedBonus = buff.SpeedNegativeBonus;
-                bonus.MoveSpeedBonus = (1 - buff.MoveSpeedNegativeBonusScale) * movableData.MoveSpeed;
+                bonus.MoveSpeedBonus = buff.MoveSpeedNegativeBonus;
             }
         }
     }

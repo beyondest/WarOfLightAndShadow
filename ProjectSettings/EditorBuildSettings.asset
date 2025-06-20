@@ -9,8 +9,14 @@ EditorBuildSettings:
     path: Assets/Resources/Scenes/NormalScenes/Bootstrapper.unity
     guid: faff5296a4531ce4c8791c369cb86194
   - enabled: 1
-    path: Assets/Scenes/Game.unity
-    guid: 45f2ced9a3b26b04099cff6974a4354e
+    path: Assets/Resources/Scenes/NormalScenes/MainWorld.unity
+    guid: fbc41771134a005489fd612fd5fbac27
+  - enabled: 1
+    path: Assets/Resources/Scenes/Cities/LightCity/LightCity1_1_1.unity
+    guid: 9d3675914bb70c64d809f0a9b3bfa3c8
+  - enabled: 1
+    path: Assets/Resources/Scenes/NormalScenes/SubWorld.unity
+    guid: e7f8348869f1de14b90c24b16d8c8156
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 874e5dc9588b4e745b50f53b6b4cedd1, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 1fb6ec391cb5e7943b6cfbaf6c3bb49c, type: 2}

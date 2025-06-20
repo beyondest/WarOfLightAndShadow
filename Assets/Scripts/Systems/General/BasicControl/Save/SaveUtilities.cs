@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -195,7 +196,7 @@ namespace SparFlame.Systems.General.BasicControl
     
     public struct SaveUtilities
     {
- 
+        private const string CitySaveFolder = "CityData";
         
         public static long GetTmpIdForSaving(Entity entity)
         {
@@ -203,13 +204,14 @@ namespace SparFlame.Systems.General.BasicControl
             return ((long)entity.Version << 32) | (uint)entity.Index;
         }
 
-        public static string GetCitySavePath(int cityId)
+        public static string GetCitySavePath(int cityId, int playerSaveSlot)
         {
-            string folder = Path.Combine(Application.persistentDataPath, "SaveData");
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            return Path.Combine(folder, $"CityData{cityId}.sav");
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var cityRootFolder = Path.Combine(saveRootFolder, CitySaveFolder);
+            if (!Directory.Exists(cityRootFolder))
+                Directory.CreateDirectory(cityRootFolder);
+            var finalPath = Path.Combine(cityRootFolder, $"CityData{cityId}.sav"); 
+            return finalPath;
         }
 
     }

@@ -18,6 +18,8 @@ namespace SparFlame.UI.SubGameplay
 {
     public class UpRightButtonWindow : MonoBehaviour
     {
+        
+        // Config
         [Header("Speed Up Scale Button")] [SerializeField]
         private TMP_Text timeScaleText;
 
@@ -52,12 +54,20 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private List<HintTypeConfig> colorConfigs;
         [SerializeField] private RectTransform topAnchor;
         [SerializeField] private float slideDownTime;
+        
+        [Header("Back To Main World Panel")]
+        [SerializeField] private GameObject backToMainWorldPanel;
+        
         public static UpRightButtonWindow Instance;
+
+        #region ButtonMethods
+
+        
 
         public void OnClickPause()
         {
             MenuOutController.Instance.ShowPauseMenu();
-            GameController.Instance.PauseGame();
+            GameController.Instance.PauseGame(false);
         }
 
         public void OnClickSpeedUp()
@@ -114,6 +124,12 @@ namespace SparFlame.UI.SubGameplay
             _em.DestroyEntity(_enemyCrystalInfo.GetSingletonEntity());
         }
 
+        public void OnClickBackToMainWorld()
+        {
+            GameController.Instance.ReturnToMainWorldFromCity();
+        }
+
+        #endregion
 
         // Internal Data
         private int _currentSpeedUpIndex;
@@ -127,6 +143,7 @@ namespace SparFlame.UI.SubGameplay
         private EntityQuery _playerCrystalInfo;
         private EntityQuery _hintsInfo;
         private EntityQuery _timeData;
+        private EntityQuery _subGameStatusData;
         private RectTransform _hintWindowRect;
         private float _hintOriginalX;
 
@@ -139,12 +156,11 @@ namespace SparFlame.UI.SubGameplay
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
             {
                 Destroy(gameObject);
-                return;
             }
 
             
@@ -160,9 +176,11 @@ namespace SparFlame.UI.SubGameplay
             _hintsInfo = _em.CreateEntityQuery(typeof(HintsInfo));
             _waveDataQuery = _em.CreateEntityQuery(typeof(GameWaveData));
             _timeData = _em.CreateEntityQuery(typeof(GameTimeData));
+            _subGameStatusData = _em.CreateEntityQuery(typeof(SubGameStatusData));
             controlPanel.SetActive(false);
             infoPanel.SetActive(false);
             tutorialPanel.SetActive(false);
+            backToMainWorldPanel.SetActive(false);
             _hintWindowRect = hintsPopupWindow.GetComponent<RectTransform>();
             _hintOriginalX = _hintWindowRect.anchoredPosition.x;
             GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
@@ -194,11 +212,15 @@ namespace SparFlame.UI.SubGameplay
 
         #endregion
 
+        
+        
         private void UpdateDynamicInfo()
         {
+            
             var enemyInfo = _enemyCrystalInfo.GetSingleton<EnemyCrystalInfo>();
             var playerInfo = _playerCrystalInfo.GetSingleton<PlayerCrystalInfo>();
-
+            var subGameStatusData = _subGameStatusData.GetSingleton<SubGameStatusData>();
+            backToMainWorldPanel.SetActive(subGameStatusData.Value == SubGameStatus.PlayerCity);                
 
             // Calculate current wave color type and switch sprite
             for (var i = 0; i < waveColorConfig.Count; i++)

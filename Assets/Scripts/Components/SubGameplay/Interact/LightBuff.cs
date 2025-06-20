@@ -6,7 +6,7 @@ namespace SparFlame.Components.SubGameplay
     public struct LightMagicDamageBuff : IComponentData,IEnableableComponent
     {
         public float SpeedNegativeBonus;
-        public float MoveSpeedNegativeBonusScale;
+        public float MoveSpeedNegativeBonus;
         public float LastTime;
     }
     

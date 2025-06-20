@@ -17,8 +17,8 @@
     "SparFlame.Core",
     "SparFlame.Components",
     "SparFlame.Systems.General.Input",
-    "SparFlame.Database"
-    
+    "SparFlame.Database",
+    "SparFlame.Systems.General.Audio"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

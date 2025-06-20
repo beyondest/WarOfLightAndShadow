@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Systems.General.BasicControl;
 using Unity.AI.Navigation;
 using Unity.Entities;
 using UnityEngine;
@@ -22,6 +23,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
         private float _syncTimeInterval;
         private float _allyAgentRadius;
         private float _enemyAgentRadius;
+        private bool _initialized;
         
         protected override void OnCreate()
         {
@@ -32,14 +34,22 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
         protected override void OnStartRunning()
         {
-            foreach (var config in SystemAPI.Query<VolumeObstacleSystemConfig>())
+            if (!_initialized)
             {
-                _obstacleTypePrefabMap = config.ObstacleTypePrefabMap;
-                _volumeTypePrefabMap = config.VolumeTypePrefabMap;
-                _syncTimeInterval = config.SyncTimeInterval;
-                _allyAgentRadius = config.AllyAgentRadius;
-                _enemyAgentRadius = config.EnemyAgentRadius;
+                foreach (var config in SystemAPI.Query<VolumeObstacleSystemConfig>())
+                {
+                    _obstacleTypePrefabMap = config.ObstacleTypePrefabMap;
+                    _volumeTypePrefabMap = config.VolumeTypePrefabMap;
+                    _syncTimeInterval = config.SyncTimeInterval;
+                    _allyAgentRadius = config.AllyAgentRadius;
+                    _enemyAgentRadius = config.EnemyAgentRadius;
+                }
+
+                GameController.Instance.OnSubGameStart += ClearMappingWhenSwitchScene;
+                GameController.Instance.OnMainGameStart += ClearMappingWhenSwitchScene;
+                _initialized = true;
             }
+          
         }
         
         protected override void OnUpdate()
@@ -257,6 +267,12 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         shouldUpdateEnemyMesh = true;
                 }
             }
+        }
+
+        private void ClearMappingWhenSwitchScene()
+        {
+            _entityMap.Clear();
+            _neutralEntityMap.Clear();
         }
     }
 }

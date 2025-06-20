@@ -9,22 +9,30 @@ namespace SparFlame.UI.General
 {
     public class MenuOutController : MonoBehaviour
     {
+        [Header("Gameplay UI Panel")]
         [SerializeField] private GameObject subGameplayUI;
         [SerializeField] private GameObject mainGameplayUI;
+        
+        [Header("Menus")]
         [SerializeField] private GameObject pauseMenu;
         [SerializeField] private GameObject mainMenu;
         [SerializeField] private GameObject gameOverMenu;
         [SerializeField] private GameObject selectMenu;
+        [SerializeField] private GameObject selectMenuElements;
+        [Header("Loading Screen")]
         [SerializeField] private GameObject loadingLight;
         [SerializeField] private GameObject loadingDark;
         [SerializeField] private Image loadingFillLight;
         [SerializeField] private Image loadingFillDark;
+        
+        [Header("Settings")]
         [SerializeField] private GameObject settings;
 
+        [Header("GameOver Menu")]
         [SerializeField] private Image gameOverImage;
         [SerializeField] private TMP_Text gameOverText;
 
-
+ 
         // Internal Data
         
         private FactionTag _playerFaction;
@@ -50,7 +58,7 @@ namespace SparFlame.UI.General
         public void OnClickResume()
         {
             pauseMenu.SetActive(false);
-            GameController.Instance.ResumeGame();
+            GameController.Instance.ResumeGame(false);
         }
 
         public void OnClickExit()
@@ -71,23 +79,12 @@ namespace SparFlame.UI.General
         {
             mainMenu.SetActive(false);
             selectMenu.SetActive(true);
+            selectMenuElements.SetActive(true);
         }
 
-        public void OnClickLightFaction()
-        {
-            _playerFaction = FactionTag.Ally;
-            selectMenu.SetActive(false);
-            loadingLight.SetActive(true);
-            GameController.Instance.PlayerChooseFaction(FactionTag.Ally);
-        }
+       
 
-        public void OnClickDarkFaction()
-        {
-            _playerFaction = FactionTag.Enemy;
-            selectMenu.SetActive(false);
-            loadingDark.SetActive(true);
-            GameController.Instance.PlayerChooseFaction(FactionTag.Enemy);
-        }
+     
 
         public void OnClickContinue()
         {
@@ -121,34 +118,45 @@ namespace SparFlame.UI.General
 
         private void Start()
         {
-            GameController.Instance.OnPause += () =>
-            {
-                if (!gameOverMenu.activeSelf)
-                {
-                    pauseMenu.SetActive(true);
-                }
-            };
-            GameController.Instance.OnResume += () => pauseMenu.SetActive(false);
+            GameController.Instance.OnPause += PauseGame;
+            GameController.Instance.OnResume += ResumeGame;
             GameController.Instance.OnGameOver += OnGameOver;
             GameController.Instance.OnSubGameStart += SubGameStart;
             GameController.Instance.OnMainGameStart += MainGameStart;
+            GameController.Instance.OnPlayerChooseFaction += PlayerChooseFaction;
             // Init loading screen
             GeneralResourceManager.Instance.OnLoadAllResources += () =>
                 ShowLoadingScreen(GeneralResourceManager.Instance.LoadingProgress);
             
+            SceneController.Instance.OnSceneSwitchGameplay += ShowLoadingScreen;
             // Switch gameplay loading screen
             
             mainMenu.SetActive(true);
             loadingLight.SetActive(false);
             loadingDark.SetActive(false);
             selectMenu.SetActive(false);
+            selectMenuElements.SetActive(false);
             pauseMenu.SetActive(false);
             gameOverMenu.SetActive(false);
             settings.SetActive(false);
+            mainGameplayUI.SetActive(false);
+            subGameplayUI.SetActive(false);
         }
 
         #endregion
 
+
+        private void PauseGame(bool isSwitching)
+        {
+            if(isSwitching)return;  
+            pauseMenu.SetActive(true);
+        }
+
+        private void ResumeGame(bool isSwitching)
+        {
+            if(isSwitching)return;
+            pauseMenu.SetActive(false);
+        }
         private void SubGameStart()
         {
             HideLoadingScreen();
@@ -161,7 +169,7 @@ namespace SparFlame.UI.General
         {
             HideLoadingScreen();
             selectMenu.SetActive(false);
-            
+            selectMenuElements.SetActive(false);
             mainGameplayUI.SetActive(true);
             subGameplayUI.SetActive(false);
         }
@@ -176,6 +184,8 @@ namespace SparFlame.UI.General
     
         private void ShowLoadingScreen(ResourceLoadingUtils.LoadingProgress progress)
         {
+            mainGameplayUI.SetActive(false);
+            subGameplayUI.SetActive(false);
             if (_playerFaction == FactionTag.Ally)
             {
                 loadingLight.SetActive(true);
@@ -201,6 +211,13 @@ namespace SparFlame.UI.General
             loadingDark.SetActive(false);
             _progress.ProgressChanged -= UpdateLoadingScreen;
         }
-        
+        private void PlayerChooseFaction(FactionTag faction)
+        {
+            _playerFaction = faction;
+            selectMenu.SetActive(false);
+            selectMenuElements.SetActive(false);
+            loadingLight.SetActive(faction == FactionTag.Ally);
+            loadingDark.SetActive(faction == FactionTag.Enemy);
+        }
     }
 }

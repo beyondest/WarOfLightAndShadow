@@ -2,7 +2,8 @@
 using System.Collections;
 using System.IO;
 using SparFlame.Components.General;
-using Unity.Entities;
+using SparFlame.Systems.General.Audio;
+using SparFlame.Systems.General.Input;
 using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
@@ -14,8 +15,8 @@ namespace SparFlame.Systems.General.BasicControl
 
         #region Events
 
-        public event Action OnPause;
-        public event Action OnResume;
+        public event Action<bool> OnPause;
+        public event Action<bool> OnResume;
 
         public event Action OnBackToMainMenu;
 
@@ -28,10 +29,11 @@ namespace SparFlame.Systems.General.BasicControl
         public event Action OnSubGameStart;
         public event Action OnMainGameStart;
 
-        public event Action<int> EcsLoadCitySaving;
-        public event Action<int> EcsSaveSityData;
-        public event Action<GameStatusSwitchType> EcsSwitchGameStatus; 
+        public event Action<int> OnEcsLoadCitySaving;
+        public event Action<int> OnEcsSaveCityData;
+        public event Action<GameStatusSwitchType, SubGameStatus> OnEcsSwitchGameStatus;
 
+        public event Action<int> OnEcsChooseSavingSlot; 
         #endregion
 
 
@@ -40,22 +42,24 @@ namespace SparFlame.Systems.General.BasicControl
         public void GameOver(FactionTag winnerFaction)
         {
             OnGameOver?.Invoke(winnerFaction);
-            PauseGame();
+            PauseGame(false);
         }
 
-        public void PauseGame()
+        public void PauseGame(bool isSwitchingGameplay)
         {
-            OnPause?.Invoke();
+            OnPause?.Invoke(isSwitchingGameplay);
         }
 
-        public void ResumeGame()
+        public void ResumeGame(bool isSwitchingGameplay)
         {
-            OnResume?.Invoke();
+            OnResume?.Invoke(isSwitchingGameplay);
         }
 
         public void EndGameToMainMenu()
         {
-            ResumeGame();
+            InputListener.Instance.DisableAllMaps();
+            AudioManager.Instance.EnableGlobalAudioListener(true);
+            ResumeGame(false);
             OnBackToMainMenu?.Invoke();
         }
 
@@ -69,32 +73,44 @@ namespace SparFlame.Systems.General.BasicControl
             OnPlayerChooseFaction?.Invoke(playerFaction);
         }
 
+        public void PlayerChooseSavingSlot(int slot)
+        {
+            _savingSlot = slot;
+            OnEcsChooseSavingSlot?.Invoke(slot);
+        }
         public void SubGameStart()
         {
+            InputListener.Instance.EnableSubGameMaps();
             OnSubGameStart?.Invoke();
         }
 
         public void MainGameStart()
         {
+            InputListener.Instance.EnableMainGameMaps();
             OnMainGameStart?.Invoke();
         }
 
         public void EnterPlayerCity(int cityId)
         {
-            PauseGame();
+            _switchType = GameStatusSwitchType.MainGameToSubGame;
+            _targetSubGameStatus = SubGameStatus.PlayerCity;
+            // AudioManager.Instance.SetAudioListener(true);
+            PauseGame(true);
             _cityId = cityId;
             SceneController.Instance.EnterCityGameplay(cityId);
-            var savePath = SaveUtilities.GetCitySavePath(cityId);
+            var savePath = SaveUtilities.GetCitySavePath(cityId,_savingSlot);
             if (File.Exists(savePath))
             {
-                EcsLoadCitySaving?.Invoke(cityId);
+                OnEcsLoadCitySaving?.Invoke(cityId);
             }
             StartCoroutine(CheckSceneLoading());
         }
 
         public void ReturnToMainWorldFromCity()
         {
-            PauseGame();
+            _switchType = GameStatusSwitchType.SubGameToMainGame;
+            // AudioManager.Instance.SetAudioListener(true);
+            PauseGame(true);
             SceneController.Instance.ReturnToMainGameplayFromSubGameplay();
             SaveCityData();
             _cityId = -1;
@@ -107,16 +123,27 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 throw new ArgumentException("This should never happen, you try to save city data when not in city");
             }
-            EcsSaveSityData?.Invoke(_cityId);
+            OnEcsSaveCityData?.Invoke(_cityId);
         }
 
         #endregion
 
+        #region TestButtonMethods
+
+        public void OnClickSwitchToSubGame()
+        {
+            OnEcsSwitchGameStatus?.Invoke(GameStatusSwitchType.MainGameToSubGame, SubGameStatus.PlayerCity);
+            SubGameStart();
+        }
+        
+
+        #endregion
 
         // Internal Data
         private int _cityId = -1;
         private GameStatusSwitchType _switchType;
-
+        private SubGameStatus _targetSubGameStatus;
+        private int _savingSlot;
         #region EventFunctions
 
         private void Awake()
@@ -148,17 +175,18 @@ namespace SparFlame.Systems.General.BasicControl
             }
             switch (_switchType)
             {
-                case GameStatusSwitchType.SubGameToMainGame:
+                case GameStatusSwitchType.MainGameToSubGame:
                     SubGameStart();
                     break;
-                case GameStatusSwitchType.MainGameToSubGame:
+                case GameStatusSwitchType.SubGameToMainGame:
+                    _targetSubGameStatus = SubGameStatus.None;
                     MainGameStart();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            ResumeGame();
-            EcsSwitchGameStatus?.Invoke(_switchType);
+            ResumeGame(true);
+            OnEcsSwitchGameStatus?.Invoke(_switchType, _targetSubGameStatus);
         }
     }
 }

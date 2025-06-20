@@ -46,13 +46,21 @@ namespace SparFlame.Core.Utils
     public class SceneGroup
     {
         
-        public List<SceneData> scenes;
-        public List<SubsceneData> subscenes;
+        public List<SceneData> scenes = new();
+        public List<SubsceneData> subscenes = new();
 
         public void AddSceneGroup(SceneGroup group)
         {
-            scenes.AddRange(group.scenes);
-            subscenes.AddRange(group.subscenes);
+            if(group == null)return;
+            if (group.scenes is { Count: > 0 })
+            {
+                scenes.AddRange(group.scenes);
+            }
+
+            if (group.subscenes is { Count: > 0 })
+            {
+                subscenes.AddRange(group.subscenes);
+            }
         }
        
         public SceneReference FindSceneRefByType(SceneType sceneType)

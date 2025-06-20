@@ -10,8 +10,23 @@ namespace SparFlame.Components.General
         Pause = 3, // Gaming pause
         MainGaming = 4,
     }
+
+    public enum SubGameStatus
+    {
+        None = 0,
+        PlayerCity = 1,
+        Reconnaissance = 2,
+        Siege = 3,
+        Defend = 4,
+        Encounter = 5
+    }
     public struct GameStatusData : IComponentData
     {
         public GameStatus Value;
+    }
+
+    public struct SubGameStatusData : IComponentData
+    {
+        public SubGameStatus Value;
     }
 }

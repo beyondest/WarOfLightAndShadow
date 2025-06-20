@@ -2,6 +2,7 @@
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Systems.General.Audio;
+using SparFlame.Systems.SubGameplay.Garrison;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -16,7 +17,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
     }
 
     [BurstCompile]
-    [UpdateBefore(typeof(StatSystem))]
+    // [UpdateAfter(typeof(StatSystem))]
+    // [UpdateBefore(typeof(GarrisonSystem))]
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct UpgradeSystem : ISystem
     {
         private NativeHashMap<int, ExpStaticConfig> _expDatabase;
@@ -30,6 +33,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<UnitAttr> _unitAttrLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<DwellingGeneratePopulationTag> _dwellingGeneratePopulationTagLookup;
+        
 
         private ComponentLookup<StatData> _statDataLookup;
         private ComponentLookup<MovableData> _movableDataLookup;
@@ -40,7 +44,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            // state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<UpgradeRequest>();
             state.RequireForUpdate<ExpSystemConfig>();
@@ -93,7 +97,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _generalAttrLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
-            var job = new UpgradeJob
+            var job =new UpgradeJob
             {
                 ExpDatabase = _expDatabase,
                 GeneralAttrLookup = _generalAttrLookup,
@@ -153,7 +157,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 Entity selfEntity)
             {
                 ECB.DestroyEntity(index, selfEntity);
+                // Safety check. If this upgrade entity is dead, do not upgrade
                 if (!GeneralAttrLookup.TryGetComponent(request.FromEntity, out var fromEntityGeneralAttr)) return;
+                if(!StatDataLookup.TryGetComponent(request.FromEntity, out var stat))return;
+                if(stat.curValue <= 0)return;
+                
+                
                 var trans = LocalTransformLookup[request.FromEntity];
                 var expData = ExpDataLookup[request.FromEntity];
                 var expStaticConfig = ExpDatabase[fromEntityGeneralAttr.ID];

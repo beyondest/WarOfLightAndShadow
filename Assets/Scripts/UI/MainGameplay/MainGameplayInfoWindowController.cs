@@ -43,9 +43,14 @@ namespace SparFlame.UI.MainGameplay
         public void UpdateCloseUpTarget(Entity target)
         {
             _closeUpTarget = target;
-            if (CityDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
+            if(ArmyGroupDetailWindow.Instance.IsOpened())
             {
-                if (!CityDetailWindow.Instance.IsOpened()) CityDetailWindow.Instance.Show();
+                if(!ArmyGroupDetailWindow.Instance.TrySwitchTarget(target))ArmyGroupDetailWindow.Instance.Hide();
+            }
+
+            if (CityDetailWindow.Instance.IsOpened())
+            {
+                if(!CityDetailWindow.Instance.TrySwitchTarget(target))CityDetailWindow.Instance.Hide();
             }
         }
 
@@ -93,10 +98,11 @@ namespace SparFlame.UI.MainGameplay
             // Valid when left click on interactable entity
             var leftClickOnValid = !inputMouseData.IsOverUI
                                    && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
-                                   && cursorData.Type is not MainGameplayCursorType.None and MainGameplayCursorType.March;
+                                   && cursorData.Type != MainGameplayCursorType.None
+                                   && cursorData.Type != MainGameplayCursorType.March;
             var leftClickOnInvalid = !inputMouseData.IsOverUI
                                      && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
-                                     && cursorData.Type is MainGameplayCursorType.None or MainGameplayCursorType.March;
+                                     && cursorData.Type is MainGameplayCursorType.March or MainGameplayCursorType.None;
 
             // Check should switch close up target
             if (leftClickOnValid)
@@ -119,7 +125,7 @@ namespace SparFlame.UI.MainGameplay
                         Show();
                     else if (_minimizeWindow)
                         maximizeButton.SetActive(true);
-                    if (!MainGameplayCloseUpWindow.Instance.HasTarget())
+                    if (_closeUpTarget == Entity.Null)
                     {
                         ArmyGroupMulti2DWindow.Instance.OnClickSlot(0);
                     }
@@ -129,10 +135,10 @@ namespace SparFlame.UI.MainGameplay
             // Check should show or hide Unit multi 2D , interact , detail window
             // Show multi unit window when select count > 1
             // Show interact and detail when select count <= 1 and closeUpTarget not null
-            var shouldShowUnitMulti2D = infoPanel.activeSelf && selectedData.CurrentSelectCount > 1;
+            var shouldShowMulti2D = infoPanel.activeSelf && selectedData.CurrentSelectCount > 1;
             var shouldShowInteractAndDetail = infoPanel.activeSelf && selectedData.CurrentSelectCount <= 1 &&
                                               _closeUpTarget != Entity.Null;
-            if (shouldShowUnitMulti2D)
+            if (shouldShowMulti2D)
             {
                 if (!ArmyGroupMulti2DWindow.Instance.IsOpened())
                 {
@@ -182,7 +188,7 @@ namespace SparFlame.UI.MainGameplay
                                        || (!ArmyGroupDetailWindow.Instance.HasTarget()
                                            && !CityDetailWindow.Instance.HasTarget()
                                            && !ArmyGroupMulti2DWindow.Instance.HasTarget()
-                                           && !MainGameplayCloseUpWindow.Instance.HasTarget());
+                                           /*&& !MainGameplayCloseUpWindow.Instance.HasTarget()*/);
             if (shouldHideInfoWindow)
             {
                 if (closeByEsc && ArmyGroupMulti2DWindow.Instance.IsOpened() && ArmyGroupDetailWindow.Instance.IsOpened())
@@ -206,20 +212,23 @@ namespace SparFlame.UI.MainGameplay
             infoPanel.SetActive(true);
             // Close up window should always open with unit info window and should never be blank
             // Only when unit info closed , it is allowed to be blank, but it will close at the same time
-            MainGameplayCloseUpWindow.Instance.Show();
+            // MainGameplayCloseUpWindow.Instance.Show();
         }
 
         public void Hide()
         {
             infoPanel.SetActive(false);
-            MainGameplayCloseUpWindow.Instance.Hide();
+            _closeUpTarget = Entity.Null;
+            // MainGameplayCloseUpWindow.Instance.Hide();
         }
 
         private void ClearCloseUpTarget()
         {
-            MainGameplayCloseUpWindow.Instance.ClearCloseUpTarget();
+            _closeUpTarget = Entity.Null;
+            // MainGameplayCloseUpWindow.Instance.ClearCloseUpTarget();
             ArmyGroupDetailWindow.Instance.ClearCloseUpTarget();
             CityDetailWindow.Instance.ClearCloseUpTarget();
+            
             MainGameplayGarrisonInfoWindow.Instance.ClearCloseUpTarget();
             // ConjureQueueWindow.Instance.ClearCloseUpTarget();
             // MiniConjureWindow.Instance.ClearCloseUpTarget();

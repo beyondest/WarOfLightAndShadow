@@ -68,8 +68,6 @@ namespace SparFlame.UI.General
                 SetCursor(normalMouseTexture);
             }
 
-         
-
 
             // Set soft cursor position
             var newPos = Input.mousePosition + cursorLeftOffset;
@@ -83,10 +81,16 @@ namespace SparFlame.UI.General
             specialCursorImage.rectTransform.position = newSpecialPos;
 
             // Update soft cursor image
-            var data = _cursorData.GetSingleton<SubGameplayCursorData>();
-            if (data.LeftCursorType is SubGameplayCursorType.ArrowDown or SubGameplayCursorType.ArrowUp or SubGameplayCursorType.ArrowLeft
-                or SubGameplayCursorType.ArrowRight or SubGameplayCursorType.ArrowLeftDown or SubGameplayCursorType.ArrowLeftUp
-                or SubGameplayCursorType.ArrowRightDown or SubGameplayCursorType.ArrowRightUp or SubGameplayCursorType.Drag)
+            var data = _cursorData.IsEmpty
+                ? new SubGameplayCursorData
+                    { LeftCursorType = SubGameplayCursorType.None, RightCursorType = SubGameplayCursorType.None }
+                : _cursorData.GetSingleton<SubGameplayCursorData>();
+            if (data.LeftCursorType is SubGameplayCursorType.ArrowDown or SubGameplayCursorType.ArrowUp
+                or SubGameplayCursorType.ArrowLeft
+                or SubGameplayCursorType.ArrowRight or SubGameplayCursorType.ArrowLeftDown
+                or SubGameplayCursorType.ArrowLeftUp
+                or SubGameplayCursorType.ArrowRightDown or SubGameplayCursorType.ArrowRightUp
+                or SubGameplayCursorType.Drag)
             {
                 Cursor.visible = false;
                 cursorLeftImage.enabled = true;
@@ -96,7 +100,10 @@ namespace SparFlame.UI.General
             {
                 cursorLeftImage.enabled = false;
             }
-            specialCursorImage.fillAmount = _circleCursorData.GetSingleton<CircleCursorData>().FillAmount;
+
+            specialCursorImage.fillAmount = _circleCursorData.IsEmpty
+                ? 0
+                : _circleCursorData.GetSingleton<CircleCursorData>().FillAmount;
         }
 
 

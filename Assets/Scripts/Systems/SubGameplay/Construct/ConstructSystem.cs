@@ -12,6 +12,7 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -24,7 +25,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
         private BufferLookup<CostList> _costLookup;
 
         private EntityQuery _buildingQuery;
-        private EntityQuery _playerBaseQuery;
+        // private EntityQuery _playerBaseQuery;
         private NativeList<Entity> _grids;
         private ComponentLookup<ConstructableTag> _constructableLookup;
 
@@ -44,8 +45,8 @@ namespace SparFlame.Systems.SubGameplay.Construct
             _constructableLookup = state.GetComponentLookup<ConstructableTag>(true);
             _costLookup = state.GetBufferLookup<CostList>(true);
 
-            _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<PlayerTag>()
-                .WithAll<CrystalDef>().Build();
+            // _playerBaseQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<PlayerTag>()
+            //     .WithAll<CrystalDef>().Build();
             _buildingQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<BuildingAttr>()
                 .WithAll<SubGameplayGeneralAttr>()
                 .WithAll<PlayerTag>().Build();
@@ -88,23 +89,23 @@ namespace SparFlame.Systems.SubGameplay.Construct
                 ClearGrid(ref state);
             }
 
-            if (_playerBaseQuery.IsEmpty || data.CommandType == ConstructCommandType.None) return;
+            if (/*_playerBaseQuery.IsEmpty ||*/ data.CommandType == ConstructCommandType.None) return;
 
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var playerBaseTrans = _playerBaseQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            // var playerBaseTrans = _playerBaseQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
 
             
             CheckConstructionCommand(ref state,
-                ecb, playerBaseTrans);
-            playerBaseTrans.Dispose();
+                ecb/*, playerBaseTrans*/);
+            // playerBaseTrans.Dispose();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
         private void CheckConstructionCommand(ref SystemState state,
-            EntityCommandBuffer ecb,
-            in NativeArray<LocalTransform> playerBaseTrans)
+            EntityCommandBuffer ecb/*,
+            in NativeArray<LocalTransform> playerBaseTrans*/)
         {
             var gridSize = SystemAPI.GetSingleton<ConstructSystemConfig>().ConstructionGridSize;
             var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
@@ -160,7 +161,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                             false);
                         valid = false;
                     }
-                  
+                    
              
                     if (valid)
                         SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabs, false);
@@ -218,7 +219,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         var ability = SystemAPI.GetComponent<AttackAbility>(data.TargetBuilding);
                         state.EntityManager.SetComponentData(data.PreviewAttackRangeEntity, new LocalTransform
                         {
-                            Scale = math.sqrt(ability.Range)
+                            Scale = ability.Range
                         });
                     }
                     else data.PreviewAttackRangeEntity = Entity.Null;

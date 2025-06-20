@@ -2,12 +2,12 @@
 
 namespace SparFlame.UI.General
 {
-    public class UIGeneralController : MonoBehaviour
+    public class GlobalUIDoubleClicker : MonoBehaviour
     {
         
         public float doubleClickThreshold = 0.3f; // seconds
         
-        public static UIGeneralController Instance;
+        public static GlobalUIDoubleClicker Instance;
         
         private void Awake()
         {

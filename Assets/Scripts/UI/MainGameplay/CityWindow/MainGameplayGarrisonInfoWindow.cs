@@ -6,25 +6,42 @@ namespace SparFlame.UI.MainGameplay
 {
     public class MainGameplayGarrisonInfoWindow : MultiSlotWindowUtils.MultiSlotsWindow<MainGameplayGarrisonInfoSlot>,MultiSlotWindowUtils.ISingleTargetWindow
     {
-        public static MainGameplayGarrisonInfoWindow Instance { get; private set; }
-        public void Awake()
-        {
-            Instance = this;
-        }
+        public static MainGameplayGarrisonInfoWindow Instance;
+        
 
         public bool TrySwitchTarget(Entity target)
         {
-            throw new System.NotImplementedException();
+            return false;
         }
 
         public bool HasTarget()
         {
-            throw new System.NotImplementedException();
+            return _targetEntity == Entity.Null;
         }
 
         public void ClearCloseUpTarget()
         {
-            throw new System.NotImplementedException();
+            _targetEntity = Entity.Null;
         }
+
+        private Entity _targetEntity = Entity.Null;
+
+        #region EventFunctions
+
+        private void Awake()
+        {
+            if(!Instance)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            Hide();
+        }
+
+        #endregion
     }
 }

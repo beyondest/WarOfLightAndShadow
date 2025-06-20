@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Systems.SubGameplay.Garrison;
 using SparFlame.Systems.SubGameplay.Ooc;
 using Unity.Burst;
 using Unity.Entities;
@@ -9,7 +10,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-    // [UpdateBefore(typeof(GarrisonSystem))]
+    [UpdateBefore(typeof(GarrisonSystem))]
     public partial struct StatSystem : ISystem
     {
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;

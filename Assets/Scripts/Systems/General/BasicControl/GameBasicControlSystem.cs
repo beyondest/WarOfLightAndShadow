@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
 using UnityEngine;
@@ -21,12 +23,12 @@ namespace SparFlame.Systems.General.BasicControl
         private bool _enterSystemInitState;
         private GameBasicConfig _gameBasicConfig;
         private CustomInputActions _customInputActions;
-        private bool _alreadyToWin;
+        // private bool _alreadyToWin;
         private GameStatus _previousGameStatus;
 
         protected override void OnCreate()
         {
-            var seed = (uint)System.DateTime.Now.Ticks;
+            var seed = (uint)DateTime.Now.Ticks;
             EntityManager.CreateSingleton(new GeneralRandom
             {
                 Rnd = new Random(seed)
@@ -44,6 +46,11 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 Value = 1f
             });
+            EntityManager.CreateSingleton(new SubGameStatusData
+            {
+                Value = SubGameStatus.None
+            });
+            EntityManager.CreateSingleton(new PlayerSaveSlot());
         }
 
         protected override void OnStartRunning()
@@ -53,12 +60,13 @@ namespace SparFlame.Systems.General.BasicControl
                 _customInputActions = InputListener.Instance.GetCustomInputActions();
                 Application.targetFrameRate = _gameBasicConfig.targetFrameRate;
                 _initialized = true;
-                GameController.Instance.OnPause += () => { PauseGame(true); };
-                GameController.Instance.OnResume += () => { PauseGame(false); };
+                GameController.Instance.OnPause += isSwitching => { PauseOrResumeGame(true, isSwitching); };
+                GameController.Instance.OnResume += isSwitching => { PauseOrResumeGame(false,isSwitching); };
                 GameController.Instance.OnBackToMainMenu += DestroyInitialization;
                 GameController.Instance.OnPlayerChooseFaction += SetPlayerFaction;
                 GeneralResourceManager.Instance.OnAllResourceLoaded += BeginSystemInit;
-                GameController.Instance.EcsSwitchGameStatus += SwitchGameStatus;
+                GameController.Instance.OnEcsSwitchGameStatus += SwitchGameStatus;
+                GameController.Instance.OnEcsChooseSavingSlot += ChooseSavingSlot;
             }
         }
 
@@ -77,11 +85,10 @@ namespace SparFlame.Systems.General.BasicControl
 
             if (gameBasicState.ValueRW.Value == GameStatus.Init) // This is the time all systems init complete
             {
-                _alreadyToWin = false;
+                // _alreadyToWin = false;
                 gameBasicState.ValueRW.Value = GameStatus.MainGaming;
                 var gaming = EntityManager.CreateEntity();
                 EntityManager.AddComponent<MainGamingTag>(gaming);
-                InputListener.Instance.EnableMainGameMaps();
                 GameController.Instance.MainGameStart();
             }
 
@@ -157,13 +164,16 @@ namespace SparFlame.Systems.General.BasicControl
             EntityManager.AddComponent<ClearGameplayEntities>(clearRequest);
         }
 
-        private void PauseGame(bool isPausing)
+        
+
+        private void PauseOrResumeGame(bool isPausing,bool isSwitchingGameplay = false)
         {
             if (_isPaused == isPausing) return;
             var gameStatusData = SystemAPI.GetSingletonRW<GameStatusData>();
             if (isPausing)
             {
-                UnityEngine.Time.timeScale = 0;
+                if(!isSwitchingGameplay)
+                    UnityEngine.Time.timeScale = 0;
                 var gamingTag = gameStatusData.ValueRO.Value == GameStatus.MainGaming
                     ? SystemAPI.GetSingletonEntity<MainGamingTag>()
                     : SystemAPI.GetSingletonEntity<SubGamingTag>();
@@ -175,7 +185,7 @@ namespace SparFlame.Systems.General.BasicControl
             }
             else
             {
-                UnityEngine.Time.timeScale = 1;
+                UnityEngine.Time.timeScale = SystemAPI.GetSingleton<GameTimeScale>().Value;
                 gameStatusData.ValueRW.Value = _previousGameStatus;
                 if (_previousGameStatus == GameStatus.MainGaming)
                     EntityManager.CreateSingleton<MainGamingTag>();
@@ -198,15 +208,15 @@ namespace SparFlame.Systems.General.BasicControl
         {
             if (!_isPaused && (!Application.isFocused || _customInputActions.ModeSwitch.Pause.WasPerformedThisFrame()))
             {
-                GameController.Instance.PauseGame();
+                GameController.Instance.PauseGame(false);
             }
             else if (_isPaused && Application.isFocused && _customInputActions.ModeSwitch.Pause.WasPerformedThisFrame())
             {
-                GameController.Instance.ResumeGame();
+                GameController.Instance.ResumeGame(false);
             }
         }
 
-        private void SwitchGameStatus(GameStatusSwitchType type)
+        private void SwitchGameStatus(GameStatusSwitchType type, SubGameStatus targetSubGameStatus)
         {
             switch (type)
             {
@@ -215,15 +225,33 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         Value = GameStatus.MainGaming
                     });
+                    EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SubGamingTag>());
+                    EntityManager.CreateSingleton<MainGamingTag>();
                     break;
                 case GameStatusSwitchType.MainGameToSubGame:
                     SystemAPI.SetSingleton(new GameStatusData
                     {
                         Value = GameStatus.SubGaming
                     });
+                    EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<MainGamingTag>());
+                    EntityManager.CreateSingleton<SubGamingTag>();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+            SystemAPI.SetSingleton(new SubGameStatusData
+            {
+                Value = targetSubGameStatus
+            });
+        }
+
+        private void ChooseSavingSlot(int slot)
+        {
+            SystemAPI.SetSingleton(new PlayerSaveSlot{Value = slot});
+            var path = FolderPathUtils.GetPlayerSaveSlotFolder(slot);
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
             }
         }
     }

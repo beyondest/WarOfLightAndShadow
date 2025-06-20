@@ -250,7 +250,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ECB.SetComponent(index, request.Interactee, new LightMagicDamageBuff
                 {
                     LastTime = math.max(config.lastTime, lightMagicDamageBuff.LastTime),
-                    MoveSpeedNegativeBonusScale = math.min(config.moveSpeedNegativeBonus, lightMagicDamageBuff.MoveSpeedNegativeBonusScale),
+                    MoveSpeedNegativeBonus = math.min(config.moveSpeedNegativeBonus, lightMagicDamageBuff.MoveSpeedNegativeBonus),
                     SpeedNegativeBonus = math.min(config.speedNegativeBonus, lightMagicDamageBuff.SpeedNegativeBonus),
                 });
                 if (!LightMagicDamageBuffLookup.IsComponentEnabled(request.Interactee))

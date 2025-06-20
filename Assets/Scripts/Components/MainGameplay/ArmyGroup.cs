@@ -10,12 +10,17 @@ namespace SparFlame.Components.MainGameplay
         public int CurWaypoint;
         public bool IsTargetReachable;
     }
+
+    public struct ArmyGroupAttr : IComponentData
+    {
+        public ArmyGroupIconType IconType;
+    }
+    
     public struct ArmyGroupWalkableTag : IComponentData{}
 
     
     public struct ArmyGroupSelectionData : IComponentData
     {
-                
         public int CurrentSelectCount;
         public FactionTag CurrentSelectFaction;
         public float2 SelectionBoxStartPos;
@@ -25,4 +30,19 @@ namespace SparFlame.Components.MainGameplay
     }
     public struct ArmyGroupSelected : IComponentData, IEnableableComponent{}
 
+
+    public enum ArmyGroupIconType
+    {
+        Bear,
+        Butterfly,
+        Dragon,
+        Deer,
+        Horse,
+        Lion,
+        Rabbit,
+        Scorpion,
+        Snake,
+        Wolf
+
+    }
 }

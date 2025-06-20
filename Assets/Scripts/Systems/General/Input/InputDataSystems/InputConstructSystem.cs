@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.Input;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.Input;
 using Unity.Entities;
 
 namespace SparFlame.Systems.General.Input
@@ -11,6 +12,7 @@ namespace SparFlame.Systems.General.Input
         {
             RequireForUpdate<InputConstructData>(); 
             RequireForUpdate<InputMouseData>();
+            RequireForUpdate<SubGamingTag>();
         }
 
         protected override void OnStartRunning()
@@ -20,11 +22,6 @@ namespace SparFlame.Systems.General.Input
 
         protected override void OnUpdate()
         {
-            if (!_customInputActions.Construct.enabled)
-            {
-                SystemAPI.SetSingleton(new InputConstructData());
-                return;
-            }
             var rotate = _customInputActions.Construct.Rotate.ReadValue<float>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             SystemAPI.SetSingleton(new InputConstructData

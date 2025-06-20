@@ -1,40 +1,50 @@
-﻿using SparFlame.Components.SubGameplay;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Entities.Serialization;
 using Unity.Physics;
+using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
 {
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial class LoadSystemPlus : SystemBase
     {
         private NativeHashMap<int, Entity> _globalIdxToPrefabs;
         private NativeHashMap<long, Entity> _tmpIdxToInstances;
         private NativeHashMap<int, ExpStaticConfig> _expDatabase;
 
-        private ComponentLookup<SeInGarrison> _inGarrisonLookup;
-        private ComponentLookup<SeTmpId> _tmpIdLookup;
-        private ComponentLookup<PhysicsMass> _physicsMassLookup;
-        private ComponentLookup<SeInverseMass> _inverseMassLookup;
-        private ComponentLookup<ExpData> _expDataLookup;
-
-
-        private BufferLookup<SeGarrisonEntity> _garrisonEntitiesLookup;
-        private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
+        // private ComponentLookup<SeInGarrison> _inGarrisonLookup;
+        // private ComponentLookup<SeTmpId> _tmpIdLookup;
+        // private ComponentLookup<PhysicsMass> _physicsMassLookup;
+        // private ComponentLookup<SeInverseMass> _inverseMassLookup;
+        // private ComponentLookup<ExpData> _expDataLookup;
+        //
+        //
+        // private BufferLookup<SeGarrisonEntity> _garrisonEntitiesLookup;
+        // private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
+        
+        private ComponentLookup<VolumeObstacleSpawnRequest> _volumeObstacleSpawnRequestsLookup;
 
         private bool _initialized;
         protected override void OnCreate()
         {
             RequireForUpdate<SaveConfig>();
             RequireForUpdate<LoadData>();
-            _inGarrisonLookup = GetComponentLookup<SeInGarrison>(true);
-            _inverseMassLookup = GetComponentLookup<SeInverseMass>(true);
-            _tmpIdLookup = GetComponentLookup<SeTmpId>(true);
-            _physicsMassLookup = GetComponentLookup<PhysicsMass>(true);
-            _expDataLookup = GetComponentLookup<ExpData>(true);
-
-            _garrisonEntitiesLookup = GetBufferLookup<SeGarrisonEntity>(true);
-            _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
+            RequireForUpdate<BuildingEntityPrefabData>();
+            RequireForUpdate<UnitEntityPrefabData>();
+            RequireForUpdate<PlayerSaveSlot>();
+            // _inGarrisonLookup = GetComponentLookup<SeInGarrison>(true);
+            // _inverseMassLookup = GetComponentLookup<SeInverseMass>(true);
+            // _tmpIdLookup = GetComponentLookup<SeTmpId>(true);
+            // _physicsMassLookup = GetComponentLookup<PhysicsMass>(true);
+            // _expDataLookup = GetComponentLookup<ExpData>(true);
+            //
+            // _garrisonEntitiesLookup = GetBufferLookup<SeGarrisonEntity>(true);
+            // _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
+            _volumeObstacleSpawnRequestsLookup = GetComponentLookup<VolumeObstacleSpawnRequest>(true);
         }
 
         protected override void OnDestroy()
@@ -52,7 +62,7 @@ namespace SparFlame.Systems.General.BasicControl
             if (!_initialized)
             {
                 Initialize();
-                GameController.Instance.EcsLoadCitySaving += LoadCity;
+                GameController.Instance.OnEcsLoadCitySaving += LoadCity;
                 _initialized = true;
             }
             
@@ -64,28 +74,40 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void LoadCity(int cityId)
         {
-            _expDataLookup.Update(this);
-            _inverseMassLookup.Update(this);
-            _physicsMassLookup.Update(this);
-            _tmpIdLookup.Update(this);
-            _inGarrisonLookup.Update(this);
-            
-            _garrisonEntitiesLookup.Update(this);
-            _garrisonTypeDataLookup.Update(this);
+            var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             using (var deserializeWorld = new World("Deserialization World"))
             {
                 var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
                 using (var reader =
-                       new StreamBinaryReader(SaveUtilities.GetCitySavePath(cityId)))
+                       new StreamBinaryReader(SaveUtilities.GetCitySavePath(cityId,playerSaveSlot)))
                 {
                     SerializeUtility.DeserializeWorld(transaction, reader);
                 }
-
+                
                 deserializeWorld.EntityManager.EndExclusiveEntityTransaction();
                 EntityManager.MoveEntitiesFrom(deserializeWorld.EntityManager);
+                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SaveSystemPlus.SaveTmpTag>());
             }
-
+            // _expDataLookup.Update(this);
+            // _inverseMassLookup.Update(this);
+            // _physicsMassLookup.Update(this);
+            // _tmpIdLookup.Update(this);
+            // _inGarrisonLookup.Update(this);
+            //
+            // _garrisonEntitiesLookup.Update(this);
+            // _garrisonTypeDataLookup.Update(this);
+            _volumeObstacleSpawnRequestsLookup.Update(this);
+            var job =new BuildingLoadJob
+            {
+                ECB = ecb.AsParallelWriter(),
+                Prefabs = _globalIdxToPrefabs,
+                RequestLookup = _volumeObstacleSpawnRequestsLookup,
+            }.ScheduleParallel(Dependency);
+            job.Complete();
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
+            /*
             var loadJob = new LoadSubGameplayJob
             {
                 ECB = ecb.AsParallelWriter(),
@@ -120,6 +142,7 @@ namespace SparFlame.Systems.General.BasicControl
             ecb2.Playback(EntityManager);
             ecb2.Dispose();
             _tmpIdxToInstances.Clear();
+            */
 
             SystemAPI.SetSingleton(new LoadData
             {
@@ -152,6 +175,25 @@ namespace SparFlame.Systems.General.BasicControl
             }
 
             _tmpIdxToInstances = new NativeHashMap<long, Entity>(100, allocator: Allocator.Persistent);
+        }
+        
+        
+        [BurstCompile]
+        [WithNone(typeof(VolumeObstacleSpawnRequest))]
+        [WithAll(typeof(BuildingAttr))]
+        [WithNone(typeof(ConstructingData))]
+        public partial struct BuildingLoadJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter ECB;
+            [ReadOnly] public NativeHashMap<int, Entity> Prefabs;
+            [ReadOnly] public ComponentLookup<VolumeObstacleSpawnRequest> RequestLookup;
+            private void Execute([ChunkIndexInQuery]int index,in SubGameplayGeneralAttr generalAttr, Entity selfEntity)
+            {
+                var prefab = Prefabs[generalAttr.ID];
+                var request = RequestLookup[prefab];
+                ECB.AddComponent(index, selfEntity, request);
+                ECB.SetComponentEnabled<VolumeObstacleSpawnRequest>(index, selfEntity, true);
+            }
         }
     }
 }

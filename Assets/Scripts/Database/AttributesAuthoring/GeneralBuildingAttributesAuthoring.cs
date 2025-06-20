@@ -15,7 +15,6 @@ namespace SparFlame.Database
             public override void Bake(GeneralBuildingAttributesAuthoring authoring)
             {
                 if (authoring.globalIdx == 0) return;
-                if(DatabaseManager.BuildingDatabaseSo == null)return;
             
                 var item = DatabaseManager.BuildingDatabaseSo.GetItemById(authoring.globalIdx);
                 var entity = GetEntity(authoring.ifInBuildingPack

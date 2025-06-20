@@ -14,6 +14,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     public class ArmyGroupAuthoring : MonoBehaviour
     {
         [Header("General")] public FactionTag faction;
+        public ArmyGroupIconType iconType;
         [Header("Moving config")]
         public float movementInitialSpeed;
         
@@ -32,7 +33,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     Faction = authoring.faction,
                     BaseTag = MainGameBaseTag.Army
                 });
-                
+                AddComponent(entity, new ArmyGroupAttr
+                {
+                    IconType = authoring.iconType,
+                });
                 // Moving 
                 AddBuffer<ArmyGroupMovingTarget>(entity);
                 AddComponent(entity, new ArmyGroupMovableData
