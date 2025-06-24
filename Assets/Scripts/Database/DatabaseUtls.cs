@@ -173,4 +173,14 @@ namespace SparFlame.Database
             }
         }
     }
+
+    public static class DatabaseUtils
+    {
+        public static CityDataItem GetCityDataItemById(int id)
+        {
+            var idStart = DatabaseManager.CityDatabaseSo.idStart;
+            var cityItem = DatabaseManager.CityDatabaseSo.items[idStart + id];
+            return cityItem;
+        }
+    }
 }

@@ -1,0 +1,177 @@
+﻿using System;
+using SparFlame.Components.General;
+using SparFlame.Components.Input;
+using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace SparFlame.Systems.MainGameplay.ArmyGroup
+{
+    [BurstCompile]
+    [WithAll(typeof(ArmyGroupSelected))]
+    public partial struct ArmyGroupSetTargetJob : IJobEntity
+    {
+        public EntityCommandBuffer.ParallelWriter ECB;
+        [ReadOnly] public float3 TargetPosition;
+        [ReadOnly] public ComponentLookup<ArmyGroupMovingTag> ArmyGroupMovingTagLookup;
+        [ReadOnly] public MainGameplayCursorType CursorType;
+
+        private void Execute([ChunkIndexInQuery] int index, ref ArmyGroupMovableData movableData,
+            ref DynamicBuffer<ArmyGroupMovingTarget> targets,
+            ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
+            ref ArmyGroupCalculatePathData pathData, ref PathVisualizeData visualizeData,
+            ref NavAgentComponent navAgent,ref ArmyGroupStateData stateData,
+            Entity selfEntity
+        )
+        {
+            // If army group is already moving, make it stop and clear its waypoints and targets
+            if (ArmyGroupMovingTagLookup.IsComponentEnabled(selfEntity))
+            {
+                ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
+                    ref visualizeData,
+                    ref navAgent,
+                    ECB, index, selfEntity);
+                movableData.MovementInfo = ArmyGroupMovementInfo.None;
+                stateData.TargetState = ArmyGroupState.Idle;
+                stateData.CurState = ArmyGroupState.Idle;
+            }
+
+            if (stateData.TargetState != ArmyGroupState.Idle)
+            {
+                var hintRequest = ECB.CreateEntity(index);
+                ECB.AddComponent(index, hintRequest, new HintRequest
+                {
+                    Name = HintName.PleaseDeleteArmyGroupLastTargetForNewTarget,
+                    
+                });
+                ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
+                return;
+            }
+            
+            switch (CursorType)
+            {
+                case MainGameplayCursorType.None:
+                    // This should never happen
+                    break;
+                case MainGameplayCursorType.March:
+                    // Do nothing
+                    break;
+                case MainGameplayCursorType.Garrison:
+                    stateData.TargetState = ArmyGroupState.Garrison;
+                    break;
+                case MainGameplayCursorType.Support:
+                    stateData.TargetState = ArmyGroupState.Support;
+                    break;
+                case MainGameplayCursorType.Invade:
+                    stateData.TargetState = ArmyGroupState.Invade;
+                    break;
+                case MainGameplayCursorType.Intercept:
+                    stateData.TargetState = ArmyGroupState.Idle;
+                    break;
+           
+            }
+
+            targets.Add(new ArmyGroupMovingTarget
+            {
+                Position = TargetPosition
+            });
+        }
+    }
+
+    [BurstCompile]
+    [WithAll(typeof(ArmyGroupSelected))]
+    public partial struct ArmyGroupStartMovingJob : IJobEntity
+    {
+        public EntityCommandBuffer.ParallelWriter ECB;
+
+        private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,
+            ref ArmyGroupMovableData movableData)
+        {
+            if (!movableData.IsTargetReachable)
+            {
+                var hintRequest = ECB.CreateEntity(index);
+                ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
+                ECB.AddComponent(index, hintRequest, new HintRequest
+                {
+                    Name = HintName.ArmyGroupNotReachable
+                });
+                return;
+            }
+
+            movableData.MovementInfo = ArmyGroupMovementInfo.NotComplete; 
+            movableData.CurWaypoint = 0;
+            ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, true);
+        }
+    }
+
+    [BurstCompile]
+    [WithAll(typeof(ArmyGroupSelected))]
+    [WithNone(typeof(ArmyGroupMovingTag))]
+    public partial struct ArmyGroupDeleteLastTargetJob : IJobEntity
+    {
+        public EntityCommandBuffer.ParallelWriter ECB;
+
+        private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<ArmyGroupMovingTarget> targets,
+            ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
+            ref DynamicBuffer<WaypointBuffer> waypointBuffer, ref ArmyGroupMovableData movableData,
+            ref ArmyGroupCalculatePathData pathData,ref ArmyGroupStateData stateData,
+            ref PathVisualizeData visualizeData, ref NavAgentComponent navAgent, Entity selfEntity
+        )
+        {
+            ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
+                ref visualizeData, ref navAgent, ECB, index, selfEntity);
+            stateData.TargetState = ArmyGroupState.Idle;
+            
+            if (targets.Length <= 0) return;
+            targets.RemoveAt(targets.Length - 1);
+        }
+    }
+
+    [BurstCompile]
+    [WithAll(typeof(ArmyGroupSelected))]
+    public partial struct ArmyGroupEndMovingJob : IJobEntity
+    {
+        public EntityCommandBuffer.ParallelWriter ECB;
+
+        private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<ArmyGroupMovingTarget> targets,
+            ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
+            ref DynamicBuffer<WaypointBuffer> waypointBuffer, ref ArmyGroupMovableData movableData,
+            ref ArmyGroupCalculatePathData pathData, ref ArmyGroupStateData stateData,
+            ref PathVisualizeData visualizeData, ref NavAgentComponent navAgent, Entity selfEntity
+        )
+        {
+            ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
+                ref visualizeData, ref navAgent, ECB, index, selfEntity);
+            movableData.MovementInfo = ArmyGroupMovementInfo.None;
+            stateData.CurState = ArmyGroupState.Idle;
+            stateData.TargetState = ArmyGroupState.Idle;
+            targets.Clear();
+            ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, false);
+        }
+    }
+
+    [BurstCompile]
+    [WithAll(typeof(ArmyGroupSelected))]
+    [WithNone(typeof(ArmyGroupMovingTag))]
+    public partial struct ArmyGroupClearAllMovingTargetsJob : IJobEntity
+    {
+        public EntityCommandBuffer ECB;
+
+        private void Execute(ref DynamicBuffer<ArmyGroupMovingTarget> targets,
+            ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
+            ref DynamicBuffer<WaypointBuffer> waypointBuffer, ref ArmyGroupMovableData movableData,
+            ref ArmyGroupCalculatePathData pathData, ref ArmyGroupStateData stateData,
+            ref PathVisualizeData visualizeData, ref NavAgentComponent navAgent, Entity selfEntity
+        )
+        {
+            ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
+                ref visualizeData, ref navAgent, ECB, selfEntity);
+            stateData.TargetState = ArmyGroupState.Idle;
+            targets.Clear();
+        }
+    }
+}

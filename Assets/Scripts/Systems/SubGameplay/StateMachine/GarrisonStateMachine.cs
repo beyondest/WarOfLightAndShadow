@@ -322,7 +322,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ECB.AddComponent<SubGameplayEntityTag>(index, killSelectedVfx);
                 ECB.AddComponent(index, killSelectedVfx, new VFXRequest
                 {
-                    VFXName = VFXName.SelectionIndicator,
+                    VFXName = VFXName.UnitSelectionIndicator,
                     RequestType = VFXRequestType.Kill,
                     VFXTrackTarget = selfEntity,
                 });

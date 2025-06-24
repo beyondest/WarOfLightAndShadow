@@ -15,6 +15,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         [Header("General")] public FactionTag faction;
         public ArmyGroupIconType iconType;
+        public SubFaction initialSubFaction;
+        // public int initialId;
         [Header("Moving config")]
         public float movementInitialSpeed;
         
@@ -31,11 +33,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 AddComponent(entity, new MainGameplayGeneralAttr
                 {
                     Faction = authoring.faction,
-                    BaseTag = MainGameBaseTag.Army
+                    BaseTag = MainGameBaseTag.Army,
+                    SubFaction = authoring.initialSubFaction,
                 });
                 AddComponent(entity, new ArmyGroupAttr
                 {
                     IconType = authoring.iconType,
+                    // ArmyGroupId = authoring.initialId
                 });
                 // Moving 
                 AddBuffer<ArmyGroupMovingTarget>(entity);
@@ -47,6 +51,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 });
                 AddComponent<ArmyGroupMovingTag>(entity);
                 SetComponentEnabled<ArmyGroupMovingTag>(entity, false);
+                
                 
                 
                 
@@ -71,6 +76,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 AddComponent<ArmyGroupCalculateEnable>(entity);
                 SetComponentEnabled<ArmyGroupCalculateEnable>(entity, false);
                 
+              
                 // Path visualizer  
                 AddComponent<PathVisualizeEnabled>(entity);
                 SetComponentEnabled<PathVisualizeEnabled>(entity, false);
@@ -105,6 +111,21 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 
                 // VFX
                 AddBuffer<TrackedByVFX>(entity);
+                
+                // Unit management
+                AddBuffer<ArmyGroupUnit>(entity);
+                AddBuffer<ArmyGroupUnitTypeData>(entity);
+                
+                // Passing Data
+                AddComponent<LastPassingByPlayerCity>(entity);
+                
+                // State data
+                AddComponent(entity, new ArmyGroupStateData
+                {
+                    Target =  Entity.Null,
+                    TargetState = ArmyGroupState.Idle,
+                    CurState = ArmyGroupState.Idle
+                });
             }
         }
     }
@@ -129,10 +150,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     }
 
     public struct ArmyGroupMovingTag : IComponentData, IEnableableComponent{}
-    public struct ArmyGroupSightTarget : IBufferElementData
-    {
-        public Entity Entity;
-    }
+  
     public struct PathVisualizer : IComponentData
     {
     }
@@ -142,5 +160,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         public int PreWaypoint;
     }
+    
+    
     
 }

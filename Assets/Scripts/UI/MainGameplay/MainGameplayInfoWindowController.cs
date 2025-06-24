@@ -4,6 +4,7 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SparFlame.UI.MainGameplay
 {
@@ -43,14 +44,14 @@ namespace SparFlame.UI.MainGameplay
         public void UpdateCloseUpTarget(Entity target)
         {
             _closeUpTarget = target;
-            if(ArmyGroupDetailWindow.Instance.IsOpened())
+            if (ArmyGroupDetailWindow.Instance.IsOpened())
             {
-                if(!ArmyGroupDetailWindow.Instance.TrySwitchTarget(target))ArmyGroupDetailWindow.Instance.Hide();
+                if (!ArmyGroupDetailWindow.Instance.TrySwitchTarget(target)) ArmyGroupDetailWindow.Instance.Hide();
             }
 
             if (CityDetailWindow.Instance.IsOpened())
             {
-                if(!CityDetailWindow.Instance.TrySwitchTarget(target))CityDetailWindow.Instance.Hide();
+                if (!CityDetailWindow.Instance.TrySwitchTarget(target)) CityDetailWindow.Instance.Hide();
             }
         }
 
@@ -93,18 +94,18 @@ namespace SparFlame.UI.MainGameplay
             var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<MainGameplayCursorData>();
             var selectedData = _selectedData.GetSingleton<ArmyGroupSelectionData>();
-              
+
             // Check left click event
             // Valid when left click on interactable entity
+            var checkInfoPerformed = _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame();
             var leftClickOnValid = !inputMouseData.IsOverUI
-                                   && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
-                                   && cursorData.Type != MainGameplayCursorType.None
-                                   && cursorData.Type != MainGameplayCursorType.March;
+                                   && checkInfoPerformed
+                                   && cursorData.CursorType != MainGameplayCursorType.None
+                                   && cursorData.CursorType != MainGameplayCursorType.March;
+           
             var leftClickOnInvalid = !inputMouseData.IsOverUI
-                                     && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
-                                     && cursorData.Type is MainGameplayCursorType.March or MainGameplayCursorType.None;
-
-            // Check should switch close up target
+                                     && checkInfoPerformed
+                                     && cursorData.CursorType is MainGameplayCursorType.None or MainGameplayCursorType.March;
             if (leftClickOnValid)
             {
                 UpdateCloseUpTarget(inputMouseData.HitEntity);
@@ -118,7 +119,7 @@ namespace SparFlame.UI.MainGameplay
 
             if (shouldShowInfoWindow)
             {
-                if(leftClickOnValid || !_ifLastTimePlayerCloseByEsc )
+                if (leftClickOnValid || !_ifLastTimePlayerCloseByEsc)
                 {
                     _ifLastTimePlayerCloseByEsc = false;
                     if (!_minimizeWindow && !infoPanel.activeSelf)
@@ -159,27 +160,23 @@ namespace SparFlame.UI.MainGameplay
 
             if (shouldShowInteractAndDetail)
             {
-                
                 if (!ArmyGroupDetailWindow.Instance.IsOpened() &&
                     ArmyGroupDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     ArmyGroupDetailWindow.Instance.Show();
                 if (!CityDetailWindow.Instance.IsOpened() &&
                     CityDetailWindow.Instance.TrySwitchTarget(_closeUpTarget))
                     CityDetailWindow.Instance.Show();
-                
             }
             else
             {
-                if (selectedData.CurrentSelectCount<=1)
+                if (selectedData.CurrentSelectCount <= 1)
                 {
-                    
                     if (ArmyGroupDetailWindow.Instance.IsOpened())
                         ArmyGroupDetailWindow.Instance.Hide();
                 }
-                
+
                 if (CityDetailWindow.Instance.IsOpened())
                     CityDetailWindow.Instance.Hide();
-                
             }
 
             var closeByEsc = _customInputActions.InfoWindow.CloseWindow.WasPerformedThisFrame();
@@ -191,7 +188,8 @@ namespace SparFlame.UI.MainGameplay
                                            /*&& !MainGameplayCloseUpWindow.Instance.HasTarget()*/);
             if (shouldHideInfoWindow)
             {
-                if (closeByEsc && ArmyGroupMulti2DWindow.Instance.IsOpened() && ArmyGroupDetailWindow.Instance.IsOpened())
+                if (closeByEsc && ArmyGroupMulti2DWindow.Instance.IsOpened() &&
+                    ArmyGroupDetailWindow.Instance.IsOpened())
                 {
                     ArmyGroupDetailWindow.Instance.Hide();
                 }
@@ -201,7 +199,7 @@ namespace SparFlame.UI.MainGameplay
                         maximizeButton.SetActive(false);
                     else if (!_minimizeWindow && infoPanel.activeSelf)
                         Hide();
-                    if(closeByEsc) _ifLastTimePlayerCloseByEsc = true;
+                    if (closeByEsc) _ifLastTimePlayerCloseByEsc = true;
                     ClearCloseUpTarget();
                 }
             }
@@ -228,7 +226,7 @@ namespace SparFlame.UI.MainGameplay
             // MainGameplayCloseUpWindow.Instance.ClearCloseUpTarget();
             ArmyGroupDetailWindow.Instance.ClearCloseUpTarget();
             CityDetailWindow.Instance.ClearCloseUpTarget();
-            
+
             MainGameplayGarrisonInfoWindow.Instance.ClearCloseUpTarget();
             // ConjureQueueWindow.Instance.ClearCloseUpTarget();
             // MiniConjureWindow.Instance.ClearCloseUpTarget();

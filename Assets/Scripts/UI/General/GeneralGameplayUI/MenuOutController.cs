@@ -120,15 +120,15 @@ namespace SparFlame.UI.General
         {
             GameController.Instance.OnPause += PauseGame;
             GameController.Instance.OnResume += ResumeGame;
-            GameController.Instance.OnGameOver += OnGameOver;
-            GameController.Instance.OnSubGameStart += SubGameStart;
-            GameController.Instance.OnMainGameStart += MainGameStart;
+            GameController.Instance.OnWinnerWin += WinnerWin;
+            GameController.Instance.OnSubGameStartForPlayer += SubGameStartForPlayer;
+            GameController.Instance.OnMainGameStartForPlayer += MainGameStartForPlayer;
             GameController.Instance.OnPlayerChooseFaction += PlayerChooseFaction;
             // Init loading screen
             GeneralResourceManager.Instance.OnLoadAllResources += () =>
                 ShowLoadingScreen(GeneralResourceManager.Instance.LoadingProgress);
             
-            SceneController.Instance.OnSceneSwitchGameplay += ShowLoadingScreen;
+            GameController.Instance.OnSwitchStatusLoadingProgress += ShowLoadingScreen;
             // Switch gameplay loading screen
             
             mainMenu.SetActive(true);
@@ -157,7 +157,7 @@ namespace SparFlame.UI.General
             if(isSwitching)return;
             pauseMenu.SetActive(false);
         }
-        private void SubGameStart()
+        private void SubGameStartForPlayer()
         {
             HideLoadingScreen();
             
@@ -165,7 +165,7 @@ namespace SparFlame.UI.General
             mainGameplayUI.SetActive(false);
         }
 
-        private void MainGameStart()
+        private void MainGameStartForPlayer()
         {
             HideLoadingScreen();
             selectMenu.SetActive(false);
@@ -174,7 +174,7 @@ namespace SparFlame.UI.General
             subGameplayUI.SetActive(false);
         }
 
-        private void OnGameOver(FactionTag winner)
+        private void WinnerWin(FactionTag winner)
         {
             gameOverImage.sprite = BasicUIResourceManager.Instance.FactionGameOverSprites[winner];
             gameOverMenu.SetActive(true);

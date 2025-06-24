@@ -14,10 +14,7 @@ namespace SparFlame.Database
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 var buffer2 = AddBuffer<UnitEntityPrefabData>(entity);
-                if (!DatabaseManager.UnitDatabaseSo || DatabaseManager.UnitDatabaseSo.Items.Count == 0)
-                {
-                    throw new ArgumentException("UnitDatabase not found");
-                }
+              
                 foreach (var unitData in DatabaseManager.UnitDatabaseSo.Items)
                 {
                     buffer2.Add(new UnitEntityPrefabData

@@ -16,7 +16,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         protected override void OnStartRunning()
         {
-            // if (!SceneController.Instance) return;
+            if (!SceneController.Instance) return;
             SceneController.Instance.EcsStartLoadScene += () => _isLoading = true;
         }
 

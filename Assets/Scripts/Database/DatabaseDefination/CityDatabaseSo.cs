@@ -12,13 +12,10 @@ namespace SparFlame.Database
     [CreateAssetMenu(fileName = "CityDatabase", menuName = "GameData/CityDatabase", order = 0)]
     public class CityDatabaseSo : ScriptableObject
     {
-        
-        public int idStart ;
-        [ReadOnly]
-        public int idEnd;
-        [TableList]
-        public List<CityDataItem> items;
-        
+        public int idStart;
+        [ReadOnly] public int idEnd;
+        [TableList] public List<CityDataItem> items;
+
         [Button("Reassign all id and ReBake")]
         private void ReassignAllIDs()
         {
@@ -43,7 +40,7 @@ namespace SparFlame.Database
                     EditorUtility.SetDirty(go);
                     UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(go.scene);
                 }
-                
+
 #endif
             }
         }
@@ -52,20 +49,37 @@ namespace SparFlame.Database
     [Serializable]
     public class CityDataItem
     {
-        [VerticalGroup("General")]
-        public int id;
-        [VerticalGroup("General")]
-        public string gameplayName;
-        
+        [VerticalGroup("General")] public int id;
+        [VerticalGroup("General")] public string gameplayName;
+
         [VerticalGroup("General"), AssetsOnly, PreviewField]
         public GameObject prefab;
-        
-        [TextArea(3,10), VerticalGroup("Description"), HideLabel]
+
+        [TextArea(3, 10), VerticalGroup("Description"), HideLabel]
         public string description;
 
         [VerticalGroup("Gameplay"), HideLabel] public FactionTag faction;
 
-        [VerticalGroup("SceneGroup"), HideLabel]
-        public SceneGroup sceneGroup;
+        [VerticalGroup("Gameplay"), HideLabel] public SubFaction subFaction;
+
+        [VerticalGroup("Gameplay"), HideLabel, FoldoutGroup("Gameplay/Max Garrison Army Count", expanded: true)]
+        public int maxGarrisonArmyCount;
+
+        [VerticalGroup("SceneGroup"), HideLabel, LabelText("Env")]
+        public SceneGroup envSceneGroup;
+        
+        [VerticalGroup("SceneGroup"), HideLabel, FoldoutGroup("SceneGroup/Player light"),LabelText("Invade")]
+        public SceneGroup lightInvadeSceneGroup;
+
+        [VerticalGroup("SceneGroup"), HideLabel, FoldoutGroup("SceneGroup/Player light"),LabelText("Support")]
+        public SceneGroup lightSupportSceneGroup;
+
+        [VerticalGroup("SceneGroup"), HideLabel, FoldoutGroup("SceneGroup/Player dark"),LabelText("Invade")]
+        public SceneGroup darkInvadeSceneGroup;
+
+        [VerticalGroup("SceneGroup"), HideLabel, FoldoutGroup("SceneGroup/Player dark"),LabelText("Support")]
+        public SceneGroup darkSupportSceneGroup;
+       
+        
     }
 }

@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using SparFlame.Components.MainGameplay;
+using Unity.Entities;
 
 namespace SparFlame.Components.General
 {
@@ -15,11 +16,12 @@ namespace SparFlame.Components.General
     {
         None = 0,
         PlayerCity = 1,
-        Reconnaissance = 2,
-        Siege = 3,
-        Defend = 4,
-        Encounter = 5
+        PlayerSiege = 3,
+        PlayerDefend = 4,
+        Encounter = 5,
+        Support = 6,
     }
+
     public struct GameStatusData : IComponentData
     {
         public GameStatus Value;
@@ -27,6 +29,11 @@ namespace SparFlame.Components.General
 
     public struct SubGameStatusData : IComponentData
     {
-        public SubGameStatus Value;
+        public SubGameStatus SubGameStatus;
+        public Entity City;
+        public BattleTriggerRequest BattleTriggerRequest;
+        public bool IsInBattle;
     }
+    
+    public struct InSubGameTag : IComponentData{}
 }

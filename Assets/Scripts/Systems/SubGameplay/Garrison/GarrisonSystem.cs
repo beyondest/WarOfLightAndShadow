@@ -105,10 +105,6 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                         entityBuffer.RemoveAt(j);
                 }
 
-                // Remove bonus if count is lower than minimum request
-                // if (entityBuffer.Length < config.MinCountToTriggerDefenceBuff
-                //     && SystemAPI.HasComponent<UnderDefence>(request.BuildingEntity))
-                //     ecb.RemoveComponent<UnderDefence>(request.BuildingEntity);
                 ecb.DestroyEntity(entity);
             }
         }

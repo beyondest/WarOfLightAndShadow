@@ -3,6 +3,7 @@ using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
@@ -21,7 +22,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             finalWaypoints.Clear();
             movableData.IsTargetReachable = true;
             navAgent.CalculationComplete = true;
-
             ecb.SetComponentEnabled<ArmyGroupCalculateEnable>(index, selfEntity, false);
             ecb.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, false);
         }
@@ -37,7 +37,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             visualizeData.PreWaypoint = 0;
             movableData.IsTargetReachable = true;
             navAgent.CalculationComplete = true;
-
             ecb.SetComponentEnabled<ArmyGroupCalculateEnable>(selfEntity, false);
             finalWaypoints.Clear();
         }
@@ -48,11 +47,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                    && entityManager.GetComponentData<MainGameplayGeneralAttr>(entity).Faction == playerFaction;
         }
 
-        public static bool IsSettingTarget(in InputArmyGroupControlData data, in InputMouseData inputMouseData,
-            EntityManager entityManager)
-        {
-            return data.SetTarget && !inputMouseData.IsOverUI  &&
-                   entityManager.HasComponent<ArmyGroupWalkableTag>(inputMouseData.HitEntity);
-        }
+        // public static bool IsSettingTarget(in InputArmyGroupControlData data, in InputMouseData inputMouseData,
+        //     EntityManager entityManager)
+        // {
+        //     return data.SetTarget && !inputMouseData.IsOverUI  &&
+        //            entityManager.HasComponent<ArmyGroupWalkableTag>(inputMouseData.HitEntity);
+        // }
     }
 }

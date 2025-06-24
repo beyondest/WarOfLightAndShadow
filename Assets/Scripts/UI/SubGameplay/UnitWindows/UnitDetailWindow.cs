@@ -64,9 +64,6 @@ namespace SparFlame.UI.SubGameplay
         {
             return TargetEntity != Entity.Null;
         }
-
-    
-
        
         // Internal Data
         protected Entity TargetEntity = Entity.Null;
@@ -113,8 +110,7 @@ namespace SparFlame.UI.SubGameplay
         }
 
         #endregion
-
-
+        
         private void UpdateStaticInfo()
         {
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(TargetEntity);

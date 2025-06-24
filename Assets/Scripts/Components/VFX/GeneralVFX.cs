@@ -16,7 +16,7 @@ namespace SparFlame.Components.VFX
         RangedUnitProjectile = 6,
         LightShield = 7,
         FlameSpear1 = 8,
-        SelectionIndicator = 9,
+        UnitSelectionIndicator = 9,
         MagicSwordProjectile2 = 10,
         MagicSwordProjectile3 = 11,
         ClericHealField = 12,

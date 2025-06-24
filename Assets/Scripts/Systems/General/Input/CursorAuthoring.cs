@@ -19,7 +19,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                 });
                 AddComponent(entity, new MainGameplayCursorData
                 {
-                    Type = MainGameplayCursorType.None
+                    CursorType = MainGameplayCursorType.None
                 });
                 AddComponent<CircleCursorData>(entity);
             }

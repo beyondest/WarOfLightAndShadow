@@ -44,6 +44,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public float waypointReachRange;
         public float rotationSpeed;
         public float moveSpeedScale;
+        public int pathRecordingCountInterval;
     }
 
     public struct ArmyGroupPathVisualizeConfig : IComponentData
@@ -54,6 +55,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         
     }
 
+ 
 
     
 }

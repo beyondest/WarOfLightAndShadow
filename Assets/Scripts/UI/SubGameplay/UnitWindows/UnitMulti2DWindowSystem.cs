@@ -79,7 +79,7 @@ namespace SparFlame.UI.SubGameplay
                 ecb.AddComponent<SubGameplayEntityTag>(vfxRequest);
                 ecb.AddComponent(vfxRequest,new VFXRequest
                 {
-                    VFXName = VFXName.SelectionIndicator,
+                    VFXName = VFXName.UnitSelectionIndicator,
                     RequestType = VFXRequestType.Kill,
                     VFXTrackTarget = entity
                 });

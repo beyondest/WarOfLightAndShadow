@@ -28,7 +28,8 @@ namespace SparFlame.UI.General
             });
             saveButton.onClick.AddListener(() =>
             {
-                GameController.Instance.PlayerChooseSavingSlot(slotValue);
+                var path2 = FolderPathUtils.GetPlayerSaveSlotFolder(slotValue);
+                GameController.Instance.PlayerChooseSavingSlot(slotValue, !Directory.Exists(path2));
                 GameController.Instance.PlayerChooseFaction(isLightFaction ? FactionTag.Ally : FactionTag.Enemy);
             });
         }

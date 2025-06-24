@@ -214,6 +214,16 @@ namespace SparFlame.Systems.General.BasicControl
             return finalPath;
         }
 
+        public static string GetArmyGroupSavePath(long saveId, int playerSaveSlot)
+        {
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var armyGroupRootFolder = Path.Combine(saveRootFolder, "ArmyGroupData");
+            if (!Directory.Exists(armyGroupRootFolder))
+                Directory.CreateDirectory(armyGroupRootFolder);
+            var finalPath = Path.Combine(armyGroupRootFolder, $"ArmyGroupData{saveId}.sav");
+            return finalPath;
+        }
+
     }
     
     

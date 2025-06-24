@@ -24,7 +24,6 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private Image tierFilterIcon;
 
         [SerializeField] private GameObject constructEnterButton;
-
         [SerializeField] private GameObject constructExitButton;
         [SerializeField] private Scrollbar scrollbar;
         

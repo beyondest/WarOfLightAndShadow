@@ -73,6 +73,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     {
                         ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWaypoints,
                             ref visualizeData, ref navAgentComponent,ECB, index, selfEntity);
+                        movableData.MovementInfo = ArmyGroupMovementInfo.Complete;
                         return;
                     }
                 }

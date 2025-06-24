@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.Input;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.Input;
 using SparFlame.Systems.General.BasicControl;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,9 +15,14 @@ namespace SparFlame.UI.General
 
         [SerializeField] private bool useSoftwareCursor;
 
-        [SerializeField] private Image cursorLeftImage;
+        [Header("Left soft cursor image")] [SerializeField]
+        private Image cursorLeftImage;
+
         [SerializeField] private Vector3 cursorLeftOffset;
-        [SerializeField] private Image specialCursorImage;
+
+        [Header("Right soft cursor image")] [SerializeField]
+        private Image specialCursorImage;
+
         [SerializeField] private Vector3 specialCursorOffset;
 
 
@@ -32,21 +38,25 @@ namespace SparFlame.UI.General
 
 
         private EntityManager _em;
-        private EntityQuery _cursorData;
+        private EntityQuery _subGameplayCursorData;
         private EntityQuery _circleCursorData;
+        private EntityQuery _mainGameplayCursorData;
+        private EntityQuery _gameStatus;
 
         private void Awake()
         {
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.Confined;
-            SetCursor(normalMouseTexture);
+            SetDefaultCurosr(normalMouseTexture);
         }
 
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _cursorData = _em.CreateEntityQuery(typeof(SubGameplayCursorData));
+            _subGameplayCursorData = _em.CreateEntityQuery(typeof(SubGameplayCursorData));
             _circleCursorData = _em.CreateEntityQuery(typeof(CircleCursorData));
+            _mainGameplayCursorData = _em.CreateEntityQuery(typeof(MainGameplayCursorData));
+            _gameStatus = _em.CreateEntityQuery(typeof(GameStatusData));
             cursorLeftImage.enabled = false;
             _minX = screenXMargin;
             _maxX = Screen.width - screenXMargin;
@@ -58,16 +68,22 @@ namespace SparFlame.UI.General
         {
             if (!HandleFocus()) return;
 
+            // Update default cursor
             if (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame)
             {
-                SetCursor(clickedCursorTexture);
+                SetDefaultCurosr(clickedCursorTexture);
             }
 
             if (Mouse.current.leftButton.wasReleasedThisFrame || Mouse.current.rightButton.wasReleasedThisFrame)
             {
-                SetCursor(normalMouseTexture);
+                SetDefaultCurosr(normalMouseTexture);
             }
 
+            
+            // Update right soft cursor
+            specialCursorImage.fillAmount = _circleCursorData.IsEmpty
+                ? 0
+                : _circleCursorData.GetSingleton<CircleCursorData>().FillAmount;
 
             // Set soft cursor position
             var newPos = Input.mousePosition + cursorLeftOffset;
@@ -81,29 +97,53 @@ namespace SparFlame.UI.General
             specialCursorImage.rectTransform.position = newSpecialPos;
 
             // Update soft cursor image
-            var data = _cursorData.IsEmpty
-                ? new SubGameplayCursorData
-                    { LeftCursorType = SubGameplayCursorType.None, RightCursorType = SubGameplayCursorType.None }
-                : _cursorData.GetSingleton<SubGameplayCursorData>();
-            if (data.LeftCursorType is SubGameplayCursorType.ArrowDown or SubGameplayCursorType.ArrowUp
-                or SubGameplayCursorType.ArrowLeft
-                or SubGameplayCursorType.ArrowRight or SubGameplayCursorType.ArrowLeftDown
-                or SubGameplayCursorType.ArrowLeftUp
-                or SubGameplayCursorType.ArrowRightDown or SubGameplayCursorType.ArrowRightUp
-                or SubGameplayCursorType.Drag)
+            var gameStatus = _gameStatus.GetSingleton<GameStatusData>().Value;
+            if (gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)
             {
-                Cursor.visible = false;
-                cursorLeftImage.enabled = true;
-                cursorLeftImage.sprite = BasicUIResourceManager.Instance.CursorSprites[data.LeftCursorType];
+                cursorLeftImage.enabled = false;
+                Cursor.visible = true;
+                return;
+            }
+
+
+            if (gameStatus == GameStatus.MainGaming)
+            {
+                var data = _mainGameplayCursorData.GetSingleton<MainGameplayCursorData>();
+                if (data.CursorType is MainGameplayCursorType.None or MainGameplayCursorType.CheckInfo)
+                {
+                    cursorLeftImage.enabled = false;
+                    Cursor.visible = true;
+                }
+                else
+                {
+                    cursorLeftImage.enabled = true;
+                    Cursor.visible = false;
+                    cursorLeftImage.sprite = BasicUIResourceManager.Instance.MainGameplayCursorSprites[data.CursorType];
+                }
             }
             else
             {
-                cursorLeftImage.enabled = false;
+                var data = _subGameplayCursorData.GetSingleton<SubGameplayCursorData>();
+                if (data.LeftCursorType is SubGameplayCursorType.ArrowDown or SubGameplayCursorType.ArrowUp
+                    or SubGameplayCursorType.ArrowLeft
+                    or SubGameplayCursorType.ArrowRight or SubGameplayCursorType.ArrowLeftDown
+                    or SubGameplayCursorType.ArrowLeftUp
+                    or SubGameplayCursorType.ArrowRightDown or SubGameplayCursorType.ArrowRightUp
+                    or SubGameplayCursorType.Drag)
+                {
+                    Cursor.visible = false;
+                    cursorLeftImage.enabled = true;
+                    cursorLeftImage.sprite = BasicUIResourceManager.Instance.SubGameplayCursorSprites[data.LeftCursorType];
+                }
+                else
+                {
+                    Cursor.visible = true;
+                    cursorLeftImage.enabled = false;
+                }
             }
+           
 
-            specialCursorImage.fillAmount = _circleCursorData.IsEmpty
-                ? 0
-                : _circleCursorData.GetSingleton<CircleCursorData>().FillAmount;
+            
         }
 
 
@@ -116,23 +156,7 @@ namespace SparFlame.UI.General
         }
 
 
-        Texture2D ScaleTexture(Texture2D source, int width, int height)
-        {
-            RenderTexture rt = RenderTexture.GetTemporary(width, height);
-            Graphics.Blit(source, rt);
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = rt;
-
-            Texture2D result = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            result.Apply();
-
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(rt);
-            return result;
-        }
-
-        private void SetCursor(Texture2D texture2D)
+        private void SetDefaultCurosr(Texture2D texture2D)
         {
             Cursor.SetCursor(texture2D, new Vector2(x: texture2D.width / 2f, y: texture2D.height / 2f),
                 useSoftwareCursor ? CursorMode.ForceSoftware : CursorMode.Auto);

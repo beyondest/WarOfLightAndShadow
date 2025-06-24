@@ -28,11 +28,7 @@ namespace SparFlame.Systems.General.BasicControl
         public float basicFixStep;
     }
 
-    public enum GameStatusSwitchType
-    {
-        SubGameToMainGame,
-        MainGameToSubGame,
-    }
+  
 
 
 

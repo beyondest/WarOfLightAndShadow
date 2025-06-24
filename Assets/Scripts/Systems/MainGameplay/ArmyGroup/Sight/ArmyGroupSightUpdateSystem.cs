@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.MainGameplay.ArmyGroup;
 using Unity.Burst;
 using Unity.Collections;

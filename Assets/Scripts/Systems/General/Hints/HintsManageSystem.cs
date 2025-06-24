@@ -13,7 +13,7 @@ namespace SparFlame.Systems.Hints
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<GameTimeData>();
-            state.RequireForUpdate<SubGamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<HintConfigs>();
             state.EntityManager.CreateSingletonBuffer<HintsInfo>();
             
@@ -23,6 +23,8 @@ namespace SparFlame.Systems.Hints
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
             if (!_hintTypeToHintContent.IsCreated)
             {
                 Initialize();

@@ -13,20 +13,28 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
             public override void Bake(CityAuthoring authoring)
             {
                 if(authoring.globalIdx == -1)return;
-                if(DatabaseManager.CityDatabaseSo == null)return;
                 var items = DatabaseManager.CityDatabaseSo.items;  
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 var item  = items[authoring.globalIdx];
+                // General
                 AddComponent(entity, new MainGameplayGeneralAttr
                 {
                     Faction = item.faction,
-                    BaseTag = MainGameBaseTag.City
+                    BaseTag = MainGameBaseTag.City,
+                    SubFaction = item.subFaction,
+                    
                 });
                 AddComponent(entity, new CityAttr
                 {
                     ID = authoring.globalIdx,
+                    MaxGarrisonCount = item.maxGarrisonArmyCount,
+                    
                 });
                 
+                // Garrison 
+                AddBuffer<CityGarrisonEntity>(entity);
+                AddBuffer<CityGarrisonTypeData>(entity);
+
             }
         }
     }

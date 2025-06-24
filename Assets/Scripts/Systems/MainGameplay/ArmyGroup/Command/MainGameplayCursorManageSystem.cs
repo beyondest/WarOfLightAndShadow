@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using Unity.Burst;
@@ -11,6 +12,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<ArmyGroupSelectionData>();
+            state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<MainGamingTag>();
         }
@@ -18,34 +21,49 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var inputData = SystemAPI.GetSingleton<InputMouseData>();
+            var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
+            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
             ref var cursorData = ref SystemAPI.GetSingletonRW<MainGameplayCursorData>().ValueRW;
-            if (inputData.IsOverUI || inputData.HitEntity == Entity.Null)
+            var selectionData = SystemAPI.GetSingleton<ArmyGroupSelectionData>();
+            var hasGeneralAttr = SystemAPI.HasComponent<MainGameplayGeneralAttr>(inputMouseData.HitEntity);
+            if (inputMouseData.IsOverUI || inputMouseData.HitEntity == Entity.Null ||
+                selectionData.CurrentSelectCount == 0)
             {
-                cursorData.Type = MainGameplayCursorType.None;
+                cursorData.CursorType = hasGeneralAttr ? MainGameplayCursorType.CheckInfo : MainGameplayCursorType.None;
                 return;
             }
 
-            if (SystemAPI.HasComponent<MainGameplayGeneralAttr>(inputData.HitEntity))
+            if (hasGeneralAttr)
             {
-                var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(inputData.HitEntity);
-                cursorData.Type = generalAttr.BaseTag switch
+                var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(inputMouseData.HitEntity);
+                var hasSupportTag = SystemAPI.HasComponent<SupportFightTag>(inputMouseData.HitEntity);
+                switch (generalAttr.BaseTag)
                 {
-                    MainGameBaseTag.City => MainGameplayCursorType.City,
-                    MainGameBaseTag.Army => MainGameplayCursorType.ArmyGroup,
-                    _ => MainGameplayCursorType.None
-                };
+                    case MainGameBaseTag.City:
+                        if (generalAttr.Faction == playerFaction)
+                        {
+                            cursorData.CursorType = hasSupportTag
+                                ? MainGameplayCursorType.Support
+                                : MainGameplayCursorType.Garrison;
+                        }
+                        else
+                        {
+                            cursorData.CursorType = MainGameplayCursorType.Invade;
+                        }
+                        break;
+                    case MainGameBaseTag.Army:
+                        cursorData.CursorType = generalAttr.Faction == playerFaction ? MainGameplayCursorType.CheckInfo : MainGameplayCursorType.Intercept;
+                        break;
+                }
             }
-            else if (SystemAPI.HasComponent<ArmyGroupWalkableTag>(inputData.HitEntity))
+            else if (SystemAPI.HasComponent<ArmyGroupWalkableTag>(inputMouseData.HitEntity))
             {
-                cursorData.Type = MainGameplayCursorType.March;
+                cursorData.CursorType = MainGameplayCursorType.March;
             }
             else
             {
-                cursorData.Type = MainGameplayCursorType.None;
+                cursorData.CursorType = MainGameplayCursorType.None;
             }
         }
-
-       
     }
 }

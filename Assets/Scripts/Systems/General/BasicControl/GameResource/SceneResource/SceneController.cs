@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
-using SparFlame.Components.MainGameplay;
+using System.Collections.Generic;
+using SparFlame.Components.General;
 using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using SparFlame.Database;
@@ -12,15 +12,16 @@ namespace SparFlame.Systems.General.BasicControl
 {
     public class SceneController : MonoBehaviour, IResourceManager
     {
-        [SerializeField] private SceneGroup initSceneGroup;
+        [SerializeField] private SceneGroup lightInitSceneGroup;
+        [SerializeField] private SceneGroup darkInitSceneGroup;
         [SerializeField] private SceneGroup mainWorldSceneGroup;
-        [SerializeField] private SceneGroup generalSubWorldSceneGroup;
-        
-        [SerializeField] private float checkInterval = 0.1f;
+        [SerializeField] private SceneGroup subWorldSceneGroup;
+        [SerializeField] private SceneGroup battleFieldSceneGroup;
+
+
         // Interface
         public static SceneController Instance;
         public Action EcsStartLoadScene;
-        public Action<ResourceLoadingUtils.LoadingProgress> OnSceneSwitchGameplay;
 
         public bool IsInitialized => _normalSceneLoaded && _subsceneLoaded;
         public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) / 2f;
@@ -37,82 +38,27 @@ namespace SparFlame.Systems.General.BasicControl
         // After select faction
         public void LoadResources()
         {
-            LoadSceneGroup(SceneGroupLoadType.Init);
+            var sceneGroupTypes = new List<SceneGroupType>
+            {
+                SceneGroupType.MainWorld
+            };
+            if(_ifNewSaving) sceneGroupTypes.Add(SceneGroupType.Init);
+            LoadSceneGroup(sceneGroupTypes);
         }
 
         // Return to main menu
         public void UnloadResources()
         {
-            UnloadSceneGroup(SceneGroupLoadType.Init);
-        }
-
-        public void EnterCityGameplay(int cityId)
-        {
-            OnSceneSwitchGameplay?.Invoke(_totalSceneLoadingProgress);
-            LoadSceneGroup(SceneGroupLoadType.City, cityId);
-            UnloadSceneGroup(SceneGroupLoadType.MainWorld);
-        }
-
-        public void EnterBattleField(BattleFieldType type)
-        {
-            OnSceneSwitchGameplay?.Invoke(_totalSceneLoadingProgress);
-            LoadSceneGroup(SceneGroupLoadType.BattleField, fieldType: type);
-            UnloadSceneGroup(SceneGroupLoadType.MainWorld);
-        }
-
-        public void ReturnToMainGameplayFromSubGameplay()
-        {
-            OnSceneSwitchGameplay?.Invoke(_totalSceneLoadingProgress);
-            LoadSceneGroup(SceneGroupLoadType.MainWorld);
-            // Battlefield is also ok
-            UnloadSceneGroup(SceneGroupLoadType.City);
-        }
-
-        // Cache
-        private bool _normalSceneLoaded;
-        private float _normalSceneLoadProgress;
-        private bool _subsceneLoaded;
-        private float _subsceneLoadProgress;
-        private readonly ResourceLoadingUtils.LoadingProgress _loading = new();
-        private readonly ResourceLoadingUtils.LoadingProgress _totalSceneLoadingProgress = new();
-
-        // Internal data
-        private SceneGroup _currentLoadingSubGameplaySceneGroup;
-        private bool _ifSubGameplaySceneLoaded;
-        private readonly NormalSceneLoader _normalSceneLoader = new();
-        private Action<SceneGroup> _onNormalSceneLoaded;
-        
-        
-        private void Awake()
-        {
-            if (!Instance)
-                Instance = this;
-            else
-                Destroy(this);
-            _loading.ProgressChanged += (f => _normalSceneLoadProgress = f);
-            _onNormalSceneLoaded+= _ =>
+            var sceneGroupTypes = new List<SceneGroupType>
             {
-                _normalSceneLoaded = true;
-                _normalSceneLoadProgress = 1f;
+                SceneGroupType.MainWorld,
+                SceneGroupType.Init
             };
+            UnloadSceneGroup(sceneGroupTypes);
         }
-
-        private void Start()
-        {
-            GeneralResourceManager.Instance.Register(this);
-        }
-
-        private IEnumerator CheckTotalLoadingProgress()
-        {
-            while (!IsInitialized)
-            {
-                _totalSceneLoadingProgress.Report(InitProgress);
-                yield return new WaitForSeconds(checkInterval);
-            }
-        }
-
-        private void LoadSceneGroup(SceneGroupLoadType sceneGroupLoadType, int cityId = -1,
-            BattleFieldType fieldType = BattleFieldType.Forest)
+        
+        public void LoadSceneGroup(List<SceneGroupType> sceneGroupTypes, int cityId = -1,
+            bool ifEnterSubGameplay = false)
         {
             // Reset Loading Progress
             _subsceneLoaded = false;
@@ -120,40 +66,13 @@ namespace SparFlame.Systems.General.BasicControl
             _normalSceneLoadProgress = 0f;
             _subsceneLoadProgress = 0f;
 
-            SceneGroup sceneGroup;
-            switch (sceneGroupLoadType)
-            {
-                case SceneGroupLoadType.Init:
-                    sceneGroup = new SceneGroup();
-                    sceneGroup.AddSceneGroup(initSceneGroup);
-                    sceneGroup.AddSceneGroup(mainWorldSceneGroup);
-                    break;
-                // This happens when player return to main gameplay from city/wild
-                case SceneGroupLoadType.MainWorld:
-                    sceneGroup = mainWorldSceneGroup;
-                    break;
-                // This happens when player enter city gameplay
-                case SceneGroupLoadType.City:
-                    _ifSubGameplaySceneLoaded = true;
-                    sceneGroup = new SceneGroup();
-                    var idStart = DatabaseManager.CityDatabaseSo.idStart;
-                    sceneGroup.AddSceneGroup(DatabaseManager.CityDatabaseSo.items[idStart + cityId].sceneGroup);
-                    sceneGroup.AddSceneGroup(generalSubWorldSceneGroup);
-                    _currentLoadingSubGameplaySceneGroup = sceneGroup;
-                    break;
-                // This happens when player enter wild gameplay
-                case SceneGroupLoadType.BattleField:
-                    _ifSubGameplaySceneLoaded = true;
-                    sceneGroup = new SceneGroup();
-                    sceneGroup.AddSceneGroup(generalSubWorldSceneGroup);
-                    _currentLoadingSubGameplaySceneGroup = sceneGroup;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(sceneGroupLoadType), sceneGroupLoadType, null);
-            }
+            var sceneGroup = GetSceneGroup(sceneGroupTypes, cityId);
+            // Only record subGameplay scene group
+            if(ifEnterSubGameplay)
+                _currentLoadingSubGameplaySceneGroup = sceneGroup;
 
-            StartCoroutine(CheckTotalLoadingProgress());
-            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading, onSceneGroupLoaded:_onNormalSceneLoaded));
+            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading,
+                onSceneGroupLoaded: _onNormalSceneLoaded));
             EcsStartLoadScene?.Invoke();
 
             foreach (var subsceneData in sceneGroup.subscenes)
@@ -163,36 +82,9 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        private void UnloadSceneGroup(SceneGroupLoadType sceneGroupLoadType)
+        public void UnloadSceneGroup(List<SceneGroupType> sceneGroupTypes)
         {
-            SceneGroup sceneGroup;
-            switch (sceneGroupLoadType)
-            {
-                // This happens when player return to main menu
-                case SceneGroupLoadType.Init:
-                    sceneGroup = new SceneGroup();
-                    sceneGroup.AddSceneGroup(initSceneGroup);
-                    sceneGroup.AddSceneGroup(mainWorldSceneGroup);
-                    if (_ifSubGameplaySceneLoaded)
-                    {
-                        sceneGroup.AddSceneGroup(_currentLoadingSubGameplaySceneGroup);
-                    }
-
-                    break;
-                // This happens when player enter sub gameplay
-                case SceneGroupLoadType.MainWorld:
-                    sceneGroup = mainWorldSceneGroup;
-                    break;
-                // This happens when player return to main gameplay from city/wild
-                case SceneGroupLoadType.City:
-                case SceneGroupLoadType.BattleField:
-                    _ifSubGameplaySceneLoaded = false;
-                    sceneGroup = _currentLoadingSubGameplaySceneGroup;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(sceneGroupLoadType), sceneGroupLoadType, null);
-            }
-
+            var sceneGroup = GetSceneGroup(sceneGroupTypes, -1);
             StartCoroutine(_normalSceneLoader.UnloadSceneGroupAsync(sceneGroup));
             foreach (var subsceneData in sceneGroup.subscenes)
             {
@@ -201,12 +93,104 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        private enum SceneGroupLoadType
+
+        // Cache
+        private bool _normalSceneLoaded;
+        private float _normalSceneLoadProgress;
+        private bool _subsceneLoaded;
+        private float _subsceneLoadProgress;
+        private readonly ResourceLoadingUtils.LoadingProgress _loading = new();
+
+        // Internal data
+        private SceneGroup _currentLoadingSubGameplaySceneGroup;
+        private bool _ifSubGameplaySceneLoaded;
+        private readonly NormalSceneLoader _normalSceneLoader = new();
+        private Action<SceneGroup> _onNormalSceneLoaded;
+        private FactionTag _playerFaction;
+        private bool _ifNewSaving;
+
+        private void Awake()
         {
-            Init,
-            MainWorld,
-            City,
-            BattleField,
+            if (!Instance)
+                Instance = this;
+            else
+                Destroy(this);
+            _loading.ProgressChanged += (f => _normalSceneLoadProgress = f);
+            _onNormalSceneLoaded += _ =>
+            {
+                _normalSceneLoaded = true;
+                _normalSceneLoadProgress = 1f;
+            };
         }
+
+        private void Start()
+        {
+            GeneralResourceManager.Instance.Register(this);
+            GameController.Instance.OnPlayerChooseSavingSlot += (_, b) => _ifNewSaving = b;
+            GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
+        }
+
+
+      
+
+
+        private SceneGroup GetSceneGroup(List<SceneGroupType> sceneGroupTypes, int cityId)
+        {
+            var sceneGroup = new SceneGroup();
+            var cityItem = cityId < 0 ? new CityDataItem() : DatabaseUtils.GetCityDataItemById(cityId);
+            foreach (var sceneGroupType in sceneGroupTypes)
+            {
+                switch (sceneGroupType)
+                {
+                    case SceneGroupType.Init:
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Ally ? lightInitSceneGroup : darkInitSceneGroup);
+                        break;
+                    case SceneGroupType.MainWorld:
+                        sceneGroup.AddSceneGroup(mainWorldSceneGroup);
+                        break;
+                    case SceneGroupType.SubWorld:
+                        sceneGroup.AddSceneGroup(subWorldSceneGroup);
+                        break;
+                    case SceneGroupType.CityEnv:
+                        sceneGroup.AddSceneGroup(cityItem.envSceneGroup);
+                        break;
+                    case SceneGroupType.BattleField:
+                        sceneGroup.AddSceneGroup(battleFieldSceneGroup);
+                        break;
+                    case SceneGroupType.CityInvadeFight:
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Ally
+                            ? cityItem.lightInvadeSceneGroup
+                            : cityItem.darkInvadeSceneGroup);
+                        break;
+                    case SceneGroupType.CitySupportFight:
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Ally
+                            ? cityItem.lightSupportSceneGroup
+                            : cityItem.darkSupportSceneGroup);
+                        break;
+                    case SceneGroupType.CurrentLoadingSubGameplaySceneGroup:
+                        sceneGroup.AddSceneGroup(_currentLoadingSubGameplaySceneGroup);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            return sceneGroup;
+        }
+
+
+      
+    }
+    
+    public enum SceneGroupType
+    {
+        Init,
+        MainWorld,
+        SubWorld,
+        CityEnv,
+        BattleField,
+        CityInvadeFight,
+        CitySupportFight,
+        CurrentLoadingSubGameplaySceneGroup,
     }
 }

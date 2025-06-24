@@ -31,6 +31,8 @@ namespace SparFlame.Components.General
         TargetNotGarrisonable = 18,
         
         ArmyGroupNotReachable = 19,
+        ArmyGroupCountExceededInCity = 20,
+        PleaseDeleteArmyGroupLastTargetForNewTarget = 21,
     }
 
     public enum HintType

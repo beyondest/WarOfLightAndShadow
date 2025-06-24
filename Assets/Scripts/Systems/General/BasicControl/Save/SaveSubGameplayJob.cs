@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
@@ -54,6 +55,7 @@ namespace SparFlame.Systems.General.BasicControl
     
     
     [BurstCompile]
+    [WithNone(typeof(InArmyGroup))]
     public partial struct SaveSubGameplayJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -141,6 +143,7 @@ namespace SparFlame.Systems.General.BasicControl
             
             // Create instance and set general data
             var instance = ECB.Instantiate(index,GlobalIdxToPrefabs[globalId.value] );
+            ECB.AddComponent<SubGameplayEntityTag>(index, instance);
             ECB.SetComponent(index, instance, new LocalTransform
             {
                 Position = transform.position,

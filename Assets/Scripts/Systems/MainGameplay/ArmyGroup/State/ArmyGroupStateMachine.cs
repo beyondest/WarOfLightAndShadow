@@ -10,30 +10,37 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
     public partial struct ArmyGroupStateMachine : ISystem
     {
-        private ComponentLookup<MainGameplayGeneralAttr> _generalAttrLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
+
+        private ComponentLookup<MainGameplayGeneralAttr> _generalAttrLookup;
+        private ComponentLookup<SupportFightTag> _supportFightTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MainGamingTag>();
             state.RequireForUpdate<ArmyGroupSightTarget>();
-            _generalAttrLookup = state.GetComponentLookup<MainGameplayGeneralAttr>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
+            _generalAttrLookup = state.GetComponentLookup<MainGameplayGeneralAttr>(true);
+            _supportFightTagLookup = state.GetComponentLookup<SupportFightTag>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _generalAttrLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
+            _generalAttrLookup.Update(ref state);
+            _supportFightTagLookup.Update(ref state);
             new ArmyGroupStateMachineJob
             {
                 TransformLookup = _localTransformLookup,
-                GeneralAttrLookup = _generalAttrLookup,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                GeneralAttrLookup = _generalAttrLookup,
+                SupportFightTagLookup = _supportFightTagLookup
             }.ScheduleParallel();
         }
 
@@ -41,21 +48,76 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public partial struct ArmyGroupStateMachineJob : IJobEntity
         {
+            [ReadOnly] public FactionTag PlayerFaction;
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<MainGameplayGeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<MainGameplayGeneralAttr> GeneralAttrLookup;
+            [ReadOnly] public ComponentLookup<SupportFightTag> SupportFightTagLookup;
 
-            private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<ArmyGroupSightTarget> targets,
+            private void Execute([ChunkIndexInQuery] int index,
+                ref DynamicBuffer<ArmyGroupSightTarget> targets,
+                ref LastPassingByPlayerCity lastCity, ref ArmyGroupMovableData movableData,
+                ref ArmyGroupStateData stateData,
                 Entity selfEntity)
             {
-                if (targets.IsEmpty) return;
-                var finalTarget = targets[0].Entity;
+                var selfFaction = GeneralAttrLookup[selfEntity].Faction;
+                
+                if (movableData.MovementInfo == ArmyGroupMovementInfo.Complete)
+                {
+                    movableData.MovementInfo = ArmyGroupMovementInfo.None;
+                    stateData.CurState = stateData.TargetState;
+                    stateData.TargetState = ArmyGroupState.Idle;
+                    switch (stateData.CurState)
+                    {
+                        case ArmyGroupState.Idle:
+                            break;
+                        case ArmyGroupState.Moving:
+                            // This should never happen
+                            break;
+                        case ArmyGroupState.Invade:
+                            
+                            BattleUtils.BeginBattle(
+                                selfFaction == PlayerFaction ? SubGameStatus.PlayerSiege : SubGameStatus.PlayerDefend,
+                                selfEntity, stateData.Target, index, ECB
+                            );
+                            break;
+                        case ArmyGroupState.Support:
+                            var targetStatus = SupportFightTagLookup.HasComponent(stateData.Target)
+                                ? SubGameStatus.Support
+                                : SubGameStatus.PlayerSiege;
+
+                            BattleUtils.BeginBattle(targetStatus, selfEntity, stateData.Target, index, ECB);
+                            break;
+                        case ArmyGroupState.Garrison:
+                            var garrisonRequest = ECB.CreateEntity(index);
+                            ECB.AddComponent<MainGameplayEntityTag>(index, garrisonRequest);
+                            ECB.AddComponent(index, garrisonRequest, new ArmyGroupGarrisonRequest
+                            {
+                                City = stateData.Target,
+                                ArmyGroup = selfEntity,
+                            });
+                            break;
+                    }
+                    return;
+                }
+
+                // Check should trigger encounter battle
+                var finalTarget = Entity.Null;
                 if (targets.Length > 1)
                 {
                     var minDisSq = float.MaxValue;
                     for (int i = 0; i < targets.Length; i++)
                     {
                         var target = targets[i].Entity;
+                        var targetGeneralAttr = GeneralAttrLookup[target];
+                        if (targetGeneralAttr.Faction == selfFaction)
+                        {
+                            // Record the last passing by city
+                            if(targetGeneralAttr.BaseTag == MainGameBaseTag.City)
+                                lastCity.City = target;
+                            // Exclude same faction army group
+                            continue;
+                        }
                         var dis = math.distancesq(TransformLookup[target].Position,
                             TransformLookup[selfEntity].Position);
                         if (dis < minDisSq)
@@ -65,17 +127,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         }
                     }
                 }
-
-                var targetGeneralAttr = GeneralAttrLookup[finalTarget];
-                var warRequest = ECB.CreateEntity(index);
-                ECB.AddComponent<MainGameplayEntityTag>(index, warRequest);
-                ECB.AddComponent(index, warRequest, new BattleTriggerRequest
+                if (finalTarget != Entity.Null)
                 {
-                    Attacker = selfEntity,
-                    Defender = finalTarget,
-                    Type = targetGeneralAttr.BaseTag == MainGameBaseTag.City ? BattleType.Siege : BattleType.Encounter
-                });
-                targets.Clear();
+                    BattleUtils.BeginBattle(SubGameStatus.Encounter, selfEntity,finalTarget, index, ECB);
+                }
             }
         }
     }

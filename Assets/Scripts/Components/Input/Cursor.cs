@@ -10,7 +10,7 @@ namespace SparFlame.Components.Input
 
     public struct MainGameplayCursorData : IComponentData
     {
-        public MainGameplayCursorType Type;
+        public MainGameplayCursorType CursorType;
     }
 
     public struct CircleCursorData : IComponentData
@@ -22,10 +22,12 @@ namespace SparFlame.Components.Input
     public enum MainGameplayCursorType
     {
         None = 0,
-        City = 1,
-        ArmyGroup = 2,
-        March = 3,
-        Others = 4
+        March = 1,
+        Garrison = 2,
+        Support = 3,
+        Invade = 4,
+        Intercept = 5,
+        CheckInfo = 6
     }
     
     

@@ -48,6 +48,8 @@ namespace SparFlame.Systems.General.BasicControl
             StartCoroutine(CheckAllResourceLoadingCoroutine());
         }
 
+        
+
         // Internal Data
         private readonly List<IResourceManager> _providers = new();
         private void Awake()

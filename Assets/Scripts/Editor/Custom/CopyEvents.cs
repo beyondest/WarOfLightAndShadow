@@ -1,10 +1,7 @@
 ﻿using UnityEngine;
-using UnityEngine;
 using UnityEditor;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
-using System.Reflection;
-using System.Collections.Generic;
 using SparFlame.UI.General;
 
 namespace Editor
@@ -15,13 +12,13 @@ namespace Editor
         [MenuItem("Tools/Migrate EventTrigger.OnPointerEnter To CursorScreenSideTrigger")]
         public static void MigrateOnPointerEnter()
         {
-            int migratedCount = 0;
+            var migratedCount = 0;
 
-            foreach (GameObject go in Selection.gameObjects)
+            foreach (var go in Selection.gameObjects)
             {
                 var trigger = go.GetComponent<EventTrigger>();
                 var cursorTrigger = go.GetComponent<LeftRightTrigger>();
-                if (trigger == null || cursorTrigger == null)
+                if (!trigger || !cursorTrigger)
                 {
                     Debug.LogWarning($"GameObject '{go.name}' missing EventTrigger or CursorScreenSideTrigger");
                     continue;
@@ -33,21 +30,19 @@ namespace Editor
                         continue;
 
                     UnityEventBase sourceEvent = entry.callback;
-                    UnityEvent targetEvent = cursorTrigger.onCursorLeftSide;
+                    var targetEvent = cursorTrigger.onCursorLeftSide;
 
                     // 利用反射复制所有 persistent calls
-                    int count = sourceEvent.GetPersistentEventCount();
-                    for (int i = 0; i < count; i++)
+                    var count = sourceEvent.GetPersistentEventCount();
+                    for (var i = 0; i < count; i++)
                     {
-                        Object target = sourceEvent.GetPersistentTarget(i);
-                        string methodName = sourceEvent.GetPersistentMethodName(i);
+                        var target = sourceEvent.GetPersistentTarget(i);
+                        var methodName = sourceEvent.GetPersistentMethodName(i);
 
-                        if (string.IsNullOrEmpty(methodName) || target == null)
+                        if (string.IsNullOrEmpty(methodName) || !target)
                             continue;
 
-                        UnityAction action =
-                            System.Delegate.CreateDelegate(typeof(UnityAction), target, methodName) as UnityAction;
-                        if (action != null)
+                        if (System.Delegate.CreateDelegate(typeof(UnityAction), target, methodName) is UnityAction action)
                         {
                             UnityEditor.Events.UnityEventTools.AddPersistentListener(targetEvent, action);
                             migratedCount++;

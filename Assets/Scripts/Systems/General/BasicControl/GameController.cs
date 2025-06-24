@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.IO;
+using System.Collections.Generic;
 using SparFlame.Components.General;
-using SparFlame.Systems.General.Audio;
+using SparFlame.Components.MainGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
+using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
@@ -11,29 +13,33 @@ namespace SparFlame.Systems.General.BasicControl
     public class GameController : MonoBehaviour
     {
         [SerializeField] private float checkInitInterval = 0.1f;
+
         public static GameController Instance;
 
         #region Events
+        
+        public Action<ResourceLoadingUtils.LoadingProgress> OnSwitchStatusLoadingProgress;
 
         public event Action<bool> OnPause;
         public event Action<bool> OnResume;
 
         public event Action OnBackToMainMenu;
 
-        // faction is winner
-        public event Action<FactionTag> OnGameOver;
+        public event Action<FactionTag> OnWinnerWin;  
 
         public event Action<FactionTag> OnPlayerChooseFaction;
-        // float is start elapsed time
 
-        public event Action OnSubGameStart;
-        public event Action OnMainGameStart;
+        public event Action OnSubGameStartForPlayer;
+        public event Action OnMainGameStartForPlayer;
 
-        public event Action<int> OnEcsLoadCitySaving;
-        public event Action<int> OnEcsSaveCityData;
-        public event Action<GameStatusSwitchType, SubGameStatus> OnEcsSwitchGameStatus;
+        public event Action< SubGameStatusData> OnSwitchGameStatusForSystems; // All systems will start running AFTER this action is called.
 
-        public event Action<int> OnEcsChooseSavingSlot; 
+        public event Action<SubGameStatusData> OnEcsDealInSubGameTag;
+        public event Action<ClearGameplayEntitiesType> OnEcsClearGameplayEntities; 
+        
+        public event Action<int, bool> OnPlayerChooseSavingSlot;
+
+
         #endregion
 
 
@@ -41,7 +47,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void GameOver(FactionTag winnerFaction)
         {
-            OnGameOver?.Invoke(winnerFaction);
+            OnWinnerWin?.Invoke(winnerFaction);
             PauseGame(false);
         }
 
@@ -58,7 +64,6 @@ namespace SparFlame.Systems.General.BasicControl
         public void EndGameToMainMenu()
         {
             InputListener.Instance.DisableAllMaps();
-            AudioManager.Instance.EnableGlobalAudioListener(true);
             ResumeGame(false);
             OnBackToMainMenu?.Invoke();
         }
@@ -73,58 +78,94 @@ namespace SparFlame.Systems.General.BasicControl
             OnPlayerChooseFaction?.Invoke(playerFaction);
         }
 
-        public void PlayerChooseSavingSlot(int slot)
+        public void PlayerChooseSavingSlot(int slot, bool ifNew)
         {
-            _savingSlot = slot;
-            OnEcsChooseSavingSlot?.Invoke(slot);
+            OnPlayerChooseSavingSlot?.Invoke(slot, ifNew);
         }
-        public void SubGameStart()
+
+        public void SubGameStartForPlayer()
         {
             InputListener.Instance.EnableSubGameMaps();
-            OnSubGameStart?.Invoke();
+            OnSubGameStartForPlayer?.Invoke();
         }
 
-        public void MainGameStart()
+        public void MainGameStartForPlayer()
         {
             InputListener.Instance.EnableMainGameMaps();
-            OnMainGameStart?.Invoke();
+            OnMainGameStartForPlayer?.Invoke();
         }
 
-        public void EnterPlayerCity(int cityId)
+        public void EnterPlayerCity(Entity city)
         {
-            _switchType = GameStatusSwitchType.MainGameToSubGame;
-            _targetSubGameStatus = SubGameStatus.PlayerCity;
-            // AudioManager.Instance.SetAudioListener(true);
-            PauseGame(true);
-            _cityId = cityId;
-            SceneController.Instance.EnterCityGameplay(cityId);
-            var savePath = SaveUtilities.GetCitySavePath(cityId,_savingSlot);
-            if (File.Exists(savePath))
+            // Set status change type
+            _targetSubGameStatusData = new SubGameStatusData
             {
-                OnEcsLoadCitySaving?.Invoke(cityId);
-            }
-            StartCoroutine(CheckSceneLoading());
-        }
-
-        public void ReturnToMainWorldFromCity()
-        {
-            _switchType = GameStatusSwitchType.SubGameToMainGame;
-            // AudioManager.Instance.SetAudioListener(true);
+                SubGameStatus = SubGameStatus.PlayerCity,
+                City = city,
+                IsInBattle = false,
+                BattleTriggerRequest = default
+            };
+            
+            // Pause game
             PauseGame(true);
-            SceneController.Instance.ReturnToMainGameplayFromSubGameplay();
-            SaveCityData();
-            _cityId = -1;
-            StartCoroutine(CheckSceneLoading());
+
+            // Load and unload scenes
+            var loads = new List<SceneGroupType>
+            {
+                SceneGroupType.SubWorld,
+                SceneGroupType.CityEnv
+            };
+            var unloads = new List<SceneGroupType> { SceneGroupType.MainWorld };
+            SceneController.Instance.LoadSceneGroup(loads, _em.GetComponentData<CityAttr>(city).ID,true);
+            SceneController.Instance.UnloadSceneGroup(unloads);
+            
+            // Show and check loading progress
+            OnSwitchStatusLoadingProgress?.Invoke(_loadingProgress);
+            StartCoroutine(CheckResourceLoading());
+            
+            // Load needed saved data
+            OnEcsDealInSubGameTag?.Invoke(_targetSubGameStatusData);
+            SaveLoadController.Instance.SyncLoadSubGameData(_targetSubGameStatusData);
         }
 
-        public void SaveCityData()
+        public void BackToMainWorld()
         {
-            if (_cityId == -1)
+            // Set status change type
+            _targetSubGameStatusData = new SubGameStatusData
             {
-                throw new ArgumentException("This should never happen, you try to save city data when not in city");
-            }
-            OnEcsSaveCityData?.Invoke(_cityId);
+                SubGameStatus = SubGameStatus.None,
+                City = Entity.Null,
+                IsInBattle = false,
+                BattleTriggerRequest = default
+            };
+            
+            // Resume game
+            PauseGame(true);
+            
+            // Save needed saved data
+            SaveLoadController.Instance.SyncSaveGame();
+            OnEcsDealInSubGameTag?.Invoke(_targetSubGameStatusData);
+            DestroyGameplayEntities(ClearGameplayEntitiesType.SubGameplay);
+
+            // Load and unload scenes
+            var loads = new List<SceneGroupType> { SceneGroupType.MainWorld };
+            var unloads = new List<SceneGroupType> { SceneGroupType.CurrentLoadingSubGameplaySceneGroup };
+            SceneController.Instance.LoadSceneGroup(loads);
+            SceneController.Instance.UnloadSceneGroup(unloads);
+            
+            // Show and check loading progress
+            OnSwitchStatusLoadingProgress?.Invoke(_loadingProgress);
+            StartCoroutine(CheckResourceLoading());
+            
         }
+
+        public void DestroyGameplayEntities(ClearGameplayEntitiesType clearType)
+        {
+            OnEcsClearGameplayEntities?.Invoke(clearType);
+        }
+        
+
+     
 
         #endregion
 
@@ -132,18 +173,24 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void OnClickSwitchToSubGame()
         {
-            OnEcsSwitchGameStatus?.Invoke(GameStatusSwitchType.MainGameToSubGame, SubGameStatus.PlayerCity);
-            SubGameStart();
+            OnSwitchGameStatusForSystems?.Invoke(
+                new SubGameStatusData
+                {
+                    SubGameStatus = SubGameStatus.Encounter,
+                    City = Entity.Null,
+                    IsInBattle = false,
+                    BattleTriggerRequest = default
+                });
+            SubGameStartForPlayer();
         }
-        
 
         #endregion
 
         // Internal Data
-        private int _cityId = -1;
-        private GameStatusSwitchType _switchType;
-        private SubGameStatus _targetSubGameStatus;
-        private int _savingSlot;
+        private SubGameStatusData _targetSubGameStatusData;
+        private readonly ResourceLoadingUtils.LoadingProgress _loadingProgress = new();
+        private EntityManager _em;
+
         #region EventFunctions
 
         private void Awake()
@@ -160,33 +207,36 @@ namespace SparFlame.Systems.General.BasicControl
 
             Application.targetFrameRate = 60;
         }
-        
-        
+
+        private void Start()
+        {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            
+        }
 
         #endregion
 
-        private IEnumerator CheckSceneLoading()
+        private IEnumerator CheckResourceLoading()
         {
             while (true)
             {
-                if(SceneController.Instance.IsInitialized)
+                if (SceneController.Instance.IsInitialized)
                     break;
+                _loadingProgress.Report(SceneController.Instance.InitProgress);
                 yield return new WaitForSeconds(checkInitInterval);
             }
-            switch (_switchType)
+
+            if (_targetSubGameStatusData.SubGameStatus == SubGameStatus.None)
             {
-                case GameStatusSwitchType.MainGameToSubGame:
-                    SubGameStart();
-                    break;
-                case GameStatusSwitchType.SubGameToMainGame:
-                    _targetSubGameStatus = SubGameStatus.None;
-                    MainGameStart();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                MainGameStartForPlayer();
             }
+            else
+            {
+                SubGameStartForPlayer();
+            }
+
             ResumeGame(true);
-            OnEcsSwitchGameStatus?.Invoke(_switchType, _targetSubGameStatus);
+            OnSwitchGameStatusForSystems?.Invoke( _targetSubGameStatusData);
         }
     }
 }

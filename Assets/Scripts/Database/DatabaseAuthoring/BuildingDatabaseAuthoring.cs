@@ -13,10 +13,7 @@ namespace SparFlame.Database
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 var buffer = AddBuffer<BuildingEntityPrefabData>(entity);
-                if (!DatabaseManager.BuildingDatabaseSo || DatabaseManager.BuildingDatabaseSo.Items.Count == 0)
-                {
-                    throw new ArgumentException("No building database found");
-                }
+               
 
                 foreach (var buildingData in
                          DatabaseManager.BuildingDatabaseSo

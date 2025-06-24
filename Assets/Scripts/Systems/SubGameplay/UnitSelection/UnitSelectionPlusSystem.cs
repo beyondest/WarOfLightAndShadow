@@ -376,7 +376,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
             var request = ecb.CreateEntity();
             ecb.AddComponent(request, new VFXRequest
             {
-                VFXName = VFXName.SelectionIndicator,
+                VFXName = VFXName.UnitSelectionIndicator,
                 Filter = new VFXSubFilter
                 {
                     FactionFilterEnable = true,
