@@ -21,9 +21,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             state.RequireForUpdate<DarkEnemyDatabaseTag>();
             state.RequireForUpdate<LightEnemyDatabaseTag>();
             state.RequireForUpdate<GameTimeData>();
-            state.RequireForUpdate<AllyResourceDataTag>();
+            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<PlayerFactionData>();
-            state.RequireForUpdate<EnemyResourceDataTag>();
+            state.RequireForUpdate<DarkResourceDataTag>();
             state.RequireForUpdate<GameWaveData>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<EnemySpawnSystemConfig>();
@@ -45,10 +45,10 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             if(gameStatus != GameStatus.SubGaming)return;
             // var config = SystemAPI.GetSingleton<EnemySpawnSystemConfig>();
             // Only when enemy population not exceeds, will conjure unit
-            var curPlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
-            var enemyResourceDataCenter = curPlayerFaction == FactionTag.Ally
-                ? SystemAPI.GetSingletonEntity<EnemyResourceDataTag>()
-                : SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
+            var curPlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
+            var enemyResourceDataCenter = curPlayerFaction == FactionTag.Light
+                ? SystemAPI.GetSingletonEntity<DarkResourceDataTag>()
+                : SystemAPI.GetSingletonEntity<LightResourceDataTag>();
             var enemyResourceData = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyResourceDataCenter);
             if (enemyResourceData[(int)ResourceType.SoulPact].Amount > 0)
             {
@@ -91,7 +91,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             [ReadOnly] public BufferLookup<CostList> CostListLookup;
 
             private void Execute([ChunkIndexInQuery] int index, in SubGameplayGeneralAttr subGameplayGeneralAttr,
-                ref EnemyConjureShrineData data,
+                ref AIConjureShrineData data,
                 in ConjureAttr attr, Entity selfEntity)
             {
                 if (CurTime < data.ConjureTime) return;
@@ -118,7 +118,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                     ECB.AddComponent(index, costRequest, new ResourceChangeRequest
                     {
                         AbsAmount = math.abs(cost.Amount * conjureCount),
-                        FromFaction = subGameplayGeneralAttr.FactionTag,
+                        FromFaction = subGameplayGeneralAttr.Faction,
                         Type = cost.Type,
                         RequestType = ResourceRequestType.Consume
                     });
@@ -130,11 +130,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
         private void Initialize(ref SystemState state)
         {
-            var lightEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
-            var darkEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
-            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
-                ? lightEntity
-                : darkEntity;
+            var lightResourceDatabaseEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
+            var darkResourceDatabaseEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
+            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().faction == FactionTag.Light
+                ? lightResourceDatabaseEntity
+                : darkResourceDatabaseEntity;
             var buffer1 = SystemAPI.GetBuffer<EnemyUnitSpawnIntervalData>(entity);
             var buffer2 = SystemAPI.GetBuffer<EnemyUnitSpawnProbPrefabEntry>(entity);
             _wavePoint2Type2Entries =

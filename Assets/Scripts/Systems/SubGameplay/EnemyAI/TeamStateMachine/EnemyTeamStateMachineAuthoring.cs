@@ -32,7 +32,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         public Entity TargetEntity;
         public float3 TargetPosition;
         public bool Focus;
-        public EnemyCommandType CommandType;
+        public AICommandType CommandType;
         public bool AssignTarget;
         public bool Idle;
     }

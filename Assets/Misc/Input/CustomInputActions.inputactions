@@ -562,6 +562,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "MoveOutAllSameIcon",
+                    "type": "Button",
+                    "id": "8e0fccf1-9bc0-4b0e-8bab-ced42a75cd1c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -672,6 +681,17 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "ResetOnlyTheLastTarget",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ac79be2d-fb3b-4af6-8970-7f9af1ae3fa0",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "MoveOutAllSameIcon",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

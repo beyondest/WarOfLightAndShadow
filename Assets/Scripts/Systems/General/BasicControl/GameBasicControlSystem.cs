@@ -2,10 +2,8 @@
 using System.IO;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
-using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
@@ -96,6 +94,7 @@ namespace SparFlame.Systems.General.BasicControl
                 gameBasicState.ValueRW.Value = GameStatus.MainGaming;
                 var gaming = EntityManager.CreateEntity();
                 EntityManager.AddComponent<MainGamingTag>(gaming);
+              
                 GameController.Instance.MainGameStartForPlayer();
             }
 
@@ -145,7 +144,8 @@ namespace SparFlame.Systems.General.BasicControl
         {
             EntityManager.CreateSingleton(new PlayerFactionData
             {
-                Value = factionTag
+                faction = factionTag,
+                subFaction = SubFactionTag.None
             });
         }
 

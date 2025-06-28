@@ -32,7 +32,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
         {
             var unitSelectionConfig = SystemAPI.GetSingleton<UnitSelectionConfig>();
             var unitSelectionData = SystemAPI.GetSingletonRW<UnitSelectionData>();
-
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var inputUnitSelectionData = SystemAPI.GetSingleton<InputUnitControlData>();
 
@@ -44,12 +44,12 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
             //     unitSelectionData.ValueRW.CurrentSelectFaction = ~unitSelectionData.ValueRW.CurrentSelectFaction;
             //     unitSelectionData.ValueRW.CurrentSelectCount = 0;
             // }
-            unitSelectionData.ValueRW.CurrentSelectFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            unitSelectionData.ValueRW.CurrentSelectFaction =playerFactionData.faction;
             // Left Click Start
             
              if (inputUnitSelectionData.ClassSelection)
             {
-                var selectable = UnitSelectionUtils.IsSelectable(state.EntityManager, in unitSelectionData.ValueRO,
+                var selectable = UnitSelectionUtils.IsSelectable(state.EntityManager,playerFactionData,
                     inputMouseData.HitEntity);
                 if (selectable)
                 {
@@ -118,7 +118,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
             }
             else if (inputUnitSelectionData.SingleSelect)
             {
-                var selectable = UnitSelectionUtils.IsSelectable(state.EntityManager, in unitSelectionData.ValueRO,
+                var selectable = UnitSelectionUtils.IsSelectable(state.EntityManager, playerFactionData,
                     inputMouseData.HitEntity);
                 // Press AddUnitKey
                 if (!inputUnitSelectionData.AddUnit)

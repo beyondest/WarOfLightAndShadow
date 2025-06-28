@@ -123,12 +123,12 @@ namespace SparFlame.Systems.General.BasicControl.Battle
 
         private void RecursivelyAddInSightArmyGroups(ref NativeHashSet<Entity> armyGroups, Entity triggerArmyGroup)
         {
-            var triggerFaction = SystemAPI.GetComponent<MainGameplayGeneralAttr>(triggerArmyGroup).Faction;
+            var triggerFaction = SystemAPI.GetComponent<MainGameplayGeneralAttr>(triggerArmyGroup).faction;
             var inSightArmyGroups = SystemAPI.GetBuffer<ArmyGroupSightTarget>(triggerArmyGroup);
             foreach (var armyGroupSightTarget in inSightArmyGroups)
             {
                 var target = armyGroupSightTarget.Entity;
-                if (SystemAPI.GetComponent<MainGameplayGeneralAttr>(target).Faction == triggerFaction)
+                if (SystemAPI.GetComponent<MainGameplayGeneralAttr>(target).faction == triggerFaction)
                 {
                     if(armyGroups.Add(target))
                         RecursivelyAddInSightArmyGroups(ref armyGroups, target);

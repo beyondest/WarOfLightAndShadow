@@ -19,10 +19,10 @@ namespace SparFlame.Systems.General.VFX
                     BuildingHighLightScale = authoring.config.buildingHighLightScale,
                     ResourceHighLightScale = authoring.config.resourceHighLightScale,
                     UnitHighLightScale = authoring.config.unitHighLightScale,
-                    PlayerHighLightColor = new float4(authoring.config.playerHighLightColor.r,
+                    AllyHighLightColor = new float4(authoring.config.playerHighLightColor.r,
                         authoring.config.playerHighLightColor.g, authoring.config.playerHighLightColor.b,
                         authoring.config.playerHighLightColor.a),
-                    EnemyHighLightColor = new float4(authoring.config.enemyHighLightColor.r, authoring.config.enemyHighLightColor.g,
+                    HostileHighLightColor = new float4(authoring.config.enemyHighLightColor.r, authoring.config.enemyHighLightColor.g,
                         authoring.config.enemyHighLightColor.b, authoring.config.enemyHighLightColor.a),
                     NeutralHighLightColor = new float4(authoring.config.neutralHighLightColor.r,authoring.config.neutralHighLightColor.g,
                         authoring.config.neutralHighLightColor.b, authoring.config.neutralHighLightColor.a),
@@ -47,8 +47,8 @@ namespace SparFlame.Systems.General.VFX
         public float UnitHighLightScale;
         public float BuildingHighLightScale;
         public float ResourceHighLightScale;
-        public float4 PlayerHighLightColor;
-        public float4 EnemyHighLightColor;
+        public float4 AllyHighLightColor;
+        public float4 HostileHighLightColor;
         public float4 NeutralHighLightColor;
     }
 }

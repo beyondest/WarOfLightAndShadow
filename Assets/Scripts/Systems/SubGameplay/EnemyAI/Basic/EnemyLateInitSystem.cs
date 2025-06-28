@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using Unity.Burst;
@@ -9,7 +10,7 @@ using Unity.Mathematics;
 namespace SparFlame.Systems.SubGameplay.EnemyAI
 {
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(EnemyInitDistinguishSystem))]
+    [UpdateAfter(typeof(SubGameplayInitDistinguishSystem))]
     public partial struct EnemyLateInitSystem : ISystem
     {
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
@@ -31,18 +32,19 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if (gameStatus == GameStatus.Init)
             {
-                SystemAPI.SetSingleton(new EnemyCrystalInfo
-                {
-                    TotalCount = 0,
-                    InSightValidCount = 0
-                });
+                // SystemAPI.SetSingleton(new EnemyCrystalInfo
+                // {
+                //     CurTotalHp = 1,
+                //     MaxTotalHp = 1
+                // });
                 return;
             }
-            if(gameStatus != GameStatus.SubGaming)return;
+
+            if (gameStatus != GameStatus.SubGaming) return;
             _buildingAttrLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var ecbP = ecb.AsParallelWriter();
             var job = new InitCrystalPackDataJob
             {
@@ -50,25 +52,28 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                 SeedBias = SystemAPI.GetSingletonRW<GeneralRandom>().ValueRW.Rnd.NextInt(),
                 BuildingAttrLookup = _buildingAttrLookup,
-                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                PlayerFactionData = playerFactionData,
                 GeneralAttrLookup = _generalAttrLookup,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = job;
             job.Complete();
-            AddMonitorToNoMonitorPlayerCrystal(ref state, playerFaction, ecb);
+            AddMonitorToNoMonitorPlayerCrystal(ref state, playerFactionData, ecb);
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
-   
-
-        private void AddMonitorToNoMonitorPlayerCrystal(ref SystemState state, FactionTag playerFaction,
+        private void AddMonitorToNoMonitorPlayerCrystal(ref SystemState state, in PlayerFactionData playerFactionData,
             EntityCommandBuffer ecb)
         {
-            foreach (var (coreCrystal, entity) in SystemAPI.Query<RefRO<CrystalDef>>().WithNone<UnderMonitorTag>()
+            foreach (var (generalAttr, entity) in SystemAPI.Query<RefRO<SubGameplayGeneralAttr>>()
+                         .WithAll<CrystalDef>()
+                         .WithNone<UnderMonitorTag>()
                          .WithAll<PlayerTag>().WithEntityAccess())
             {
-                if (coreCrystal.ValueRO.Faction != playerFaction) continue;
+                var relationship = FactionUtils.GetRelationship(playerFactionData, generalAttr.ValueRO.Faction,
+                    generalAttr.ValueRO.SubFaction);
+                // Only monitor self and ally crystal for enemy AI. Ally AI don't need that.
+                if (relationship != Relationship.Player && relationship != Relationship.Ally) continue;
                 var generateMonitorRequest = ecb.CreateEntity();
                 ecb.AddComponent<SubGameplayEntityTag>(generateMonitorRequest);
                 ecb.AddComponent(generateMonitorRequest, new GenerateMonitorRequest
@@ -102,7 +107,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         {
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public int SeedBias;
-            [ReadOnly] public FactionTag PlayerFaction;
+            [ReadOnly] public PlayerFactionData PlayerFactionData;
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
@@ -116,22 +121,25 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 {
                     var group = children[i];
                     var child = group.Value;
-                    
+
                     if (BuildingAttrLookup.TryGetComponent(child, out var buildingAttr))
                     {
-                        if(GeneralAttrLookup. TryGetComponent(child, out var generalAttr)
-                           && generalAttr.FactionTag == PlayerFaction)return;
+                        if (!GeneralAttrLookup.TryGetComponent(child, out var generalAttr)) return;
+                        var relationship = FactionUtils.GetRelationship(PlayerFactionData, generalAttr.Faction,
+                            generalAttr.SubFaction);
+                        // Player's crystal pack don't need AI Logic
+                        if (relationship == Relationship.Player) return;
                         if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal }
-                            or {Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon})
+                            or { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Beacon })
                         {
                             baseEntity = child;
-                            ECB.AddBuffer<EnemyBaseGarrisonTowerData>(index, baseEntity);
+                            ECB.AddBuffer<AIBaseGarrisonTowerData>(index, baseEntity);
                         }
 
                         if (buildingAttr is { Type: BuildingType.ConjuringShrines })
                         {
-                            ECB.AddComponent<EnemyConjureShrineData>(index, child);
-                            ECB.SetComponent(index, child, new EnemyConjureShrineData
+                            ECB.AddComponent<AIConjureShrineData>(index, child);
+                            ECB.SetComponent(index, child, new AIConjureShrineData
                             {
                                 Base = baseEntity,
                                 ConjureTime = 0f,
@@ -141,9 +149,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
                         if (buildingAttr is
                             { Type: BuildingType.Fortifications, SubTypeIndex: (int)FortificationType.Tower }
-                            or {Type: BuildingType.Fortifications, SubTypeIndex: (int)FortificationType.BigTower})
+                            or { Type: BuildingType.Fortifications, SubTypeIndex: (int)FortificationType.BigTower })
                         {
-                            ECB.AppendToBuffer(index, baseEntity, new EnemyBaseGarrisonTowerData
+                            ECB.AppendToBuffer(index, baseEntity, new AIBaseGarrisonTowerData
                             {
                                 Tower = child,
                                 AvailableCount = 1

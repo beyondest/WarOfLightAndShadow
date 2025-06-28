@@ -4,7 +4,6 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace SparFlame.UI.MainGameplay
 {
@@ -227,7 +226,6 @@ namespace SparFlame.UI.MainGameplay
             ArmyGroupDetailWindow.Instance.ClearCloseUpTarget();
             CityDetailWindow.Instance.ClearCloseUpTarget();
 
-            MainGameplayGarrisonInfoWindow.Instance.ClearCloseUpTarget();
             // ConjureQueueWindow.Instance.ClearCloseUpTarget();
             // MiniConjureWindow.Instance.ClearCloseUpTarget();
             // ConjureWindow.Instance.ClearCloseUpTarget();

@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
@@ -37,7 +38,7 @@ namespace SparFlame.Systems.General.VFX
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var config = SystemAPI.GetSingleton<HighLightSystemConfig>();
             ref var data = ref SystemAPI.GetSingletonRW<HighLightData>().ValueRW;
             if(data.PreHighLightEntity == inputMouseData.HitEntity && !inputMouseData.IsOverUI)return;
@@ -66,20 +67,17 @@ namespace SparFlame.Systems.General.VFX
                         {
                             Value = scale
                         });
-                        float4 color;
-                        if (generalAttr.FactionTag == playerFaction)
+                        var relationship = FactionUtils.GetRelationship(playerFactionData, generalAttr.Faction,
+                            generalAttr.SubFaction);
+                        var color = relationship switch
                         {
-                            color = config.PlayerHighLightColor;
-                        }
-                        else if (generalAttr.FactionTag == ~playerFaction)
-                        {
-                            color = config.EnemyHighLightColor;
-                        }
-                        else
-                        {
-                            color = config.NeutralHighLightColor;
-                        }
-                        
+                            Relationship.Ally => config.AllyHighLightColor,
+                            Relationship.Hostile => config.HostileHighLightColor,
+                            Relationship.Player => config.AllyHighLightColor,
+                            Relationship.Neutral => config.NeutralHighLightColor,
+                            _ => config.NeutralHighLightColor // this should never happen
+                        };
+
                         SystemAPI.SetComponent(entity, new HighLightColorVector4Override
                         {
                             Value = color

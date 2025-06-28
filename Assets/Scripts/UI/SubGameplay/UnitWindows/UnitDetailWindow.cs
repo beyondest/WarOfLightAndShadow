@@ -19,8 +19,9 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private TMP_Text description;
         [SerializeField] private Image idSingleIcon;
         [SerializeField] private Image interactAbilityTriangle;
-
-
+        [SerializeField] private Image generalFactionImage;
+        [SerializeField] private Image subFactionImage;
+    
         [Header("Unit Detail")]
         [SerializeField] private TMP_Text unitMoveSpeed;
 
@@ -115,6 +116,23 @@ namespace SparFlame.UI.SubGameplay
         {
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(TargetEntity);
             var unitAttr = Em.GetComponentData<UnitAttr>(TargetEntity);
+            if (generalAttr.Faction == FactionTag.Neutral)
+            {
+                generalFactionImage.enabled = false;
+                subFactionImage.enabled = false;
+            }
+            else
+            {
+                generalFactionImage.enabled = true;
+                subFactionImage.enabled = generalAttr.SubFaction != SubFactionTag.None; 
+                
+                generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.Faction];
+                subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.SubFaction];
+                var color = generalFactionImage.color;
+                color.a = generalAttr.Faction == FactionTag.Light ? GlobalUIConfigger.Instance.lightGeneralFactionAlpha : GlobalUIConfigger.Instance.darkGeneralFactionAlpha;
+                generalFactionImage.color = color;
+                subFactionImage.color = color;
+            }
             description.text = DatabaseManager.UnitDatabaseSo.GetItemById(generalAttr.ID).description;
             generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.Type];
             generalTypeText.text = unitAttr.Type.ToString();

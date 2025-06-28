@@ -102,7 +102,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         Filter = new VFXSubFilter
                         {
                             FactionFilterEnable = true,
-                            Faction = FactionTag.Enemy
+                            Faction = FactionTag.Dark
                         },
                         KeepDuration = float.MaxValue,
                         SpawnPosition = TransformLookup[target].Position,

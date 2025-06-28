@@ -230,7 +230,7 @@ namespace SparFlame.UI.SubGameplay
         private void UpdateStaticData()
         {
             var attr = _em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
-            _closeUpTargetColliderSize = attr.BoxColliderSize;
+            _closeUpTargetColliderSize = _em.GetComponentData<BoxColliderSize>(_targetEntity).Value;
             closeUpTargetName.text = attr.BaseTag switch
             {
                 BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(attr.ID).gameplayName,
@@ -249,9 +249,9 @@ namespace SparFlame.UI.SubGameplay
                 tierIcon.enabled = false;
             }
 
-            switch (attr.FactionTag)
+            switch (attr.Faction)
             {
-                case FactionTag.Ally:
+                case FactionTag.Light:
                     lightHpObj.SetActive(true);
                     darkHpObj.SetActive(false);
                     lightExpObj.SetActive(_showExpBar);
@@ -264,7 +264,7 @@ namespace SparFlame.UI.SubGameplay
                     tierIcon.color = Color.white;
 
                     break;
-                case FactionTag.Enemy:
+                case FactionTag.Dark:
                     lightHpObj.SetActive(false);
                     darkHpObj.SetActive(true);
                     lightExpObj.SetActive(false);

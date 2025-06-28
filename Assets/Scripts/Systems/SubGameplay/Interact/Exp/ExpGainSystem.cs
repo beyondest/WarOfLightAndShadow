@@ -1,3 +1,4 @@
+using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
@@ -6,7 +7,7 @@ using Unity.Entities;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-    partial struct ExpSystem : ISystem
+    partial struct ExpGainSystem : ISystem
     {
         private NativeHashMap<int, int> _expGainTypeToGainAmount;
         private ComponentLookup<ExpData> _expDataLookup;
@@ -47,7 +48,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         aiExpGainScale = 1f,
                         playerExpGainScale = 1f
                     },
-                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
             }.Schedule();
         }
 
@@ -75,7 +76,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public NativeHashMap<int, int> ExpGainTypeToGainAmount;
             [ReadOnly] public ExpDebug ExpDebug;
-            [ReadOnly] public FactionTag PlayerFaction;
+            [ReadOnly] public PlayerFactionData PlayerFactionData;
             [NativeDisableParallelForRestriction] public ComponentLookup<ExpData> ExpLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
 
@@ -86,7 +87,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 if (!GeneralAttrLookup.TryGetComponent(request.GainEntity, out var generalAttr)) return;
                 if (!ExpLookup.HasComponent(request.GainEntity)) return;
                 var expData = ExpLookup.GetRefRW(request.GainEntity);
-                var debugScale = generalAttr.FactionTag == PlayerFaction
+                var relationship =
+                    FactionUtils.GetRelationship(PlayerFactionData, generalAttr.Faction, generalAttr.SubFaction);
+                var debugScale = relationship == Relationship.Player
                     ? ExpDebug.playerExpGainScale
                     : ExpDebug.aiExpGainScale;
                 if (request.Multiplier == 0) request.Multiplier = 1f;

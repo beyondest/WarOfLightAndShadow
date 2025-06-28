@@ -21,5 +21,23 @@ namespace SparFlame.Components.General
     {
        
     }
+    
+    public struct MainGameplayEntityTag : IComponentData
+    {
+        
+    }
+    public struct SubGameplayEntityTag : IComponentData
+    {
+        
+    }
 
+    public struct ReassignMainGameplayAITagRequest : IComponentData
+    {
+        
+    }
+
+    public struct ReassignSubGameplayAITagRequest : IComponentData
+    {
+        
+    }
 }

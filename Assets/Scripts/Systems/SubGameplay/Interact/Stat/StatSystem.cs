@@ -53,8 +53,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
-            state.RequireForUpdate<EnemyResourceDataTag>();
-            state.RequireForUpdate<AllyResourceDataTag>();
+            state.RequireForUpdate<DarkResourceDataTag>();
+            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<StatSystemConfig>();
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<OocSystemConfig>();
@@ -181,7 +181,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 RandomValue = rndValue,
                 SightConfig = autoChooseTargetSystemConfig,
                 OocConfig = oocSystemConfig,
-                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
 
                 // Debug
                 StatDebug = statDebug,

@@ -1,4 +1,6 @@
-﻿using SparFlame.Components.SubGameplay;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 
 namespace SparFlame.Systems.SubGameplay.UnitSelection
@@ -13,15 +15,17 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
         /// <param name="data"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public static bool IsSelectable(EntityManager entityManager, in UnitSelectionData data, Entity entity)
+        public static bool IsSelectable(EntityManager entityManager, 
+            in PlayerFactionData playerFactionData, Entity entity)
         {
             if (entity == Entity.Null) return false;
-            if(!entityManager.HasComponent<Selected>(entity))return false;
+            if (!entityManager.HasComponent<Selected>(entity)) return false;
             if (!entityManager.HasComponent<SubGameplayGeneralAttr>(entity))
                 return false;
             var attr = entityManager.GetComponentData<SubGameplayGeneralAttr>(entity);
-            if (attr.FactionTag != data.CurrentSelectFaction) return false;
-            if(entityManager.HasComponent<InGarrison>(entity))return false;
+            var relationship = FactionUtils.GetRelationship(playerFactionData, attr.Faction, attr.SubFaction);
+            if (relationship != Relationship.Player) return false;
+            if (entityManager.HasComponent<InGarrison>(entity)) return false;
             return true;
         }
     }

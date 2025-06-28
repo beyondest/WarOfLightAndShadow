@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.SubGameplay;
+﻿using System;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -22,7 +23,7 @@ namespace SparFlame.Components.MainGameplay
 
     public enum RemoveFromArmyGroupType
     {
-        RemoveSpecifiedUnit,
+        RemoveSpecifiedUnitWithoutRemovingInArmyGroup,
         MoveOutAllSameId,
         MoveOutAll,
         RandomRemoveSingleSameId,
@@ -33,7 +34,7 @@ namespace SparFlame.Components.MainGameplay
         public Entity Unit;
         public Entity ArmyGroup;
         public int MoveOutId;
-        public RemoveFromArmyGroupType Type;
+        public RemoveFromArmyGroupType RemoveType;
     }
 
     
@@ -41,14 +42,22 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupUnit : IBufferElementData
     {
         public Entity Unit;
-        public int Id;
+        public int GlobalId;
+        public long SaveTmpId;
     }
 
-    public struct ArmyGroupUnitTypeData : IBufferElementData
+    public struct ArmyGroupUnitTypeData : IBufferElementData, IEquatable<ArmyGroupUnitTypeData>
     {
         public UnitType UnitType;
         public int Id;
         public int Count;
+
+        public bool Equals(ArmyGroupUnitTypeData other)
+        {
+            return Id == other.Id;
+        }
+
+     
     }
 
     

@@ -17,8 +17,8 @@ namespace SparFlame.Systems.General.Resource
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<GlobalResourceDataTag>();
-            state.RequireForUpdate<EnemyResourceDataTag>();
-            state.RequireForUpdate<AllyResourceDataTag>();
+            state.RequireForUpdate<DarkResourceDataTag>();
+            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<ResourceManageSystemConfig>();
             state.RequireForUpdate<GameStatusData>();
             _globalResourceDataCenter =
@@ -41,8 +41,8 @@ namespace SparFlame.Systems.General.Resource
             if (gameStatusData.Value != GameStatus.SubGaming) return;
             // var config = SystemAPI.GetSingleton<ResourceSystemConfig>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var allyDataCenter = SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
-            var enemyDataCenter = SystemAPI.GetSingletonEntity<EnemyResourceDataTag>();
+            var allyDataCenter = SystemAPI.GetSingletonEntity<LightResourceDataTag>();
+            var enemyDataCenter = SystemAPI.GetSingletonEntity<DarkResourceDataTag>();
             DealResourceChangeRequest(ref state, ecb, allyDataCenter, enemyDataCenter);
             UpdateGlobalResourceDataCenter(ref state);
             DealtDwellingGeneratePopulationRequest(ref state, ecb);
@@ -62,7 +62,7 @@ namespace SparFlame.Systems.General.Resource
                 {
                     AbsAmount = dwellingAttr.ValueRO.Amount,
                     RequestType = ResourceRequestType.Generate,
-                    FromFaction = generalAttr.ValueRO.FactionTag,
+                    FromFaction = generalAttr.ValueRO.Faction,
                     Type = dwellingAttr.ValueRO.ResourceType
                 };
                 var request = ecb.CreateEntity();
@@ -95,7 +95,7 @@ namespace SparFlame.Systems.General.Resource
                     _globalResourceDataCenter[resourceKey] = v;
                 }
 
-                var targetCenter = request.FromFaction == FactionTag.Ally ? allyDataCenter : enemyDataCenter;
+                var targetCenter = request.FromFaction == FactionTag.Light ? allyDataCenter : enemyDataCenter;
 
                 var availableDatas = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(targetCenter);
 
@@ -201,8 +201,8 @@ namespace SparFlame.Systems.General.Resource
                 _populationResources.Add((int)type);
             }
 
-            var allyDataCenter = SystemAPI.GetSingletonEntity<AllyResourceDataTag>();
-            var enemyDataCenter = SystemAPI.GetSingletonEntity<EnemyResourceDataTag>();
+            var allyDataCenter = SystemAPI.GetSingletonEntity<LightResourceDataTag>();
+            var enemyDataCenter = SystemAPI.GetSingletonEntity<DarkResourceDataTag>();
             var allyInitBuffer = SystemAPI.GetBuffer<ResourceTypeToInitAmount>(allyDataCenter);
             var enemyInitBuffer = SystemAPI.GetBuffer<ResourceTypeToInitAmount>(enemyDataCenter);
             var allyAvailableBuffer = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(allyDataCenter);

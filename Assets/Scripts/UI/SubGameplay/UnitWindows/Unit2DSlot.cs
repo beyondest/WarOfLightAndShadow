@@ -24,8 +24,8 @@ namespace SparFlame.UI.SubGameplay
             hpFilled.fillAmount = info.HpRatio;
             var tier = (int)info.Tier - 2;
             tierImage.fillAmount = tier / maxTierF;
-            tierBg.color = currentSelectFaction == FactionTag.Ally ? Color.white : Color.black;
-            button.image.color = currentSelectFaction == FactionTag.Ally ? Color.white : Color.black;
+            tierBg.color = currentSelectFaction == FactionTag.Light ? Color.white : Color.black;
+            button.image.color = currentSelectFaction == FactionTag.Light ? Color.white : Color.black;
             levelText.text = $"Lv. {info.Level}";
         }
     }

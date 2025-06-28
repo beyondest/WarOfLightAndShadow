@@ -97,11 +97,11 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         public static void SetTargetStateViaTargetType(in FactionTag selfFactionTag,
             in SubGameplayGeneralAttr targetgeneralAttr, ref BasicStateData selfStateData)
         {
-            if (selfFactionTag == targetgeneralAttr.FactionTag)
+            if (selfFactionTag == targetgeneralAttr.Faction)
                 selfStateData.TargetState = InteractState.Healing;
             if (targetgeneralAttr.BaseTag == BaseTag.Resources)
                 selfStateData.TargetState = InteractState.Harvesting;
-            if (selfFactionTag == ~targetgeneralAttr.FactionTag)
+            if (selfFactionTag == ~targetgeneralAttr.Faction)
                 selfStateData.TargetState = InteractState.Attacking;
         }
 

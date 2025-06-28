@@ -2,7 +2,6 @@
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SparFlame.Database
 {
@@ -137,18 +136,11 @@ namespace SparFlame.Database
                 {
                     
                 }
-                if (ornamentData.ornamentType is OrnamentType.Crystal or OrnamentType.Beacon)
+                if (ornamentData.ornamentType is OrnamentType.Crystal)
                 {
-                    AddComponent(entity, new CrystalDef
-                    {
-                        Faction = item.factionTag
-                    });
-           
+                    AddComponent(entity, new CrystalDef());
                 }
-                if (item.factionTag == FactionTag.Ally && ornamentData.ornamentType == OrnamentType.Crystal)
-                {
-                    AddComponent<LightSingleCrystalTag>(entity);
-                }
+            
             }
         }
     }

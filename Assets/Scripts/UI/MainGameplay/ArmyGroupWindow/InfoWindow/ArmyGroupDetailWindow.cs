@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
@@ -67,6 +68,7 @@ namespace SparFlame.UI.MainGameplay
             }
             _targetEntity = target;
             UpdateStaticData();
+            UpdateDynamicData();
             if(isSingleton)
                 ShowComposition();
             return true;
@@ -85,7 +87,6 @@ namespace SparFlame.UI.MainGameplay
         private Entity _targetEntity;
         protected EntityManager Em;
 
-
         #region EventFunctions
 
         protected virtual void Awake()
@@ -103,28 +104,48 @@ namespace SparFlame.UI.MainGameplay
             Hide();
         }
 
+     
+
         #endregion
 
 
         private void UpdateStaticData()
         {
-            var playerFaction = Em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>().Value;
+            var playerFactionData = Em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
             var generalAttr = Em.GetComponentData<MainGameplayGeneralAttr>(_targetEntity);
-            generalFactionIcon.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.Faction];
-            subFactionIcon.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.SubFaction];
+            if (generalAttr.faction == FactionTag.Neutral)
+            {
+                generalFactionIcon.enabled = false;
+                subFactionIcon.enabled = false;
+            }
+            else
+            {
+                generalFactionIcon.enabled = true;
+                subFactionIcon.enabled = generalAttr.subFaction!= SubFactionTag.None;
+                generalFactionIcon.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];
+                subFactionIcon.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.subFaction];
+            }
+        
             
             var armyGroupAttr = Em.GetComponentData<ArmyGroupAttr>(_targetEntity);
-            armyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.IconType];
-            armyGroupIcon.color = generalAttr.Faction == FactionTag.Ally ? Color.white : Color.black;
-            armyGroupNameText.text = armyGroupAttr.GameplayName.ToString();
+            armyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
+            armyGroupIcon.color = generalAttr.faction == FactionTag.Light ? Color.white : Color.black;
+            armyGroupNameText.text = armyGroupAttr.gameplayName.ToString();
+      
+            var relationship =
+                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+            
+            compositionPanel.SetActive(relationship is Relationship.Player or Relationship.Ally);
+            formationButton.SetActive(relationship == Relationship.Player && !isSingleton);
+        }
+
+        protected void UpdateDynamicData()
+        {
             var units = Em.GetBuffer<ArmyGroupUnit>(_targetEntity);
             totalUnitCountText.text = units.Length.ToString();
             var movableData = Em.GetComponentData<ArmyGroupMovableData>(_targetEntity);
-            speedText.text = movableData.Speed.ToString("F1");
+            speedText.text = movableData.speed.ToString("F1");
 
-            var isPlayerFaction = playerFaction == generalAttr.Faction;
-            compositionPanel.SetActive(isPlayerFaction);
-            formationButton.SetActive(isPlayerFaction && !isSingleton);
         }
 
         public void ShowComposition()

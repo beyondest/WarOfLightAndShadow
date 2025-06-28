@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Collections;
 using Unity.Entities;
@@ -24,12 +25,15 @@ namespace SparFlame.Components.MainGameplay
         Snake,
         Wolf
     }
+    
+    [Serializable]
     public struct ArmyGroupAttr : IComponentData
     {
-        public ArmyGroupIconType IconType;
-        // public int ArmyGroupId;
-        public FixedString32Bytes GameplayName;
-        public long SaveId;
+        public ArmyGroupIconType iconType;
+        public FixedString32Bytes gameplayName;
+        
+        // This id is generated when new an army group, and will never duplicate nor change.
+        public long saveId;
     }
 
     public struct LastPassingByPlayerCity : IComponentData

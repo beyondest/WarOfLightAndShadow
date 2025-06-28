@@ -1,11 +1,13 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 
 namespace SparFlame.Components.MainGameplay
 {
+    [Serializable]
     public struct CityAttr : IComponentData
     {
-        public int ID;
-        public int MaxGarrisonCount;
+        public int globalId;
+        public int maxGarrisonCount;
     }
 
     public struct CityData : IComponentData
@@ -18,9 +20,16 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
     }
 
+    [Serializable]
     public struct CityGarrisonTypeData : IBufferElementData
     {
-        public ArmyGroupIconType IconType;
-        public int Count;
+        public ArmyGroupIconType iconType;
+        public int count;
+    }
+
+    public struct CityEntityPrefabData : IBufferElementData
+    {
+        public Entity Prefab;
+        public int GlobalIdx;
     }
 }

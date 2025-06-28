@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.Input;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
@@ -6,7 +7,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
@@ -78,22 +78,22 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 in NavAgentComponent navAgent, Entity selfEntity)
             {
                 var isMoving = MovingTagLookup.IsComponentEnabled(selfEntity);
-                var notUpdate = !isMoving && visualizeData.PreWaypoint == finalWaypoints.Length;
-                if (!navAgent.CalculationComplete || finalWaypoints.Length == 0 || notUpdate) return;
+                var notUpdate = !isMoving && visualizeData.preWaypoint == finalWaypoints.Length;
+                if (!navAgent.calculationComplete || finalWaypoints.Length == 0 || notUpdate) return;
                 ECB.SetComponentEnabled<PathVisualizeEnabled>(index, selfEntity, false);
                 var startIndex = isMoving
-                    ? movableData.CurWaypoint
-                    : visualizeData.PreWaypoint;
-                visualizeData.PreWaypoint = finalWaypoints.Length;
+                    ? movableData.curWaypoint
+                    : visualizeData.preWaypoint;
+                visualizeData.preWaypoint = finalWaypoints.Length;
                 for (var i = startIndex; i < finalWaypoints.Length; i++)
                 {
                     var waypoint = finalWaypoints[i];
                     var pathVisualizer = ECB.Instantiate(index,
-                        movableData.IsTargetReachable ? Config.ReachableRef : Config.UnreachableRef);
+                        movableData.isTargetReachable ? Config.ReachableRef : Config.UnreachableRef);
                     ECB.AddComponent<MainGameplayEntityTag>(index, pathVisualizer);
                     ECB.SetComponent(index, pathVisualizer, new LocalTransform
                     {
-                        Position = waypoint.Position,
+                        Position = waypoint.position,
                         Rotation = quaternion.identity,
                         Scale = 1f
                     });

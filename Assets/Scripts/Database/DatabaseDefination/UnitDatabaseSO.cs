@@ -61,13 +61,13 @@ namespace SparFlame.Database
             var dict = new Dictionary<(UnitType, int, Tier), UnitDataItem>();
             foreach (var item in items)
             {
-                if (item.factionTag == FactionTag.Ally)
+                if (item.factionTag == FactionTag.Light)
                     dict.Add((item.type, item.GetSubtypeIndex(), item.curTier), item);
             }
 
             foreach (var item in items)
             {
-                if (item.factionTag == FactionTag.Enemy)
+                if (item.factionTag == FactionTag.Dark)
                 {
                     if (dict.TryGetValue((item.type, item.GetSubtypeIndex(), item.curTier), out var lightItem))
                     {
@@ -205,12 +205,12 @@ namespace SparFlame.Database
             if (baseTag == default)
                 baseTag = BaseTag.Units;
             if (factionTag == default)
-                factionTag = FactionTag.Ally;
+                factionTag = FactionTag.Light;
         }
 
         public bool HasLightGroupBuff()
         {
-            return factionTag == FactionTag.Ally && type is UnitType.Shield or UnitType.Cavalry;
+            return factionTag == FactionTag.Light && type is UnitType.Shield or UnitType.Cavalry;
         }
     }
 

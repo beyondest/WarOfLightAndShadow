@@ -18,7 +18,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
     [UpdateAfter(typeof(BuffManageSystem))]
     public partial struct MovingStateMachine : ISystem
     {
-        private ComponentLookup<SubGameplayGeneralAttr> _interactableLookup;
+        private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
+        private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<Selected> _selectedLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<MovableData> _movableLookup;
@@ -40,7 +41,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MovingStateMachineConfig>();
             state.RequireForUpdate<SubGamingTag>();
-            _interactableLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
+            _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
+            _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
             _selectedLookup = state.GetComponentLookup<Selected>(true);
             _aiTagLookup = state.GetComponentLookup<AITag>(true);
             _statLookup = state.GetComponentLookup<StatData>(true);
@@ -50,7 +52,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _regeneratingTag = state.GetComponentLookup<RegeneratingTag>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
             _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
-
+            
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _movableLookup = state.GetComponentLookup<MovableData>();
             _unitBasicStateLookup = state.GetComponentLookup<BasicStateData>();
@@ -66,7 +68,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _harvestabilityLookup.Update(ref state);
             _healabilityLookup.Update(ref state);
             _attackabilityLookup.Update(ref state);
-            _interactableLookup.Update(ref state);
+            _generalAttrLookup.Update(ref state);
+            _boxColliderSizeLookup.Update(ref state);
             _selectedLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
             _movableLookup.Update(ref state);
@@ -84,7 +87,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             new CheckMovingState
             {
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                GeneralLookup = _interactableLookup,
+                GeneralLookup = _generalAttrLookup,
+                BoxColliderSizeLookup = _boxColliderSizeLookup,
                 Selected = _selectedLookup,
                 TransLookup = _localTransformLookup,
                 MovableLookup = _movableLookup,
@@ -99,7 +103,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 RegeneratingTagLookup = _regeneratingTag,
                 SightSystemConfig = sightConfig,
                 GarrisonSystemConfig = garrisonSystemConfig,
-                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
             }.ScheduleParallel();
         }
 
@@ -111,6 +115,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralLookup;
+            [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
             [ReadOnly] public ComponentLookup<Selected> Selected;
             [ReadOnly] public ComponentLookup<AttackAbility> AttackLookup;
             [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
@@ -144,7 +149,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ref var stateData = ref StateLookup.GetRefRW(selfEntity).ValueRW;
                 ref var movableData = ref MovableLookup.GetRefRW(selfEntity).ValueRW;
                 ref var transform = ref TransLookup.GetRefRW(selfEntity).ValueRW;
-                var selfFaction = GeneralLookup[selfEntity].FactionTag;
+                var selfFaction = GeneralLookup[selfEntity].Faction;
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (stateData.CurState != InteractState.Moving) return;
 
@@ -192,13 +197,13 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if(DarkShieldTauntedBuffLookup.TryGetComponent(selfEntity, out var tauntedBuff)
                    && DarkShieldTauntedBuffLookup.IsComponentEnabled(selfEntity)
                    && TransLookup.TryGetComponent(tauntedBuff.TauntedBy, out var targetTrans)
-                   && GeneralLookup.TryGetComponent(tauntedBuff.TauntedBy, out var tauntedGeneralAttr))
+                   && BoxColliderSizeLookup.TryGetComponent(tauntedBuff.TauntedBy, out var boxColliderSize))
                 {
                     if (stateData.TargetEntity == tauntedBuff.TauntedBy) return false;
                     // If taunted, should change target to taunted target
                     stateData.TargetEntity = tauntedBuff.TauntedBy;
                     stateData.TargetState = InteractState.Attacking;
-                    MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, tauntedGeneralAttr.BoxColliderSize,
+                    MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, boxColliderSize.Value,
                         MovementCommandType.Interactive, AttackLookup[selfEntity].Range);
                     return true;
                 }
@@ -215,7 +220,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 }
 
                 // Interactive move check
-                if (movableData.MovementCommandType == MovementCommandType.Interactive)
+                if (movableData.MovementCommandType == MovementCommandType.Interactive && stateData.TargetState != InteractState.Garrison)
                 {
                     // Check target not destroy
                     if (GeneralLookup.TryGetComponent(stateData.TargetEntity, out targetSubGameplayGeneralAttr))
@@ -275,7 +280,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         {
                             StateUtils.GarrisonMoveBack(inGarrison, ref stateData, ref movableData,
                                 TransLookup[inGarrison.BuildingEntity].Position,
-                                GeneralLookup[inGarrison.BuildingEntity].BoxColliderSize,
+                                BoxColliderSizeLookup[inGarrison.BuildingEntity].Value,
                                 GarrisonSystemConfig.GarrisonRadiusSq, isAi,
                                 selfEntity, index, ECB);
                             return true;
@@ -302,9 +307,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
                 targetSubGameplayGeneralAttr = GeneralLookup[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
-                var targetColliderSize = targetSubGameplayGeneralAttr.BoxColliderSize;
+                var targetColliderSize = BoxColliderSizeLookup[stateData.TargetEntity].Value;
                 float range;
-                if (targetSubGameplayGeneralAttr.FactionTag == selfFactionTag)
+                if (targetSubGameplayGeneralAttr.Faction == selfFactionTag)
                 {
                     stateData.TargetState = InteractState.Healing;
                     range = HealLookup[selfEntity].Range;
@@ -364,7 +369,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 var selfCanAttack = AttackLookup.HasComponent(selfEntity);
                 // If stuck by enemy building, remove it
                 if (GeneralLookup.TryGetComponent(surroundings.FrontEntity, out var generalAttr)
-                    && generalAttr is { BaseTag: BaseTag.Buildings, FactionTag: FactionTag.Enemy })
+                    && generalAttr is { BaseTag: BaseTag.Buildings, Faction: FactionTag.Dark })
                 {
                     // No attack ability unit cannot remove enemy building forward, and should turn to idle
                     if (!selfCanAttack)
@@ -389,10 +394,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // If front is not enemy building and get stuck and left or right is enemy unit, attack it. Front cannot be enemy unit or it will get taunted
                 var leftIsEnemy = surroundings.LeftEntity != Entity.Null
                                   && GeneralLookup.TryGetComponent(surroundings.LeftEntity, out var iDataLeft)
-                                  && iDataLeft is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Enemy };
+                                  && iDataLeft is { BaseTag: BaseTag.Units, Faction: FactionTag.Dark };
                 var rightIsEnemy = surroundings.RightEntity != Entity.Null
                                    && GeneralLookup.TryGetComponent(surroundings.RightEntity, out var iDataRight)
-                                   && iDataRight is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Enemy };
+                                   && iDataRight is { BaseTag: BaseTag.Units, Faction: FactionTag.Dark };
                 if (leftIsEnemy || rightIsEnemy)
                 {
                     stateData.TargetEntity = leftIsEnemy
@@ -420,6 +425,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     MovementUtils.ResetSurroundings(ref surroundings);
                     if (stateData.TargetState == InteractState.Idle) stateData.TargetEntity = Entity.Null;
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
+                    stateData.TargetState = InteractState.Idle;
                     return true;
                 }
 
@@ -456,7 +462,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     && GeneralLookup.TryGetComponent(entity, out var iData)
                     && Selected.HasComponent(entity)
                     && Selected.IsComponentEnabled(entity) == selected
-                    && iData is { BaseTag: BaseTag.Units, FactionTag: FactionTag.Ally }
+                    && iData is { BaseTag: BaseTag.Units, Faction: FactionTag.Light }
                     && StateLookup.TryGetComponent(entity, out var stateData)
                     && stateData.CurState == InteractState.Idle;
             }

@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
@@ -12,7 +13,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
     {
         private ComponentLookup<OutsideTag> _outsideTagLookup;
         private EntityQuery _crystalQuery;
-        private NativeList<float3> _playerCrystalPositions;
+        private NativeList<float3> _playerSideCrystalPositions;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -21,9 +22,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             state.RequireForUpdate<PlayerUnitOutsideMonitorConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
-            _crystalQuery = SystemAPI.QueryBuilder().WithAll<CrystalDef>().WithAll<LocalTransform>().Build();
+            _crystalQuery = SystemAPI.QueryBuilder().WithAll<CrystalDef>().WithAll<LocalTransform>().WithAll<SubGameplayGeneralAttr>().Build();
             _outsideTagLookup = state.GetComponentLookup<OutsideTag>(true);
-            _playerCrystalPositions = new NativeList<float3>(Allocator.Persistent);
+            _playerSideCrystalPositions = new NativeList<float3>(Allocator.Persistent);
         }
 
         [BurstCompile]
@@ -31,27 +32,27 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         {
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var config = SystemAPI.GetSingleton<PlayerUnitOutsideMonitorConfig>();
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>();
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             _outsideTagLookup.Update(ref state);
             if (_crystalQuery.IsEmpty) return;
-            _playerCrystalPositions.Clear();
-            var crystalTags = _crystalQuery.ToComponentDataArray<CrystalDef>(Allocator.Temp);
+            _playerSideCrystalPositions.Clear();
+            var generalAttrs = _crystalQuery.ToComponentDataArray<SubGameplayGeneralAttr>(Allocator.Temp);
             var locations = _crystalQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            for (var i = 0; i < crystalTags.Length; i++)
+            for (var i = 0; i < generalAttrs.Length; i++)
             {
-                if (crystalTags[i].Faction == playerFaction.Value)
+                var relationship = FactionUtils.GetRelationship(playerFactionData, generalAttrs[i].Faction, generalAttrs[i].SubFaction);
+                if (relationship == Relationship.Player || relationship == Relationship.Ally)
                 {
-                    _playerCrystalPositions.Add(locations[i].Position);
+                    _playerSideCrystalPositions.Add(locations[i].Position);
                 }
             }
-            if (_playerCrystalPositions.Length == 0) return;
-            new PlayerUnitOutsideMonitorJob
+            if (_playerSideCrystalPositions.Length == 0) return;
+            new PlayerSideUnitOutsideMonitorJob
             {
                 Config = config,
                 ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 OutsideTagLookup = _outsideTagLookup,
-                PlayerCrystalLocs = _playerCrystalPositions,
-                PlayerFaction = playerFaction.Value,
+                PlayerCrystalLocs = _playerSideCrystalPositions,
             }.ScheduleParallel();
         }
 
@@ -59,13 +60,12 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         [WithAll(typeof(UnitAttr))]
         [WithAll(typeof(PlayerTag))]
-        public partial struct PlayerUnitOutsideMonitorJob : IJobEntity
+        public partial struct PlayerSideUnitOutsideMonitorJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public NativeList<float3> PlayerCrystalLocs;
             [ReadOnly] public PlayerUnitOutsideMonitorConfig Config;
             [ReadOnly] public ComponentLookup<OutsideTag> OutsideTagLookup;
-            [ReadOnly] public FactionTag PlayerFaction;
 
             private void Execute([ChunkIndexInQuery] int chunkIndex, in SubGameplayGeneralAttr subGameplayGeneralAttr, Entity selfEntity,
                 in LocalTransform transform)
@@ -97,8 +97,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
         public void OnDestroy(ref SystemState state)
         {
-            if (_playerCrystalPositions.IsCreated)
-                _playerCrystalPositions.Dispose();
+            if (_playerSideCrystalPositions.IsCreated)
+                _playerSideCrystalPositions.Dispose();
         }
     }
 }

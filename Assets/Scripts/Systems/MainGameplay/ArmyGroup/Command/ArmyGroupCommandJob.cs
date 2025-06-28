@@ -18,13 +18,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetPosition;
         [ReadOnly] public ComponentLookup<ArmyGroupMovingTag> ArmyGroupMovingTagLookup;
-        [ReadOnly] public MainGameplayCursorType CursorType;
+        [ReadOnly] public ArmyGroupState TargetState;
+        [ReadOnly] public Entity TargetEntity;
 
         private void Execute([ChunkIndexInQuery] int index, ref ArmyGroupMovableData movableData,
             ref DynamicBuffer<ArmyGroupMovingTarget> targets,
             ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
             ref ArmyGroupCalculatePathData pathData, ref PathVisualizeData visualizeData,
-            ref NavAgentComponent navAgent,ref ArmyGroupStateData stateData,
+            ref NavAgentComponent navAgent, ref ArmyGroupStateData stateData,
             Entity selfEntity
         )
         {
@@ -35,9 +36,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     ref visualizeData,
                     ref navAgent,
                     ECB, index, selfEntity);
-                movableData.MovementInfo = ArmyGroupMovementInfo.None;
+                movableData.movementInfo = ArmyGroupMovementInfo.None;
                 stateData.TargetState = ArmyGroupState.Idle;
                 stateData.CurState = ArmyGroupState.Idle;
+                stateData.Target = Entity.Null;
             }
 
             if (stateData.TargetState != ArmyGroupState.Idle)
@@ -46,38 +48,18 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 ECB.AddComponent(index, hintRequest, new HintRequest
                 {
                     Name = HintName.PleaseDeleteArmyGroupLastTargetForNewTarget,
-                    
                 });
                 ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
                 return;
             }
             
-            switch (CursorType)
-            {
-                case MainGameplayCursorType.None:
-                    // This should never happen
-                    break;
-                case MainGameplayCursorType.March:
-                    // Do nothing
-                    break;
-                case MainGameplayCursorType.Garrison:
-                    stateData.TargetState = ArmyGroupState.Garrison;
-                    break;
-                case MainGameplayCursorType.Support:
-                    stateData.TargetState = ArmyGroupState.Support;
-                    break;
-                case MainGameplayCursorType.Invade:
-                    stateData.TargetState = ArmyGroupState.Invade;
-                    break;
-                case MainGameplayCursorType.Intercept:
-                    stateData.TargetState = ArmyGroupState.Idle;
-                    break;
-           
-            }
+            stateData.TargetState = TargetState;
+            stateData.Target = TargetEntity;
+
 
             targets.Add(new ArmyGroupMovingTarget
             {
-                Position = TargetPosition
+                position = TargetPosition
             });
         }
     }
@@ -91,7 +73,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,
             ref ArmyGroupMovableData movableData)
         {
-            if (!movableData.IsTargetReachable)
+            if (!movableData.isTargetReachable)
             {
                 var hintRequest = ECB.CreateEntity(index);
                 ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
@@ -102,8 +84,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 return;
             }
 
-            movableData.MovementInfo = ArmyGroupMovementInfo.NotComplete; 
-            movableData.CurWaypoint = 0;
+            movableData.movementInfo = ArmyGroupMovementInfo.NotComplete;
+            movableData.curWaypoint = 0;
             ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, true);
         }
     }
@@ -118,14 +100,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<ArmyGroupMovingTarget> targets,
             ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
             ref DynamicBuffer<WaypointBuffer> waypointBuffer, ref ArmyGroupMovableData movableData,
-            ref ArmyGroupCalculatePathData pathData,ref ArmyGroupStateData stateData,
+            ref ArmyGroupCalculatePathData pathData, ref ArmyGroupStateData stateData,
             ref PathVisualizeData visualizeData, ref NavAgentComponent navAgent, Entity selfEntity
         )
         {
             ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
                 ref visualizeData, ref navAgent, ECB, index, selfEntity);
             stateData.TargetState = ArmyGroupState.Idle;
-            
+
             if (targets.Length <= 0) return;
             targets.RemoveAt(targets.Length - 1);
         }
@@ -146,7 +128,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
                 ref visualizeData, ref navAgent, ECB, index, selfEntity);
-            movableData.MovementInfo = ArmyGroupMovementInfo.None;
+            movableData.movementInfo = ArmyGroupMovementInfo.None;
             stateData.CurState = ArmyGroupState.Idle;
             stateData.TargetState = ArmyGroupState.Idle;
             targets.Clear();

@@ -64,11 +64,11 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 var targetGeneralAttr = GeneralAttrLookup[stateData.TargetEntity];
                 var selfGeneralAttr = GeneralAttrLookup[entity];
                 
-                if (selfGeneralAttr.FactionTag == targetGeneralAttr.FactionTag)
+                if (selfGeneralAttr.Faction == targetGeneralAttr.Faction)
                     stateData.TargetState = InteractState.Healing;
                 if(targetGeneralAttr.BaseTag == BaseTag.Resources)
                     stateData.TargetState = InteractState.Harvesting;
-                if(selfGeneralAttr.FactionTag == ~targetGeneralAttr.FactionTag)
+                if(selfGeneralAttr.Faction == ~targetGeneralAttr.Faction)
                     stateData.TargetState = InteractState.Attacking;
                 StateUtils.SwitchState(ref stateData,ECB,entity, index);
             }

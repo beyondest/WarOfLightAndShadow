@@ -66,7 +66,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         KeepDuration = float.MaxValue,
                         Filter = new VFXSubFilter
                         {
-                            Faction = subGameplayGeneralAttr.FactionTag,
+                            Faction = subGameplayGeneralAttr.Faction,
                             FactionFilterEnable =  true
                         },
                         SpawnPosition = transform.Position,

@@ -57,7 +57,7 @@ namespace SparFlame.UI.MainGameplay
                 _infos.Add(new ArmyGroupMulti2DRealTimeInfo
                 {
                     Entity = entity,
-                    IconType = armyGroupAttr.ValueRO.IconType
+                    IconType = armyGroupAttr.ValueRO.iconType
                 });
             }
             ArmyGroupMulti2DWindow.Instance.UpdateSelectedView(_infos, selectionData.CurrentSelectFaction);

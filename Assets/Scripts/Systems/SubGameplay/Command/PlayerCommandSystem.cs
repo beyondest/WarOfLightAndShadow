@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Systems.SubGameplay.Interact;
@@ -17,6 +18,7 @@ namespace SparFlame.Systems.SubGameplay.Command
     [UpdateBefore(typeof(MovementSystem))]
     public partial struct PlayerCommandSystem : ISystem
     {
+        private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -29,6 +31,7 @@ namespace SparFlame.Systems.SubGameplay.Command
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<UnitSelectionData>();
             state.RequireForUpdate<GarrisonSystemConfig>();
+            _inArmyGroupLookup = state.GetComponentLookup<InArmyGroup>();
         }
 
         [BurstCompile]
@@ -61,7 +64,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<SubGameplayGeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -89,15 +92,17 @@ namespace SparFlame.Systems.SubGameplay.Command
                     }
                     targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                     name = VFXName.ControlToGarrison;
-                    new MovementGarrisonJob()
+                    _inArmyGroupLookup.Update(ref state);
+                    new MovementGarrisonJob
                     {
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<SubGameplayGeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                         InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,
+                        InArmyGroupLookup = _inArmyGroupLookup,
                     }.ScheduleParallel();
                     break;
                 }
@@ -111,7 +116,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<SubGameplayGeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -127,7 +132,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<SubGameplayGeneralAttr>(inputMouseData.HitEntity).BoxColliderSize,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -309,6 +314,7 @@ namespace SparFlame.Systems.SubGameplay.Command
     public partial struct MovementGarrisonJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
+        [ReadOnly] public ComponentLookup<InArmyGroup> InArmyGroupLookup;
         [ReadOnly] public float3 TargetColliderShape;
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public float InteractiveRangeSq;
@@ -316,13 +322,22 @@ namespace SparFlame.Systems.SubGameplay.Command
         [ReadOnly] public bool Focus;
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData,
-            Entity entity)
+            Entity selfEntity)
         {
-
+            if (InArmyGroupLookup.HasComponent(selfEntity))
+            {
+                var hintRequest = ECB.CreateEntity(index);
+                ECB.AddComponent<SubGameplayEntityTag>(index, hintRequest);
+                ECB.AddComponent(index, hintRequest, new HintRequest
+                {
+                    Name = HintName.UnitInArmyGroupCannotGarrisonInBuilding,
+                });
+                return;
+            }
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, InteractiveRangeSq);
             basicStateData.TargetState = InteractState.Moving;
-            StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
+            StateUtils.SwitchState(ref basicStateData, ECB, selfEntity, index);
             basicStateData.TargetEntity = TargetEntity;
             basicStateData.Focus = Focus;
             basicStateData.TargetState = InteractState.Garrison;

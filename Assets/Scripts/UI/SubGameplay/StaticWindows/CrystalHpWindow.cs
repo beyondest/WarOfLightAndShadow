@@ -11,50 +11,51 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
     public class CrystalHpWindow : MonoBehaviour
     {
         [Header("Crystal Hp")] [SerializeField]
-        private Image playerCrystalFilledHp;
-
-        [SerializeField] private Image playerCrystalBlankHp;
-        [SerializeField] private Image enemyCrystalFilledHp;
-        [SerializeField] private Image enemyCrystalBlankHp;
+        private Image crystalHpFilled;
+        [SerializeField] private Image crystalHpBlank;
+       
         
-        private FactionTag _playerFaction;
-        
-        private EntityQuery _playerCrystalInfo;
-        private EntityQuery _enemyCrystalInfo;
+        private EntityQuery _crystalQuery;
+        private EntityQuery _subGameStatusQuery;
 
         private void Start()
         {
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _playerCrystalInfo = em.CreateEntityQuery(typeof(PlayerCrystalInfo));
-            _enemyCrystalInfo = em.CreateEntityQuery(typeof(EnemyCrystalInfo));
-            GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
-            GeneralResourceManager.Instance.OnAllResourceLoaded += UpdateStaticInfo;
+            _crystalQuery = em.CreateEntityQuery(typeof(CrystalDef), typeof(StatData),
+                typeof(SubGameplayGeneralAttr));
+            _subGameStatusQuery = em.CreateEntityQuery(typeof(SubGameStatusData));
+            crystalHpFilled.enabled = false;
+            crystalHpBlank.enabled = false;
+        
         }
 
         private void Update()
         {
-            var enemyInfo = _enemyCrystalInfo.GetSingleton<EnemyCrystalInfo>();
-            var playerInfo = _playerCrystalInfo.GetSingleton<PlayerCrystalInfo>();
-            // Update hp info
-            enemyCrystalFilledHp.enabled = enemyInfo.InSightValidCount != 0;
-            enemyCrystalBlankHp.enabled = enemyInfo.InSightValidCount != 0;
-            // Update crystal hp info
-            if (playerInfo.MaxTotalHp != 0f)
-                playerCrystalFilledHp.fillAmount = playerInfo.CurTotalHp / playerInfo.MaxTotalHp;
-            if (enemyInfo.MaxTotalHp != 0f)
-                enemyCrystalFilledHp.fillAmount = enemyInfo.CurTotalHp / enemyInfo.MaxTotalHp;
+            var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
+            if (!subGameStatusData.IsInBattle
+                || _crystalQuery.IsEmpty)
+            {
+                crystalHpFilled.enabled = false;
+                crystalHpBlank.enabled = false;
+                return;
+            }
+            var statData = _crystalQuery.GetSingleton<StatData>();
+            var generalAttr = _crystalQuery.GetSingleton<SubGameplayGeneralAttr>();
+            
+            crystalHpFilled.enabled = true;
+            crystalHpBlank.enabled = true;
+            crystalHpFilled.fillAmount = statData.curValue / statData.maxValue;
+            crystalHpFilled.sprite =
+                BasicUIResourceManager.Instance.FactionCrystalHpFilledSprites[generalAttr.Faction];
+            crystalHpBlank.sprite = BasicUIResourceManager.Instance.FactionCrystalHpBlankSprites[generalAttr.Faction];
+
 
         }
         
         private void UpdateStaticInfo()
         {
-            playerCrystalFilledHp.sprite =
-                BasicUIResourceManager.Instance.FactionCrystalHpFilledSprites[_playerFaction];
-            playerCrystalBlankHp.sprite = BasicUIResourceManager.Instance.FactionCrystalHpBlankSprites[_playerFaction];
-
-            enemyCrystalFilledHp.sprite =
-                BasicUIResourceManager.Instance.FactionCrystalHpFilledSprites[~_playerFaction];
-            enemyCrystalBlankHp.sprite = BasicUIResourceManager.Instance.FactionCrystalHpBlankSprites[~_playerFaction];
+           
+            
         }
     }
 }

@@ -108,7 +108,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             }
 
             if (DarkClericBuffLookup.TryGetComponent(request.Interactee, out var darkClericBuff) &&
-                request.InteractorSubGameplayGeneralAttr.FactionTag == FactionTag.Enemy)
+                request.InteractorSubGameplayGeneralAttr.Faction == FactionTag.Dark)
             {
                 var expData = ExpDataLookup[request.Interactor];
                 var config = DarkClericBuffConfigs[(int)expData.curTier - 3];
@@ -211,7 +211,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             }
 
             // Apply light archer buff
-            if (LightArcherBuffLookup.HasComponent(request.Interactor) && interacteeAttr.FactionTag == FactionTag.Enemy)
+            if (LightArcherBuffLookup.HasComponent(request.Interactor) && interacteeAttr.Faction == FactionTag.Dark)
             {
                 var unitAttr = UnitAttrLookup.GetRefRW(request.Interactor);
                 var expData = ExpDataLookup[request.Interactor];
@@ -240,7 +240,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             // Apply Light magic damage buff
             if (request.DamageType == DamageType.Magic && LightMagicDamageBuffLookup.TryGetComponent(request.Interactee,out var lightMagicDamageBuff)
-                                                       && request.InteractorSubGameplayGeneralAttr.FactionTag == FactionTag.Ally)
+                                                       && request.InteractorSubGameplayGeneralAttr.Faction == FactionTag.Light)
             {
                 // When attacker is tier4 magic tower, should be considered as tier3
                 if (!ExpDataLookup.TryGetComponent(request.Interactor, out var expData))
@@ -269,8 +269,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             // Apply dark magic damage buff
             if (request.DamageType == DamageType.Magic && DarkMagicDamageBuffLookup.TryGetComponent(request.Interactee, out var darkMagicDamageBuff)
-                                                       && request.InteractorSubGameplayGeneralAttr.FactionTag ==
-                                                       FactionTag.Enemy)
+                                                       && request.InteractorSubGameplayGeneralAttr.Faction ==
+                                                       FactionTag.Dark)
             {
                 // When attacker is tier4 magic tower, should be considered as tier3
                 if (!ExpDataLookup.TryGetComponent(request.Interactor, out var expData))

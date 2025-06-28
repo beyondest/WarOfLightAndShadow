@@ -12,7 +12,7 @@ namespace SparFlame.Components.SubGameplay
     {
         public Entity BelongsToTeam;
     }
-    public struct EnemyUnitBelongsTo : IComponentData
+    public struct AIUnitBelongsTo : IComponentData
     {
         public Entity Base;
     }
@@ -27,19 +27,19 @@ namespace SparFlame.Components.SubGameplay
     // When enemy base is destroyed, building pack of that base level is destroyed;
     // If all base level is destroyed, then destroy the building pack;
     // If all building pack is destroyed, then next wave point can start
-    public struct DestroyEnemyBaseRequest : IComponentData
+    public struct DestroyAIBaseRequest : IComponentData
     {
         public Entity Base;
     }
     
-    public struct EnemyConjureShrineData : IComponentData
+    public struct AIConjureShrineData : IComponentData
     {
         public Random Rnd;
         public Entity Base;
         public float ConjureTime;
     }
     
-    public struct EnemyBaseTeamAvailableData : IBufferElementData
+    public struct AIBaseTeamAvailableData : IBufferElementData
     {
         public AITeamType TeamType; // gather / attack / defense / harass
         public Entity TeamEntity; 

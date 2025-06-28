@@ -217,7 +217,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         Filter = new VFXSubFilter
                         {
                             FactionFilterEnable = true,
-                            Faction = fromEntityGeneralAttr.FactionTag,
+                            Faction = fromEntityGeneralAttr.Faction,
                             TierFilterEnable = false
                         },
                         StatChangeRequest = default,
@@ -304,7 +304,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         Filter = new VFXSubFilter
                         {
                             FactionFilterEnable = true,
-                            Faction = fromEntityGeneralAttr.FactionTag,
+                            Faction = fromEntityGeneralAttr.Faction,
                             TierFilterEnable = false
                         },
                         StatChangeRequest = default,

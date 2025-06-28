@@ -175,9 +175,9 @@ namespace SparFlame.UI.SubGameplay
                 for (int i = _infos.Count - 1; i >= 0; i--)
                 {
                     // Light faction cannot construct crystal, dark faction cannot construct beacon
-                    if (_currentFaction == FactionTag.Ally && _infos[i].SubtypeIndex == (int)OrnamentType.Crystal)
+                    if (_currentFaction == FactionTag.Light && _infos[i].SubtypeIndex == (int)OrnamentType.Crystal)
                         _infos.RemoveAt(i);
-                    if(_currentFaction == FactionTag.Enemy && _infos[i].SubtypeIndex == (int)OrnamentType.Beacon)
+                    if(_currentFaction == FactionTag.Dark && _infos[i].SubtypeIndex == (int)OrnamentType.Beacon)
                         _infos.RemoveAt(i);
                 }
             }

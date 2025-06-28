@@ -82,7 +82,7 @@ namespace SparFlame.UI.SubGameplay
                 ecb.AddComponent(costRequest, new ResourceChangeRequest
                 {
                     AbsAmount = math.abs(cost.Amount * actualConjureCount),
-                    FromFaction = SystemAPI.GetComponent<SubGameplayGeneralAttr>(buildingEntity).FactionTag,
+                    FromFaction = SystemAPI.GetComponent<SubGameplayGeneralAttr>(buildingEntity).Faction,
                     Type = cost.Type,
                     RequestType = ResourceRequestType.Consume
                 });

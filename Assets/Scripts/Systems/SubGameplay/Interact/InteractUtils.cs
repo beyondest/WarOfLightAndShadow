@@ -18,7 +18,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 return false;
             }
             // Healing state but target stat is already full. If it is in healing state, target should be ally unit, this logic is determined by Auto Choose System
-            if (targetSubGameplayGeneralAttr.FactionTag == selfFactionTag)
+            if (targetSubGameplayGeneralAttr.Faction == selfFactionTag)
             {
                 if (!canHeal) return false;
                 return targetStatData.curValue < targetStatData.maxValue + targetStatData.bonus;

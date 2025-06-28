@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
@@ -12,7 +13,6 @@ using Unity.Physics;
 using Unity.Physics.Stateful;
 using Unity.Rendering;
 using Unity.Transforms;
-using UnityEngine;
 using BoxCollider = Unity.Physics.BoxCollider;
 
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -35,8 +35,8 @@ namespace SparFlame.Systems.SubGameplay.Construct
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<ConstructSystemConfig>();
             state.RequireForUpdate<PlayerFactionData>();
-            state.RequireForUpdate<EnemyResourceDataTag>();
-            state.RequireForUpdate<AllyResourceDataTag>();
+            state.RequireForUpdate<DarkResourceDataTag>();
+            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputMouseData>();
@@ -49,6 +49,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
             //     .WithAll<CrystalDef>().Build();
             _buildingQuery = SystemAPI.QueryBuilder().WithAll<LocalTransform>().WithAll<BuildingAttr>()
                 .WithAll<SubGameplayGeneralAttr>()
+                .WithAll<BoxColliderSize>()
                 .WithAll<PlayerTag>().Build();
             _grids = new NativeList<Entity>(Allocator.Persistent);
         }
@@ -70,7 +71,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
             if (gameStatusData == GameStatus.Init)
             {
-                data.Faction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+                data.Faction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
                 data.CommandType = ConstructCommandType.None;
                 return;
             }
@@ -111,17 +112,17 @@ namespace SparFlame.Systems.SubGameplay.Construct
             var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
             var customInputData = SystemAPI.GetSingleton<InputMouseData>();
             var allyResourceData =
-                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<AllyResourceDataTag>());
+                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<LightResourceDataTag>());
             var enemyResourceData =
                 SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI
-                    .GetSingletonEntity<EnemyResourceDataTag>());
+                    .GetSingletonEntity<DarkResourceDataTag>());
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
-            var resourceData = data.Faction == FactionTag.Ally ? allyResourceData : enemyResourceData;
-            var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(data.TargetBuilding);
+            var resourceData = data.Faction == FactionTag.Light ? allyResourceData : enemyResourceData;
+            var boxColliderSize = SystemAPI.GetComponent<BoxColliderSize>(data.TargetBuilding);
             var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
      
-            var curFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
-
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             // Light faction can only build buildings in light ness, including beacon
        
             
@@ -182,7 +183,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     targetTransform.Rotation =
                         math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
                     var rotationAbsAngle = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                    MathUtils.GetSnapGridPosition(customInputData.HitPosition,rotationAbsAngle , generalAttr.BoxColliderSize,
+                    MathUtils.GetSnapGridPosition(customInputData.HitPosition,rotationAbsAngle , boxColliderSize.Value,
                         gridSize, out var snapPosition);
                     // targetTransform.Position = customInputData.HitPosition;
                     targetTransform.Position = snapPosition;
@@ -225,7 +226,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     else data.PreviewAttackRangeEntity = Entity.Null;
 
 
-                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, generalAttr.BoxColliderSize, gridSize,
+                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Value, gridSize,
                         out data.PreviewCube);
                     // VisualizeGrid(ref state, gridSize, playerBaseTrans,constructableRadiusSq, prefabs.GridPrefab);
 
@@ -263,12 +264,16 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         // Create building
                         var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
                         state.EntityManager.AddComponent<SubGameplayEntityTag>(targetBuilding);
-                        state.EntityManager.SetComponentData(targetBuilding, newTransform);
-
+                        SystemAPI.SetComponent(targetBuilding, newTransform);
+                        var generalAttr = state.EntityManager.GetComponentData<SubGameplayGeneralAttr>(targetBuilding);
+                        var cityGeneralAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(subGameStatusData.City);
+                        generalAttr.SubFaction = cityGeneralAttr.subFaction;
+                        SystemAPI.SetComponent(targetBuilding, generalAttr);
+                        
                         // Make the building in constructing state
                         state.EntityManager.AddComponent<ConstructingData>(targetBuilding);
                         var attr = state.EntityManager.GetComponentData<BuildingAttr>(targetBuilding);
-                        state.EntityManager.SetComponentData(targetBuilding, new ConstructingData
+                        SystemAPI.SetComponent(targetBuilding, new ConstructingData
                         {
                             LastTime = attr.ConstructTime
                         });
@@ -279,7 +284,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         
                         // Exchange grid preview
                         _grids.Add(data.PreviewCube);
-                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, generalAttr.BoxColliderSize, gridSize,
+                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Value, gridSize,
                             out data.PreviewCube);
                         
                         data.CommandType = ConstructCommandType.Drag; // Continue building
@@ -291,7 +296,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                             ParabolaTargetPosition = default,
                             Filter = new VFXSubFilter
                             {
-                                Faction = curFaction,
+                                Faction = playerFactionData.faction,
                                 FactionFilterEnable = true,
                                 Tier = default,
                                 TierFilterEnable = false
@@ -412,11 +417,11 @@ namespace SparFlame.Systems.SubGameplay.Construct
             var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
             var gridSize = SystemAPI.GetSingleton<ConstructSystemConfig>().ConstructionGridSize;
             var trans = _buildingQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            var generalAttrs = _buildingQuery.ToComponentDataArray<SubGameplayGeneralAttr>(Allocator.Temp);
+            var boxColliderSizes = _buildingQuery.ToComponentDataArray<BoxColliderSize>(Allocator.Temp);
 
             for (var i = 0; i < trans.Length; i++)
             {
-                var boxColliderSize = generalAttrs[i].BoxColliderSize;
+                var boxColliderSize = boxColliderSizes[i].Value;
                 var tran = trans[i];
 
                 // 1. 获取旋转角度（只支持 90° 的倍数）

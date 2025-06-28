@@ -109,7 +109,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 teamStateData.Focus = false;
                 teamStateData.TargetEntity = Entity.Null;
                 teamStateData.TargetPosition = float3.zero;
-                teamStateData.CommandType = EnemyCommandType.None;
+                teamStateData.CommandType = AICommandType.None;
                 ECB.SetComponentEnabled<TeamNeedTargetTag>(index, selfEntity, true);
             }
 
@@ -142,9 +142,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                             if (unitState.TargetState != InteractState.Attacking &&
                                 unitState.CurState != InteractState.Attacking)
                             {
-                                ecb.AddComponent(index, teamEntityData.Unit, new EnemyUnitCommandData
+                                ecb.AddComponent(index, teamEntityData.Unit, new AIUnitCommandData
                                 {
-                                    CommandType = EnemyCommandType.March,
+                                    CommandType = AICommandType.March,
                                     TargetPos = targetPos,
                                     TargetEntity = Entity.Null,
                                     Focus = false
@@ -168,7 +168,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
                 var bias = assembleLocs[(int)teamData.TeamType].TeamAssembleLocationBias;
                 var targetPos = LocalTransformLookup[teamData.BelongsToBase].TransformPoint(bias);
-                teamStateData.CommandType = EnemyCommandType.March;
+                teamStateData.CommandType = AICommandType.March;
                 teamStateData.Focus = true;
                 teamStateData.TargetPosition = targetPos;
                 teamStateData.TargetEntity = Entity.Null;
@@ -240,17 +240,17 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 foreach (var data in teamEntities)
                 {
                     var pos = LocalTransformLookup[data.Unit].Position;
-                    if (stateData.CommandType == EnemyCommandType.March &&
+                    if (stateData.CommandType == AICommandType.March &&
                         math.distancesq(pos, stateData.TargetPosition) < Config.reachTargetToleranceDisSq)
                         continue;
-                    ECB.SetComponent(index, data.Unit, new EnemyUnitCommandData
+                    ECB.SetComponent(index, data.Unit, new AIUnitCommandData
                     {
                         CommandType = stateData.CommandType,
                         TargetEntity = stateData.TargetEntity,
                         Focus = stateData.Focus,
                         TargetPos = stateData.TargetPosition
                     });
-                    ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, data.Unit, true);
+                    ECB.SetComponentEnabled<AIUnitCommandUpdate>(index, data.Unit, true);
                 }
             }
         }

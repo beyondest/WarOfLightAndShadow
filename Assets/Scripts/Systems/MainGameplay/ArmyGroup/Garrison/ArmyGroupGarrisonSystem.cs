@@ -3,6 +3,7 @@ using SparFlame.Components.MainGameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Transforms;
 
 // ReSharper disable Unity.Entities.SingletonMustBeRequested
 
@@ -25,10 +26,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public void OnUpdate(ref SystemState state)
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
-            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
+            if (gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming) return;
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            
+
             DealGarrisonRequest(ref state, ecb);
 
 
@@ -40,6 +41,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             var entities = _requestQuery.ToEntityArray(Allocator.Temp);
             var requests = _requestQuery.ToComponentDataArray<ArmyGroupGarrisonRequest>(Allocator.Temp);
+            var config = SystemAPI.GetSingleton<ArmyGroupGarrisonSystemConfig>();
 
             for (var k = 0; k < entities.Length; k++)
             {
@@ -47,13 +49,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var request = requests[k];
                 ecb.DestroyEntity(entity);
 
-
                 var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(request.City);
                 var garrisonDatas = SystemAPI.GetBuffer<CityGarrisonTypeData>(request.City);
-                if (garrisonEntities.Length == 0)
-                {
-                    continue;
-                }
 
 
                 int i;
@@ -61,7 +58,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 for (i = 0; i < garrisonDatas.Length; i++)
                 {
                     var data = garrisonDatas[i];
-                    if (data.IconType == request.IconType)
+                    if (data.iconType == request.IconType)
                     {
                         break;
                     }
@@ -75,14 +72,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     {
                         garrisonDatas.Add(new CityGarrisonTypeData
                         {
-                            Count = 1,
-                            IconType = request.IconType
+                            count = 1,
+                            iconType = request.IconType
                         });
                     }
                     else
                     {
                         var data = garrisonDatas[i];
-                        data.Count++;
+                        data.count++;
                         garrisonDatas[i] = data;
                     }
 
@@ -91,10 +88,15 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     {
                         ArmyGroup = request.ArmyGroup
                     });
+
                     ecb.AddComponent(request.ArmyGroup, new ArmyGroupInGarrison
                     {
                         City = request.City,
                     });
+                    // Hide the garrison army group entity
+                    var transform = SystemAPI.GetComponent<LocalTransform>(request.ArmyGroup);
+                    transform.Position += config.hidePositionBias;
+                    ecb.SetComponent(request.ArmyGroup, transform);
                 }
                 // ArmyGroup garrison out
                 else
@@ -102,25 +104,40 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     if (i == garrisonDatas.Length)
                         continue;
                     var data = garrisonDatas[i];
-                    data.Count--;
-                    if (data.Count == 0)
+                    if (request.IfGarrisonOutAllSameIcon)
+                        data.count = 0;
+                    else
+                        data.count--;
+                    if (data.count == 0)
                         garrisonDatas.RemoveAt(i);
                     else
                     {
                         garrisonDatas[i] = data;
                     }
 
+                    var removeSpecifiedEntity = request.ArmyGroup != Entity.Null;
+
                     for (var j = garrisonEntities.Length - 1; j >= 0; j--)
                     {
                         var garrisonEntity = garrisonEntities[j];
-                        if (garrisonEntity.ArmyGroup != request.ArmyGroup) continue;
+                        if (removeSpecifiedEntity)
+                        {
+                            if ( garrisonEntity.ArmyGroup != request.ArmyGroup) continue;
+                        }
+                        else
+                        {
+                            if(SystemAPI.GetComponent<ArmyGroupAttr>(garrisonEntity.ArmyGroup).iconType != request.IconType) continue;
+                        }
                         garrisonEntities.RemoveAt(j);
-                        break;
-                    }
-
-                    if (SystemAPI.HasComponent<ArmyGroupInGarrison>(request.ArmyGroup))
-                    {
-                        ecb.RemoveComponent<ArmyGroupInGarrison>(request.ArmyGroup);
+                        if (SystemAPI.HasComponent<ArmyGroupInGarrison>(garrisonEntity.ArmyGroup))
+                        {
+                            ecb.RemoveComponent<ArmyGroupInGarrison>(garrisonEntity.ArmyGroup);
+                            // Show the get out army group entity
+                            var transform = SystemAPI.GetComponent<LocalTransform>(garrisonEntity.ArmyGroup);
+                            transform.Position -= config.hidePositionBias;
+                            ecb.SetComponent(garrisonEntity.ArmyGroup, transform);
+                        }
+                        if (!request.IfGarrisonOutAllSameIcon) break;
                     }
                 }
             }

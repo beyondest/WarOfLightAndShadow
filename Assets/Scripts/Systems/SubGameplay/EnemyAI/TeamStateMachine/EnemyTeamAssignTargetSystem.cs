@@ -38,7 +38,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         private ComponentLookup<StatData> _statDataLookUp;
         private ComponentLookup<EnemyBasePosData> _basePosDataLookUp;
         private ComponentLookup<LocalTransform> _localTransformLookUp;
-        private BufferLookup<EnemyBaseGarrisonTowerData> _garrisonTowerDataLookUp;
+        private BufferLookup<AIBaseGarrisonTowerData> _garrisonTowerDataLookUp;
         private BufferLookup<TeamEntityData> _teamEntityDataLookUp;
 
         [BurstCompile]
@@ -59,7 +59,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
             _attackAbilityLookUp = state.GetComponentLookup<AttackAbility>(true);
             _statDataLookUp = state.GetComponentLookup<StatData>(true);
-            _garrisonTowerDataLookUp = state.GetBufferLookup<EnemyBaseGarrisonTowerData>(true);
+            _garrisonTowerDataLookUp = state.GetBufferLookup<AIBaseGarrisonTowerData>(true);
             _teamEntityDataLookUp = state.GetBufferLookup<TeamEntityData>(true);
             _basePosDataLookUp = state.GetComponentLookup<EnemyBasePosData>(true);
             _localTransformLookUp = state.GetComponentLookup<LocalTransform>(true);
@@ -353,7 +353,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             stateData.TargetEntity = targetLocPair.Target;
             stateData.TargetPosition = targetLocPair.Location;
             stateData.Focus = false;
-            stateData.CommandType = EnemyCommandType.March;
+            stateData.CommandType = AICommandType.March;
         }
 
         private static void RandomMarchToPosAroundPlayerBase(ref Random rnd, NativeArray<LocalTransform> playerBaseTrans,
@@ -366,7 +366,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             stateData.TargetEntity = Entity.Null;
             stateData.TargetPosition = pos;
             stateData.Focus = false;
-            stateData.CommandType = EnemyCommandType.March;
+            stateData.CommandType = AICommandType.March;
         }
 
         private void HarassTarget(ref TeamStateData stateData)
@@ -376,7 +376,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             stateData.TargetEntity = targetLocPair.Target;
             stateData.TargetPosition = targetLocPair.Location;
             stateData.Focus = true;
-            stateData.CommandType = EnemyCommandType.Attack; // Interact movement must focus when target is too far, or enemy AI will lose aggro
+            stateData.CommandType = AICommandType.Attack; // Interact movement must focus when target is too far, or enemy AI will lose aggro
         }
 
         private void RandomDefendOnCircle(in TeamData teamData, ref Random rnd,
@@ -390,7 +390,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 Location = marchPos,
                 Target = Entity.Null
             };
-            stateData.CommandType = EnemyCommandType.March;
+            stateData.CommandType = AICommandType.March;
             stateData.AssignTarget = true;
             stateData.TargetEntity = targetLocPair.Target;
             stateData.TargetPosition = targetLocPair.Location;
@@ -412,7 +412,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             }
 
             var targetLocPair = bestTarget.Pair;
-            stateData.CommandType = EnemyCommandType.Garrison;
+            stateData.CommandType = AICommandType.Garrison;
             stateData.AssignTarget = true;
             stateData.TargetEntity = targetLocPair.Target;
             stateData.TargetPosition = targetLocPair.Location;
@@ -429,7 +429,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             teamStateData.TargetPosition = targetLocPair.Location;
             teamStateData.Focus = false;
             teamStateData.CommandType =
-                EnemyCommandType.March; // Interact move will drop aggro when no focus and target too far
+                AICommandType.March; // Interact move will drop aggro when no focus and target too far
         }
 
         private void FallbackToBase(in TeamData teamData, ref TeamStateData teamStateData)
@@ -441,7 +441,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             teamStateData.TargetPosition =
                 baseTransform.TransformPoint(_basePosDataLookUp[teamData.BelongsToBase].FallBackPosBias);
             teamStateData.Focus = false;
-            teamStateData.CommandType = EnemyCommandType.March;
+            teamStateData.CommandType = AICommandType.March;
         }
 
         private void CalculateDefendTowerSequence(NativeArray<Entity> baseEntities)

@@ -2,6 +2,7 @@
 using System.Collections;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
+using SparFlame.Systems.General.Input;
 using SparFlame.UI.General;
 using TMPro;
 using UnityEngine;
@@ -15,27 +16,29 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private Image newArmyGroupIcon;
         [SerializeField] private GameObject armyGroupNewPanel;
         [SerializeField] private TMP_Text newArmyGroupName;
-
+        [SerializeField] private GameObject selectIconPanel;
         // Interface
         public static ArmyGroupNewWindow Instance;
         public Action<string, ArmyGroupIconType> OnEcsNewArmyGroup;
         
+        
         public override void Show(Vector2? pos = null)
         {
             newArmyGroupName.text = "New Army";
-            newArmyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[ArmyGroupIconType.Wolf];
+            newArmyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[ArmyGroupIconType.Bear];
             armyGroupNewPanel.SetActive(true);
-            panel.SetActive(false);
             foreach (var slot in Slots)
             {
                 slot.SetActive(false);
             }
+            InputListener.Instance.GetCustomInputActions().CameraNormalMode.Disable();
         }
 
         public override void Hide()
         {
             armyGroupNewPanel.SetActive(false);
-            panel.SetActive(false);
+            selectIconPanel.SetActive(false);
+            InputListener.Instance.GetCustomInputActions().CameraNormalMode.Enable();
         }
 
         #region ButtonMethods
@@ -54,7 +57,7 @@ namespace SparFlame.UI.MainGameplay
         public void OnClickChooseIcon()
         {
             // This panel is type icon panel
-            panel.SetActive(true);
+            selectIconPanel.SetActive(true);
             var types = Enum.GetValues(typeof(ArmyGroupIconType));
             for (var i = 0; i < Slots.Count; i++)
             {
@@ -75,7 +78,7 @@ namespace SparFlame.UI.MainGameplay
 
         public override void OnClickSlot(int slotIndex)
         {
-            panel.SetActive(false);
+            selectIconPanel.SetActive(false);
             var types = Enum.GetValues(typeof(ArmyGroupIconType));
             _newIconType = (ArmyGroupIconType)types.GetValue(slotIndex);
             newArmyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[_newIconType];

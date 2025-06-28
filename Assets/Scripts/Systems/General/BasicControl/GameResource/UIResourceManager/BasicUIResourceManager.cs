@@ -49,7 +49,7 @@ namespace SparFlame.Systems.General.BasicControl
         public readonly Dictionary<FactionTag,Sprite> FactionCrystalHpBlankSprites = new();
         
         public readonly Dictionary<FactionTag, Sprite> GeneralFactionIconSprites = new();
-        public readonly Dictionary<SubFaction, Sprite> SubFactionIconSprites = new();
+        public readonly Dictionary<SubFactionTag, Sprite> SubFactionIconSprites = new();
         
         // Internal Data
         private readonly ResourceLoadingUtils.AddressableResourceGroup _group = new();
@@ -110,7 +110,7 @@ namespace SparFlame.Systems.General.BasicControl
             
             _group.Add(ResourceLoadingUtils.LoadTypeSuffix<FactionTag, Sprite>(generalFactionCitySpriteSuffix,
                 result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, GeneralFactionIconSprites)));
-            _group.Add(ResourceLoadingUtils.LoadTypeSuffix<SubFaction, Sprite>(subFactionCitySpriteSuffix,
+            _group.Add(ResourceLoadingUtils.LoadTypeSuffix<SubFactionTag, Sprite>(subFactionCitySpriteSuffix,
                 result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, SubFactionIconSprites)));
             
             _group.Add(ResourceLoadingUtils.LoadTypeSuffix<MainGameplayCursorType, Sprite>(mainGameplayCursorTypeSuffix,

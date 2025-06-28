@@ -51,7 +51,6 @@ namespace SparFlame.Systems.General.BasicControl
         {
             var sceneGroupTypes = new List<SceneGroupType>
             {
-                SceneGroupType.MainWorld,
                 SceneGroupType.Init
             };
             UnloadSceneGroup(sceneGroupTypes);
@@ -70,7 +69,7 @@ namespace SparFlame.Systems.General.BasicControl
             // Only record subGameplay scene group
             if(ifEnterSubGameplay)
                 _currentLoadingSubGameplaySceneGroup = sceneGroup;
-
+            
             StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading,
                 onSceneGroupLoaded: _onNormalSceneLoaded));
             EcsStartLoadScene?.Invoke();
@@ -143,7 +142,7 @@ namespace SparFlame.Systems.General.BasicControl
                 switch (sceneGroupType)
                 {
                     case SceneGroupType.Init:
-                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Ally ? lightInitSceneGroup : darkInitSceneGroup);
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Light ? lightInitSceneGroup : darkInitSceneGroup);
                         break;
                     case SceneGroupType.MainWorld:
                         sceneGroup.AddSceneGroup(mainWorldSceneGroup);
@@ -158,12 +157,12 @@ namespace SparFlame.Systems.General.BasicControl
                         sceneGroup.AddSceneGroup(battleFieldSceneGroup);
                         break;
                     case SceneGroupType.CityInvadeFight:
-                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Ally
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Light
                             ? cityItem.lightInvadeSceneGroup
                             : cityItem.darkInvadeSceneGroup);
                         break;
                     case SceneGroupType.CitySupportFight:
-                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Ally
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Light
                             ? cityItem.lightSupportSceneGroup
                             : cityItem.darkSupportSceneGroup);
                         break;

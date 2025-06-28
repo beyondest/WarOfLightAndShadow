@@ -10,29 +10,20 @@ namespace SparFlame.Systems.General.BasicControl
         public static SaveLoadController Instance;
 
         // Load actions
-        public Action OnEcsLoadArmyGroupSubData;
-        public Action<SubGameStatusData> OnEcsLoadCitySubData;
-        public Action<int> OnEcsLoadGeneralGameData;
+        public event Action OnEcsLoadArmyGroupSubData;
+        public event Action<SubGameStatusData> OnEcsLoadCitySubData;
+        public event Action OnEcsLoadGeneralGameData;
         
         // Save actions
-        public Action OnEcsSaveCitySubData;
-        public Action OnEcsSaveArmyGroupSubData;
-        public Action OnEcsSaveArmyGroupMainData;
-        public Action OnEcsSaveCityMainData;
-        
-        public void SyncSaveGame(bool forceSaveAll = false)
+        public event Action OnEcsSaveCitySubData;
+        public event Action OnEcsSaveArmyGroupSubData;
+        public event Action OnEcsSaveArmyGroupMainData;
+        public event Action OnEcsSaveCityMainData;
+        public event Action OnEcsSaveGameMainData;
+        public void SyncSaveGame()
         {
             var subGameStatusData = _currentSubGameStatusQuery.GetSingleton<SubGameStatusData>();
             if(subGameStatusData.IsInBattle)return; // When in battle, saving is not allowed
-            if (forceSaveAll)
-            {
-                if(subGameStatusData.SubGameStatus == SubGameStatus.PlayerCity)
-                    OnEcsSaveCitySubData?.Invoke();
-                OnEcsSaveArmyGroupSubData?.Invoke();
-                OnEcsSaveArmyGroupMainData?.Invoke();
-                OnEcsSaveCityMainData?.Invoke();
-                return;
-            }
             
             // If battle not complete, save game is not allowed, player only has the pre-battle saving;
             // If battle complete but player failed, city sub game data still not save, because now city does not belong to player;
@@ -42,44 +33,31 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 // This happens when player save in his city or after win the battle
                 case SubGameStatus.PlayerCity:
+                    OnEcsSaveCityMainData?.Invoke();
                     OnEcsSaveCitySubData?.Invoke();
                     OnEcsSaveArmyGroupSubData?.Invoke();
                     OnEcsSaveArmyGroupMainData?.Invoke();
-                    OnEcsSaveCityMainData?.Invoke();
+                    OnEcsSaveGameMainData?.Invoke();
                     break;
                 // This happens when player save in the main world
                 case SubGameStatus.None:
                     OnEcsSaveArmyGroupMainData?.Invoke();
                     OnEcsSaveCityMainData?.Invoke();
+                    OnEcsSaveGameMainData?.Invoke();
                     break;
-                // This happens when player failed the siege battle
+                // These will never happen because player cannot save in battle
                 case SubGameStatus.PlayerSiege:
-                    OnEcsSaveArmyGroupSubData?.Invoke();
-                    OnEcsSaveArmyGroupMainData?.Invoke();
-                    break;
-                // This happens when player failed the defend battle
                 case SubGameStatus.PlayerDefend:
-                    OnEcsSaveArmyGroupSubData?.Invoke();
-                    OnEcsSaveArmyGroupMainData?.Invoke();
-                    OnEcsSaveCityMainData?.Invoke();
-                    break;
-                // This happens when player failed the encounter battle
                 case SubGameStatus.Encounter:
-                    OnEcsSaveArmyGroupSubData?.Invoke();
-                    OnEcsSaveArmyGroupMainData?.Invoke();
-                    break;
-                // This happens when player failed the support battle
                 case SubGameStatus.Support:
-                    OnEcsSaveArmyGroupSubData?.Invoke();
-                    OnEcsSaveArmyGroupMainData?.Invoke();
-                    OnEcsSaveCityMainData?.Invoke();
+                default:
                     break;
             }
         }
 
         public void LoadGeneralGameData()
         {
-            OnEcsLoadGeneralGameData?.Invoke(_saveSlot);
+            OnEcsLoadGeneralGameData?.Invoke();
         }
 
         public void SyncLoadSubGameData(SubGameStatusData targetSubGameStatusData)

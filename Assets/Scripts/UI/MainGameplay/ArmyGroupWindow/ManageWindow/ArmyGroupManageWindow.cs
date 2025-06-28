@@ -17,11 +17,12 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private TMP_Text armyGroupAllowedCountText;
         // Interface
         public static ArmyGroupManageWindow Instance;
-        public Action OnEcsUpdateStaticData;
-        public Action<Entity> OnEcsDeleteArmyGroup;
+        public event Action OnEcsUpdateStaticData;
+        public event Action<Entity> OnEcsDeleteArmyGroup;
         public Action<Entity, AddToArmyGroupType> OnEcsAddToArmyGroup;
-        public Action OnEcsCheckSelected;
-        public Action<int, int> OnEcsCheckMaxArmyGroupCount;
+        public event Action OnEcsCheckSelected;
+        public event Action<int, int> OnEcsTryNewArmyGroup;
+        public event Action OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned;
         public bool HasSelectedUnitAlreadyInArmyGroup { get; set; }
 
         public void UpdateStaticData(List<ArmyGroupManageInfo> infos,  int maxGarrisonCount)
@@ -43,7 +44,6 @@ namespace SparFlame.UI.MainGameplay
                     slot.SetActive(false);
                 }
             }
-            
             armyGroupAllowedCountText.text = _infos.Count + "/" +maxGarrisonCount ;
         }
 
@@ -51,7 +51,6 @@ namespace SparFlame.UI.MainGameplay
         {
             var armyGroup = _infos[index].ArmyGroupEntity;
             OnEcsDeleteArmyGroup?.Invoke(armyGroup);
-            _infos.RemoveAt(index);
             UpdateStaticData(_infos,_maxGarrisonCount);
         }
 
@@ -99,6 +98,7 @@ namespace SparFlame.UI.MainGameplay
         public void OnClickCloseArmyGroupManageWindow()
         {
             var hasEmptyArmyGroup = false;
+            OnEcsUpdateStaticData?.Invoke();
             foreach (var info in _infos)
             {
                 if (info.TotalUnitCount == 0)
@@ -112,10 +112,16 @@ namespace SparFlame.UI.MainGameplay
                 ConfirmWindow.Instance.Show("You have army group with no units. Close the window will delete the army group.",
                     () =>
                     {
+                        var deleteInfos = new List<ArmyGroupManageInfo>();
                         foreach (var info in _infos)
                         {
                             if (info.TotalUnitCount == 0)
-                                OnEcsDeleteArmyGroup?.Invoke(info.ArmyGroupEntity);
+                                deleteInfos.Add(info);
+                        }
+
+                        foreach (var info in deleteInfos)
+                        {
+                            OnEcsDeleteArmyGroup?.Invoke(info.ArmyGroupEntity);
                         }
                         Hide();
                     });
@@ -129,9 +135,13 @@ namespace SparFlame.UI.MainGameplay
  
         public void OnClickNewArmyGroup()
         {
-            OnEcsCheckMaxArmyGroupCount?.Invoke(_infos.Count, config.rows * config.cols);
+            OnEcsTryNewArmyGroup?.Invoke(_infos.Count, config.rows * config.cols);
         }
 
+        public void OnClickSelectAllUnitsWithoutArmyGroupAndGarrisoned()
+        {
+            OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned?.Invoke();
+        }
         #endregion
 
         private readonly List<ArmyGroupManageInfo> _infos = new();

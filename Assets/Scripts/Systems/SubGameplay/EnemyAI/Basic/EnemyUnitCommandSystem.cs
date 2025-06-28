@@ -13,7 +13,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
     [UpdateBefore(typeof(MovementSystem))]
     public partial struct EnemyUnitCommandSystem : ISystem
     {
-        private ComponentLookup<SubGameplayGeneralAttr> _generalAttr;
+        private ComponentLookup<BoxColliderSize> _generalAttr;
         private ComponentLookup<AttackAbility> _attackability;
 
         [BurstCompile]
@@ -21,11 +21,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GarrisonSystemConfig>();
-            state.RequireForUpdate<EnemyUnitCommandUpdate>();
+            state.RequireForUpdate<AIUnitCommandUpdate>();
             state.RequireForUpdate<SubGamingTag>();
-            state.RequireForUpdate<EnemyUnitCommandSystemConfig>();
-            state.RequireForUpdate<EnemyUnitCommandUpdate>();
-            _generalAttr = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
+            state.RequireForUpdate<AIUnitCommandSystemConfig>();
+            state.RequireForUpdate<AIUnitCommandUpdate>();
+            _generalAttr = state.GetComponentLookup<BoxColliderSize>(true);
             _attackability = state.GetComponentLookup<AttackAbility>(true);
         }
 
@@ -35,7 +35,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             _generalAttr.Update(ref state);
             _attackability.Update(ref state);
-            var config = SystemAPI.GetSingleton<EnemyUnitCommandSystemConfig>();
+            var config = SystemAPI.GetSingleton<AIUnitCommandSystemConfig>();
             new EnemyUnitCommandJob
             {
                 GeneralAttrLookUp = _generalAttr,
@@ -47,34 +47,34 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
 
         [BurstCompile]
-        [WithAll(typeof(EnemyUnitCommandUpdate))]
+        [WithAll(typeof(AIUnitCommandUpdate))]
         private partial struct EnemyUnitCommandJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<AttackAbility> AttackAbilityLookUp;
-            [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookUp;
+            [ReadOnly] public ComponentLookup<BoxColliderSize> GeneralAttrLookUp;
             [ReadOnly] public float GarrisonRangeSq;
-            [ReadOnly] public EnemyUnitCommandSystemConfig Config;
+            [ReadOnly] public AIUnitCommandSystemConfig Config;
 
-            private void Execute([ChunkIndexInQuery] int index, ref EnemyUnitCommandData commandData,
+            private void Execute([ChunkIndexInQuery] int index, ref AIUnitCommandData commandData,
                 ref BasicStateData basicStateData, ref MovableData movableData,
                 ref DynamicBuffer<InsightTarget> targets,
                 Entity entity)
             {
-                ECB.SetComponentEnabled<EnemyUnitCommandUpdate>(index, entity, false);
+                ECB.SetComponentEnabled<AIUnitCommandUpdate>(index, entity, false);
                 var targetEntity = commandData.TargetEntity;
                 var focus = commandData.Focus;
                 var targetPos = commandData.TargetPos;
                 var targetColliderShape = float3.zero;
-                if (GeneralAttrLookUp.TryGetComponent(commandData.TargetEntity, out var generalAttr))
+                if (GeneralAttrLookUp.TryGetComponent(commandData.TargetEntity, out var boxColliderSize))
                 {
-                    targetColliderShape = generalAttr.BoxColliderSize;
+                    targetColliderShape = boxColliderSize.Value;
                 }
                 switch (commandData.CommandType)
                 {
-                    case EnemyCommandType.None:
+                    case AICommandType.None:
                         break;
-                    case EnemyCommandType.March:
+                    case AICommandType.March:
                         targetColliderShape = new float3(Config.aiMarchExtent, 1f, Config.aiMarchExtent);
                         MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderShape,
                             MovementCommandType.March, 0f);
@@ -90,7 +90,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                         basicStateData.TargetState = InteractState.Idle;
                         basicStateData.Focus = focus;
                         break;
-                    case EnemyCommandType.Garrison:
+                    case AICommandType.Garrison:
                         MovementUtils.SetMoveTarget(ref movableData, targetPos, targetColliderShape,
                             MovementCommandType.Interactive, GarrisonRangeSq);
                         basicStateData.TargetState = InteractState.Moving;
@@ -99,7 +99,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                         basicStateData.Focus = focus;
                         basicStateData.TargetState = InteractState.Garrison;
                         break;
-                    case EnemyCommandType.Attack:
+                    case AICommandType.Attack:
                         if (AttackAbilityLookUp.TryGetComponent(entity, out var attackAbility))
                         {
                             MovementUtils.SetMoveTarget(ref movableData, targetPos,

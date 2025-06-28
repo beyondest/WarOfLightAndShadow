@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -47,22 +48,24 @@ namespace SparFlame.Components.SubGameplay
         public int SlideTimes;*/
     }
     
+    [Serializable]
     public struct NavAgentComponent : IComponentData
     {
-        public bool EnableCalculation;
-        public float3 TargetPosition;
-        public bool CalculationComplete;
-        public int CurrentWaypoint;
-        public float NextPathCalculateTime;
-        public float CalculateInterval;
-        public float3 Extents;
-        public bool ForceCalculate;
-        public int AgentId;
+        public bool enableCalculation;
+        public float3 targetPosition;
+        public bool calculationComplete;
+        public int currentWaypoint;
+        public float nextPathCalculateTime;
+        public float calculateInterval;
+        public float3 extents;
+        public bool forceCalculate;
+        public int agentId;
     }
 
+    [Serializable]
     public struct WaypointBuffer : IBufferElementData
     {
-        public float3 Position;
+        public float3 position;
     }
 
 
@@ -142,10 +145,9 @@ namespace SparFlame.Components.SubGameplay
         /// </summary>
         public FactionTag RequestFromFaction;
 
-        // public bool NotGenerateNotWalkableVolume;
-        // public bool NotGenerateHighCostVolume;
     }
-    
+
+
     public enum AreaType
     {
         Walkable = 0,
@@ -184,5 +186,18 @@ namespace SparFlame.Components.SubGameplay
         public bool OpenOrClose;
         public FactionTag RequestFromFaction;
         public Entity FromEntity;
+    }
+    
+    public struct UpdateNavMeshRequest : IComponentData
+    {
+        /// <summary>
+        /// This is the id for which navmesh should be updated
+        /// </summary>
+        public FactionTag FactionTag;
+    }
+
+    public struct UpdateCityNavMeshRequest : IComponentData
+    {
+        
     }
 }

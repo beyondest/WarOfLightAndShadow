@@ -7,7 +7,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 {
     public class EnemyUnitCommandSystemAuthoring : MonoBehaviour
     {
-        public EnemyUnitCommandSystemConfig config;
+        public AIUnitCommandSystemConfig config;
         private class EnemyAISystemAuthoringBaker : Baker<EnemyUnitCommandSystemAuthoring>
         {
             public override void Bake(EnemyUnitCommandSystemAuthoring authoring)
@@ -19,11 +19,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
     }
     
     [Serializable]
-    public struct EnemyUnitCommandSystemConfig : IComponentData
+    public struct AIUnitCommandSystemConfig : IComponentData
     {
         public float aiMarchExtent;
     }
-    public enum EnemyCommandType
+    public enum AICommandType
     {
         None = 0,
         March = 1,
@@ -32,15 +32,15 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
     }
 
 
-    public struct EnemyUnitCommandData : IComponentData
+    public struct AIUnitCommandData : IComponentData
     {
         public Entity TargetEntity;
-        public EnemyCommandType CommandType;
+        public AICommandType CommandType;
         public float3 TargetPos;
         public bool Focus;
     }
 
-    public struct EnemyUnitCommandUpdate : IComponentData, IEnableableComponent
+    public struct AIUnitCommandUpdate : IComponentData, IEnableableComponent
     {
         
     }

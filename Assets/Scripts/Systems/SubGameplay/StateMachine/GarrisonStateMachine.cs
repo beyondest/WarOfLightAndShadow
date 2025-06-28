@@ -20,7 +20,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<GarrisonAttr> _garrisonAttrLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
-        private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
+        private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<Selected> _selectedAttrLookup;
 
         private BufferLookup<AllowGarrisonUnit> _allowGarrisonUnitLookup;
@@ -43,7 +43,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _allowGarrisonUnitLookup = state.GetBufferLookup<AllowGarrisonUnit>(true);
             _insightTargetLookup = state.GetBufferLookup<InsightTarget>(true);
-            _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
+            _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
             _garrisonStateTagLookup = state.GetComponentLookup<GarrisonStateTag>(true);
             _oocTagLookup = state.GetComponentLookup<OocTag>(true);
             _constructingTagLookup = state.GetComponentLookup<ConstructingData>(true);
@@ -59,7 +59,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _buildingAttrLookup.Update(ref state);
             _allowGarrisonUnitLookup.Update(ref state);
             _insightTargetLookup.Update(ref state);
-            _generalAttrLookup.Update(ref state);
+            _boxColliderSizeLookup.Update(ref state);
             _garrisonStateTagLookup.Update(ref state);
             _oocTagLookup.Update(ref state);
             _constructingTagLookup.Update(ref state);
@@ -87,7 +87,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 BuildingAttrLookup = _buildingAttrLookup,
                 GarrisonAttrLookup = _garrisonAttrLookup,
                 GarrisonStateTagLookup = _garrisonStateTagLookup,
-                GeneralAttrLookup = _generalAttrLookup,
+                BoxColliderSizeLookup = _boxColliderSizeLookup,
                 InsightTargetLookup = _insightTargetLookup,
                 TransformLookup = _localTransformLookup,
                 OocTagLookup = _oocTagLookup,
@@ -102,7 +102,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             public EntityCommandBuffer.ParallelWriter ECB;
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public BufferLookup<InsightTarget> InsightTargetLookup;
-            [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
+            [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
@@ -175,7 +175,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     {
                         StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
                             TransformLookup[inGarrison.BuildingEntity].Position,
-                            GeneralAttrLookup[inGarrison.BuildingEntity].BoxColliderSize,
+                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Value,
                             Config.GarrisonRadiusSq,false,
                             selfEntity,index, ECB);
                     }
@@ -204,7 +204,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         // This should happen when self is healer and target is wounded
                         StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
                             TransformLookup[inGarrison.BuildingEntity].Position,
-                            GeneralAttrLookup[inGarrison.BuildingEntity].BoxColliderSize,
+                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Value,
                             Config.GarrisonRadiusSq,false,
                             selfEntity,index, ECB);
                         return;

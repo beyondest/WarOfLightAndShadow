@@ -9,7 +9,9 @@ namespace SparFlame.Systems.Map
     public class MiniMapSystemAuthoring : MonoBehaviour
     {
         public Color playerColor;
-        public Color enemyColor;
+        public Color allyColor;
+        public Color hostileColor;
+        public Color neutralColor;
         [SerializeField] private LayerMask miniMapLayerMask;
         public MapInfo mapInfo;
         
@@ -22,7 +24,9 @@ namespace SparFlame.Systems.Map
                 AddComponent(entity, new MiniMapConfig
                 {
                     PlayerColor = new float4(authoring.playerColor.r, authoring.playerColor.g, authoring.playerColor.b, authoring.playerColor.a),
-                    EnemyColor = new float4(authoring.enemyColor.r, authoring.enemyColor.g, authoring.enemyColor.b, authoring.enemyColor.a),
+                    AllyColor = new float4(authoring.allyColor.r, authoring.allyColor.g, authoring.allyColor.b, authoring.allyColor.a),
+                    NeutralColor = new float4(authoring.neutralColor.r, authoring.neutralColor.g, authoring.neutralColor.b, authoring.neutralColor.a),
+                    HostileColor = new float4(authoring.hostileColor.r, authoring.hostileColor.g, authoring.hostileColor.b, authoring.hostileColor.a),
                     Layer = (int)math.log2(authoring.miniMapLayerMask.value)
                 });
                 AddComponent(entity, authoring.mapInfo);
@@ -33,7 +37,9 @@ namespace SparFlame.Systems.Map
     public struct MiniMapConfig : IComponentData
     {
         public float4 PlayerColor;
-        public float4 EnemyColor;
+        public float4 AllyColor;
+        public float4 HostileColor;
+        public float4 NeutralColor;
         public int Layer;
     }
 

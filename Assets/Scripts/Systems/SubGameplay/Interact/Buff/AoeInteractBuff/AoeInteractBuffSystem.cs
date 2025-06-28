@@ -56,7 +56,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     var target = targets[i];
                     // remove dead targets
                     if (!GeneralAttrLookup.TryGetComponent(target.Entity, out var attr)
-                        || attr.FactionTag != data.TargetFaction)
+                        || attr.Faction != data.TargetFaction)
                     {
                         targets.RemoveAt(i);
                         continue;

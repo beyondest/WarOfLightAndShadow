@@ -95,11 +95,11 @@ namespace SparFlame.Components.General
         public int TotalAmount;
     }
 
-    public struct AllyResourceDataTag : IComponentData
+    public struct LightResourceDataTag : IComponentData
     {
     }
 
-    public struct EnemyResourceDataTag : IComponentData
+    public struct DarkResourceDataTag : IComponentData
     {
     }
 

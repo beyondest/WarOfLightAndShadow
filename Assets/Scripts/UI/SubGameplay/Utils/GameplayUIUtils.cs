@@ -12,11 +12,11 @@ namespace SparFlame.UI.SubGameplay
             EntityQuery query;
             switch (faction)
             {
-                case FactionTag.Ally:
-                    query = em.CreateEntityQuery(typeof(AllyResourceDataTag));
+                case FactionTag.Light:
+                    query = em.CreateEntityQuery(typeof(LightResourceDataTag));
                     break;
-                case FactionTag.Enemy:
-                    query = em.CreateEntityQuery(typeof(EnemyResourceDataTag));
+                case FactionTag.Dark:
+                    query = em.CreateEntityQuery(typeof(DarkResourceDataTag));
                     break;
                 case FactionTag.Neutral:
                     return 0;

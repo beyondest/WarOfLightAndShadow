@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
@@ -24,7 +25,9 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private TMP_Text description;
         [SerializeField] private Image idSingleIcon;
         [SerializeField] private GameObject interactAbilityPanel;
-
+        [SerializeField] private Image generalFactionImage;
+        [SerializeField] private Image subFactionImage;
+        
         [Header("Building detail")] [SerializeField]
         private Image buildingStateIcon;
 
@@ -220,7 +223,7 @@ namespace SparFlame.UI.SubGameplay
         private Entity _targetEntity = Entity.Null;
         private bool _hasGarrisonUnits;
         private bool _ifConstructing;
-        private FactionTag _playerFaction;
+        private PlayerFactionData _playerFactionData;
 
         // Cache
         private GameObject _costSlotPrefab;
@@ -256,7 +259,7 @@ namespace SparFlame.UI.SubGameplay
         protected virtual void Update()
         {
             if (_gamingTag.IsEmpty || _playerFactionQuery.IsEmpty) return;
-            _playerFaction = _playerFactionQuery.GetSingleton<PlayerFactionData>().Value;
+            _playerFactionData = _playerFactionQuery.GetSingleton<PlayerFactionData>();
             if (!IsOpened()) return;
             if (_targetEntity == Entity.Null) return;
             if (!Em.HasComponent<SubGameplayGeneralAttr>(_targetEntity))
@@ -274,6 +277,25 @@ namespace SparFlame.UI.SubGameplay
         {
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
             var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(generalAttr.ID);
+            // Visualize faction info
+            if (generalAttr.Faction == FactionTag.Neutral)
+            {
+                generalFactionImage.enabled = false;
+                subFactionImage.enabled = false;
+            }
+            else
+            {
+                generalFactionImage.enabled = true;
+                subFactionImage.enabled = generalAttr.SubFaction != SubFactionTag.None; 
+                
+                generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.Faction];
+                subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.SubFaction];
+                var color = generalFactionImage.color;
+                color.a = generalAttr.Faction == FactionTag.Light ? GlobalUIConfigger.Instance.lightGeneralFactionAlpha : GlobalUIConfigger.Instance.darkGeneralFactionAlpha;
+                generalFactionImage.color = color;
+                subFactionImage.color = color;
+            }
+            
             _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
             description.text = dataItem.description;
             // Visualize type attributes
@@ -310,9 +332,10 @@ namespace SparFlame.UI.SubGameplay
             ActiveNecessaryPanels(generalAttr);
         }
 
-        private void ActiveNecessaryPanels(SubGameplayGeneralAttr subGameplayGeneralAttr)
+        private void ActiveNecessaryPanels(SubGameplayGeneralAttr generalAttr)
         {
-            
+            var relationship = FactionUtils.GetRelationship(_playerFactionData, generalAttr.Faction,
+                generalAttr.SubFaction);
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
             {
                 var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
@@ -367,7 +390,9 @@ namespace SparFlame.UI.SubGameplay
 
                     break;
                 case BuildingType.ConjuringShrines:
-                    if (subGameplayGeneralAttr.FactionTag != _playerFaction) break;
+                   
+                    // Player can only control player self buildings
+                    if (relationship != Relationship.Player) break;
                     conjurePanel.SetActive(true);
                     var conjureAttribute = Em.GetComponentData<ConjureAttr>(_targetEntity);
                     var currentTier = Em.GetComponentData<ExpData>(_targetEntity).curTier;
@@ -403,7 +428,7 @@ namespace SparFlame.UI.SubGameplay
             }
 
             // Check should open these control windows for player
-            if (subGameplayGeneralAttr.FactionTag == _playerFaction)
+            if (relationship == Relationship.Player)
             {
                 constructPanel.SetActive(true);
                 if (isMainInfoSingleton )

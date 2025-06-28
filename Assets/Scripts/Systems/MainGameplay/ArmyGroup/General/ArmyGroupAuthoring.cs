@@ -1,4 +1,5 @@
-﻿using Sirenix.OdinInspector;
+﻿using System;
+using Sirenix.OdinInspector;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -15,7 +16,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         [Header("General")] public FactionTag faction;
         public ArmyGroupIconType iconType;
-        public SubFaction initialSubFaction;
+        public SubFactionTag initialSubFactionTag;
         // public int initialId;
         [Header("Moving config")]
         public float movementInitialSpeed;
@@ -32,22 +33,24 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 // General
                 AddComponent(entity, new MainGameplayGeneralAttr
                 {
-                    Faction = authoring.faction,
-                    BaseTag = MainGameBaseTag.Army,
-                    SubFaction = authoring.initialSubFaction,
+                    faction = authoring.faction,
+                    baseTag = MainGameBaseTag.ArmyGroup,
+                    subFaction = authoring.initialSubFactionTag,
                 });
                 AddComponent(entity, new ArmyGroupAttr
                 {
-                    IconType = authoring.iconType,
-                    // ArmyGroupId = authoring.initialId
+                    iconType = authoring.iconType,
+                    saveId = 0,
+                    gameplayName = "New Army Group",
                 });
+                
                 // Moving 
                 AddBuffer<ArmyGroupMovingTarget>(entity);
                 AddComponent(entity, new ArmyGroupMovableData
                 {
-                    Speed = authoring.movementInitialSpeed,
-                    CurWaypoint = 0,
-                    IsTargetReachable = true
+                    speed = authoring.movementInitialSpeed,
+                    curWaypoint = 0,
+                    isTargetReachable = true
                 });
                 AddComponent<ArmyGroupMovingTag>(entity);
                 SetComponentEnabled<ArmyGroupMovingTag>(entity, false);
@@ -58,20 +61,20 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 // Navigation path
                 AddComponent(entity, new NavAgentComponent
                 {
-                    TargetPosition = float3.zero,
-                    Extents = float3.zero,
-                    EnableCalculation = false,
-                    CalculationComplete = true,
-                    CurrentWaypoint = 0,
-                    ForceCalculate = false,
-                    AgentId = authoring.GetComponent<NavMeshAgent>().agentTypeID
+                    targetPosition = float3.zero,
+                    extents = float3.zero,
+                    enableCalculation = false,
+                    calculationComplete = true,
+                    currentWaypoint = 0,
+                    forceCalculate = false,
+                    agentId = authoring.GetComponent<NavMeshAgent>().agentTypeID
                 });
                 AddBuffer<WaypointBuffer>(entity);
                 AddBuffer<ArmyGroupFinalWayPoint>(entity);
                 AddComponent(entity, new ArmyGroupCalculatePathData
                 {
-                    CurTargetIndex = -1,
-                    StartPosition = float3.zero
+                    curTargetIndex = -1,
+                    startPosition = float3.zero
                 });
                 AddComponent<ArmyGroupCalculateEnable>(entity);
                 SetComponentEnabled<ArmyGroupCalculateEnable>(entity, false);
@@ -82,7 +85,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 SetComponentEnabled<PathVisualizeEnabled>(entity, false);
                 AddComponent(entity, new PathVisualizeData
                 {
-                    PreWaypoint = 0
+                    preWaypoint = 0
                 });
                 
                 // Sight
@@ -131,35 +134,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     }
    
 
-    public struct ArmyGroupCalculatePathData : IComponentData
-    {
-        public int CurTargetIndex;
-        public float3 StartPosition;
-    }
-    public struct ArmyGroupCalculateEnable : IComponentData, IEnableableComponent{}
 
-    public struct ArmyGroupFinalWayPoint : IBufferElementData
-    {
-        public float3 Position;
-    }
-
-   
-    public struct ArmyGroupMovingTarget : IBufferElementData
-    {
-        public float3 Position;
-    }
-
-    public struct ArmyGroupMovingTag : IComponentData, IEnableableComponent{}
-  
+    
     public struct PathVisualizer : IComponentData
     {
     }
     public struct PathVisualizeEnabled : IComponentData, IEnableableComponent{}
 
-    public struct PathVisualizeData : IComponentData
-    {
-        public int PreWaypoint;
-    }
+
     
     
     

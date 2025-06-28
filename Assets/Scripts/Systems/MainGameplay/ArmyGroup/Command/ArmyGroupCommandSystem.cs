@@ -1,10 +1,12 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.Audio;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 // ReSharper disable UseIndexFromEndExpression
@@ -73,12 +75,55 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 state.EntityManager.SetComponentData(flag, trans);
                 _flags.Add(flag);
                 _armyGroupMovingTagLookup.Update(ref state);
-                new ArmyGroupSetTargetJob
+                var targetPosition =inputMouseData.HitPosition;;
+                var targetEntity = Entity.Null;
+                var targetState = ArmyGroupState.Idle;
+                var setTargetValid = false;
+                switch (cursorData.CursorType)
                 {
-                    TargetPosition = inputMouseData.HitPosition,
-                    ArmyGroupMovingTagLookup = _armyGroupMovingTagLookup,
-                    ECB = ecbP
-                }.ScheduleParallel();
+                    case MainGameplayCursorType.CheckInfo:
+                    case MainGameplayCursorType.None:
+                        break;
+                    case MainGameplayCursorType.March:
+                        setTargetValid = true;
+                        break;
+                    case MainGameplayCursorType.Garrison:
+                        setTargetValid = true;
+                        targetState = ArmyGroupState.Garrison;
+                        targetEntity = inputMouseData.HitEntity;
+                        targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                        break;
+                    case MainGameplayCursorType.Support:
+                        setTargetValid = true;
+                        targetState = ArmyGroupState.Support;
+                        targetEntity = inputMouseData.HitEntity;
+                        targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                        break;
+                    case MainGameplayCursorType.Invade:
+                        setTargetValid = true;
+                        targetState = ArmyGroupState.Invade;
+                        targetEntity = inputMouseData.HitEntity;
+                        targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                        break;
+                    case MainGameplayCursorType.Intercept:
+                        setTargetValid = true;
+                        targetState = ArmyGroupState.Idle;
+                        targetEntity = Entity.Null;
+                        targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                        break;
+                }
+
+                if (setTargetValid)
+                {
+                    new ArmyGroupSetTargetJob
+                    {
+                        ArmyGroupMovingTagLookup = _armyGroupMovingTagLookup,
+                        ECB = ecbP,
+                        TargetPosition = targetPosition,
+                        TargetState = targetState,
+                        TargetEntity = targetEntity,
+                    }.ScheduleParallel();
+                }
             }
 
 

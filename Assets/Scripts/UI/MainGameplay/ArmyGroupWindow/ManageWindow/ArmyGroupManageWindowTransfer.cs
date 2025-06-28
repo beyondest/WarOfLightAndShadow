@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -35,11 +37,14 @@ namespace SparFlame.UI.MainGameplay
                     GiveUpAndOnlySelectExistArmyGroupUnits;
                 ArmyGroupAddTypeSelectWindow.Instance.OnEcsGiveUpAndOnlySelectNoArmyGroupUnits +=
                     GiveUpAndOnlySelectNoArmyGroupUnits;
-                ArmyGroupManageWindow.Instance.OnEcsCheckMaxArmyGroupCount += CheckMaxArmyGroupCount;
+                ArmyGroupManageWindow.Instance.OnEcsTryNewArmyGroup += TryNewArmyGroup;
+                ArmyGroupManageWindow.Instance.OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned +=
+                    SelectAllUnitsWithNoArmyGroupAndGarrisoned;
+                
+                ArmyGroupManageCompositionWindow.Instance.OnEcsRemoveSelectedFromArmyGroup += RemoveSelectedUnitTypeFromArmyGroup;
                 _initialized = true;
             }
         }
-
 
 
         protected override void OnUpdate()
@@ -51,29 +56,33 @@ namespace SparFlame.UI.MainGameplay
             var config = SystemAPI.GetSingleton<ArmyGroupManageConfig>();
             var currentSubStatus = SystemAPI.GetSingleton<SubGameStatusData>();
             var cityGeneralAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(currentSubStatus.City);
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
-            var prefab = playerFaction == FactionTag.Ally ? config.LightArmyGroupPrefab : config.DarkArmyGroupPrefab;
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
+            var garrisonConfig = SystemAPI.GetSingleton<ArmyGroupGarrisonSystemConfig>();
+            var prefab = playerFactionData.faction == FactionTag.Light ? config.LightArmyGroupPrefab : config.DarkArmyGroupPrefab;
+            var relationship = FactionUtils.GetRelationship(playerFactionData, cityGeneralAttr.faction, cityGeneralAttr.subFaction);
             
             // Instantiate army group
             var armyGroup = EntityManager.Instantiate(prefab);
+            var armyGroupTransform = SystemAPI.GetComponent<LocalTransform>(armyGroup);
+            var transform = SystemAPI.GetComponent<LocalTransform>(currentSubStatus.City);
+            
+            armyGroupTransform.Position = transform.Position + garrisonConfig.hidePositionBias;
+            EntityManager.SetComponentData(armyGroup, armyGroupTransform);
+            EntityManager.AddComponent<InSubGameTag>(armyGroup);
+            EntityManager.SetComponentData(armyGroup,transform);
             EntityManager.AddComponent<MainGameplayEntityTag>(armyGroup);
             EntityManager.SetComponentData(armyGroup, new ArmyGroupAttr
             {
-                GameplayName = name,
-                IconType = iconType,
-                SaveId = SingleIdGenerator.GetNewArmyGroupId(),
+                gameplayName = name,
+                iconType = iconType,
+                saveId = SingleIdGenerator.GetNewArmyGroupId(),
             });
-            EntityManager.SetComponentData(armyGroup, new LocalTransform
-            {
-                Position = config.HidePosition,
-                Rotation = quaternion.identity,
-                Scale = 1f
-            });
+           
             EntityManager.SetComponentData(armyGroup, new MainGameplayGeneralAttr
             {
-                Faction = playerFaction,
-                BaseTag = MainGameBaseTag.Army,
-                SubFaction = cityGeneralAttr.SubFaction
+                faction = playerFactionData.faction,
+                baseTag = MainGameBaseTag.ArmyGroup,
+                subFaction = relationship is  Relationship.Player? cityGeneralAttr.subFaction : SubFactionTag.None,
             });
 
             // Create garrison request
@@ -88,6 +97,54 @@ namespace SparFlame.UI.MainGameplay
                 IfGarrisonIn = true
             });
             UpdateStaticData();
+        }
+
+        private void SelectAllUnitsWithNoArmyGroupAndGarrisoned()
+        {
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            foreach (var (_, entity) in SystemAPI.Query<RefRO<Selected>>().WithEntityAccess())
+            {
+                ecb.SetComponentEnabled<Selected>(entity, false);
+                var vfxRequest = ecb.CreateEntity();
+                ecb.AddComponent(vfxRequest, new VFXRequest
+                {
+                    VFXName = VFXName.UnitSelectionIndicator,
+                    RequestType = VFXRequestType.Kill,
+                    VFXTrackTarget = entity,
+                });
+                ecb.AddComponent<SubGameplayEntityTag>(vfxRequest);
+            }
+
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
+
+            var ecb2 = new EntityCommandBuffer(Allocator.Temp);
+            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
+            foreach (var (transform, expData, entity) in SystemAPI.Query<RefRO<LocalTransform>,
+                             RefRO<ExpData>>().WithDisabled<Selected>().WithNone<InGarrison>()
+                         .WithNone<InArmyGroup>().WithEntityAccess())
+            {
+                ecb2.SetComponentEnabled<Selected>(entity, true);
+                var vfxRequest = ecb2.CreateEntity();
+                ecb2.AddComponent(vfxRequest, new VFXRequest
+                {
+                    VFXName = VFXName.UnitSelectionIndicator,
+                    RequestType = VFXRequestType.Spawn,
+                    VFXTrackTarget = entity,
+                    KeepDuration = 0,
+                    SpawnPosition = transform.ValueRO.Position,
+                    Filter = new VFXSubFilter
+                    {
+                        Faction = playerFaction,
+                        FactionFilterEnable = true,
+                        Tier = expData.ValueRO.curTier,
+                        TierFilterEnable = true
+                    }
+                });
+                ecb2.AddComponent<SubGameplayEntityTag>(vfxRequest);
+            }
+            ecb2.Playback(EntityManager);
+            ecb2.Dispose();
         }
 
         private void UpdateStaticData()
@@ -107,11 +164,12 @@ namespace SparFlame.UI.MainGameplay
                     // Speed = movableData.ValueRO.Speed,
                     // TypeDatas = unitTypeDatas,
                     ArmyGroupEntity = armyGroup,
-                    TotalUnitCount = SystemAPI.GetBuffer<ArmyGroupUnit>(subGameStatusData.City).Length
+                    TotalUnitCount = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup).Length
                     // TotalUnitCount = units.Length
                 });
             }
-            ArmyGroupManageWindow.Instance.UpdateStaticData(infos, cityAttr.MaxGarrisonCount);
+
+            ArmyGroupManageWindow.Instance.UpdateStaticData(infos, cityAttr.maxGarrisonCount);
         }
 
         private void CheckSelected()
@@ -119,8 +177,7 @@ namespace SparFlame.UI.MainGameplay
             var query = SystemAPI.QueryBuilder().WithAll<Selected>().WithAll<InArmyGroup>().Build();
             ArmyGroupManageWindow.Instance.HasSelectedUnitAlreadyInArmyGroup = !query.IsEmpty;
         }
-        
-        
+
 
         private void AddToArmyGroup(Entity armyGroup, AddToArmyGroupType type)
         {
@@ -134,11 +191,14 @@ namespace SparFlame.UI.MainGameplay
                     if (type == AddToArmyGroupType.AllSelectedOverrideAlreadyIn)
                     {
                         ref var inArmyGroup = ref SystemAPI.GetComponentRW<InArmyGroup>(unit).ValueRW;
+                        // The unit has army group already in the same army group, then do nothing
+                        if(inArmyGroup.BelongsTo ==  armyGroup)continue;
                         var removeRequest = ecb.CreateEntity();
                         ecb.AddComponent(removeRequest, new RemoveFromArmyGroupRequest
                         {
                             ArmyGroup = inArmyGroup.BelongsTo,
-                            Unit = unit
+                            Unit = unit,
+                            RemoveType = RemoveFromArmyGroupType.RemoveSpecifiedUnitWithoutRemovingInArmyGroup
                         });
                         inArmyGroup.BelongsTo = armyGroup;
                     }
@@ -189,10 +249,10 @@ namespace SparFlame.UI.MainGameplay
                 units.Add(new ArmyGroupUnit
                 {
                     Unit = unit,
-                    Id = generalAttr.ValueRO.ID
+                    GlobalId = generalAttr.ValueRO.ID
                 });
             }
-            
+
             ecb.Playback(EntityManager);
             ecb.Dispose();
             UpdateStaticData();
@@ -205,32 +265,34 @@ namespace SparFlame.UI.MainGameplay
             var armyGroupUnits = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup);
             foreach (var armyGroupUnit in armyGroupUnits)
             {
-                if(!SystemAPI.HasComponent<InArmyGroup>(armyGroupUnit.Unit))continue; // This should never happen
+                if (!SystemAPI.HasComponent<InArmyGroup>(armyGroupUnit.Unit)) continue; // This should never happen
                 ecb.RemoveComponent<InArmyGroup>(armyGroupUnit.Unit);
             }
+
             // Garrison get out of city
             if (SystemAPI.HasComponent<ArmyGroupInGarrison>(armyGroup))
             {
                 var garrisonRequest = ecb.CreateEntity();
                 ecb.AddComponent<MainGameplayEntityTag>(garrisonRequest);
-                ecb.AddComponent(garrisonRequest,new ArmyGroupGarrisonRequest
+                ecb.AddComponent(garrisonRequest, new ArmyGroupGarrisonRequest
                 {
                     ArmyGroup = armyGroup,
-                    IconType = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup).IconType,
+                    IconType = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup).iconType,
                     City = SystemAPI.GetComponent<ArmyGroupInGarrison>(armyGroup).City,
                     IfGarrisonIn = false
                 });
             }
+
             ecb.Playback(EntityManager);
             ecb.Dispose();
             UpdateStaticData();
         }
 
-        private void CheckMaxArmyGroupCount(int currentGarrisonArmyGroupCount, int maxArmyGroupCountForSlots)
+        private void TryNewArmyGroup(int currentGarrisonArmyGroupCount, int maxArmyGroupCountForSlots)
         {
             if (currentGarrisonArmyGroupCount >= maxArmyGroupCountForSlots
                 || currentGarrisonArmyGroupCount >= SystemAPI
-                    .GetComponent<CityAttr>(SystemAPI.GetSingleton<SubGameStatusData>().City).MaxGarrisonCount)
+                    .GetComponent<CityAttr>(SystemAPI.GetSingleton<SubGameStatusData>().City).maxGarrisonCount)
             {
                 var hintRequest = EntityManager.CreateEntity();
                 EntityManager.AddComponent<HintRequest>(hintRequest);
@@ -245,7 +307,7 @@ namespace SparFlame.UI.MainGameplay
                 ArmyGroupNewWindow.Instance.Show();
             }
         }
-        
+
         private void GiveUpAndOnlySelectNoArmyGroupUnits()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
@@ -285,7 +347,23 @@ namespace SparFlame.UI.MainGameplay
             ecb.Playback(EntityManager);
             ecb.Dispose();
         }
-        
-   
+
+        private void RemoveSelectedUnitTypeFromArmyGroup(List<ArmyGroupUnitTypeData> unitTypeDatas, Entity armyGroup)
+        {
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            foreach (var typeData in unitTypeDatas)
+            {
+                var request = ecb.CreateEntity();
+                ecb.AddComponent(request, new RemoveFromArmyGroupRequest
+                {
+                    ArmyGroup = armyGroup,
+                    RemoveType = RemoveFromArmyGroupType.MoveOutAllSameId,
+                    MoveOutId = typeData.Id
+                });
+                ecb.AddComponent<SubGameplayEntityTag>(request);
+            }
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
+        }
     }
 }

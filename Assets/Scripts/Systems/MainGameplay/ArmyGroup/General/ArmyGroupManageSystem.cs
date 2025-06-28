@@ -16,6 +16,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ArmyGroupManageConfig>();
+            state.RequireForUpdate<RemoveFromArmyGroupRequest>();
             _removeRequestQuery = SystemAPI.QueryBuilder().WithAll<RemoveFromArmyGroupRequest>().Build();
             
         }
@@ -46,12 +47,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var request = requests[k];
                 ecb.DestroyEntity(entity);
 
-                // Check if building is destroyed. The garrison state machine will move unit out if they are still in building
-                if (!SystemAPI.HasBuffer<ArmyGroupUnitTypeData>(request.ArmyGroup))
-                {
-                    continue;
-                }
-
                 var entityBuffer = SystemAPI.GetBuffer<ArmyGroupUnit>(request.ArmyGroup);
                 var dataBuffer = SystemAPI.GetBuffer<ArmyGroupUnitTypeData>(request.ArmyGroup);
                 if (entityBuffer.Length == 0)
@@ -59,7 +54,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     continue;
                 }
 
-                switch (request.Type)
+                switch (request.RemoveType)
                 {
                     case RemoveFromArmyGroupType.MoveOutAll:
                         foreach (var armyGroupUnit in entityBuffer)
@@ -72,7 +67,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         dataBuffer.Clear();
                         ecb.DestroyEntity(entity);
                         continue;
-                    case RemoveFromArmyGroupType.RemoveSpecifiedUnit:
+                    case RemoveFromArmyGroupType.RemoveSpecifiedUnitWithoutRemovingInArmyGroup:
                     case RemoveFromArmyGroupType.MoveOutAllSameId:
                     case RemoveFromArmyGroupType.RandomRemoveSingleSameId:
                         int i;
@@ -88,19 +83,19 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         }
                         var data2 = dataBuffer[i];
                         // Move out all same id
-                        if (request.Type == RemoveFromArmyGroupType.MoveOutAllSameId)
+                        if (request.RemoveType == RemoveFromArmyGroupType.MoveOutAllSameId)
                         {
                             dataBuffer.RemoveAt(i);
                             for (var j = entityBuffer.Length - 1; j >= 0; j--)
                             {
-                                if (entityBuffer[j].Id != request.MoveOutId) continue;
+                                if (entityBuffer[j].GlobalId != request.MoveOutId) continue;
                                 var garrisonEntity = entityBuffer[j];
                                 // Move out garrison units
                                 ecb.RemoveComponent<InArmyGroup>(garrisonEntity.Unit);
                                 entityBuffer.RemoveAt(j);
                             }
                         }
-                        else if(request.Type == RemoveFromArmyGroupType.RandomRemoveSingleSameId)
+                        else if(request.RemoveType == RemoveFromArmyGroupType.RandomRemoveSingleSameId)
                         {
                             data2.Count--;
                             if (data2.Count == 0)
@@ -110,7 +105,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             for (var j = entityBuffer.Length - 1; j >= 0; j--)
                             {
                                 var armyGroupUnit = entityBuffer[j];
-                                if (armyGroupUnit.Id != request.MoveOutId) continue;
+                                if (armyGroupUnit.GlobalId != request.MoveOutId) continue;
                                 // Move out garrison units
                                 ecb.RemoveComponent<InArmyGroup>(armyGroupUnit.Unit);
                                 entityBuffer.RemoveAt(j);

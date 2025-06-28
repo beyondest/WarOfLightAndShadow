@@ -10,7 +10,6 @@ namespace SparFlame.Database
             public override void Bake(GeneralResourceAttributesAuthoring authoring)
             {
                 if(authoring.globalIdx == 0)return;
-                if(DatabaseManager.ResourceDatabaseSo == null)return;
                 var item = DatabaseManager.ResourceDatabaseSo.GetItemById(authoring.globalIdx);
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 BakeGeneralDataItem(entity, item);

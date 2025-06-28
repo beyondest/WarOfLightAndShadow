@@ -130,21 +130,21 @@ namespace SparFlame.Systems.SubGameplay.Movement
             {
                 // ref var navAgent = ref NavAgentLookup.GetRefRW(Entity).ValueRW;
                 // Only calculate for the enable calculation agents
-                if (!NavAgent.EnableCalculation) return;
+                if (!NavAgent.enableCalculation) return;
                 // Only recalculate the path once in an interval OR the target is updated
-                if (!(NavAgent.ForceCalculate || NavAgent.NextPathCalculateTime < ElapsedTime)) return;
+                if (!(NavAgent.forceCalculate || NavAgent.nextPathCalculateTime < ElapsedTime)) return;
                 // TODO : Sometimes will cause bug : Farmer get inverse direction waypoint far away from resource. Don't know why
-                NavAgent.NextPathCalculateTime = ElapsedTime + NavAgent.CalculateInterval;
-                NavAgent.CalculationComplete = false;
-                NavAgent.ForceCalculate = false;
+                NavAgent.nextPathCalculateTime = ElapsedTime + NavAgent.calculateInterval;
+                NavAgent.calculationComplete = false;
+                NavAgent.forceCalculate = false;
                 ECB.SetComponent(Entity, NavAgent);
                 
-                var toPosition = NavAgent.TargetPosition;
-                var radius = NavAgentRadius[NavAgent.AgentId];
-                var extents = new float3(NavAgent.Extents.x + radius, NavAgent.Extents.y, NavAgent.Extents.z + radius);
+                var toPosition = NavAgent.targetPosition;
+                var radius = NavAgentRadius[NavAgent.agentId];
+                var extents = new float3(NavAgent.extents.x + radius, NavAgent.extents.y, NavAgent.extents.z + radius);
                 extents += ExtentsOffset;
-                var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.AgentId);
-                var toLocation = Query.MapLocation(toPosition, extents, NavAgent.AgentId);
+                var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.agentId);
+                var toLocation = Query.MapLocation(toPosition, extents, NavAgent.agentId);
                 if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
 
                 var status = Query.BeginFindPath(fromLocation, toLocation);
@@ -196,15 +196,15 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         {
                             var newWayPoint = new WaypointBuffer
                             {
-                                Position = new float3(location.position.x, 0f, location.position.z),
+                                position = new float3(location.position.x, 0f, location.position.z),
                             };
                             // waypointBuffer.Add(newWayPoint);   
                             ECB.AppendToBuffer(Entity,newWayPoint);
                         }
                     }
 
-                    NavAgent.CurrentWaypoint = 0;
-                    NavAgent.CalculationComplete = true;
+                    NavAgent.currentWaypoint = 0;
+                    NavAgent.calculationComplete = true;
                     ECB.SetComponent(Entity, NavAgent);
                 }
 

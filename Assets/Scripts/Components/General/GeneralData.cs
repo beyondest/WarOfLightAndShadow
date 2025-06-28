@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 
 namespace SparFlame.Components.General
 {
@@ -8,9 +9,11 @@ namespace SparFlame.Components.General
         public Unity.Mathematics.Random Rnd;
     }
 
+    [Serializable]
     public struct PlayerFactionData : IComponentData
     {
-        public FactionTag Value;
+        public FactionTag faction;
+        public SubFactionTag subFaction;
     }
 
     public struct PlayerSaveSlot : IComponentData

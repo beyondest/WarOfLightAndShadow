@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using Unity.Burst;
 using Unity.Collections;
@@ -38,7 +39,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 TransformLookup = _localTransformLookup,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 GeneralAttrLookup = _generalAttrLookup,
                 SupportFightTagLookup = _supportFightTagLookup
             }.ScheduleParallel();
@@ -48,23 +49,24 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public partial struct ArmyGroupStateMachineJob : IJobEntity
         {
-            [ReadOnly] public FactionTag PlayerFaction;
+            [ReadOnly] public PlayerFactionData PlayerFactionData;
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<MainGameplayGeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<SupportFightTag> SupportFightTagLookup;
 
             private void Execute([ChunkIndexInQuery] int index,
+                in ArmyGroupAttr armyGroupAttr,
                 ref DynamicBuffer<ArmyGroupSightTarget> targets,
                 ref LastPassingByPlayerCity lastCity, ref ArmyGroupMovableData movableData,
                 ref ArmyGroupStateData stateData,
                 Entity selfEntity)
             {
-                var selfFaction = GeneralAttrLookup[selfEntity].Faction;
+                var generalAttr = GeneralAttrLookup[selfEntity];
                 
-                if (movableData.MovementInfo == ArmyGroupMovementInfo.Complete)
+                if (movableData.movementInfo == ArmyGroupMovementInfo.Complete)
                 {
-                    movableData.MovementInfo = ArmyGroupMovementInfo.None;
+                    movableData.movementInfo = ArmyGroupMovementInfo.None;
                     stateData.CurState = stateData.TargetState;
                     stateData.TargetState = ArmyGroupState.Idle;
                     switch (stateData.CurState)
@@ -75,9 +77,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             // This should never happen
                             break;
                         case ArmyGroupState.Invade:
-                            
+                            var relationship = FactionUtils.GetRelationship(PlayerFactionData, generalAttr.faction,
+                                generalAttr.subFaction);
                             BattleUtils.BeginBattle(
-                                selfFaction == PlayerFaction ? SubGameStatus.PlayerSiege : SubGameStatus.PlayerDefend,
+                                relationship == Relationship.Player ? SubGameStatus.PlayerSiege : SubGameStatus.PlayerDefend,
                                 selfEntity, stateData.Target, index, ECB
                             );
                             break;
@@ -95,25 +98,35 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             {
                                 City = stateData.Target,
                                 ArmyGroup = selfEntity,
+                                IconType = armyGroupAttr.iconType,
+                                IfGarrisonIn = true
                             });
                             break;
                     }
-                    return;
-                }
 
+                    stateData.CurState = ArmyGroupState.Idle;
+                    stateData.Target = Entity.Null;
+                }
+                // Only check sight target when army group is idle or moving
+                if(stateData.CurState != ArmyGroupState.Idle || stateData.CurState != ArmyGroupState.Moving)return;
+                
                 // Check should trigger encounter battle
                 var finalTarget = Entity.Null;
                 if (targets.Length > 1)
                 {
                     var minDisSq = float.MaxValue;
-                    for (int i = 0; i < targets.Length; i++)
+                    for (var i = 0; i < targets.Length; i++)
                     {
                         var target = targets[i].Entity;
                         var targetGeneralAttr = GeneralAttrLookup[target];
-                        if (targetGeneralAttr.Faction == selfFaction)
+                        var relationship = FactionUtils.GetRelationship(PlayerFactionData, targetGeneralAttr.faction,
+                            targetGeneralAttr.subFaction);
+                        // This cases should not trigger encounter battle
+                        if (relationship is Relationship.Ally or Relationship.Player or Relationship.Neutral)
                         {
                             // Record the last passing by city
-                            if(targetGeneralAttr.BaseTag == MainGameBaseTag.City)
+                            if(targetGeneralAttr.baseTag == MainGameBaseTag.City
+                               && relationship is Relationship.Ally or Relationship.Player)
                                 lastCity.City = target;
                             // Exclude same faction army group
                             continue;

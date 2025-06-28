@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.Audio;
@@ -18,7 +19,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public float RandomValue;
-            [ReadOnly] public FactionTag PlayerFaction;
+            [ReadOnly] public PlayerFactionData PlayerFactionData;
             [ReadOnly] public SightSystemConfig SightConfig;
             [ReadOnly] public OocSystemConfig OocConfig;
             [ReadOnly] public StatDebug StatDebug;
@@ -328,15 +329,17 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ref StatData statInteractee)
             {
                 if(request.Type == StatChangeType.SimpleCleanUsedAsUpgrade)return;
-                if (StatDebug.playerStatGeneralInfinite && interacteeAttr.FactionTag == PlayerFaction)
+                var relationship = FactionUtils.GetRelationship(PlayerFactionData, interacteeAttr.Faction,
+                    interacteeAttr.SubFaction);
+                if (StatDebug.playerStatGeneralInfinite && relationship == Relationship.Player)
                     statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
-                if (StatDebug.playerStatGeneralZero && interacteeAttr.FactionTag == PlayerFaction)
+                if (StatDebug.playerStatGeneralZero &&relationship == Relationship.Player)
                     statInteractee.curValue = 0f;
-                if (StatDebug.aiStatGeneralInfinite && interacteeAttr.FactionTag == ~PlayerFaction)
+                if (StatDebug.aiStatGeneralInfinite && relationship != Relationship.Player)
                     statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
-                if (StatDebug.aiStatGeneralZero && interacteeAttr.FactionTag == ~PlayerFaction)
+                if (StatDebug.aiStatGeneralZero &&  relationship != Relationship.Player)
                     statInteractee.curValue = 0f;
-                if (StatDebug.playerCrystalStatInfinite && interacteeAttr.FactionTag == PlayerFaction &&
+                if (StatDebug.playerCrystalStatInfinite &&  relationship == Relationship.Player &&
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
@@ -347,7 +350,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     }
                 }
 
-                if (StatDebug.playerCrystalStatZero && interacteeAttr.FactionTag == PlayerFaction &&
+                if (StatDebug.playerCrystalStatZero &&  relationship == Relationship.Player &&
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
@@ -358,7 +361,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     }
                 }
 
-                if (StatDebug.aiCrystalStatInfinite && interacteeAttr.FactionTag == ~PlayerFaction &&
+                if (StatDebug.aiCrystalStatInfinite && relationship != Relationship.Player  &&
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
@@ -369,7 +372,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     }
                 }
 
-                if (StatDebug.aiCrystalStatZero && interacteeAttr.FactionTag == ~PlayerFaction &&
+                if (StatDebug.aiCrystalStatZero && relationship != Relationship.Player  &&
                     interacteeAttr.BaseTag == BaseTag.Buildings)
                 {
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
@@ -380,25 +383,25 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     }
                 }
 
-                if (StatDebug.playerUnitStatInfinite && interacteeAttr.FactionTag == PlayerFaction &&
+                if (StatDebug.playerUnitStatInfinite && relationship == Relationship.Player  &&
                     interacteeAttr.BaseTag == BaseTag.Units)
                 {
                     statInteractee.curValue = statInteractee.maxValue+ statInteractee.bonus;
                 }
 
-                if (StatDebug.playerUnitStatZero && interacteeAttr.FactionTag == PlayerFaction &&
+                if (StatDebug.playerUnitStatZero &&relationship == Relationship.Player  &&
                     interacteeAttr.BaseTag == BaseTag.Units)
                 {
                     statInteractee.curValue = 0f;
                 }
 
-                if (StatDebug.aiUnitStatInfinite && interacteeAttr.FactionTag == ~PlayerFaction &&
+                if (StatDebug.aiUnitStatInfinite &&relationship != Relationship.Player  &&
                     interacteeAttr.BaseTag == BaseTag.Units)
                 {
                     statInteractee.curValue = statInteractee.maxValue+ statInteractee.bonus;
                 }
 
-                if (StatDebug.aiUnitStatZero && interacteeAttr.FactionTag == ~PlayerFaction &&
+                if (StatDebug.aiUnitStatZero && relationship != Relationship.Player &&
                     interacteeAttr.BaseTag == BaseTag.Units)
                 {
                     statInteractee.curValue = 0f;
@@ -419,7 +422,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 }
                 ECB.AddComponent<UnitDeadTag>(index, request.Interactee);
                 AudioUtils.PlayAudioClip(
-                    interacteeAttr.FactionTag == FactionTag.Ally ? AudioName.LightDead : AudioName.DarkDead,
+                    interacteeAttr.Faction == FactionTag.Light ? AudioName.LightDead : AudioName.DarkDead,
                     TransformLookup[request.Interactee].Position,
                     ECB, index);
                 ECB.RemoveComponent<SubGameplayGeneralAttr>(index, request.Interactee);

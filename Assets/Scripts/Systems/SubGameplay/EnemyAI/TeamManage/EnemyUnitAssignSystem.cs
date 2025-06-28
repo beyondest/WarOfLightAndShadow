@@ -33,7 +33,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             // _enemyBaseTeamAvailableData = state.GetBufferLookup<EnemyBaseTeamAvailableData>();
             // _enemyBaseTeamGeneralData = state.GetBufferLookup<EnemyBaseTeamGeneralData>();
             _needAssignTeamUnits = SystemAPI.QueryBuilder().WithAll<AITag>().WithNone<InTeamTag>().
-                WithAll<UnitAttr>().WithAllRW<EnemyUnitBelongsTo>()
+                WithAll<UnitAttr>().WithAllRW<AIUnitBelongsTo>()
                 .Build();
         }
 
@@ -55,7 +55,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
             var unitAttrs = _needAssignTeamUnits.ToComponentDataArray<UnitAttr>(Allocator.Temp);
             var unitEntities = _needAssignTeamUnits.ToEntityArray(Allocator.Temp);
-            var bases = _needAssignTeamUnits.ToComponentDataArray<EnemyUnitBelongsTo>(Allocator.Temp);
+            var bases = _needAssignTeamUnits.ToComponentDataArray<AIUnitBelongsTo>(Allocator.Temp);
             var ecb = new EntityCommandBuffer(Allocator.Temp);
  
             for (int i = 0; i < unitEntities.Length; i++)
@@ -80,9 +80,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             NativeHashMap<int, TeamSpecialData> teamType2SpecialData, EntityCommandBuffer ecb
         )
         {
-            if(!SystemAPI.HasBuffer<EnemyBaseTeamAvailableData>(belongsToBase))return false;
-            var baseAvailableTeamDatas = SystemAPI.GetBuffer<EnemyBaseTeamAvailableData>(belongsToBase);
-            var baseTeamData = SystemAPI.GetBuffer<EnemyBaseTeamGeneralData>(belongsToBase);
+            if(!SystemAPI.HasBuffer<AIBaseTeamAvailableData>(belongsToBase))return false;
+            var baseAvailableTeamDatas = SystemAPI.GetBuffer<AIBaseTeamAvailableData>(belongsToBase);
+            var baseTeamData = SystemAPI.GetBuffer<AIBaseTeamGeneralData>(belongsToBase);
 
             var assignSuccess = false;
             foreach (var teamType in strategy)
@@ -190,7 +190,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                         }
                     }
 
-                    baseAvailableTeamDatas.Add(new EnemyBaseTeamAvailableData
+                    baseAvailableTeamDatas.Add(new AIBaseTeamAvailableData
                     {
                         TeamEntity = newTeam,
                         TeamType = teamType,
@@ -229,11 +229,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
         private void Initialize(ref SystemState state)
         {
-            var lightEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
-            var darkEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
-            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
-                ? lightEntity
-                : darkEntity;
+            var lightEnemyDatabaseTag = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
+            var darkEnemyDatabaseTag = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
+            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().faction == FactionTag.Light
+                ? lightEnemyDatabaseTag
+                : darkEnemyDatabaseTag;
             var buffer = SystemAPI.GetBuffer<WaveUnitAssignStrategyData>(entity);
             var buffer2 = SystemAPI.GetBuffer<WaveTeamSpecialData>(entity);
             _wavePoint2Strategy = new NativeHashMap<int, NativeList<AITeamType>>(5, Allocator.Persistent);

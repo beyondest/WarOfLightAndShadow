@@ -74,7 +74,7 @@ namespace SparFlame.Systems.Generate
                     ECB.AddComponent(index, request, new ResourceChangeRequest
                     {
                         Type = plantGenerateAttr.GenerateResourceType,
-                        FromFaction = subGameplayGeneralAttr.FactionTag,
+                        FromFaction = subGameplayGeneralAttr.Faction,
                         AbsAmount = math.abs((int)plantGenerateAttr.GenerateSpeed),
                         RequestType = ResourceRequestType.Generate
                     });
@@ -83,7 +83,7 @@ namespace SparFlame.Systems.Generate
                     ECB.AddComponent<SubGameplayEntityTag>(index, popNumberRequest);
                     ECB.AddComponent(index, popNumberRequest, new PopNumberRequest
                     {
-                        ColorId = subGameplayGeneralAttr.FactionTag == FactionTag.Ally
+                        ColorId = subGameplayGeneralAttr.Faction == FactionTag.Light
                             ? (int)PopNumberType.LightGenerate
                             : (int)PopNumberType.DarkGenerate,
                         Position = transform.Position,
@@ -142,7 +142,7 @@ namespace SparFlame.Systems.Generate
                     ECB.AddComponent(index, request, new ResourceChangeRequest
                     {
                         Type = resourceMineGenerateAttr.GenerateResourceType,
-                        FromFaction = subGameplayGeneralAttr.FactionTag,
+                        FromFaction = subGameplayGeneralAttr.Faction,
                         AbsAmount = math.abs((int)resourceMineGenerateAttr.CurGenerateSpeed),
                         RequestType = ResourceRequestType.Generate
                     });
@@ -151,7 +151,7 @@ namespace SparFlame.Systems.Generate
                     ECB.AddComponent<SubGameplayEntityTag>(index, popNumberRequest);
                     ECB.AddComponent(index, popNumberRequest, new PopNumberRequest
                     {
-                        ColorId = subGameplayGeneralAttr.FactionTag == FactionTag.Ally
+                        ColorId = subGameplayGeneralAttr.Faction == FactionTag.Light
                             ? (int)PopNumberType.LightGenerate
                             : (int)PopNumberType.DarkGenerate,
                         Position = transform.Position,

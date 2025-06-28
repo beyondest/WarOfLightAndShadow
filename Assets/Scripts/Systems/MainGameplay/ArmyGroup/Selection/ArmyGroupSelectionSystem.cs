@@ -32,17 +32,17 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var inputArmyGroupSelectionData = SystemAPI.GetSingleton<InputArmyGroupControlData>();
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
 
          
-            armyGroupSelectionData.ValueRW.CurrentSelectFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            armyGroupSelectionData.ValueRW.CurrentSelectFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
             // Left Click Start
 
             if (inputArmyGroupSelectionData.SingleSelect)
             {
                 var selectable =
-                    ArmyGroupUtils.IsSelectable(state.EntityManager, inputMouseData.HitEntity, playerFaction);
+                    ArmyGroupUtils.IsSelectable(state.EntityManager, inputMouseData.HitEntity, playerFactionData);
                 // Press AddUnitKey
                 if (!inputArmyGroupSelectionData.AddArmyGroup)
                 {
@@ -173,7 +173,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
             
             foreach (var (screenPos, trans, entity) in SystemAPI.Query<RefRO<ScreenPos>, RefRO<LocalTransform>>().WithAll<InCameraView>()
-                         .WithDisabled<LockArmyGroupSelectedWorkForDrag>().WithEntityAccess()
+                         .WithDisabled<LockArmyGroupSelectedWorkForDrag>()
+                         .WithNone<ArmyGroupInGarrison>()
+                         .WithEntityAccess()
                          .WithAll<PlayerTag>())
             {
                 // Inside selection box

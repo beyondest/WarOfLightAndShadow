@@ -13,8 +13,14 @@ namespace SparFlame.Components.SubGameplay
     public struct SubGameplayGeneralAttr : IComponentData
     {
         public BaseTag BaseTag;
-        public FactionTag FactionTag;
-        public float3 BoxColliderSize;
+        public FactionTag Faction;
+        public SubFactionTag SubFaction;
         public int ID;
+    }
+
+    public struct BoxColliderSize : IComponentData
+    {
+        public float3 Value;
+
     }
 }

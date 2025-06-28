@@ -94,22 +94,22 @@ namespace SparFlame.Systems.SubGameplay.Command
             in SubGameplayGeneralAttr subGameplayGeneralAttr, in BuildingAttr buildingAttr, bool isResourceValid)
         {
             var attr = subGameplayGeneralAttr;
-            if(unitSelectionData.CurrentSelectFaction != FactionTag.Ally)
-                attr.FactionTag = ~attr.FactionTag;
+            if(unitSelectionData.CurrentSelectFaction != FactionTag.Light)
+                attr.Faction = ~attr.Faction;
             
             // None unit selected
             if (unitSelectionData.CurrentSelectCount == 0)
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (TeamTag: attr.FactionTag, attr.BaseTag) switch
+                    (TeamTag: attr.Faction, attr.BaseTag) switch
                     {
                         (FactionTag.Neutral, BaseTag.Resources) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.None),
-                        (FactionTag.Ally, BaseTag.Units) => (SubGameplayCursorType.ControlSelect, SubGameplayCursorType.None),
+                        (FactionTag.Light, BaseTag.Units) => (SubGameplayCursorType.ControlSelect, SubGameplayCursorType.None),
                         // (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.CurBuildingState == BuildingState.Worked => (
                         //     CursorType.Gather, CursorType.None),
-                        (FactionTag.Ally, BaseTag.Buildings)/* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
+                        (FactionTag.Light, BaseTag.Buildings)/* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
                             SubGameplayCursorType.ControlSelect, SubGameplayCursorType.None),
-                        (FactionTag.Enemy, _) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.None),
+                        (FactionTag.Dark, _) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.None),
                         (_, _) => (SubGameplayCursorType.UI, SubGameplayCursorType.None),
                     };
             }
@@ -117,16 +117,16 @@ namespace SparFlame.Systems.SubGameplay.Command
             else
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
-                    (TeamTag: attr.FactionTag, attr.BaseTag) switch
+                    (TeamTag: attr.Faction, attr.BaseTag) switch
                     {
                         (FactionTag.Neutral, BaseTag.Resources) when isResourceValid => (
                             SubGameplayCursorType.CheckInfo, SubGameplayCursorType.Harvest),
-                        (FactionTag.Ally, BaseTag.Units) => (SubGameplayCursorType.ControlSelect, SubGameplayCursorType.Heal),
+                        (FactionTag.Light, BaseTag.Units) => (SubGameplayCursorType.ControlSelect, SubGameplayCursorType.Heal),
                         // (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.CurBuildingState == BuildingState.Worked => (
                         //     CursorType.Gather, CursorType.Garrison),
-                        (FactionTag.Ally, BaseTag.Buildings)/* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
+                        (FactionTag.Light, BaseTag.Buildings)/* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
                             SubGameplayCursorType.ControlSelect, SubGameplayCursorType.Garrison),
-                        (FactionTag.Enemy, _) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.Attack),
+                        (FactionTag.Dark, _) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.Attack),
                         (_, _) => (SubGameplayCursorType.UI, SubGameplayCursorType.None),
                     };
             }

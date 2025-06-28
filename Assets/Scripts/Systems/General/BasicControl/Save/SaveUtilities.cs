@@ -5,19 +5,26 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 using BinaryReader = Unity.Entities.Serialization.BinaryReader;
 using BinaryWriter = Unity.Entities.Serialization.BinaryWriter;
 
 namespace SparFlame.Systems.General.BasicControl
 {
-
-
-    [AttributeUsage(AttributeTargets.Struct)]
-    public class SavableAttribute : Attribute
+    [Serializable]
+    public struct SeGlobalId : IComponentData
     {
-        
+        public int value;
     }
+
+    [Serializable]
+    public struct SeTransform : IComponentData
+    {
+        public float3 position;
+        public quaternion rotation;
+        public float scale;
+    }
+
+
     
     
     
@@ -196,34 +203,68 @@ namespace SparFlame.Systems.General.BasicControl
     
     public struct SaveUtilities
     {
-        private const string CitySaveFolder = "CityData";
-        
+        private const string CitySubDataFolder = "CitySubData";
+        private const string ArmyGroupSubDataFolder = "ArmySubData";
+        private const string GameGeneralDataFolder = "GameGeneralData";
+        private const string CityMainDataName = "CityMainData";
+        private const string ArmyGroupMainDataName = "ArmyMainData";
+        private const string GameMainDataName = "GameMainData";
         public static long GetTmpIdForSaving(Entity entity)
         {
             // Index 占低位（0~31），Version 占高位（32~63）
             return ((long)entity.Version << 32) | (uint)entity.Index;
         }
 
-        public static string GetCitySavePath(int cityId, int playerSaveSlot)
+        public static string GetCitySubDataPath(int cityId, int playerSaveSlot)
         {
             var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
-            var cityRootFolder = Path.Combine(saveRootFolder, CitySaveFolder);
+            var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
             if (!Directory.Exists(cityRootFolder))
                 Directory.CreateDirectory(cityRootFolder);
-            var finalPath = Path.Combine(cityRootFolder, $"CityData{cityId}.sav"); 
+            var finalPath = Path.Combine(cityRootFolder, $"{cityId}.sav"); 
             return finalPath;
         }
 
-        public static string GetArmyGroupSavePath(long saveId, int playerSaveSlot)
+        public static string GetArmyGroupSubDataPath(long saveId, int playerSaveSlot)
         {
             var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
-            var armyGroupRootFolder = Path.Combine(saveRootFolder, "ArmyGroupData");
+            var armyGroupRootFolder = Path.Combine(saveRootFolder, ArmyGroupSubDataFolder);
             if (!Directory.Exists(armyGroupRootFolder))
                 Directory.CreateDirectory(armyGroupRootFolder);
-            var finalPath = Path.Combine(armyGroupRootFolder, $"ArmyGroupData{saveId}.sav");
+            var finalPath = Path.Combine(armyGroupRootFolder, $"{saveId}.sav");
             return finalPath;
         }
 
+        public static string GetCityMainDataPath(int playerSaveSlot)
+        {
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var generalDataFolder = Path.Combine(saveRootFolder, GameGeneralDataFolder);
+            if (!Directory.Exists(generalDataFolder))
+                Directory.CreateDirectory(generalDataFolder);
+            var cityMainDataPath = Path.Combine(generalDataFolder, $"{CityMainDataName}.sav");
+            return cityMainDataPath;
+        }
+
+        public static string GetArmyGroupMainDataPath(int playerSaveSlot)
+        {
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var generalDataFolder = Path.Combine(saveRootFolder, GameGeneralDataFolder);
+            if (!Directory.Exists(generalDataFolder))
+                Directory.CreateDirectory(generalDataFolder);
+            var armyGroupMainDataPath = Path.Combine(generalDataFolder, $"{ArmyGroupMainDataName}.sav");
+            return armyGroupMainDataPath;
+        }
+
+        public static string GetGameMainDataPath(int playerSaveSlot)
+        {
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var generalDataFolder = Path.Combine(saveRootFolder, GameGeneralDataFolder);
+            if (!Directory.Exists(generalDataFolder))
+                Directory.CreateDirectory(generalDataFolder);
+            var gameMainDataPath = Path.Combine(generalDataFolder, $"{GameMainDataName}.sav");
+            return gameMainDataPath;
+        }
+        
     }
     
     

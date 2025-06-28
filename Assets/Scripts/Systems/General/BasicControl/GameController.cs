@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
@@ -18,7 +19,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         #region Events
         
-        public Action<ResourceLoadingUtils.LoadingProgress> OnSwitchStatusLoadingProgress;
+        public event Action<ResourceLoadingUtils.LoadingProgress> OnSwitchStatusLoadingProgress;
 
         public event Action<bool> OnPause;
         public event Action<bool> OnResume;
@@ -61,25 +62,36 @@ namespace SparFlame.Systems.General.BasicControl
             OnResume?.Invoke(isSwitchingGameplay);
         }
 
-        public void EndGameToMainMenu()
+        public void EndGameToMainMenu(bool ifFromSubGameplay)
         {
+            _ifInMainMenu = true;
             InputListener.Instance.DisableAllMaps();
             ResumeGame(false);
+            SaveLoadController.Instance.SyncSaveGame();
+            var unloads = new List<SceneGroupType>
+            {
+                ifFromSubGameplay
+                    ? SceneGroupType.CurrentLoadingSubGameplaySceneGroup
+                    : SceneGroupType.MainWorld
+            };
+            SceneController.Instance.UnloadSceneGroup(unloads);
             OnBackToMainMenu?.Invoke();
         }
 
         public void ExitGame()
         {
+            SaveLoadController.Instance.SyncSaveGame();
             Application.Quit();
         }
 
-        public void PlayerChooseFaction(FactionTag playerFaction)
+        public void PlayerChooseFactionAndStartGame(FactionTag playerFaction)
         {
             OnPlayerChooseFaction?.Invoke(playerFaction);
         }
 
         public void PlayerChooseSavingSlot(int slot, bool ifNew)
         {
+            _ifNewSlot = ifNew;
             OnPlayerChooseSavingSlot?.Invoke(slot, ifNew);
         }
 
@@ -91,8 +103,14 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void MainGameStartForPlayer()
         {
+            if (!_ifNewSlot && _ifInMainMenu)
+            {
+                SaveLoadController.Instance.LoadGeneralGameData();
+            }
+            _ifInMainMenu = false;
             InputListener.Instance.EnableMainGameMaps();
             OnMainGameStartForPlayer?.Invoke();
+            _em.CreateSingleton<UpdateCityNavMeshRequest>();
         }
 
         public void EnterPlayerCity(Entity city)
@@ -116,7 +134,7 @@ namespace SparFlame.Systems.General.BasicControl
                 SceneGroupType.CityEnv
             };
             var unloads = new List<SceneGroupType> { SceneGroupType.MainWorld };
-            SceneController.Instance.LoadSceneGroup(loads, _em.GetComponentData<CityAttr>(city).ID,true);
+            SceneController.Instance.LoadSceneGroup(loads, _em.GetComponentData<CityAttr>(city).globalId,true);
             SceneController.Instance.UnloadSceneGroup(unloads);
             
             // Show and check loading progress
@@ -190,6 +208,8 @@ namespace SparFlame.Systems.General.BasicControl
         private SubGameStatusData _targetSubGameStatusData;
         private readonly ResourceLoadingUtils.LoadingProgress _loadingProgress = new();
         private EntityManager _em;
+        private bool _ifNewSlot;
+        private bool _ifInMainMenu = true;
 
         #region EventFunctions
 

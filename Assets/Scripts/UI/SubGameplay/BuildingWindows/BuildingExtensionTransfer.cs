@@ -45,22 +45,22 @@ namespace SparFlame.UI.SubGameplay
                     _expDatabase.Add(config.GlobalIdx, config);
                 }
             }
-            _playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            _playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
 
         }
 
         protected override void OnUpdate()
         {
-            var entity = _playerFaction == FactionTag.Ally
-                ? SystemAPI.GetSingletonEntity<AllyResourceDataTag>()
-                : SystemAPI.GetSingletonEntity<EnemyResourceDataTag>();
+            var entity = _playerFaction == FactionTag.Light
+                ? SystemAPI.GetSingletonEntity<LightResourceDataTag>()
+                : SystemAPI.GetSingletonEntity<DarkResourceDataTag>();
             var playerResources = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(entity);
             BuildingDetailWindow.Instance.UpDatePlayerGlobalResourceData(playerResources);
         }
 
         private void RecycleBuilding(Entity entity)
         {
-            if(!SystemAPI.HasBuffer<CostList>(entity) || SystemAPI.HasComponent<LightSingleCrystalTag>(entity))
+            if(!SystemAPI.HasBuffer<CostList>(entity) || SystemAPI.HasComponent<CrystalDef>(entity))
                 return;
             AudioUtils.PlayAudioClip(AudioName.Recycle, SystemAPI.GetComponent<LocalTransform>(entity).Position,EntityManager);
             var buffer = SystemAPI.GetBuffer<CostList>(entity);

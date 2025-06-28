@@ -112,7 +112,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 if (buffer.Length == 0)
                 {
                     var teamGeneralDatas =
-                        SystemAPI.GetBuffer<EnemyBaseTeamGeneralData>(teamData.BelongsToBase);
+                        SystemAPI.GetBuffer<AIBaseTeamGeneralData>(teamData.BelongsToBase);
                     var generalData = teamGeneralDatas[(int)teamData.TeamType];
                     generalData.CurCount--;
                     teamGeneralDatas[(int)teamData.TeamType] = generalData;
@@ -121,7 +121,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                     if (SystemAPI.HasComponent<TeamWaitTag>(request.BelongsToTeam))
                     {
                         var teamAvailableDatas =
-                            SystemAPI.GetBuffer<EnemyBaseTeamAvailableData>(teamData.BelongsToBase);
+                            SystemAPI.GetBuffer<AIBaseTeamAvailableData>(teamData.BelongsToBase);
                         for (var i = teamAvailableDatas.Length - 1; i >= 0; i--)
                         {
                             var teamAvailableData = teamAvailableDatas[i];
@@ -154,11 +154,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
         private void Initialize(ref SystemState state)
         {
-            var lightEntity = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
-            var darkEntity = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
-            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
-                ? lightEntity
-                : darkEntity;
+            var lightEnemyDatabaseTag = SystemAPI.GetSingletonEntity<LightEnemyDatabaseTag>();
+            var darkEnemyDatabaseTag = SystemAPI.GetSingletonEntity<DarkEnemyDatabaseTag>();
+            var entity = ~SystemAPI.GetSingleton<PlayerFactionData>().faction == FactionTag.Light
+                ? lightEnemyDatabaseTag
+                : darkEnemyDatabaseTag;
             var buffer = SystemAPI.GetBuffer<WaveTeamSpecialData>(entity);
             _wavePoint2TeamType2MemberCountEntriesLimit =
                 new NativeHashMap<int, NativeHashMap<int, TeamSpecialData>>(5, Allocator.Persistent);

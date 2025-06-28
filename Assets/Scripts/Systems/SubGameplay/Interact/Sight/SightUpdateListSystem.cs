@@ -81,7 +81,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             private void Execute(ref DynamicBuffer<InsightTarget> targets, Entity selfEntity)
             {
-                var selfFaction = GeneralAttrLookUp[selfEntity].FactionTag;
+                var selfFaction = GeneralAttrLookUp[selfEntity].Faction;
                 var selfPos = TransformLookup[selfEntity].Position;
 
                 var tempList = new NativeList<InsightTarget>(Allocator.Temp); // 临时排序列表
@@ -106,7 +106,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     {
                         if (targetgeneralAttr.BaseTag == BaseTag.Resources)
                             insightTarget.InteractOverride = Config.HarvestAboveAttack;
-                        else if (targetgeneralAttr.FactionTag == selfFaction)
+                        else if (targetgeneralAttr.Faction == selfFaction)
                             insightTarget.InteractOverride = Config.HealAboveAttack;
                     }
 

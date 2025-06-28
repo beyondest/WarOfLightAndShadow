@@ -53,13 +53,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
     
     
   
-    internal struct UpdateNavMeshRequest : IComponentData
-    {
-        /// <summary>
-        /// This is the id for which navmesh should be updated
-        /// </summary>
-        public FactionTag FactionTag;
-    }
+
     internal class VolumeObstacleSystemConfig : IComponentData
     {
         public Dictionary<FactionTag, GameObject> ObstacleTypePrefabMap;

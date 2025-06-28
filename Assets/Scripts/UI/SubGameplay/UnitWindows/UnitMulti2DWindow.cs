@@ -153,7 +153,7 @@ namespace SparFlame.UI.SubGameplay
         private IEnumerator ClickRoutine()
         {
             _ifClickRoutineRunning = true;
-            yield return new WaitForSeconds(GlobalUIDoubleClicker.Instance.doubleClickThreshold);
+            yield return new WaitForSeconds(GlobalUIConfigger.Instance.doubleClickThreshold);
             if (_clickCount == 1)
             {
                 UnitDetailWindow.Instance.Show();

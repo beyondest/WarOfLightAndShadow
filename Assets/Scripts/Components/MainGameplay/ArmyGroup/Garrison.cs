@@ -1,4 +1,6 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.Components.MainGameplay
 {
@@ -10,7 +12,13 @@ namespace SparFlame.Components.MainGameplay
     {
         public Entity ArmyGroup;
         public Entity City;
-        public bool IfGarrisonIn;
         public ArmyGroupIconType IconType;
+        public bool IfGarrisonIn;
+        public bool IfGarrisonOutAllSameIcon;
+    }
+    [Serializable]
+    public struct ArmyGroupGarrisonSystemConfig : IComponentData
+    {
+        public float3 hidePositionBias;
     }
 }

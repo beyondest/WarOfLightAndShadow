@@ -31,7 +31,7 @@ namespace SparFlame.Components.General
         [ShowIf(nameof(enabled))] public float playerMovementScale;
         [ShowIf(nameof(enabled))] public float aiMovementScale;
         [ShowIf(nameof(enabled))] public float playerArmyGroupMovementScale;
-        [ShowIf(nameof(enabled))] public float enemyArmyGroupMovementScale;
+        [ShowIf(nameof(enabled))] public float nonPlayerArmyGroupMovementScale;
     }
 
 

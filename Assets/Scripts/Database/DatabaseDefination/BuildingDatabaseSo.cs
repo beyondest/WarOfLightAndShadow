@@ -89,14 +89,14 @@ namespace SparFlame.Database
             var dict = new Dictionary<(BuildingType, int, Tier, int), BuildingDataItem>();
             foreach (var item in items)
             {
-                if (item.factionTag == FactionTag.Ally)
+                if (item.factionTag == FactionTag.Light)
                     if(!dict.TryAdd((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()), item))
                         Debug.LogError($"{item.gameplayName} / {item.id} : Duplicate key found");
             }
 
             foreach (var item in items)
             {
-                if (item.factionTag == FactionTag.Enemy)
+                if (item.factionTag == FactionTag.Dark)
                 {
                     if (dict.TryGetValue((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()), out var lightItem))
                     {
@@ -218,7 +218,7 @@ namespace SparFlame.Database
 
             if (factionTag == default)
             {
-                factionTag = FactionTag.Ally;
+                factionTag = FactionTag.Light;
             }
         }
 

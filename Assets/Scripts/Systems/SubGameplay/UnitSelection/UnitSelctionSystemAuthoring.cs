@@ -14,7 +14,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
         [Tooltip("When a game object use 2 physics shape, the second one will be placed in child list first, " +
                  "so if indicator is the first child in hierarchy, actually it is the second child in entity linked group")]
         public int selectedIndicatorIndex = 2;
-        [FormerlySerializedAs("initSelectableTeam")] public FactionTag initSelectableFaction = FactionTag.Ally;
+        [FormerlySerializedAs("initSelectableTeam")] public FactionTag initSelectableFaction = FactionTag.Light;
 
         class Baker : Baker<UnitSelectionSystemAuthoring>
         {

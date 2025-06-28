@@ -58,12 +58,12 @@ namespace SparFlame.Systems.General.Resource
                     case FactionTag.Neutral:
                         AddComponent<GlobalResourceDataTag>(entity);
                         break;
-                    case FactionTag.Ally:
-                        AddComponent<AllyResourceDataTag>(entity);
+                    case FactionTag.Light:
+                        AddComponent<LightResourceDataTag>(entity);
                         AddComponent<PopulationSpecialData>(entity);
                         break;
-                    case FactionTag.Enemy:
-                        AddComponent<EnemyResourceDataTag>(entity);
+                    case FactionTag.Dark:
+                        AddComponent<DarkResourceDataTag>(entity);
                         AddComponent<PopulationSpecialData>(entity);
                         break;
                     default:

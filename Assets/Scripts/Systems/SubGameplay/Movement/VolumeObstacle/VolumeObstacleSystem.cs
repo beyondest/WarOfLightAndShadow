@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.BasicControl;
 using Unity.AI.Navigation;
@@ -60,7 +61,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var shouldUpdateAllyMesh = false;
             var shouldUpdateEnemyMesh = false;
 
-            SpawnVolumeObstacleInMainScene(ref shouldUpdateAllyMesh,  ref shouldUpdateEnemyMesh,ref ecb);
+            SpawnVolumeObstacle(ref shouldUpdateAllyMesh,  ref shouldUpdateEnemyMesh,ref ecb);
 
             DestroyVolumeObstacleInMainScene(ref shouldUpdateAllyMesh,  ref shouldUpdateEnemyMesh,ref ecb);
 
@@ -80,7 +81,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 var entity = ecb.CreateEntity();
                 ecb.AddComponent(entity, new UpdateNavMeshRequest
                 {
-                    FactionTag = FactionTag.Ally
+                    FactionTag = FactionTag.Light
                 });
                 ecb.AddComponent<SubGameplayEntityTag>(entity);
 
@@ -90,7 +91,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 var entity2 = ecb.CreateEntity();
                 ecb.AddComponent(entity2, new UpdateNavMeshRequest
                 {
-                    FactionTag = FactionTag.Enemy
+                    FactionTag = FactionTag.Dark
                 });
                 ecb.AddComponent<SubGameplayEntityTag>(entity2);
 
@@ -156,11 +157,12 @@ namespace SparFlame.Systems.SubGameplay.Movement
             }
         }
 
-        private void SpawnVolumeObstacleInMainScene(ref bool shouldUpdateAllyMesh,ref bool shouldUpdateEnemyMesh,ref EntityCommandBuffer ecb )
+        private void SpawnVolumeObstacle(ref bool shouldUpdateAllyMesh,ref bool shouldUpdateEnemyMesh,ref EntityCommandBuffer ecb )
         {
             // Spawn Main scene obstacle/volume so that navmesh can recognize it
             foreach (var (localTransform, request, entity) in SystemAPI
                          .Query<RefRO<LocalTransform>, RefRO<VolumeObstacleSpawnRequest>>()
+                         .WithNone<CityAttr>()
                          .WithEntityAccess())
             {
                 var req = request.ValueRO;
@@ -192,7 +194,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         );
                         var navMeshVolume0 = volumeNotWalkable.GetComponent<NavMeshModifierVolume>();
                         var size0 = req.Size;
-                        if (req.RequestFromFaction == FactionTag.Ally)
+                        if (req.RequestFromFaction == FactionTag.Light)
                         {
                             size0.x += _allyAgentRadius; // Ally building is not walkable for ally unit and should plus radius to prevent stuck
                             size0.z += _allyAgentRadius;
@@ -218,7 +220,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         var navMeshVolume = volumeHighCost.GetComponent<NavMeshModifierVolume>();
                         var size = req.Size;
                         // If request from ally, then this is the area high cost for enemy
-                        if (~req.RequestFromFaction == FactionTag.Ally)
+                        if (~req.RequestFromFaction == FactionTag.Light)
                         {
                             size.x += _allyAgentRadius;
                             size.z += _allyAgentRadius;
@@ -263,9 +265,9 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 if (volume != null)
                 {
                     volume.SetActive(doorControl.ValueRO.OpenOrClose);
-                    if(doorControl.ValueRO.RequestFromFaction == FactionTag.Ally)
+                    if(doorControl.ValueRO.RequestFromFaction == FactionTag.Light)
                         shouldUpdateAllyMesh = true;
-                    if (doorControl.ValueRO.RequestFromFaction == FactionTag.Enemy)
+                    if (doorControl.ValueRO.RequestFromFaction == FactionTag.Dark)
                         shouldUpdateEnemyMesh = true;
                 }
             }

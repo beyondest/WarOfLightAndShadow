@@ -39,7 +39,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Awake()
         {
-            if(Instance == null)    
+            if(!Instance)    
                 Instance = this;
             else
                 Destroy(gameObject);

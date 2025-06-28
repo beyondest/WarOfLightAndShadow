@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
@@ -24,26 +25,26 @@ namespace SparFlame.Systems.Map
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var colorConfig = SystemAPI.GetSingleton<MiniMapConfig>();
             _miniMapMaterialLookup.Update(ref state);
-            // new MiniMapJob
-            // {
-            //     PlayerFaction = playerFaction,
-            //     ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-            //         .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-            //     MiniMapTagLookup = _miniMapMaterialLookup,
-            //     Config = colorConfig,
-            // }.ScheduleParallel();
+    
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             
             foreach (var (attr, entity) in SystemAPI.Query<RefRO<SubGameplayGeneralAttr>>().WithEntityAccess().WithNone<MiniMapInitCompleteTag>())
             {
                 var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
                 ecb.AddComponent<MiniMapInitCompleteTag>( entity);
-                if(attr.ValueRO.FactionTag == FactionTag.Neutral)continue;
-                var color = attr.ValueRO.FactionTag == playerFaction ? colorConfig.PlayerColor :
-                    colorConfig.EnemyColor;
+                var relationship =
+                    FactionUtils.GetRelationship(playerFactionData, attr.ValueRO.Faction, attr.ValueRO.SubFaction);
+                if(attr.ValueRO.Faction == FactionTag.Neutral)continue;
+                var color = relationship switch
+                {
+                    Relationship.Ally => colorConfig.AllyColor,
+                    Relationship.Hostile => colorConfig.HostileColor,
+                    Relationship.Player => colorConfig.PlayerColor,
+                    _ => colorConfig.NeutralColor
+                };
                 foreach (var group in buffer)
                 {
                     if (SystemAPI.HasComponent<MiniMapMaterialTag>(group.Value))

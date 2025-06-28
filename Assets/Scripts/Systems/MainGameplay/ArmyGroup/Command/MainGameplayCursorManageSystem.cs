@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
@@ -22,7 +23,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public void OnUpdate(ref SystemState state)
         {
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
+            var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             ref var cursorData = ref SystemAPI.GetSingletonRW<MainGameplayCursorData>().ValueRW;
             var selectionData = SystemAPI.GetSingleton<ArmyGroupSelectionData>();
             var hasGeneralAttr = SystemAPI.HasComponent<MainGameplayGeneralAttr>(inputMouseData.HitEntity);
@@ -37,22 +38,25 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             {
                 var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(inputMouseData.HitEntity);
                 var hasSupportTag = SystemAPI.HasComponent<SupportFightTag>(inputMouseData.HitEntity);
-                switch (generalAttr.BaseTag)
+                var relationShip =
+                    FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+                switch (generalAttr.baseTag)
                 {
                     case MainGameBaseTag.City:
-                        if (generalAttr.Faction == playerFaction)
+                        cursorData.CursorType = relationShip switch
                         {
-                            cursorData.CursorType = hasSupportTag
+                            Relationship.Ally => hasSupportTag
                                 ? MainGameplayCursorType.Support
-                                : MainGameplayCursorType.Garrison;
-                        }
-                        else
-                        {
-                            cursorData.CursorType = MainGameplayCursorType.Invade;
-                        }
+                                : MainGameplayCursorType.Garrison,
+                            Relationship.Player => MainGameplayCursorType.Garrison,
+                            _ => MainGameplayCursorType.Invade
+                        };
+
                         break;
-                    case MainGameBaseTag.Army:
-                        cursorData.CursorType = generalAttr.Faction == playerFaction ? MainGameplayCursorType.CheckInfo : MainGameplayCursorType.Intercept;
+                    case MainGameBaseTag.ArmyGroup:
+                        cursorData.CursorType = relationShip == Relationship.Hostile
+                            ? MainGameplayCursorType.Intercept
+                            : MainGameplayCursorType.CheckInfo;
                         break;
                 }
             }

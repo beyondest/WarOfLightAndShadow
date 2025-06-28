@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -16,12 +17,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             ref NavAgentComponent navAgent,
             EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity)
         {
-            movableData.CurWaypoint = 0;
-            pathData.CurTargetIndex = -1;
-            visualizeData.PreWaypoint = 0;
+            movableData.curWaypoint = 0;
+            pathData.curTargetIndex = -1;
+            visualizeData.preWaypoint = 0;
             finalWaypoints.Clear();
-            movableData.IsTargetReachable = true;
-            navAgent.CalculationComplete = true;
+            movableData.isTargetReachable = true;
+            navAgent.calculationComplete = true;
             ecb.SetComponentEnabled<ArmyGroupCalculateEnable>(index, selfEntity, false);
             ecb.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, false);
         }
@@ -32,19 +33,23 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             ref NavAgentComponent navAgent,
             EntityCommandBuffer ecb, Entity selfEntity)
         {
-            movableData.CurWaypoint = 0;
-            pathData.CurTargetIndex = -1;
-            visualizeData.PreWaypoint = 0;
-            movableData.IsTargetReachable = true;
-            navAgent.CalculationComplete = true;
+            movableData.curWaypoint = 0;
+            pathData.curTargetIndex = -1;
+            visualizeData.preWaypoint = 0;
+            movableData.isTargetReachable = true;
+            navAgent.calculationComplete = true;
             ecb.SetComponentEnabled<ArmyGroupCalculateEnable>(selfEntity, false);
             finalWaypoints.Clear();
         }
         public static bool IsSelectable(EntityManager entityManager, Entity entity,
-            FactionTag playerFaction)
+           in PlayerFactionData playerFactionData)
         {
-            return entityManager.HasComponent<ArmyGroupSelected>(entity)
-                   && entityManager.GetComponentData<MainGameplayGeneralAttr>(entity).Faction == playerFaction;
+            if (!entityManager.HasComponent<ArmyGroupSelected>(entity)) return false;
+            if(!entityManager.HasComponent<ArmyGroupInGarrison>(entity))return false;
+            var generalAttr = entityManager.GetComponentData<MainGameplayGeneralAttr>(entity);
+            var relationship =
+                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+            return relationship == Relationship.Player;
         }
 
         // public static bool IsSettingTarget(in InputArmyGroupControlData data, in InputMouseData inputMouseData,

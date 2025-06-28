@@ -3,6 +3,7 @@ using SparFlame.Components.General;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
 using TMPro;
+using Unity.Entities;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.General
@@ -37,6 +38,8 @@ namespace SparFlame.UI.General
         
         private FactionTag _playerFaction;
         private Image _loadingImage;
+        private EntityManager _em;
+        private EntityQuery _subGameStatusQuery;
         
         // Cache
         private ResourceLoadingUtils.LoadingProgress _progress;
@@ -49,11 +52,7 @@ namespace SparFlame.UI.General
             pauseMenu.SetActive(true);
         }
 
-       
-
-        
         #region ButtonMethods
-
 
         public void OnClickResume()
         {
@@ -63,16 +62,45 @@ namespace SparFlame.UI.General
 
         public void OnClickExit()
         {
-            GameController.Instance.ExitGame();
+            var subGameStatus = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
+            if (subGameStatus.IsInBattle)
+            {
+                ConfirmWindow.Instance.Show("Are you sure you want to exit the game? You cannot save the game when in battle",
+                    () =>
+                    {
+                        GameController.Instance.ExitGame();
+                    });
+            }
+            else
+            {
+                GameController.Instance.ExitGame();
+            }
         }
 
         public void OnClickGoToMainMenu()
         {
-            pauseMenu.SetActive(false);
-            mainMenu.SetActive(true);
-            gameOverMenu.SetActive(false);
-            subGameplayUI.SetActive(false);
-            GameController.Instance.EndGameToMainMenu();
+            var subGameStatus = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
+            if (subGameStatus.IsInBattle)
+            {
+                ConfirmWindow.Instance.Show("Are you sure you want to go back to the main menu? You cannot save the game when in battle",
+                    () =>
+                    {
+                        pauseMenu.SetActive(false);
+                        mainMenu.SetActive(true);
+                        gameOverMenu.SetActive(false);
+                        subGameplayUI.SetActive(false);
+                        GameController.Instance.EndGameToMainMenu(subGameStatus.SubGameStatus != SubGameStatus.None);
+                    });
+            }
+            else
+            {
+                pauseMenu.SetActive(false);
+                mainMenu.SetActive(true);
+                gameOverMenu.SetActive(false);
+                subGameplayUI.SetActive(false);
+                GameController.Instance.EndGameToMainMenu(subGameStatus.SubGameStatus != SubGameStatus.None);
+            }
+           
         }
 
         public void OnClickPlay()
@@ -141,6 +169,9 @@ namespace SparFlame.UI.General
             settings.SetActive(false);
             mainGameplayUI.SetActive(false);
             subGameplayUI.SetActive(false);
+
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _subGameStatusQuery = _em.CreateEntityQuery(typeof(SubGameStatusData));
         }
 
         #endregion
@@ -186,7 +217,7 @@ namespace SparFlame.UI.General
         {
             mainGameplayUI.SetActive(false);
             subGameplayUI.SetActive(false);
-            if (_playerFaction == FactionTag.Ally)
+            if (_playerFaction == FactionTag.Light)
             {
                 loadingLight.SetActive(true);
                 _loadingImage = loadingFillLight;
@@ -216,8 +247,8 @@ namespace SparFlame.UI.General
             _playerFaction = faction;
             selectMenu.SetActive(false);
             selectMenuElements.SetActive(false);
-            loadingLight.SetActive(faction == FactionTag.Ally);
-            loadingDark.SetActive(faction == FactionTag.Enemy);
+            loadingLight.SetActive(faction == FactionTag.Light);
+            loadingDark.SetActive(faction == FactionTag.Dark);
         }
     }
 }

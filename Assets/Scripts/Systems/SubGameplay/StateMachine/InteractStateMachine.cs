@@ -25,7 +25,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
         private ComponentLookup<StatData> _stat;
         private ComponentLookup<LocalTransform> _localTransform;
-        private ComponentLookup<SubGameplayGeneralAttr> _interactable;
+        private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
+        private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<MovableData> _movable;
         private ComponentLookup<BasicStateData> _basicState;
         private ComponentLookup<HealStateTag> _healState;
@@ -61,7 +62,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
 
             _stat = state.GetComponentLookup<StatData>(true);
-            _interactable = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
+            _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
+            _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
             _insightTarget = state.GetBufferLookup<InsightTarget>(true);
             _healState = state.GetComponentLookup<HealStateTag>(true);
             _harvestState = state.GetComponentLookup<HarvestStateTag>(true);
@@ -86,7 +88,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             var sightSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             _stat.Update(ref state);
             _localTransform.Update(ref state);
-            _interactable.Update(ref state);
+            _generalAttrLookup.Update(ref state);
+            _boxColliderSizeLookup.Update(ref state);
             _movable.Update(ref state);
             _insightTarget.Update(ref state);
             _basicState.Update(ref state);
@@ -109,7 +112,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 Entities = attackEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
-                GeneralAttrLookup = _interactable,
+                GeneralAttrLookup = _generalAttrLookup,
+                BoxColliderSizeLookup = _boxColliderSizeLookup,
                 InsightTarget = _insightTarget,
                 RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
@@ -139,7 +143,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 Entities = healEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
-                GeneralAttrLookup = _interactable,
+                GeneralAttrLookup = _generalAttrLookup,
+                BoxColliderSizeLookup = _boxColliderSizeLookup,
                 InsightTarget = _insightTarget,
                 RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
@@ -169,7 +174,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 Entities = harvestEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
-                GeneralAttrLookup = _interactable,
+                GeneralAttrLookup = _generalAttrLookup,
+                BoxColliderSizeLookup = _boxColliderSizeLookup,
                 InsightTarget = _insightTarget,
                 RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
@@ -211,6 +217,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
+            [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
             [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
             [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
             [ReadOnly] public ComponentLookup<AttackStateTag> AttackLookup;
@@ -241,7 +248,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 var ability = Ability[index];
                 ref var selfStateData = ref BasicStateData.GetRefRW(selfEntity).ValueRW;
                 var selfGeneralAttr = GeneralAttrLookup[selfEntity];
-                var selfFactionTag = selfGeneralAttr.FactionTag;
+                var selfFactionTag = selfGeneralAttr.Faction;
 
                 // Pre Check 
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
@@ -310,11 +317,11 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ref var transform = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
                 var curPos = transform.Position;
                 var targetPos = TransformLookup[selfStateData.TargetEntity].Position;
-
+                var targetBoxColliderSize = BoxColliderSizeLookup[selfStateData.TargetEntity];
                 // Check if target in range
                 /*As long as target is valid, movable unit will never change target in interact state.
                  The target can only be changed while moving*/
-                if (!IsTargetInRange(math.square(ability.Range + AbilityBonusLookup[selfEntity].RangeBonus), in curPos, in targetPos, in targetGeneralAttr))
+                if (!IsTargetInRange(math.square(ability.Range + AbilityBonusLookup[selfEntity].RangeBonus), in curPos, in targetPos, in targetBoxColliderSize))
                 {
                     // Interacter is movable
                     if (MovableLookup.HasComponent(selfEntity))
@@ -399,7 +406,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 in TInteractAbility ability, Entity entity, int index)
             {
                 var tarPos = TransformLookup[stateData.TargetEntity].Position;
-                var tarColliderShape = GeneralAttrLookup[stateData.TargetEntity].BoxColliderSize;
+                var tarColliderShape = BoxColliderSizeLookup[stateData.TargetEntity].Value;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
                     ability.Range
@@ -418,12 +425,12 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool IsTargetInRange(float rangeSq, in float3 curPos, in float3 targetPos,
-                in SubGameplayGeneralAttr targetSubGameplayGeneralAttr)
+                in BoxColliderSize targetSubGameplayGeneralAttr)
             {
                 var curPos2 = new float2(curPos.x, curPos.z);
                 var targetPos2 = new float2(targetPos.x, targetPos.z);
-                var targetColliderSizeXz = new float2(targetSubGameplayGeneralAttr.BoxColliderSize.x,
-                    targetSubGameplayGeneralAttr.BoxColliderSize.z);
+                var targetColliderSizeXz = new float2(targetSubGameplayGeneralAttr.Value.x,
+                    targetSubGameplayGeneralAttr.Value.z);
                 var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
                 return disSqPointToRect < rangeSq;
             }
@@ -490,7 +497,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         TierFilterEnable = true,
                         Tier =tier,
                         FactionFilterEnable = true,
-                        Faction = selfSubGameplayGeneralAttr.FactionTag
+                        Faction = selfSubGameplayGeneralAttr.Faction
                     },
                     StatChangeRequest = statChangeRequest,
                     VFXName = vfxName,
@@ -511,7 +518,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 {
                     TriggerTime = CurTime + damageDelayTime, 
                     StatChangeRequest = statChangeRequest,
-                    TargetFaction = ~selfSubGameplayGeneralAttr.FactionTag,
+                    TargetFaction = ~selfSubGameplayGeneralAttr.Faction,
                 });
                 ECB.AddComponent(index, aoeBuffRequest, new BuffRequest
                 {
@@ -525,7 +532,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     Filter = new BuffFilter
                     {
                     factionFilterEnabled = true,
-                    faction = selfSubGameplayGeneralAttr.FactionTag,
+                    faction = selfSubGameplayGeneralAttr.Faction,
                     tier = tier,
                     tierFilterEnabled = true
                 }

@@ -27,10 +27,10 @@ namespace SparFlame.UI.SubGameplay
             var curFaction = selectionData.CurrentSelectFaction;
             var entity = curFaction switch
             {
-                FactionTag.Ally =>
-                    SystemAPI.GetSingletonEntity<AllyResourceDataTag>(),
-                FactionTag.Enemy =>
-                    SystemAPI.GetSingletonEntity<EnemyResourceDataTag>(),
+                FactionTag.Light =>
+                    SystemAPI.GetSingletonEntity<LightResourceDataTag>(),
+                FactionTag.Dark =>
+                    SystemAPI.GetSingletonEntity<DarkResourceDataTag>(),
                 FactionTag.Neutral => default,
                 _ => throw new ArgumentOutOfRangeException()
             };

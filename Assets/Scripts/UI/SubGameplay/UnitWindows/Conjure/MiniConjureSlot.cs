@@ -26,7 +26,7 @@ namespace SparFlame.UI.SubGameplay
         {
             _targetEntity = info.EntityPrefab;
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _faction = _em.GetComponentData<SubGameplayGeneralAttr>(info.EntityPrefab).FactionTag;
+            _faction = _em.GetComponentData<SubGameplayGeneralAttr>(info.EntityPrefab).Faction;
             button!.image.sprite = info.Sprite;
             CalculateMaxConjureCount();
         }

@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
@@ -14,13 +15,15 @@ namespace SparFlame.UI.MainGameplay
     {
         #region Config
 
-        [SerializeField] private GameObject panel;
-        [SerializeField] private GameObject controlPanel;
         [SerializeField] private TMP_Text cityNameText;
         [SerializeField] private TMP_Text cityDescriptionText;
         [SerializeField] private Image generalFactionImage;
         [SerializeField] private Image subFactionImage;
         
+        [Header("Panels")]
+        [SerializeField] private GameObject panel;
+        [SerializeField] private GameObject controlPanel;
+
         #endregion
 
 
@@ -107,6 +110,8 @@ namespace SparFlame.UI.MainGameplay
             Hide();
         }
 
+   
+
         #endregion
 
 
@@ -114,18 +119,23 @@ namespace SparFlame.UI.MainGameplay
         {
             var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(_targetEntity);
             var cityAttr = _em.GetComponentData<CityAttr>(_targetEntity);
-            if (generalAttr.Faction == _playerFaction)
+            if (generalAttr.faction == _playerFaction)
             {
                 controlPanel.SetActive(true);
             }
 
             var idStart = DatabaseManager.CityDatabaseSo.idStart;
-            var item = DatabaseManager.CityDatabaseSo.items[idStart + cityAttr.ID];
+            var item = DatabaseManager.CityDatabaseSo.items[cityAttr.globalId - idStart];
             cityNameText.text = item.gameplayName;
             cityDescriptionText.text = item.description;
-            generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.Faction];
-            subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.SubFaction];
+            generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];
+            subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.subFaction];
+            if(CityGarrisonWindow.Instance.TrySwitchTarget(_targetEntity))
+                CityGarrisonWindow.Instance.Show();
+            else
+                CityGarrisonWindow.Instance.Hide();
         }
+
         
         
     }

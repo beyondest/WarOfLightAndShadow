@@ -33,7 +33,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 Type = resourceAttr.Type,
                 AbsAmount = absAmount,
-                FromFaction = interactorAttr.FactionTag,
+                FromFaction = interactorAttr.Faction,
                 RequestType = ResourceRequestType.Harvest
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, entity);
@@ -45,15 +45,15 @@ namespace SparFlame.Systems.SubGameplay.Interact
             int absAmount)
         {
             if(absAmount <= 0)return;
-            var interactorFaction = subGameplayGeneralAttr.FactionTag;
+            var interactorFaction = subGameplayGeneralAttr.Faction;
             var popNumberType = (request.Type, interactorFaction) switch
             {
-                (StatChangeType.Heal, FactionTag.Ally) => PopNumberType.AllyHealed,
-                (StatChangeType.Attack, FactionTag.Ally) => PopNumberType.DamageDealt,
-                (StatChangeType.Heal, FactionTag.Enemy) => PopNumberType.EnemyHealed,
-                (StatChangeType.Attack, FactionTag.Enemy) => PopNumberType.DamageTaken,
-                (StatChangeType.Harvest, FactionTag.Ally) => PopNumberType.AllyHarvest,
-                (StatChangeType.Harvest, FactionTag.Enemy) => PopNumberType.EnemyHarvest,
+                (StatChangeType.Heal, FactionTag.Light) => PopNumberType.AllyHealed,
+                (StatChangeType.Attack, FactionTag.Light) => PopNumberType.DamageDealt,
+                (StatChangeType.Heal, FactionTag.Dark) => PopNumberType.EnemyHealed,
+                (StatChangeType.Attack, FactionTag.Dark) => PopNumberType.DamageTaken,
+                (StatChangeType.Harvest, FactionTag.Light) => PopNumberType.AllyHarvest,
+                (StatChangeType.Harvest, FactionTag.Dark) => PopNumberType.EnemyHarvest,
                 _ => PopNumberType.UnNormalKill
             };
 
@@ -77,7 +77,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ecb.AddComponent(index, destroyObstacleRequest, new VolumeObstacleDestroyRequest
             {
                 FromEntity = interacteeEntity,
-                RequestFromFaction = isResource ? FactionTag.Neutral : FactionTag.Ally // Ally or enemy is both ok
+                RequestFromFaction = isResource ? FactionTag.Neutral : FactionTag.Light // Ally or enemy is both ok
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, destroyObstacleRequest);
         }
@@ -113,7 +113,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ecb.AddComponent(index, releasePopulationRequest, new ResourceChangeRequest
             {
                 AbsAmount = math.abs(amount),
-                FromFaction = interacteeAttr.FactionTag,
+                FromFaction = interacteeAttr.Faction,
                 RequestType = ResourceRequestType.Release,
                 Type = ResourceType.SoulPact
             });
@@ -131,7 +131,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 Type = dwellingAttr.ResourceType,
                 AbsAmount = math.abs(dwellingAttr.Amount),
-                FromFaction = interacteeAttr.FactionTag,
+                FromFaction = interacteeAttr.Faction,
                 RequestType = ResourceRequestType.DwellingDestroyConsume
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, request);

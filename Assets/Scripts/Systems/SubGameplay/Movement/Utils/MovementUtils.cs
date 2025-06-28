@@ -42,9 +42,9 @@ namespace SparFlame.Systems.SubGameplay.Movement
         
         public static void ResetNavAgent(ref NavAgentComponent navAgentComponent)
         {
-            navAgentComponent.ForceCalculate = false;
-            navAgentComponent.EnableCalculation = false;
-            navAgentComponent.CalculationComplete = false;
+            navAgentComponent.forceCalculate = false;
+            navAgentComponent.enableCalculation = false;
+            navAgentComponent.calculationComplete = false;
         }
 
         public static void ResetSurroundings(ref Surroundings surroundings)

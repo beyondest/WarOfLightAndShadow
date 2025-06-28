@@ -3,9 +3,8 @@ using Unity.AI.Navigation;
 using Unity.Entities;
 using System.Collections;
 using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Collections;
-using UnityEngine.AI;
-using UnityEngine.Experimental.AI;
 
 namespace SparFlame.Systems.SubGameplay.Movement
 {
@@ -26,13 +25,11 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
         // ECS
         private EntityManager _em;
-        private EntityQuery _gamingTag;
         private EntityQuery _updateNavMeshRequest;
 
         private void OnEnable()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             _updateNavMeshRequest = _em.CreateEntityQuery(typeof(UpdateNavMeshRequest));
         }
 
@@ -44,7 +41,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
             // }
 
             // If game pause, do nothing
-            if (_gamingTag.IsEmpty) return;
             var ifUpdateAlly = false;
             var ifUpdateEnemy = false;
 
@@ -60,7 +56,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 var updateNavMeshRequest = componentDataArray[i];
                 switch (updateNavMeshRequest.FactionTag)
                 {
-                    case FactionTag.Ally:
+                    case FactionTag.Light:
                     {
                         if (_isUpdatingAlly)
                         {
@@ -70,7 +66,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         ifUpdateAlly = true;
                         break;
                     }
-                    case FactionTag.Enemy:
+                    case FactionTag.Dark:
                     {
                         if (_isUpdatingEnemy)
                         {
@@ -91,26 +87,26 @@ namespace SparFlame.Systems.SubGameplay.Movement
             ecb.Dispose();
             if (ifUpdateAlly )
             {
-                StartCoroutine(UpdateNavMesh(FactionTag.Ally));
+                StartCoroutine(UpdateNavMesh(FactionTag.Light));
             }
             else
             {
                 if (_pendingUpDataAlly)
                 {
                     _pendingUpDataAlly = false;
-                    StartCoroutine(UpdateNavMesh(FactionTag.Ally));
+                    StartCoroutine(UpdateNavMesh(FactionTag.Light));
                 }
             }
             if (ifUpdateEnemy )
             {
-                StartCoroutine(UpdateNavMesh(FactionTag.Enemy));
+                StartCoroutine(UpdateNavMesh(FactionTag.Dark));
             }
             else
             {
                 if (_pendingUpDateEnemy)
                 {
                     _pendingUpDateEnemy = false;
-                    StartCoroutine(UpdateNavMesh(FactionTag.Enemy));
+                    StartCoroutine(UpdateNavMesh(FactionTag.Dark));
                 }
             }
         }
@@ -119,10 +115,10 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             switch (factionTag)
             {
-                case FactionTag.Ally:
+                case FactionTag.Light:
                     _isUpdatingAlly = true;
                     break;
-                case FactionTag.Enemy:
+                case FactionTag.Dark:
                     _isUpdatingEnemy = true;
                     break;
                 case FactionTag.Neutral:
@@ -130,7 +126,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     break;
             }
 
-            var operation = factionTag == FactionTag.Ally
+            var operation = factionTag == FactionTag.Light
                 ? navAlly.UpdateNavMesh(navAlly.navMeshData)
                 : navEnemy.UpdateNavMesh(navEnemy.navMeshData);
 
@@ -142,10 +138,10 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
             switch (factionTag)
             {
-                case FactionTag.Ally:
+                case FactionTag.Light:
                     _isUpdatingAlly = false;
                     break;
-                case FactionTag.Enemy:
+                case FactionTag.Dark:
                     _isUpdatingEnemy = false;
                     break;
                 case FactionTag.Neutral:

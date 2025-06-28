@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 
 namespace SparFlame.Components.General
 {
@@ -6,8 +7,8 @@ namespace SparFlame.Components.General
     public enum FactionTag
     {
         Neutral = 0,
-        Ally = 1,
-        Enemy = ~1,
+        Light = 1,
+        Dark = ~1,
     }
     
     public enum Tier
@@ -19,17 +20,23 @@ namespace SparFlame.Components.General
         // Tier5 = 7,
     }
 
-    public enum SubFaction
+    public enum SubFactionTag
     {
-        None = 0,
-        LightFaction1 = 1,
-        LightFaction2 = 2,
-        LightFaction3 = 3,
-        DarkFaction1 = 4,
-        DarkFaction2 = 5,
-        DarkFaction3 = 6,
+        None          = 1 << 0,
+        LightFaction1 = 1 << 1,  
+        LightFaction2 = 1 << 2,  
+        LightFaction3 = 1 << 3,  
+        DarkFaction1  = 1 << 4,  
+        DarkFaction2  = 1 << 5,  
+        DarkFaction3  = 1 << 6,  
     }
-   
-    
+
+    public enum Relationship
+    {
+        Neutral = 0,
+        Ally = 1,
+        Hostile = ~1,
+        Player = 2
+    }
    
 }

@@ -33,8 +33,8 @@ namespace SparFlame.UI.SubGameplay
             gameplayNameText.text = info.GameplayName;
             tierIcon.sprite = BasicUIResourceManager.Instance.TierSprites[info.Tier];
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _faction = _em.GetComponentData<SubGameplayGeneralAttr>(info.EntityPrefab).FactionTag;
-            tierIcon.color = _faction == FactionTag.Ally ? Color.white : Color.black;
+            _faction = _em.GetComponentData<SubGameplayGeneralAttr>(info.EntityPrefab).Faction;
+            tierIcon.color = _faction == FactionTag.Light ? Color.white : Color.black;
             hpText.text = _em.GetComponentData<StatData>(_targetEntity).maxValue.ToString();
             hpImage.sprite = BasicUIResourceManager.Instance.FactionHpSprites[_faction];
             // Update detail panel and interact ability panel

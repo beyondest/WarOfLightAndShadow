@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using SparFlame.Components.ComponentUtils;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
@@ -36,9 +37,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             {
                 Config = SystemAPI.GetSingleton<ArmyGroupMovingSystemConfig>(),
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
-                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 Debug = debug,
-                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
+                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+                    .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
             }.ScheduleParallel();
         }
 
@@ -47,7 +49,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [WithAll(typeof(ArmyGroupMovingTag))]
         public partial struct ArmyGroupMovingJob : IJobEntity
         {
-            [ReadOnly] public FactionTag PlayerFaction;
+            [ReadOnly] public PlayerFactionData PlayerFactionData;
             [ReadOnly] public ArmyGroupMovingSystemConfig Config;
             [ReadOnly] public MovementDebug Debug;
             [ReadOnly] public float DeltaTime;
@@ -61,47 +63,49 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 ref PathVisualizeData visualizeData,
                 Entity selfEntity)
             {
-                if (!navAgentComponent.CalculationComplete || finalWaypoints.Length == 0)
+                if (!navAgentComponent.calculationComplete || finalWaypoints.Length == 0)
                 {
                     return;
                 }
 
-                if (math.distance(transform.Position, targets[0].Position) < Config.finalReachRange)
+                if (math.distance(transform.Position, targets[0].position) < Config.finalReachRange)
                 {
                     targets.RemoveAt(0);
                     if (targets.Length == 0)
                     {
                         ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWaypoints,
-                            ref visualizeData, ref navAgentComponent,ECB, index, selfEntity);
-                        movableData.MovementInfo = ArmyGroupMovementInfo.Complete;
+                            ref visualizeData, ref navAgentComponent, ECB, index, selfEntity);
+                        movableData.movementInfo = ArmyGroupMovementInfo.Complete;
                         return;
                     }
                 }
 
 
-                if (movableData.CurWaypoint + 1 < finalWaypoints.Length &&
-                    math.distance(finalWaypoints[movableData.CurWaypoint].Position, transform.Position) <
-                    Config.waypointReachRange)
+                var maxDisToNextPoint = math.distance(finalWaypoints[movableData.curWaypoint].position, transform.Position);
+                if (movableData.curWaypoint + 1 < finalWaypoints.Length && maxDisToNextPoint < Config.waypointReachRange)
                 {
-                    movableData.CurWaypoint += 1;
+                    movableData.curWaypoint += 1;
                 }
 
-                var nextPosition = finalWaypoints[movableData.CurWaypoint].Position;
+                var nextPosition = finalWaypoints[movableData.curWaypoint].position;
                 var direction = math.normalizesafe(nextPosition - transform.Position);
                 var scale = Config.moveSpeedScale;
                 if (Debug.enabled)
                 {
-                    scale = generalData.Faction == PlayerFaction
+                    var relation = FactionUtils.GetRelationship(PlayerFactionData, generalData.faction,
+                        generalData.subFaction);
+                    scale *= relation == Relationship.Player
                         ? Debug.playerArmyGroupMovementScale
-                        : Debug.enemyArmyGroupMovementScale;
+                        : Debug.nonPlayerArmyGroupMovementScale;
                 }
 
-                var moveLength = DeltaTime * movableData.Speed * scale;
-
+                var moveLength = DeltaTime * movableData.speed * scale;
+                moveLength = math.min(moveLength, maxDisToNextPoint);
                 var targetRotation = quaternion.LookRotationSafe(-direction, math.up());
                 transform.Rotation = math.slerp(transform.Rotation.value, targetRotation,
                     DeltaTime * Config.rotationSpeed);
                 transform.Position += moveLength * direction;
+              
             }
         }
     }

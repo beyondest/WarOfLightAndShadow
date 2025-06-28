@@ -16,7 +16,6 @@ namespace SparFlame.Database
             public override void Bake(GeneralUnitAttributesAuthoring authoring)
             {
                 if (authoring.globalIdx == 0)return;
-                if(DatabaseManager.UnitDatabaseSo == null)return;
                 
                 var item = DatabaseManager.UnitDatabaseSo.GetItemById(authoring.globalIdx);
                 var unixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -78,14 +77,14 @@ namespace SparFlame.Database
             {
                 AddComponent(entity, new NavAgentComponent
                 {
-                    TargetPosition = float3.zero,
-                    CalculateInterval = item.movementCalculationInterval,
-                    Extents = float3.zero,
-                    EnableCalculation = false,
-                    CalculationComplete = false,
-                    CurrentWaypoint = 0,
-                    ForceCalculate = false,
-                    AgentId = authoring.GetComponent<NavMeshAgent>().agentTypeID
+                    targetPosition = float3.zero,
+                    calculateInterval = item.movementCalculationInterval,
+                    extents = float3.zero,
+                    enableCalculation = false,
+                    calculationComplete = false,
+                    currentWaypoint = 0,
+                    forceCalculate = false,
+                    agentId = authoring.GetComponent<NavMeshAgent>().agentTypeID
                 });
 
                 var physicsShape = item.prefab.GetComponent<PhysicsShapeAuthoring>();
@@ -141,7 +140,7 @@ namespace SparFlame.Database
                     SetComponentEnabled<CavalryMoveBuff>(entity, false);
                 }
                 
-                if (item.factionTag == FactionTag.Ally)
+                if (item.factionTag == FactionTag.Light)
                 {
                     // Bake dark debuffs
                     AddComponent<DarkMagicDamageBuff>(entity);
@@ -190,7 +189,7 @@ namespace SparFlame.Database
                     }
                 }
                 
-                else if (item.factionTag == FactionTag.Enemy)
+                else if (item.factionTag == FactionTag.Dark)
                 {
                     // Bake light debuffs
                     AddComponent<LightMagicDamageBuff>(entity);

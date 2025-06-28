@@ -54,7 +54,7 @@ namespace SparFlame.Systems.SubGameplay.Interact.GamePlaySystem.Functionality.In
                         Filter = new VFXSubFilter
                         {
                             FactionFilterEnable  = true,
-                            Faction = subGameplayGeneralAttr.FactionTag
+                            Faction = subGameplayGeneralAttr.Faction
                         },
                         RequestType = VFXRequestType.Spawn,
                         VFXName = VFXName.CavalryMoveDamageReduction,

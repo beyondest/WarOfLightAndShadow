@@ -1,5 +1,6 @@
 ﻿using System;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using UnityEngine;
@@ -69,7 +70,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 {
                     Entity = entities[i],
                     NavAgent = navAgents[i],
-                    FromPosition = calculationPathDatas[i].StartPosition,
+                    FromPosition = calculationPathDatas[i].startPosition,
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
                     Iterations = config.maxIterations,
@@ -115,14 +116,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             public void Execute()
             {
 
-                NavAgent.CalculationComplete = false;
+                NavAgent.calculationComplete = false;
                 ECB.SetComponent(Entity, NavAgent);
                 
-                var toPosition = NavAgent.TargetPosition;
-                var extents = NavAgent.Extents;
+                var toPosition = NavAgent.targetPosition;
+                var extents = NavAgent.extents;
                 extents += ExtentsOffset;
-                var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.AgentId);
-                var toLocation = Query.MapLocation(toPosition, extents, NavAgent.AgentId);
+                var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.agentId);
+                var toLocation = Query.MapLocation(toPosition, extents, NavAgent.agentId);
                 if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
 
                 var status = Query.BeginFindPath(fromLocation, toLocation);
@@ -172,14 +173,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         {
                             var newWayPoint = new WaypointBuffer
                             {
-                                Position = location.position
+                                position = location.position
                             };
                             ECB.AppendToBuffer(Entity,newWayPoint);
                         }
                     }
 
-                    NavAgent.CurrentWaypoint = 0;
-                    NavAgent.CalculationComplete = true;
+                    NavAgent.currentWaypoint = 0;
+                    NavAgent.calculationComplete = true;
 
                     ECB.SetComponentEnabled<ArmyGroupCalculateEnable>(Entity,false);
                     ECB.SetComponent(Entity, NavAgent);

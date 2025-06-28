@@ -650,6 +650,15 @@ namespace SparFlame.Components.Input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MoveOutAllSameIcon"",
+                    ""type"": ""Button"",
+                    ""id"": ""8e0fccf1-9bc0-4b0e-8bab-ced42a75cd1c"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -760,6 +769,17 @@ namespace SparFlame.Components.Input
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""ResetOnlyTheLastTarget"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ac79be2d-fb3b-4af6-8970-7f9af1ae3fa0"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": ""Press"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""MoveOutAllSameIcon"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -2604,6 +2624,7 @@ namespace SparFlame.Components.Input
             m_ArmyGroupControl_ResetAllTargets = m_ArmyGroupControl.FindAction("ResetAllTargets", throwIfNotFound: true);
             m_ArmyGroupControl_SetTarget = m_ArmyGroupControl.FindAction("SetTarget", throwIfNotFound: true);
             m_ArmyGroupControl_ResetOnlyTheLastTarget = m_ArmyGroupControl.FindAction("ResetOnlyTheLastTarget", throwIfNotFound: true);
+            m_ArmyGroupControl_MoveOutAllSameIcon = m_ArmyGroupControl.FindAction("MoveOutAllSameIcon", throwIfNotFound: true);
             // Construct
             m_Construct = asset.FindActionMap("Construct", throwIfNotFound: true);
             m_Construct_Build = m_Construct.FindAction("Build", throwIfNotFound: true);
@@ -3105,6 +3126,7 @@ namespace SparFlame.Components.Input
         private readonly InputAction m_ArmyGroupControl_ResetAllTargets;
         private readonly InputAction m_ArmyGroupControl_SetTarget;
         private readonly InputAction m_ArmyGroupControl_ResetOnlyTheLastTarget;
+        private readonly InputAction m_ArmyGroupControl_MoveOutAllSameIcon;
         /// <summary>
         /// Provides access to input actions defined in input action map "ArmyGroupControl".
         /// </summary>
@@ -3156,6 +3178,10 @@ namespace SparFlame.Components.Input
             /// Provides access to the underlying input action "ArmyGroupControl/ResetOnlyTheLastTarget".
             /// </summary>
             public InputAction @ResetOnlyTheLastTarget => m_Wrapper.m_ArmyGroupControl_ResetOnlyTheLastTarget;
+            /// <summary>
+            /// Provides access to the underlying input action "ArmyGroupControl/MoveOutAllSameIcon".
+            /// </summary>
+            public InputAction @MoveOutAllSameIcon => m_Wrapper.m_ArmyGroupControl_MoveOutAllSameIcon;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -3212,6 +3238,9 @@ namespace SparFlame.Components.Input
                 @ResetOnlyTheLastTarget.started += instance.OnResetOnlyTheLastTarget;
                 @ResetOnlyTheLastTarget.performed += instance.OnResetOnlyTheLastTarget;
                 @ResetOnlyTheLastTarget.canceled += instance.OnResetOnlyTheLastTarget;
+                @MoveOutAllSameIcon.started += instance.OnMoveOutAllSameIcon;
+                @MoveOutAllSameIcon.performed += instance.OnMoveOutAllSameIcon;
+                @MoveOutAllSameIcon.canceled += instance.OnMoveOutAllSameIcon;
             }
 
             /// <summary>
@@ -3253,6 +3282,9 @@ namespace SparFlame.Components.Input
                 @ResetOnlyTheLastTarget.started -= instance.OnResetOnlyTheLastTarget;
                 @ResetOnlyTheLastTarget.performed -= instance.OnResetOnlyTheLastTarget;
                 @ResetOnlyTheLastTarget.canceled -= instance.OnResetOnlyTheLastTarget;
+                @MoveOutAllSameIcon.started -= instance.OnMoveOutAllSameIcon;
+                @MoveOutAllSameIcon.performed -= instance.OnMoveOutAllSameIcon;
+                @MoveOutAllSameIcon.canceled -= instance.OnMoveOutAllSameIcon;
             }
 
             /// <summary>
@@ -4613,6 +4645,13 @@ namespace SparFlame.Components.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnResetOnlyTheLastTarget(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "MoveOutAllSameIcon" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnMoveOutAllSameIcon(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Construct" which allows adding and removing callbacks.

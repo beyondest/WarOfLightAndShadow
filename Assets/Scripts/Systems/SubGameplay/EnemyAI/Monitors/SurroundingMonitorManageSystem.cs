@@ -28,7 +28,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             new GenerateSurroundingMonitorJob
             {
-                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value,
+                PlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction,
                 TransformLookup = _transformLookup,
                 ECB = ecb,
                 MonitorPrefabData = SystemAPI.GetSingleton<MonitorPrefabData>()
@@ -57,8 +57,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 // Safety check
                 if(!TransformLookup.TryGetComponent(request.TargetToMonitor, out var transform))return;
                 
-                // This should not happen, only for safety
-                var prefab = PlayerFaction == FactionTag.Ally
+                var prefab = PlayerFaction == FactionTag.Light
                     ? MonitorPrefabData.LightMonitorPrefab
                     : MonitorPrefabData.DarkMonitorPrefab;
                 var monitor = ECB.Instantiate(index,prefab);

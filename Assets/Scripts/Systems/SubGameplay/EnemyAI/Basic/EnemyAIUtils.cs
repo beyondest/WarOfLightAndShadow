@@ -107,10 +107,10 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ResetPendingCommand(ref EnemyUnitCommandData commandData)
+        public static void ResetPendingCommand(ref AIUnitCommandData commandData)
         {
             commandData.TargetEntity = Entity.Null;
-            commandData.CommandType = EnemyCommandType.None;
+            commandData.CommandType = AICommandType.None;
             commandData.TargetPos = float3.zero;
             commandData.Focus = false;
         }

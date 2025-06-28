@@ -11,6 +11,7 @@
     "Unity.Physics",
     "Unity.Physics.Custom",
     "Unity.Physics.Stateful",
+    "Unity.AI.Navigation",
     "SparFlame.Core",
     "SparFlame.Components",
     "SparFlame.Systems.General.Audio"

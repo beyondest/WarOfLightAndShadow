@@ -14,7 +14,7 @@ namespace SparFlame.Systems.Construction
     public partial class ConstructSystemTransfer : SystemBase
     {
         // Internal Data
-        private FactionTag _playerCurrentFaction = FactionTag.Ally; // Only work for player command
+        private FactionTag _playerCurrentFaction = FactionTag.Light; // Only work for player command
         private bool _inGhostShow;
         private ConstructSystemConfig _config;
 

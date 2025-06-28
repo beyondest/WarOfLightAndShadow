@@ -53,25 +53,25 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 in DynamicBuffer<ArmyGroupMovingTarget> targets, in LocalTransform transform,
                 Entity selfEntity)
             {
-                if (!navAgent.CalculationComplete) return;
+                if (!navAgent.calculationComplete) return;
                 if (wayPoints.Length != 0)
                 {
                     ECB.SetComponentEnabled<PathVisualizeEnabled>(index, selfEntity, true);
                     foreach (var waypoint in wayPoints)
                     {
-                        finalWayPoints.Add(new ArmyGroupFinalWayPoint { Position = waypoint.Position });
+                        finalWayPoints.Add(new ArmyGroupFinalWayPoint { position = waypoint.position });
                     }
-                    var lastPosition = wayPoints[wayPoints.Length - 1].Position;
-                    var targetPosition = targets[data.CurTargetIndex].Position;
+                    var lastPosition = wayPoints[wayPoints.Length - 1].position;
+                    var targetPosition = targets[data.curTargetIndex].position;
                     if (math.distance(lastPosition, targetPosition) > Config.finalReachRange)
                     {
-                        movableData.IsTargetReachable = false;
+                        movableData.isTargetReachable = false;
                     }
                     wayPoints.Clear();
                 }
               
                 // Already finish all targets calculation
-                if (data.CurTargetIndex >= targets.Length - 1)
+                if (data.curTargetIndex >= targets.Length - 1)
                 {
                     wayPoints.Clear();
                     if (ArmyGroupCalculateEnableLookup.IsComponentEnabled(selfEntity))
@@ -82,12 +82,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 }
                 // ECB.SetComponentEnabled<ArmyGroupCalculateEnable>(index,selfEntity,true );
                 ArmyGroupCalculateEnableLookup.SetComponentEnabled(selfEntity, true);
-                data.CurTargetIndex++;
-                data.StartPosition = data.CurTargetIndex - 1 < 0
+                data.curTargetIndex++;
+                data.startPosition = data.curTargetIndex - 1 < 0
                     ? transform.Position
-                    : targets[data.CurTargetIndex - 1].Position;
-                navAgent.Extents = Config.extents;
-                navAgent.TargetPosition = targets[data.CurTargetIndex].Position;
+                    : targets[data.curTargetIndex - 1].position;
+                navAgent.extents = Config.extents;
+                navAgent.targetPosition = targets[data.curTargetIndex].position;
             }
         }
     }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using Sirenix.OdinInspector;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -20,6 +19,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [AssetsOnly]
         public GameObject unreachableRef;
 
+        public ArmyGroupVolumeObstacleConfig volumeObstacleConfig;
+        
         private class ArmyGroupMovingSystemAuthoringBaker : Baker<ArmyGroupMovingSystemAuthoring>
         {
             public override void Bake(ArmyGroupMovingSystemAuthoring authoring)
@@ -32,6 +33,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     UnreachableRef = GetEntity(authoring.unreachableRef,TransformUsageFlags.Dynamic),
                     Interval = authoring.armyGroupPathVisualizeInterval
                 });
+                var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
+                AddComponentObject(entity2, authoring.volumeObstacleConfig);
             }
         }
     }
@@ -52,7 +55,17 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public Entity ReachableRef;
         public Entity UnreachableRef;
         public float Interval;
-        
+    }
+
+    [Serializable]
+    public class ArmyGroupVolumeObstacleConfig : IComponentData
+    {
+        [AssetsOnly]
+        public GameObject lightCityObstacle;
+        [AssetsOnly]
+        public GameObject darkCityObstacle;
+        [AssetsOnly]
+        public GameObject neutralCityObstacle;
     }
 
  

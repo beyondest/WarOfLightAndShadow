@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
@@ -32,9 +33,13 @@ namespace SparFlame.Database
                 AddComponent(entity, new SubGameplayGeneralAttr
                 {
                     BaseTag = item.baseTag,
-                    FactionTag = item.factionTag,
+                    Faction = item.factionTag,
+                    SubFaction = SubFactionTag.None,
                     ID = item.id,
-                    BoxColliderSize = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
+                });
+                AddComponent(entity, new BoxColliderSize
+                {
+                    Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
                 });
 
                 // Stat 
@@ -179,7 +184,7 @@ namespace SparFlame.Database
         public static CityDataItem GetCityDataItemById(int id)
         {
             var idStart = DatabaseManager.CityDatabaseSo.idStart;
-            var cityItem = DatabaseManager.CityDatabaseSo.items[idStart + id];
+            var cityItem = DatabaseManager.CityDatabaseSo.items[id - idStart];
             return cityItem;
         }
     }

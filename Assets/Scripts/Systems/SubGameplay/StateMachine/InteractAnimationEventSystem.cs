@@ -236,7 +236,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 Filter = new VFXSubFilter
                                 {
                                     FactionFilterEnable = true,
-                                    Faction = subGameplayGeneralAttr.FactionTag,
+                                    Faction = subGameplayGeneralAttr.Faction,
                                     Tier = expData.curTier,
                                     TierFilterEnable = true,
                                 },
@@ -314,8 +314,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         {
                             var targetFaction = stateData.CurState switch
                             {
-                                InteractState.Attacking => ~subGameplayGeneralAttr.FactionTag,
-                                InteractState.Healing => subGameplayGeneralAttr.FactionTag,
+                                InteractState.Attacking => ~subGameplayGeneralAttr.Faction,
+                                InteractState.Healing => subGameplayGeneralAttr.Faction,
                                 InteractState.Harvesting => FactionTag.Neutral,
                                 _ => FactionTag.Neutral // This should never happen
                             };
@@ -341,7 +341,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 Filter = new BuffFilter
                                 {
                                     factionFilterEnabled = true,
-                                    faction = subGameplayGeneralAttr.FactionTag,
+                                    faction = subGameplayGeneralAttr.Faction,
                                     tier = expData.curTier,
                                     tierFilterEnabled = true
                                 }

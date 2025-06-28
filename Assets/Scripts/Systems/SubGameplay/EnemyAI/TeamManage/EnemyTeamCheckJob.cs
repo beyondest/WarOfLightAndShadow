@@ -17,9 +17,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [ReadOnly] public BufferLookup<GarrisonEntity> GarrisonEntityLookup;
         [ReadOnly] public NativeHashMap<int, int> TeamType2MaxSpecialUnitCount;
         private void Execute([ChunkIndexInQuery] int index,
-            ref DynamicBuffer<EnemyBaseTeamAvailableData> teamAvailableDatas,
-            ref DynamicBuffer<EnemyBaseTeamGeneralData> teamGeneralDatas,
-            ref DynamicBuffer<EnemyBaseGarrisonTowerData> garrisonTowerDatas)
+            ref DynamicBuffer<AIBaseTeamAvailableData> teamAvailableDatas,
+            ref DynamicBuffer<AIBaseTeamGeneralData> teamGeneralDatas,
+            ref DynamicBuffer<AIBaseGarrisonTowerData> garrisonTowerDatas)
         {
             // Check wait team complete
             for (var i = teamAvailableDatas.Length - 1; i >= 0; i--)
@@ -104,7 +104,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                     }
                 }
 
-                ECB.AppendToBuffer(index, teamData.BelongsToBase, new EnemyBaseTeamAvailableData
+                ECB.AppendToBuffer(index, teamData.BelongsToBase, new AIBaseTeamAvailableData
                 {
                     TeamEntity = selfEntity,
                     TeamType = teamData.TeamType,

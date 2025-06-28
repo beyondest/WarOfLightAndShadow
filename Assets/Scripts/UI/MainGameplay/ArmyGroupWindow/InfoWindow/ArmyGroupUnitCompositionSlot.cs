@@ -1,5 +1,4 @@
-﻿using SparFlame.Components.General;
-using SparFlame.Components.MainGameplay;
+﻿using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
 using TMPro;
@@ -13,7 +12,8 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private TMP_Text countText;
         [SerializeField] private TMP_Text unitName;
         [SerializeField] private Image tierImage;
-
+        [SerializeField] private Image selectedSprite;
+        
         public void SetTarget(in ArmyGroupUnitTypeData data)
         {
             var info = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(data.UnitType,
@@ -22,6 +22,24 @@ namespace SparFlame.UI.MainGameplay
             unitName.text = info.GameplayName;
             tierImage.sprite = BasicUIResourceManager.Instance.TierSprites[info.Tier];
             countText.text = data.Count.ToString();
+            _data = data;
+        }
+
+        public ArmyGroupUnitTypeData GetData()
+        {
+            return _data;
+        }
+
+        public void ToggleSelected(bool isSelected)
+        {
+            selectedSprite.enabled = isSelected;
+        }
+        
+        private ArmyGroupUnitTypeData _data;
+
+        private void Start()
+        {
+            ToggleSelected(false);
         }
     }
 }

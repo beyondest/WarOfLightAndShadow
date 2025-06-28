@@ -33,6 +33,7 @@ namespace SparFlame.Components.General
         ArmyGroupNotReachable = 19,
         ArmyGroupCountExceededInCity = 20,
         PleaseDeleteArmyGroupLastTargetForNewTarget = 21,
+        UnitInArmyGroupCannotGarrisonInBuilding = 22,
     }
 
     public enum HintType
@@ -53,7 +54,7 @@ namespace SparFlame.Components.General
 
     public struct HintsInfo : IBufferElementData
     {
-        public FixedString64Bytes Content;
+        public FixedString128Bytes Content;
         public float UpdateTime;
         public HintType HintType;
     }
@@ -62,7 +63,7 @@ namespace SparFlame.Components.General
     {
         public HintName Name;
         public HintType Type;
-        public FixedString64Bytes Content;
+        public FixedString128Bytes Content;
     }
 
 }

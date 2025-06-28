@@ -12,7 +12,7 @@ namespace SparFlame.Components.SubGameplay
         public Tier curTier;
         public int maxValue;
         public float curValue;
-        public int curLevel;
+        public int curLevel; // Init is 0
     }
 
     public struct ExpStaticConfig : IBufferElementData

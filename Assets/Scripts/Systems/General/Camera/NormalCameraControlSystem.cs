@@ -61,7 +61,7 @@ namespace SparFlame.Systems.General.Camera
                 _cameraTransform = _camera.transform;
                 _zoomHeight = _cameraTransform.localPosition.y;
                 var startPos = SystemAPI.GetSingleton<CameraStartPosData>();
-                _rigTransform.position = SystemAPI.GetSingleton<PlayerFactionData>().Value == FactionTag.Ally
+                _rigTransform.position = SystemAPI.GetSingleton<PlayerFactionData>().faction == FactionTag.Light
                     ? startPos.LightInitStartPos
                     : startPos.DarkInitStartPos;
                 return;

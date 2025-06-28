@@ -11,7 +11,7 @@ namespace SparFlame.UI.MainGameplay
             FactionTag currentSelectFaction)
         {
             button!.image.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[info.IconType];
-            button.image.color = currentSelectFaction == FactionTag.Ally ? Color.white : Color.black;
+            button.image.color = currentSelectFaction == FactionTag.Light ? Color.white : Color.black;
         }
     }
 }

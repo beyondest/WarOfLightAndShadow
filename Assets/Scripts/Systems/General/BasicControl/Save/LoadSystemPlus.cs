@@ -2,11 +2,13 @@
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Entities.Serialization;
 using Unity.Physics;
+using UnityEngine;
+
+// ReSharper disable ConvertToUsingDeclaration
 
 namespace SparFlame.Systems.General.BasicControl
 {
@@ -15,20 +17,31 @@ namespace SparFlame.Systems.General.BasicControl
     {
         private EntityQuery _loadArmyGroupQuery;
 
+        // Database
         private NativeHashMap<int, Entity> _globalIdxToPrefabs;
         private NativeHashMap<long, Entity> _tmpIdxToInstances;
         private NativeHashMap<int, ExpStaticConfig> _expDatabase;
 
+        // Sub gameplay component lookup
         private ComponentLookup<SeInGarrison> _inGarrisonLookup;
         private ComponentLookup<SeTmpId> _tmpIdLookup;
         private ComponentLookup<PhysicsMass> _physicsMassLookup;
         private ComponentLookup<SeInverseMass> _inverseMassLookup;
         private ComponentLookup<ExpData> _expDataLookup;
-        
+        private ComponentLookup<MovableData> _movableDataLookup;
+        private ComponentLookup<AttackAbility> _attackAbilityLookup;
+        private ComponentLookup<HealAbility> _healAbilityLookup;
+        private ComponentLookup<HarvestAbility> _harvestAbilityLookup;
+
         private BufferLookup<SeGarrisonEntity> _garrisonEntitiesLookup;
         private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
 
-        private ComponentLookup<VolumeObstacleSpawnRequest> _volumeObstacleSpawnRequestsLookup;
+        // private ComponentLookup<VolumeObstacleSpawnRequest> _volumeObstacleSpawnRequestsLookup;
+
+        // Main gameplay component lookup
+        private ComponentLookup<SeArmyGroupInGarrison> _armyGroupInGarrisonLookup;
+        private BufferLookup<SeCityGarrisonEntity> _cityGarrisonEntitiesLookup;
+
 
         private bool _initialized;
 
@@ -44,10 +57,17 @@ namespace SparFlame.Systems.General.BasicControl
             _tmpIdLookup = GetComponentLookup<SeTmpId>(true);
             _physicsMassLookup = GetComponentLookup<PhysicsMass>(true);
             _expDataLookup = GetComponentLookup<ExpData>(true);
-            
+            _movableDataLookup = GetComponentLookup<MovableData>(true);
+            _attackAbilityLookup = GetComponentLookup<AttackAbility>(true);
+            _healAbilityLookup = GetComponentLookup<HealAbility>(true);
+            _harvestAbilityLookup = GetComponentLookup<HarvestAbility>(true);
+
             _garrisonEntitiesLookup = GetBufferLookup<SeGarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
-            _volumeObstacleSpawnRequestsLookup = GetComponentLookup<VolumeObstacleSpawnRequest>(true);
+            // _volumeObstacleSpawnRequestsLookup = GetComponentLookup<VolumeObstacleSpawnRequest>(true);
+
+            _armyGroupInGarrisonLookup = GetComponentLookup<SeArmyGroupInGarrison>(true);
+            _cityGarrisonEntitiesLookup = GetBufferLookup<SeCityGarrisonEntity>(true);
 
             _loadArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>().Build();
         }
@@ -70,6 +90,7 @@ namespace SparFlame.Systems.General.BasicControl
                 _initialized = true;
                 SaveLoadController.Instance.OnEcsLoadCitySubData += LoadCitySubData;
                 SaveLoadController.Instance.OnEcsLoadArmyGroupSubData += LoadArmyGroupSubData;
+                SaveLoadController.Instance.OnEcsLoadGeneralGameData += LoadMainGameplayData;
             }
         }
 
@@ -83,8 +104,8 @@ namespace SparFlame.Systems.General.BasicControl
             var armyGroupAttrs = _loadArmyGroupQuery.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
             foreach (var armyGroupAttr in armyGroupAttrs)
             {
-                var armyGroupPath = SaveUtilities.GetArmyGroupSavePath(armyGroupAttr.SaveId, playerSaveSlot);
-                if(!File.Exists(armyGroupPath))continue;
+                var armyGroupPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot);
+                if (!File.Exists(armyGroupPath)) continue;
                 using (var deserializeWorld = new World("Deserialization World"))
                 {
                     var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
@@ -99,8 +120,56 @@ namespace SparFlame.Systems.General.BasicControl
                     EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SaveSystemPlus.SaveTmpTag>());
                 }
             }
-
             armyGroupAttrs.Dispose();
+
+            _movableDataLookup.Update(this);
+            _attackAbilityLookup.Update(this);
+            _healAbilityLookup.Update(this);
+            _harvestAbilityLookup.Update(this);
+
+            _garrisonEntitiesLookup.Update(this);
+            _garrisonTypeDataLookup.Update(this);
+            var ecb = new EntityCommandBuffer(Allocator.TempJob);
+
+            var loadJob = new LoadArmyGroupSubDataJob
+            {
+                ECB = ecb.AsParallelWriter(),
+                ExpDatabase = _expDatabase,
+                GlobalIdxToPrefabs = _globalIdxToPrefabs,
+                AttackAbilityLookup = _attackAbilityLookup,
+                HealAbilityLookup = _healAbilityLookup,
+                HarvestAbilityLookup = _harvestAbilityLookup,
+                MovableDataLookup = _movableDataLookup,
+            }.ScheduleParallel(Dependency);
+            loadJob.Complete();
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
+            _tmpIdxToInstances.Clear();
+            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeTmpId>>().WithEntityAccess())
+            {
+                _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
+            }
+
+            foreach (var (armyGroupAttr, entity) in SystemAPI.Query<RefRO<ArmyGroupAttr>>().WithAll<InSubGameTag>().WithEntityAccess())
+            {
+                _tmpIdxToInstances.Add(armyGroupAttr.ValueRO.saveId, entity);
+            }
+
+            var ecb2 = new EntityCommandBuffer(Allocator.TempJob);
+            var unitReplaceTmpIdJob = new ArmyGroupSubDataReplaceUnitTmpIdJob
+            {
+                ECB = ecb2.AsParallelWriter(),
+                TmpIdxToInstances = _tmpIdxToInstances,
+            }.ScheduleParallel(Dependency);
+            var armyGroupReplaceTmpJob = new ArmyGroupSubDataReplaceArmyGroupTmpIdJob
+            {
+                TmpIdxToInstances = _tmpIdxToInstances
+            }.ScheduleParallel(Dependency);
+            unitReplaceTmpIdJob.Complete();
+            armyGroupReplaceTmpJob.Complete();
+            ecb2.Playback(EntityManager);
+            ecb2.Dispose();
+            _tmpIdxToInstances.Clear();
         }
 
         private void LoadCitySubData(SubGameStatusData targetSubGameStatusData)
@@ -108,7 +177,7 @@ namespace SparFlame.Systems.General.BasicControl
             var city = targetSubGameStatusData.City;
             var cityAttr = SystemAPI.GetComponent<CityAttr>(city);
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
-            var citySavePath = SaveUtilities.GetCitySavePath(cityAttr.ID, playerSaveSlot);
+            var citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot);
 
             // Load city data
             var fileExist = File.Exists(citySavePath);
@@ -128,19 +197,23 @@ namespace SparFlame.Systems.General.BasicControl
                     EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SaveSystemPlus.SaveTmpTag>());
                 }
             }
-           
+
 
             _expDataLookup.Update(this);
             _inverseMassLookup.Update(this);
             _physicsMassLookup.Update(this);
             _tmpIdLookup.Update(this);
             _inGarrisonLookup.Update(this);
-            
+            _movableDataLookup.Update(this);
+            _attackAbilityLookup.Update(this);
+            _healAbilityLookup.Update(this);
+            _harvestAbilityLookup.Update(this);
+
             _garrisonEntitiesLookup.Update(this);
             _garrisonTypeDataLookup.Update(this);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            
-            
+
+
             var loadJob = new LoadSubGameplayJob
             {
                 ECB = ecb.AsParallelWriter(),
@@ -152,6 +225,11 @@ namespace SparFlame.Systems.General.BasicControl
                 GlobalIdxToPrefabs = _globalIdxToPrefabs,
                 InverseMassLookup = _inverseMassLookup,
                 ExpLookup = _expDataLookup,
+                HealAbilityLookup = _healAbilityLookup,
+                AttackAbilityLookup = _attackAbilityLookup,
+                HarvestAbilityLookup = _harvestAbilityLookup,
+                MovableDataLookup = _movableDataLookup,
+                ExpDatabase = _expDatabase,
             }.ScheduleParallel(Dependency);
             loadJob.Complete();
             ecb.Playback(EntityManager);
@@ -160,11 +238,11 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
             }
-            
+
             _garrisonEntitiesLookup.Update(this);
             _inGarrisonLookup.Update(this);
             var ecb2 = new EntityCommandBuffer(Allocator.TempJob);
-            var replaceTmpRefJob = new ReplaceTmpIdJob
+            var replaceTmpRefJob = new SubGameplayReplaceTmpIdJob
             {
                 ECB = ecb2.AsParallelWriter(),
                 SeGarrisonEntitiesLookup = _garrisonEntitiesLookup,
@@ -175,9 +253,9 @@ namespace SparFlame.Systems.General.BasicControl
             ecb2.Playback(EntityManager);
             ecb2.Dispose();
             _tmpIdxToInstances.Clear();
-            
-            
-            var ecb3 = new EntityCommandBuffer(Allocator.TempJob);
+
+
+            /*var ecb3 = new EntityCommandBuffer(Allocator.TempJob);
             _volumeObstacleSpawnRequestsLookup.Update(this);
             var buildingSpawnObstacleJob = new BuildingSpawnObstacleJob
             {
@@ -187,9 +265,156 @@ namespace SparFlame.Systems.General.BasicControl
             }.ScheduleParallel(Dependency);
             buildingSpawnObstacleJob.Complete();
             ecb3.Playback(EntityManager);
-            ecb3.Dispose();
+            ecb3.Dispose();*/
+        }
 
-         
+        private void LoadMainGameplayData()
+        {
+            var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
+            var cityMainDataPath = SaveUtilities.GetCityMainDataPath(playerSaveSlot);
+            var armyGroupMainDataPath = SaveUtilities.GetArmyGroupMainDataPath(playerSaveSlot);
+            var gameMainDataPath = SaveUtilities.GetGameMainDataPath(playerSaveSlot);
+
+
+            // Load city data
+            if (File.Exists(cityMainDataPath))
+            {
+                using (var deserializeWorld = new World("Deserialization World"))
+                {
+                    var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
+                    using (var reader =
+                           new StreamBinaryReader(cityMainDataPath))
+                    {
+                        SerializeUtility.DeserializeWorld(transaction, reader);
+                    }
+
+                    deserializeWorld.EntityManager.EndExclusiveEntityTransaction();
+                    EntityManager.MoveEntitiesFrom(deserializeWorld.EntityManager);
+                    EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SaveSystemPlus.SaveTmpTag>());
+                }
+            }
+            else
+            {
+                Debug.LogError($"Losing saving : slot {playerSaveSlot} path {cityMainDataPath}");
+            }
+
+            // Load army group data
+            if (File.Exists(armyGroupMainDataPath))
+            {
+                using (var deserializeWorld = new World("Deserialization World"))
+                {
+                    var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
+                    using (var reader =
+                           new StreamBinaryReader(armyGroupMainDataPath))
+                    {
+                        SerializeUtility.DeserializeWorld(transaction, reader);
+                    }
+
+                    deserializeWorld.EntityManager.EndExclusiveEntityTransaction();
+                    EntityManager.MoveEntitiesFrom(deserializeWorld.EntityManager);
+                    EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SaveSystemPlus.SaveTmpTag>());
+                }
+            }
+            else
+            {
+                Debug.LogError($"Losing saving : slot {playerSaveSlot} path {armyGroupMainDataPath}");
+            }
+
+            var ecb = new EntityCommandBuffer(Allocator.TempJob);
+
+            _armyGroupInGarrisonLookup.Update(this);
+            _cityGarrisonEntitiesLookup.Update(this);
+            _tmpIdLookup.Update(this);
+            var loadCityJob = new LoadCityMainDataJob
+            {
+                ECB = ecb.AsParallelWriter(),
+                TmpIdLookup = _tmpIdLookup,
+                GlobalIdxToPrefabs = _globalIdxToPrefabs,
+                CityGarrisonEntitiesLookup = _cityGarrisonEntitiesLookup
+            }.ScheduleParallel(Dependency);
+            loadCityJob.Complete();
+            var loadArmyGroupJob = new LoadArmyGroupMainDataJob
+            {
+                ECB = ecb.AsParallelWriter(),
+                InGarrisonLookup = _armyGroupInGarrisonLookup,
+                ArmyGroupManageConfig = SystemAPI.GetSingleton<ArmyGroupManageConfig>()
+            }.ScheduleParallel(Dependency);
+            loadArmyGroupJob.Complete();
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
+
+            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeTmpId>>().WithEntityAccess())
+            {
+                _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
+            }
+
+            _armyGroupInGarrisonLookup.Update(this);
+            _cityGarrisonEntitiesLookup.Update(this);
+            var ecb2 = new EntityCommandBuffer(Allocator.TempJob);
+            var job2 = new MainGameplayReplaceTmpIdJob
+            {
+                ECB = ecb2.AsParallelWriter(),
+                SeGarrisonEntitiesLookup = _cityGarrisonEntitiesLookup,
+                SeInGarrisonLookup = _armyGroupInGarrisonLookup,
+                TmpIdxToInstances = _tmpIdxToInstances,
+            }.ScheduleParallel(Dependency);
+            job2.Complete();
+            ecb2.Playback(EntityManager);
+            ecb2.Dispose();
+            _tmpIdxToInstances.Clear();
+
+
+            // Load game main data
+            if (File.Exists(gameMainDataPath))
+            {
+                using (var deserializeWorld = new World("Deserialization World"))
+                {
+                    var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
+                    using (var reader =
+                           new StreamBinaryReader(gameMainDataPath))
+                    {
+                        SerializeUtility.DeserializeWorld(transaction, reader);
+                    }
+
+                    deserializeWorld.EntityManager.EndExclusiveEntityTransaction();
+                    var dem = deserializeWorld.EntityManager;
+
+                    // Set Player faction data
+                    var factionData = dem.CreateEntityQuery(typeof(PlayerFactionData))
+                        .GetSingleton<PlayerFactionData>();
+                    SystemAPI.SetSingleton(factionData);
+
+                    // Set light resource data
+                    var savedLightResourceDatas = dem.CreateEntityQuery(typeof(LightResourceDataTag),
+                            typeof(ResourceTypeToAvailableAmount))
+                        .GetSingletonBuffer<ResourceTypeToAvailableAmount>();
+                    var lightResourceDatas =
+                        SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(
+                            SystemAPI.GetSingletonEntity<LightResourceDataTag>());
+                    for (var i = 0; i < savedLightResourceDatas.Length; i++)
+                    {
+                        var typeToAvailableAmount = savedLightResourceDatas[i];
+                        lightResourceDatas[i] = typeToAvailableAmount;
+                    }
+
+                    // Set dark resource data
+                    var savedDarkResourceDatas = dem.CreateEntityQuery(typeof(DarkResourceDataTag),
+                            typeof(ResourceTypeToAvailableAmount))
+                        .GetSingletonBuffer<ResourceTypeToAvailableAmount>();
+                    var darkResourceDatas =
+                        SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(
+                            SystemAPI.GetSingletonEntity<DarkResourceDataTag>());
+                    for (var i = 0; i < savedDarkResourceDatas.Length; i++)
+                    {
+                        var typeToAvailableAmount = savedDarkResourceDatas[i];
+                        darkResourceDatas[i] = typeToAvailableAmount;
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError($"Losing saving : slot {playerSaveSlot} path {gameMainDataPath}");
+            }
         }
 
         private void Initialize()
@@ -197,6 +422,7 @@ namespace SparFlame.Systems.General.BasicControl
             var buildingDatabase = SystemAPI.GetSingletonBuffer<BuildingEntityPrefabData>();
             var unitDatabase = SystemAPI.GetSingletonBuffer<UnitEntityPrefabData>();
             var expDatabase = SystemAPI.GetSingletonBuffer<ExpStaticConfig>();
+            var cityDatabase = SystemAPI.GetSingletonBuffer<CityEntityPrefabData>();
             _globalIdxToPrefabs =
                 new NativeHashMap<int, Entity>(buildingDatabase.Length + unitDatabase.Length, Allocator.Persistent);
             foreach (var prefabData in buildingDatabase)
@@ -205,6 +431,11 @@ namespace SparFlame.Systems.General.BasicControl
             }
 
             foreach (var prefabData in unitDatabase)
+            {
+                _globalIdxToPrefabs.Add(prefabData.GlobalIdx, prefabData.Prefab);
+            }
+
+            foreach (var prefabData in cityDatabase)
             {
                 _globalIdxToPrefabs.Add(prefabData.GlobalIdx, prefabData.Prefab);
             }
@@ -219,7 +450,7 @@ namespace SparFlame.Systems.General.BasicControl
         }
 
 
-        [BurstCompile]
+        /*[BurstCompile]
         [WithNone(typeof(VolumeObstacleSpawnRequest))]
         [WithAll(typeof(BuildingAttr))]
         [WithNone(typeof(ConstructingData))]
@@ -237,6 +468,6 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB.AddComponent(index, selfEntity, request);
                 ECB.SetComponentEnabled<VolumeObstacleSpawnRequest>(index, selfEntity, true);
             }
-        }
+        }*/
     }
 }

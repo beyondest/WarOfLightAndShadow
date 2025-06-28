@@ -1,9 +1,6 @@
-﻿using System;
-using SparFlame.Components.General;
-using SparFlame.UI.General;
-using TMPro;
+﻿using SparFlame.UI.General;
+using Unity.Entities;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace SparFlame.UI.MainGameplay
 {
@@ -11,16 +8,13 @@ namespace SparFlame.UI.MainGameplay
     {
         // Config
         [SerializeField] private GameObject controlPanel; // Delete, add function
-        [SerializeField] private ArmyGroupDetailWindow armyGroupDetailWindow;
-        [SerializeField] private GameObject armyGroupCompositionPanel;
-        private void Start()
-        {
-            armyGroupCompositionPanel.SetActive(false);
-        }
+        [SerializeField] private ArmyGroupManageDetailInfoSlot armyGroupDetailInfoSlot;
+   
 
         public void SetTarget(in ArmyGroupManageInfo manageInfo)
         {
-            armyGroupDetailWindow.TrySwitchTarget(manageInfo.ArmyGroupEntity);
+            armyGroupDetailInfoSlot.TrySwitchTarget(manageInfo.ArmyGroupEntity);
+            _targetEntity = manageInfo.ArmyGroupEntity;
         }
 
         public void OnClickDelete()
@@ -34,13 +28,19 @@ namespace SparFlame.UI.MainGameplay
         }
         public void OnClickShowComposition()
         {
-            armyGroupCompositionPanel.SetActive(true);
-            armyGroupDetailWindow.ShowComposition();
+            if (ArmyGroupManageCompositionWindow.Instance.TrySwitchTarget(_targetEntity))
+            {
+                ArmyGroupManageCompositionWindow.Instance.Show();
+            }
+            
         }
 
         public void OnClickCloseComposition()
         {
-            armyGroupCompositionPanel.SetActive(false);
+            ArmyGroupManageCompositionWindow.Instance.Hide();
         }
+
+        private Entity _targetEntity;
+
     }
 }
