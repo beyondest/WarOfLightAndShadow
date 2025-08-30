@@ -23,7 +23,6 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AIInitDistinguishConfig>();
             state.RequireForUpdate<GeneralRandom>();

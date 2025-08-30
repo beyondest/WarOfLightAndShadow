@@ -30,7 +30,7 @@ namespace SparFlame.Systems.General.Camera
 
         protected override void OnUpdate()
         {
-            var deltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+            var deltaTime = SystemAPI.Time.DeltaTime;
             var inputData = SystemAPI.GetSingleton<InputCameraFlyData>();
             var inputNormalData = SystemAPI.GetSingleton<InputCameraNormalData>();
             var config = SystemAPI.GetSingleton<FlyCameraControlConfig>();

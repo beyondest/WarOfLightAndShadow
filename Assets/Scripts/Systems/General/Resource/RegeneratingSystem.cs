@@ -10,10 +10,11 @@ namespace SparFlame.Systems.General.Resource
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<RegeneratingSystemConfig>();
+            state.RequireForUpdate<WorldTimeData>();
+            
         }
 
         [BurstCompile]
@@ -25,7 +26,7 @@ namespace SparFlame.Systems.General.Resource
             {
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Config = config,
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
+                DeltaHour = SystemAPI.GetSingleton<WorldTimeData>().deltaHour,
             }.ScheduleParallel();
         }
         
@@ -36,10 +37,10 @@ namespace SparFlame.Systems.General.Resource
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public RegeneratingSystemConfig Config;
-            [ReadOnly] public float DeltaTime;
+            [ReadOnly] public float DeltaHour;
             private void Execute([ChunkIndexInQuery] int index,ref RenewableData renewableData, Entity entity)
             {
-                renewableData.RegeneratingLeftTime -= DeltaTime * Config.RegeneratingTimeScale;
+                renewableData.RegeneratingLeftTime -= DeltaHour * Config.RegeneratingTimeScale;
                 if (renewableData.RegeneratingLeftTime < 0)
                 {
                     ECB.RemoveComponent<RegeneratingTag>(index,entity);

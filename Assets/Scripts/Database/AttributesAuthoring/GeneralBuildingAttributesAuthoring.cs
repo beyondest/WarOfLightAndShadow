@@ -27,7 +27,7 @@ namespace SparFlame.Database
                 {
                     SubTypeIndex = item.GetSubtypeIndex(),
                     Type = item.type,
-                    ConstructTime = item.constructTime
+                    ConstructTimeHours = item.constructTimeHours
                 });
                 
 
@@ -90,14 +90,14 @@ namespace SparFlame.Database
                         AddComponent(entity, new PlantGenerateAttr
                         {
                             GenerateResourceType = generatorData.generateResourceType,
-                            GenerateSpeed = generatorData.generateSpeed
+                            GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit
                         });
                         break;
                     case GeneratorType.ResourceMine:
                         AddComponent(entity, new ResourceMineGenerateAttr
                         {
                             GenerateResourceType = generatorData.generateResourceType,
-                            CurGenerateSpeed = generatorData.generateSpeed,
+                            GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit,
                             MinCultivatorsRequireToGenerate = generatorData.minWorkersCount < 1 ? 1 : generatorData.minWorkersCount
                         });
                         break;

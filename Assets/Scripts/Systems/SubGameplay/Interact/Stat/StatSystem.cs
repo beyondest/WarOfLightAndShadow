@@ -49,7 +49,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
         {
             state.RequireForUpdate<GarrisonBuffConfig>();
             state.RequireForUpdate<CavalryMoveBuffConfig>();
-            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();

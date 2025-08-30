@@ -41,18 +41,17 @@ namespace SparFlame.Systems.General.BasicControl
             });
             EntityManager.CreateSingleton(new GameTimeData
             {
-                DeltaTime = 0f,
-                ElapsedTime = 0f
             });
             EntityManager.CreateSingleton(new GameTimeScale
             {
                 Value = 1f
             });
+            EntityManager.CreateSingleton(new WorldTimeData());
+            
             EntityManager.CreateSingleton(new SubGameStatusData
             {
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
-                IsInBattle = false,
                 BattleTriggerRequest = default
             });
             EntityManager.CreateSingleton(new PlayerSaveSlot());
@@ -160,7 +159,6 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
-                IsInBattle = false,
                 BattleTriggerRequest = default
             });
            

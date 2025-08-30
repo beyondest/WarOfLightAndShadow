@@ -23,7 +23,7 @@ namespace SparFlame.Database
                     AddComponent(entity, new RenewableData
                     {
                         RegeneratingLeftTime = 0f,
-                        RegenerationTimeSeconds =  item.regenerationTimeSeconds,
+                        RegeneratingTimeHours =  item.regenerationTimeHours,
                     });
                 }
                 BakeVolumeObstacleAttr(item, entity);

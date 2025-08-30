@@ -10,7 +10,7 @@ namespace SparFlame.Components.SubGameplay
     {
         public UnitType Type;
         public int SubTypeIndex;
-        public float ConjureSpeedSecondPerUnit;
+        public float ConjureSpeedHoursPerUnit;
         public Random Rnd;
     }
 

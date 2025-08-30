@@ -284,8 +284,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     {
                         ECB.AddComponent(index, nextTierEntity, new ConstructingData
                         {
-                            LastTime = BuildingAttrLookup[expStaticConfig.NextTierPrefab]
-                                .ConstructTime
+                            LastTimeHours = BuildingAttrLookup[expStaticConfig.NextTierPrefab]
+                                .ConstructTimeHours
                         });
                         if (DwellingGeneratePopulationTagLookup.HasComponent(expStaticConfig.NextTierPrefab))
                             ECB.SetComponentEnabled<DwellingGeneratePopulationTag>(index, nextTierEntity, false);

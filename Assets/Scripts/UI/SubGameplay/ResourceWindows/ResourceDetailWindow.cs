@@ -114,7 +114,7 @@ namespace SparFlame.UI.SubGameplay
                 var renewableResourceData = _em.GetComponentData<RenewableData>(_targetEntity);
                 regeneratingGo.SetActive(true);
                 remainingTime.enabled = true;
-                remainingTime.text = UIMathMethods.FormatTime((int)renewableResourceData.RegeneratingLeftTime);
+                remainingTime.text = UIMathMethods.FormatTimeFromHours((int)renewableResourceData.RegeneratingLeftTime);
             }
             else
             {

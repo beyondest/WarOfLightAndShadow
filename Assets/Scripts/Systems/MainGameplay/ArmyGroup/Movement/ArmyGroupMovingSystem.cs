@@ -17,6 +17,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<GameTimeData>();
@@ -36,7 +37,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             new ArmyGroupMovingJob
             {
                 Config = SystemAPI.GetSingleton<ArmyGroupMovingSystemConfig>(),
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
+                DeltaHour = SystemAPI.GetSingleton<WorldTimeData>().deltaHour,
+                DeltaTime =  SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 Debug = debug,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -52,6 +54,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             [ReadOnly] public PlayerFactionData PlayerFactionData;
             [ReadOnly] public ArmyGroupMovingSystemConfig Config;
             [ReadOnly] public MovementDebug Debug;
+            [ReadOnly] public float DeltaHour;
             [ReadOnly] public float DeltaTime;
             public EntityCommandBuffer.ParallelWriter ECB;
 
@@ -80,7 +83,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     }
                 }
 
-
                 var maxDisToNextPoint = math.distance(finalWaypoints[movableData.curWaypoint].position, transform.Position);
                 if (movableData.curWaypoint + 1 < finalWaypoints.Length && maxDisToNextPoint < Config.waypointReachRange)
                 {
@@ -99,7 +101,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         : Debug.nonPlayerArmyGroupMovementScale;
                 }
 
-                var moveLength = DeltaTime * movableData.speed * scale;
+                var moveLength = DeltaHour * movableData.speedPerDay/24 * scale;
                 moveLength = math.min(moveLength, maxDisToNextPoint);
                 var targetRotation = quaternion.LookRotationSafe(-direction, math.up());
                 transform.Rotation = math.slerp(transform.Rotation.value, targetRotation,

@@ -26,8 +26,8 @@ namespace SparFlame.Components.SubGameplay
         public Entity ConjuringEntity;
         public int TargetAmount;
         public int ConjuredAmount;
-        public float RemainingTimeSeconds;
-        public float Counter;
+        public float RemainingTimeHours;
+        public float AccumulatedHours;
     }
 
 }

@@ -7,13 +7,13 @@ namespace SparFlame.Components.SubGameplay
     {
         public ResourceType GenerateResourceType;
         public int MinCultivatorsRequireToGenerate;
-        public float CurGenerateSpeed;
+        public float GenerateSpeedHoursPerUnit;
     }
 
     public struct PlantGenerateAttr : IComponentData
     {
         public ResourceType GenerateResourceType;
-        public float GenerateSpeed;
+        public float GenerateSpeedHoursPerUnit;
     }
     
     public struct GeneratingTag : IComponentData
@@ -22,6 +22,6 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct GenerateData : IComponentData
     {
-        public float GenerateTime;
+        public float AccumulatedHours;
     }
 }

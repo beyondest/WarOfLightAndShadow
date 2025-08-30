@@ -33,19 +33,6 @@ namespace SparFlame.Components.General
 
         Aetherium = 6, // Only Harvest
 
-        StarLight = 7, //  Only Harvest
-        NetherFlame = 8, // Only Harvest
-
-        BloodCrystal = 9, //  Only Harvest
-
-        SoulMist = 10, // Generate and harvest
-        ArcaneEnergy = 11, // Generate and harvest
-
-        ChaosShard = 12, //  only harvest
-        RelicFragments = 13, //  only harvest
-
-        OathOfLight = 14, // Light high-level population
-        ShadowCovenant = 15 // Dark high-level population
     }
 
     public struct ResourceAttr : IComponentData
@@ -56,7 +43,7 @@ namespace SparFlame.Components.General
 
     public struct RenewableData : IComponentData
     {
-        public float RegenerationTimeSeconds;
+        public float RegeneratingTimeHours;
         public float RegeneratingLeftTime;
     }
 
@@ -143,11 +130,6 @@ namespace SparFlame.Components.General
                 case ResourceType.SoulPact:
                 case ResourceType.Essence:
                 case ResourceType.Aetherium:
-                case ResourceType.BloodCrystal:
-                case ResourceType.SoulMist:
-                case ResourceType.ArcaneEnergy:
-                case ResourceType.ChaosShard:
-                case ResourceType.RelicFragments:
                     return false;
                 case ResourceType.LightEnergy:
                     correspondingResourceType = ResourceType.DarkEnergy;
@@ -161,18 +143,7 @@ namespace SparFlame.Components.General
                 case ResourceType.Obsidian:
                     correspondingResourceType = ResourceType.Luminite;
                     return true;
-                case ResourceType.StarLight:
-                    correspondingResourceType = ResourceType.NetherFlame;
-                    return true;
-                case ResourceType.NetherFlame:
-                    correspondingResourceType = ResourceType.StarLight;
-                    return true;
-                case ResourceType.OathOfLight:
-                    correspondingResourceType = ResourceType.ShadowCovenant;
-                    return true;
-                case ResourceType.ShadowCovenant:
-                    correspondingResourceType = ResourceType.OathOfLight;
-                    return true;
+              
                 default:
                     throw new ArgumentOutOfRangeException(nameof(resourceType), resourceType, null);
             }

@@ -126,7 +126,6 @@ namespace SparFlame.UI.MainGameplay
                 subFactionIcon.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.subFaction];
             }
         
-            
             var armyGroupAttr = Em.GetComponentData<ArmyGroupAttr>(_targetEntity);
             armyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
             armyGroupIcon.color = generalAttr.faction == FactionTag.Light ? Color.white : Color.black;
@@ -136,7 +135,7 @@ namespace SparFlame.UI.MainGameplay
                 FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
             
             compositionPanel.SetActive(relationship is Relationship.Player or Relationship.Ally);
-            formationButton.SetActive(relationship == Relationship.Player && !isSingleton);
+            formationButton.SetActive(relationship == Relationship.Player && isSingleton);
         }
 
         protected void UpdateDynamicData()
@@ -144,8 +143,7 @@ namespace SparFlame.UI.MainGameplay
             var units = Em.GetBuffer<ArmyGroupUnit>(_targetEntity);
             totalUnitCountText.text = units.Length.ToString();
             var movableData = Em.GetComponentData<ArmyGroupMovableData>(_targetEntity);
-            speedText.text = movableData.speed.ToString("F1");
-
+            speedText.text = movableData.speedPerDay.ToString("F1");
         }
 
         public void ShowComposition()

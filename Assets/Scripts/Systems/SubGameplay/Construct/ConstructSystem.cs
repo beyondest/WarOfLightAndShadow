@@ -32,7 +32,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<ConstructSystemConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<DarkResourceDataTag>();
@@ -275,7 +274,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         var attr = state.EntityManager.GetComponentData<BuildingAttr>(targetBuilding);
                         SystemAPI.SetComponent(targetBuilding, new ConstructingData
                         {
-                            LastTime = attr.ConstructTime
+                            LastTimeHours = attr.ConstructTimeHours
                         });
                         if(buildingAttr.Type == BuildingType.Dwellings)
                             state.EntityManager.SetComponentEnabled<DwellingGeneratePopulationTag>(targetBuilding,false);

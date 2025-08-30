@@ -188,8 +188,8 @@ namespace SparFlame.Database
          TableColumnWidth(250, false), TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
 
-        [VerticalGroup("Cost"), HorizontalGroup("Cost/1")]
-        public float constructTime = 10f;
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/1"), Tooltip("Construction time hours")]
+        public float constructTimeHours = 10f;
 
 
         [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/1"),
@@ -282,9 +282,8 @@ namespace SparFlame.Database
         public ResourceType generateResourceType;
 
         [ShowIf(nameof(IsPlantGenerator)), FoldoutGroup("Gameplay/Generator"), HorizontalGroup("Gameplay/Generator/2"),
-         Tooltip("All the cultivator generate speed bonus multiply this initial speed to " +
-                 "calculate the cur speed, not the cur speed")]
-        public float generateSpeed;
+         Tooltip("Generate speed hours per unit")]
+        public float generateSpeedHoursPerUnit;
 
         [ShowIf(nameof(IsResourceMine)), FoldoutGroup("Gameplay/Generator"), HorizontalGroup("Gameplay/Generator/1")]
         public int minWorkersCount = 1;

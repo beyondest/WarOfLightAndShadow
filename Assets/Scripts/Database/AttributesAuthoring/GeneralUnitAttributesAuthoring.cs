@@ -30,7 +30,7 @@ namespace SparFlame.Database
                 {
                     Type = item.type,
                     SubTypeIndex = item.GetSubtypeIndex(),
-                    ConjureSpeedSecondPerUnit = item.conjureSpeedSecondPerUnit,
+                    ConjureSpeedHoursPerUnit = item.conjureSpeedHoursPerUnit,
                     Rnd = new Random(seed)
                 });
                 switch (item.type)

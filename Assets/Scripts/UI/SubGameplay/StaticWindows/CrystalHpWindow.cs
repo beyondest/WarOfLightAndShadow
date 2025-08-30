@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.BasicControl;
 using Unity.Entities;
@@ -32,7 +31,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         private void Update()
         {
             var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if (!subGameStatusData.IsInBattle
+            if (!GameStatusUtils.IsInBattle(subGameStatusData)
                 || _crystalQuery.IsEmpty)
             {
                 crystalHpFilled.enabled = false;
@@ -52,10 +51,6 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         }
         
-        private void UpdateStaticInfo()
-        {
-           
-            
-        }
+    
     }
 }

@@ -213,7 +213,7 @@ namespace SparFlame.Systems.General.Camera
                 : _config.maxRotationSpeed;
 
             quaternion deltaRotation = quaternion.RotateY(
-                math.radians(inputValue * speed * SystemAPI.GetSingleton<GameTimeData>().DeltaTime)
+                math.radians(inputValue * speed * SystemAPI.Time.DeltaTime)
             );
 
             _rigTransform.rotation = math.mul(
@@ -319,7 +319,7 @@ namespace SparFlame.Systems.General.Camera
         private void UpdateRigTranslationVelocity()
         {
             _horizontalVelocity = ((float3)_rigTransform.transform.position - _lastPosition) /
-                                  SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+                                  SystemAPI.Time.DeltaTime;
             _horizontalVelocity.y = 0f;
             _lastPosition = _rigTransform.transform.position;
         }
@@ -330,22 +330,22 @@ namespace SparFlame.Systems.General.Camera
             {
                 //create a ramp up or acceleration
                 var speed = math.lerp(_config.speedForTargetMoving, _config.translationMaxSpeed,
-                    SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.translationAcceleration);
+                    SystemAPI.Time.DeltaTime * _config.translationAcceleration);
                 if (_inputData is { SpeedUp: true, DraggingCamera: false }) speed *= _config.speedUpFactor;
                 _rigTransform.position +=
-                    (Vector3)_targetRigPosDelta * speed * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+                    (Vector3)_targetRigPosDelta * speed * SystemAPI.Time.DeltaTime;
             }
             else
             {
                 //create smooth slow down
                 _horizontalVelocity = math.lerp(_horizontalVelocity, float3.zero,
-                    SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.translationDamping);
+                    SystemAPI.Time.DeltaTime * _config.translationDamping);
                 if (!math.any(math.isnan(_horizontalVelocity)))
                 {
                     _rigTransform.position +=
-                        (Vector3)_horizontalVelocity * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+                        (Vector3)_horizontalVelocity * SystemAPI.Time.DeltaTime;
                 }
-                // _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+                // _rigTransform.position += (Vector3)_horizontalVelocity * SystemAPI.Time.DeltaTime;
             }
 
             //reset for next frame
@@ -363,7 +363,7 @@ namespace SparFlame.Systems.General.Camera
             
             _cameraTransform.localPosition =
                 math.lerp(_cameraTransform.localPosition, zoomTarget,
-                    SystemAPI.GetSingleton<GameTimeData>().DeltaTime * _config.zoomDamping);
+                    SystemAPI.Time.DeltaTime * _config.zoomDamping);
             _cameraTransform.LookAt(_rigTransform.transform);
             
         }

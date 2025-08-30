@@ -13,6 +13,7 @@ namespace SparFlame.UI.General
         [Header("Gameplay UI Panel")]
         [SerializeField] private GameObject subGameplayUI;
         [SerializeField] private GameObject mainGameplayUI;
+        [SerializeField] private GameObject staticWindowPanel;
         
         [Header("Menus")]
         [SerializeField] private GameObject pauseMenu;
@@ -60,10 +61,23 @@ namespace SparFlame.UI.General
             GameController.Instance.ResumeGame(false);
         }
 
+        public void OnClickSaveGame()
+        {
+            var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
+            if (GameStatusUtils.IsInBattle(subGameStatusData))
+            {
+                ConfirmWindow.Instance.Show("You cannot save game while in battle");
+            }
+            else
+            {
+                SaveLoadController.Instance.SyncSaveGame();
+            }
+        }
+
         public void OnClickExit()
         {
-            var subGameStatus = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if (subGameStatus.IsInBattle)
+            var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
+            if (GameStatusUtils.IsInBattle(subGameStatusData))
             {
                 ConfirmWindow.Instance.Show("Are you sure you want to exit the game? You cannot save the game when in battle",
                     () =>
@@ -79,8 +93,8 @@ namespace SparFlame.UI.General
 
         public void OnClickGoToMainMenu()
         {
-            var subGameStatus = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if (subGameStatus.IsInBattle)
+            var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
+            if (GameStatusUtils.IsInBattle(subGameStatusData))
             {
                 ConfirmWindow.Instance.Show("Are you sure you want to go back to the main menu? You cannot save the game when in battle",
                     () =>
@@ -89,7 +103,8 @@ namespace SparFlame.UI.General
                         mainMenu.SetActive(true);
                         gameOverMenu.SetActive(false);
                         subGameplayUI.SetActive(false);
-                        GameController.Instance.EndGameToMainMenu(subGameStatus.SubGameStatus != SubGameStatus.None);
+                        staticWindowPanel.SetActive(false);
+                        GameController.Instance.EndGameToMainMenu(subGameStatusData.SubGameStatus != SubGameStatus.None);
                     });
             }
             else
@@ -97,8 +112,9 @@ namespace SparFlame.UI.General
                 pauseMenu.SetActive(false);
                 mainMenu.SetActive(true);
                 gameOverMenu.SetActive(false);
-                subGameplayUI.SetActive(false);
-                GameController.Instance.EndGameToMainMenu(subGameStatus.SubGameStatus != SubGameStatus.None);
+                mainGameplayUI.SetActive(false);
+                staticWindowPanel.SetActive(false);
+                GameController.Instance.EndGameToMainMenu(subGameStatusData.SubGameStatus != SubGameStatus.None);
             }
            
         }
@@ -169,6 +185,7 @@ namespace SparFlame.UI.General
             settings.SetActive(false);
             mainGameplayUI.SetActive(false);
             subGameplayUI.SetActive(false);
+            staticWindowPanel.SetActive(false);
 
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _subGameStatusQuery = _em.CreateEntityQuery(typeof(SubGameStatusData));
@@ -202,6 +219,7 @@ namespace SparFlame.UI.General
             selectMenu.SetActive(false);
             selectMenuElements.SetActive(false);
             mainGameplayUI.SetActive(true);
+            staticWindowPanel.SetActive(true);
             subGameplayUI.SetActive(false);
         }
 

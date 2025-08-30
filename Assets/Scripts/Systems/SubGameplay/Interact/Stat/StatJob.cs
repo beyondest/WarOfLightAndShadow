@@ -274,7 +274,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         if (RenewableResourceDataLookup.TryGetComponent(request.Interactee, out var renewableData))
                         {
                             var resourceAttr = ResourceAttrLookup[request.Interactee];
-                            renewableData.RegeneratingLeftTime = renewableData.RegenerationTimeSeconds;
+                            renewableData.RegeneratingLeftTime = renewableData.RegeneratingTimeHours;
                             var bias = (resourceAttr.AmountRange.upper - resourceAttr.AmountRange.lower) * RandomValue;
                             statInteractee.maxValue = (int)(resourceAttr.AmountRange.lower + bias);
                             statInteractee.curValue = statInteractee.maxValue;

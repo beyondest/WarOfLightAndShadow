@@ -16,14 +16,14 @@ namespace SparFlame.Components.SubGameplay
 
     public struct ConstructingData : IComponentData
     {
-        public float LastTime;
+        public float LastTimeHours;
     }
     
     public struct BuildingAttr : IComponentData
     {
         public BuildingType Type;
         public int SubTypeIndex;
-        public float ConstructTime;
+        public float ConstructTimeHours;
     }
 
         public enum BuildingType 

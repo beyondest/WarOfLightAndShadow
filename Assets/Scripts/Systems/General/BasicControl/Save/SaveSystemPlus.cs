@@ -252,6 +252,7 @@ namespace SparFlame.Systems.General.BasicControl
             entities.Add( SystemAPI.GetSingletonEntity<PlayerFactionData>());
             entities.Add(SystemAPI.GetSingletonEntity<LightResourceDataTag>());
             entities.Add(SystemAPI.GetSingletonEntity<DarkResourceDataTag>());
+            entities.Add(SystemAPI.GetSingletonEntity<WorldTimeData>());
             
             using (var serializeWorld = new World("Serialization World"))
             {

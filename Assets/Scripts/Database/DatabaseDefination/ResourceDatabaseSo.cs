@@ -100,7 +100,7 @@ namespace SparFlame.Database
         public bool renewable;
         
         [ShowIf(nameof(renewable)),FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/2")]
-        public int regenerationTimeSeconds;
+        public int regenerationTimeHours;
         protected override void InitDefaults()
         {
             base.InitDefaults();

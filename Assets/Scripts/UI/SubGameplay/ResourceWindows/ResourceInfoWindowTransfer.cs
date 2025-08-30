@@ -7,25 +7,23 @@ namespace SparFlame.UI.SubGameplay
 {
     public partial class ResourceInfoWindowTransfer : SystemBase
     {
-        private FactionTag _faction;
 
         protected override void OnCreate()
         {
-            RequireForUpdate<SubGamingTag>();
+            RequireForUpdate<GameStatusData>();
             RequireForUpdate<ResourceTypeToAvailableAmount>();
             RequireForUpdate<UnitSelectionData>();
+            RequireForUpdate<PlayerFactionData>();
         }
 
-        protected override void OnStartRunning()
-        {
-            _faction = FactionTag.Neutral;
-        }
+  
+        
 
         protected override void OnUpdate()
         {
-            var selectionData = SystemAPI.GetSingleton<UnitSelectionData>();
-            var curFaction = selectionData.CurrentSelectFaction;
-            var entity = curFaction switch
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
+            var entity = playerFaction switch
             {
                 FactionTag.Light =>
                     SystemAPI.GetSingletonEntity<LightResourceDataTag>(),
@@ -35,12 +33,12 @@ namespace SparFlame.UI.SubGameplay
                 _ => throw new ArgumentOutOfRangeException()
             };
             var datas = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(entity);
-            if (_faction != curFaction)
+            if (gameStatusData.Value == GameStatus.Init)
             {
                 ResourceInfoWindow.Instance.UpdateStaticData(datas);
-                _faction = curFaction;
             }
-
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming )return;
+            
             var data = SystemAPI.GetComponent<PopulationSpecialData>(entity);
             ResourceInfoWindow.Instance.occupiedPopulationValue =data
                 .OccupiedAmount;
@@ -49,3 +47,4 @@ namespace SparFlame.UI.SubGameplay
         }
     }
 }
+

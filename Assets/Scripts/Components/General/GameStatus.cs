@@ -32,8 +32,18 @@ namespace SparFlame.Components.General
         public SubGameStatus SubGameStatus;
         public Entity City;
         public BattleTriggerRequest BattleTriggerRequest;
-        public bool IsInBattle;
     }
     
     public struct InSubGameTag : IComponentData{}
+
+    public static class GameStatusUtils
+    {
+        public static bool IsInBattle(SubGameStatusData subGameStatusData)
+        {
+            return subGameStatusData.SubGameStatus == SubGameStatus.PlayerSiege
+                   || subGameStatusData.SubGameStatus == SubGameStatus.PlayerDefend
+                   || subGameStatusData.SubGameStatus == SubGameStatus.Encounter
+                   || subGameStatusData.SubGameStatus == SubGameStatus.Support;
+        }
+    }
 }

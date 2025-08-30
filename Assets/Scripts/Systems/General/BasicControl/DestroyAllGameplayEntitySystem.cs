@@ -29,7 +29,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         protected override void OnStartRunning()
         {
-            if (!_initialized)
+            if (!_initialized && GameController.Instance)
             {
                 GameController.Instance.OnEcsClearGameplayEntities +=
                     type =>

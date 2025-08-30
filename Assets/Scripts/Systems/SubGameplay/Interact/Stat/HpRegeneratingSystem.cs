@@ -1,4 +1,4 @@
-﻿using SparFlame.Components.General;
+﻿/*using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
@@ -13,7 +13,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
+            state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<StatSystemConfig>();
             _aiTagLookup = state.GetComponentLookup<AITag>();
@@ -28,13 +28,13 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 AITagLookup = _aiTagLookup,
                 Config = config,
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime
+                DeltaHour = SystemAPI.GetSingleton<WorldTimeData>().deltaHour
             }.ScheduleParallel();
             new NormalHpRegenerationJob
             {
                 AITagLookup = _aiTagLookup,
                 Config = config,
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime
+                DeltaTime = SystemAPI.GetSingleton<WorldTimeData>().deltaHour
             }.ScheduleParallel();
         }
 
@@ -46,7 +46,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [WithNone(typeof(ResourceAttr))]
         private partial struct GarrisonHpRegenerationJob : IJobEntity
         {
-            [ReadOnly] public float DeltaTime;
+            [ReadOnly] public float DeltaHour;
             [ReadOnly] public StatSystemConfig Config;
             [ReadOnly] public ComponentLookup<AITag> AITagLookup;
             private void Execute(ref StatData statData, in SubGameplayGeneralAttr subGameplayGeneralAttr,Entity selfEntity)
@@ -59,7 +59,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     : Config.BuildingHpRegenerationRate;
                 speed *= speedBoost;
                 
-                statData.curValue += DeltaTime * speed;
+                statData.curValue += DeltaHour * speed;
                 if(statData.curValue >= statData.maxValue + statData.bonus)statData.curValue = statData.maxValue;
             }
         }
@@ -87,4 +87,4 @@ namespace SparFlame.Systems.SubGameplay.Interact
             }
         }
     }
-}
+}*/

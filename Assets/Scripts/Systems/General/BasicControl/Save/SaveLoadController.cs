@@ -12,7 +12,9 @@ namespace SparFlame.Systems.General.BasicControl
         // Load actions
         public event Action OnEcsLoadArmyGroupSubData;
         public event Action<SubGameStatusData> OnEcsLoadCitySubData;
-        public event Action OnEcsLoadGeneralGameData;
+        public event Action OnEcsLoadGameMainData;
+
+        public event Action OnEcsLoadMainGameplayData;
         
         // Save actions
         public event Action OnEcsSaveCitySubData;
@@ -23,7 +25,7 @@ namespace SparFlame.Systems.General.BasicControl
         public void SyncSaveGame()
         {
             var subGameStatusData = _currentSubGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if(subGameStatusData.IsInBattle)return; // When in battle, saving is not allowed
+            if(GameStatusUtils.IsInBattle(subGameStatusData))return; // When in battle, saving is not allowed
             
             // If battle not complete, save game is not allowed, player only has the pre-battle saving;
             // If battle complete but player failed, city sub game data still not save, because now city does not belong to player;
@@ -55,10 +57,16 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        public void LoadGeneralGameData()
+        public void LoadGameMainData()
         {
-            OnEcsLoadGeneralGameData?.Invoke();
+            OnEcsLoadGameMainData?.Invoke();
         }
+
+        public void LoadMainGameplayData()
+        {
+            OnEcsLoadMainGameplayData?.Invoke();
+        }
+        
 
         public void SyncLoadSubGameData(SubGameStatusData targetSubGameStatusData)
         {

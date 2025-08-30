@@ -105,7 +105,8 @@ namespace SparFlame.Systems.General.BasicControl
         {
             if (!_ifNewSlot && _ifInMainMenu)
             {
-                SaveLoadController.Instance.LoadGeneralGameData();
+                SaveLoadController.Instance.LoadGameMainData();
+                SaveLoadController.Instance.LoadMainGameplayData();
             }
             _ifInMainMenu = false;
             InputListener.Instance.EnableMainGameMaps();
@@ -120,7 +121,6 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 SubGameStatus = SubGameStatus.PlayerCity,
                 City = city,
-                IsInBattle = false,
                 BattleTriggerRequest = default
             };
             
@@ -153,7 +153,6 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
-                IsInBattle = false,
                 BattleTriggerRequest = default
             };
             
@@ -196,7 +195,6 @@ namespace SparFlame.Systems.General.BasicControl
                 {
                     SubGameStatus = SubGameStatus.Encounter,
                     City = Entity.Null,
-                    IsInBattle = false,
                     BattleTriggerRequest = default
                 });
             SubGameStartForPlayer();

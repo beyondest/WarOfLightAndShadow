@@ -146,7 +146,7 @@ namespace SparFlame.Systems.General.Input
             // Check if double click
             if (data.ClickFlag != ClickFlag.Start)
             {
-                _currentClickInterval += SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
+                _currentClickInterval += SystemAPI.Time.DeltaTime;
                 _currentClickInterval = math.min(10000, _currentClickInterval);
             }
             else

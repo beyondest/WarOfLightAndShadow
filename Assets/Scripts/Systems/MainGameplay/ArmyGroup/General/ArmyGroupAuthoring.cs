@@ -48,7 +48,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 AddBuffer<ArmyGroupMovingTarget>(entity);
                 AddComponent(entity, new ArmyGroupMovableData
                 {
-                    speed = authoring.movementInitialSpeed,
+                    speedPerDay = authoring.movementInitialSpeed,
                     curWaypoint = 0,
                     isTargetReachable = true
                 });

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,11 +15,18 @@ namespace SparFlame.UI.General
         /// </summary>
         /// <param name="totalSeconds"></param>
         /// <returns></returns>
-        public static string FormatTime(int totalSeconds)
+        public static string FormatTimeFromSeconds(int totalSeconds)
         {
             var minutes = totalSeconds / 60;
             var seconds = totalSeconds % 60;
             return $"{minutes} min : {seconds} s";
+        }
+
+        public static string FormatTimeFromHours(float totalHours)
+        {
+            var days = (int) totalHours / 24;
+            var hours = math.ceil( totalHours % 24);
+            return $"{days} days : {hours} h";
         }
 
         public static async void AnimateColorAsync(Image image, Color from, Color to, float duration)

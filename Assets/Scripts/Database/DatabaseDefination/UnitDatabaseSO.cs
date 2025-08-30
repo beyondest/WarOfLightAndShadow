@@ -106,7 +106,7 @@ namespace SparFlame.Database
                         item.harvestTargets = lightItem.harvestTargets;
                         item.harvestTargetsPerLevel = lightItem.harvestTargetsPerLevel;
 
-                        item.conjureSpeedSecondPerUnit = lightItem.conjureSpeedSecondPerUnit;
+                        item.conjureSpeedHoursPerUnit = lightItem.conjureSpeedHoursPerUnit;
                         item.costs = new List<CostResourceTypeAmountPair>();
                         foreach (var cost in lightItem.costs)
                         {
@@ -187,8 +187,8 @@ namespace SparFlame.Database
          TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
 
-        [VerticalGroup("Cost"), HorizontalGroup("Cost/2")]
-        public float conjureSpeedSecondPerUnit;
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/2"),Tooltip("Conjure speed hours per unit")]
+        public float conjureSpeedHoursPerUnit;
 
         [ShowIf(nameof(HasLightGroupBuff)), FoldoutGroup("Additional/Buff"),
          AssetsOnly, Tooltip("Light shield and light cavalry will raise buff by aoe trigger")]

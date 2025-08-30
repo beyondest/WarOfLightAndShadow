@@ -93,7 +93,7 @@ namespace SparFlame.UI.SubGameplay
                     slotComponent.remainedCountText.text =
                         $"{conjureData.ConjuredAmount} / {conjureData.TargetAmount}";
                     slotComponent.remainedTimeText.text =
-                        UIMathMethods.FormatTime((int)conjureData.RemainingTimeSeconds);
+                        UIMathMethods.FormatTimeFromHours((int)conjureData.RemainingTimeHours);
                 }
                 else
                 {

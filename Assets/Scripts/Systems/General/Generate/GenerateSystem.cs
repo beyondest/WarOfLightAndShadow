@@ -17,7 +17,7 @@ namespace SparFlame.Systems.Generate
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
+            state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<BuildingGenerateSystemConfig>();
             state.RequireForUpdate<SubGamingTag>();
@@ -30,23 +30,24 @@ namespace SparFlame.Systems.Generate
         {
             _generatingTagLookup.Update(ref state);
             _harvestAbilityLookup.Update(ref state);
-            var config = SystemAPI.GetSingleton<BuildingGenerateSystemConfig>();
+            // var config = SystemAPI.GetSingleton<BuildingGenerateSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            var worldTimeData = SystemAPI.GetSingleton<WorldTimeData>();
              new ResourceMineGenerateJob
             {
                 ECB = ecb,
                 GeneratingTagLookup = _generatingTagLookup,
-                HarvestAbilityLookup = _harvestAbilityLookup,
-                Config = config,
-                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
+                // HarvestAbilityLookup = _harvestAbilityLookup,
+                // Config = config,
+                DeltaHour = worldTimeData.deltaHour
             }.ScheduleParallel();
 
             new PlantGenerateJob
             {
                 ECB = ecb,
-                Config = config,
-                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                // Config = config,
+                DeltaHour = worldTimeData.deltaHour
             }.ScheduleParallel();
         }
 
@@ -58,16 +59,19 @@ namespace SparFlame.Systems.Generate
         private partial struct PlantGenerateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public float ElapsedTime;
-            [ReadOnly] public BuildingGenerateSystemConfig Config;
+            [ReadOnly] public float DeltaHour;
+            // [ReadOnly] public BuildingGenerateSystemConfig Config;
 
             private void Execute([ChunkIndexInQuery] int index, ref PlantGenerateAttr plantGenerateAttr, ref GenerateData data,
                in BuildingAttr buildingAttr, in SubGameplayGeneralAttr subGameplayGeneralAttr, in LocalTransform transform)
             {
+                data.AccumulatedHours += DeltaHour;
+                
                 // Generate resource
-                if (ElapsedTime > data.GenerateTime)
+                if (data.AccumulatedHours >=  plantGenerateAttr.GenerateSpeedHoursPerUnit)
                 {
-                    data.GenerateTime = ElapsedTime + Config.GenerateIntervalSeconds;
+                    var amount = (int)(data.AccumulatedHours /  plantGenerateAttr.GenerateSpeedHoursPerUnit);
+                    data.AccumulatedHours %= plantGenerateAttr.GenerateSpeedHoursPerUnit;
                     // Generate resource
                     var request = ECB.CreateEntity(index);
                     ECB.AddComponent<SubGameplayEntityTag>(index, request);
@@ -75,7 +79,7 @@ namespace SparFlame.Systems.Generate
                     {
                         Type = plantGenerateAttr.GenerateResourceType,
                         FromFaction = subGameplayGeneralAttr.Faction,
-                        AbsAmount = math.abs((int)plantGenerateAttr.GenerateSpeed),
+                        AbsAmount = amount,
                         RequestType = ResourceRequestType.Generate
                     });
                     // Generate Pop Number VFX
@@ -88,7 +92,7 @@ namespace SparFlame.Systems.Generate
                             : (int)PopNumberType.DarkGenerate,
                         Position = transform.Position,
                         Scale = 1f,
-                        Value = math.abs((int)plantGenerateAttr.GenerateSpeed),
+                        Value = amount,
                     });
                 }
             }
@@ -101,9 +105,9 @@ namespace SparFlame.Systems.Generate
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
-            [ReadOnly] public ComponentLookup<HarvestAbility> HarvestAbilityLookup;
-            [ReadOnly] public float ElapsedTime;
-            [ReadOnly] public BuildingGenerateSystemConfig Config;
+            // [ReadOnly] public ComponentLookup<HarvestAbility> HarvestAbilityLookup;
+            [ReadOnly] public float DeltaHour;
+            // [ReadOnly] public BuildingGenerateSystemConfig Config;
 
             private void Execute([ChunkIndexInQuery] int index, ref ResourceMineGenerateAttr resourceMineGenerateAttr, ref GenerateData data,
                 in DynamicBuffer<GarrisonEntity> entities, in BuildingAttr buildingAttr, in SubGameplayGeneralAttr subGameplayGeneralAttr,
@@ -114,7 +118,7 @@ namespace SparFlame.Systems.Generate
                 // Not enough workers
                 if (entities.Length < resourceMineGenerateAttr.MinCultivatorsRequireToGenerate)
                 {
-                    resourceMineGenerateAttr.CurGenerateSpeed = 0f;
+                    resourceMineGenerateAttr.GenerateSpeedHoursPerUnit = 0f;
                     if (GeneratingTagLookup.HasComponent(entity))
                         ECB.RemoveComponent<GeneratingTag>(index, entity);
                     return;
@@ -123,19 +127,28 @@ namespace SparFlame.Systems.Generate
                 // Generating
                 if (!GeneratingTagLookup.HasComponent(entity))
                     ECB.AddComponent<GeneratingTag>(index, entity);
+
+                #region GenerateSpeed not influneced by garrison count. Deprecated
+
+                
+
                 // Calculate speed
-                var speed = 0f;
-                foreach (var garrisonEntity in entities)
-                {
-                    var harvestAbility = HarvestAbilityLookup[garrisonEntity.Value];
-                    speed += harvestAbility.Amount * harvestAbility.Speed;
-                }
-                resourceMineGenerateAttr.CurGenerateSpeed = speed;
+                // var speed = 0f;
+                // foreach (var garrisonEntity in entities)
+                // {
+                //     var harvestAbility = HarvestAbilityLookup[garrisonEntity.Value];
+                //     speed += harvestAbility.Amount * harvestAbility.Speed;
+                // }
+                // resourceMineGenerateAttr.CurGenerateSpeed = speed;
                 
                 // Generate resource
-                if (ElapsedTime > data.GenerateTime)
+                #endregion
+
+                data.AccumulatedHours += DeltaHour;
+                if ( data.AccumulatedHours>= resourceMineGenerateAttr.GenerateSpeedHoursPerUnit)
                 {
-                    data.GenerateTime = ElapsedTime + Config.GenerateIntervalSeconds;
+                    var amount = (int)(data.AccumulatedHours / resourceMineGenerateAttr.GenerateSpeedHoursPerUnit);
+                    data.AccumulatedHours %= resourceMineGenerateAttr.GenerateSpeedHoursPerUnit;
                     // Generate resource
                     var request = ECB.CreateEntity(index);
                     ECB.AddComponent<SubGameplayEntityTag>(index, request);
@@ -143,7 +156,7 @@ namespace SparFlame.Systems.Generate
                     {
                         Type = resourceMineGenerateAttr.GenerateResourceType,
                         FromFaction = subGameplayGeneralAttr.Faction,
-                        AbsAmount = math.abs((int)resourceMineGenerateAttr.CurGenerateSpeed),
+                        AbsAmount = amount,
                         RequestType = ResourceRequestType.Generate
                     });
                     // Generate Pop Number VFX
@@ -156,7 +169,7 @@ namespace SparFlame.Systems.Generate
                             : (int)PopNumberType.DarkGenerate,
                         Position = transform.Position,
                         Scale = 1f,
-                        Value = math.abs((int)resourceMineGenerateAttr.CurGenerateSpeed),
+                        Value = amount,
                     });
                 }
             }

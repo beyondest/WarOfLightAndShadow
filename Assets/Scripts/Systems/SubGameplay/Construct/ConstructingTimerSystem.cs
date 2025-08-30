@@ -11,7 +11,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
+            state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -20,7 +20,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
         {
             new ConstructingTimerJob
             {
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
+                DeltaHours = SystemAPI.GetSingleton<WorldTimeData>().deltaHour,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
             }.ScheduleParallel();
@@ -30,13 +30,13 @@ namespace SparFlame.Systems.SubGameplay.Construct
         [BurstCompile]
         public partial struct ConstructingTimerJob : IJobEntity
         {
-            [ReadOnly] public float DeltaTime;
+            [ReadOnly] public float DeltaHours;
             public EntityCommandBuffer.ParallelWriter ECB;
             private void Execute([ChunkIndexInQuery]int index,ref ConstructingData constructingTimer,
                 Entity selfEntity, in BuildingAttr buildingAttr)
             {
-                constructingTimer.LastTime -= DeltaTime;
-                if (constructingTimer.LastTime <= 0)
+                constructingTimer.LastTimeHours -= DeltaHours;
+                if (constructingTimer.LastTimeHours <= 0)
                 {
                     ECB.RemoveComponent<ConstructingData>(index, selfEntity);
                     if(buildingAttr.Type == BuildingType.Dwellings)

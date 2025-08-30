@@ -17,11 +17,11 @@ namespace SparFlame.Systems.SubGameplay.Conjure
         private ComponentLookup<AIConjureShrineData> _enemyConjuringDataLookUp;
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
         private NativeHashSet<Entity> _alreadyTagged;
-        
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameTimeData>();
+            state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<ConjureSystemConfig>();
@@ -45,7 +45,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             // var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             // var config = SystemAPI.GetSingleton<ConjureSystemConfig>();
-            
+
             CheckConjureUnitsRequest(ref state, ecb);
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -53,10 +53,10 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             _enemyConjuringDataLookUp.Update(ref state);
             _unitAttrLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
-            var job =new ConjureJob
+            var job = new ConjureJob
             {
                 ECB = ecbp.AsParallelWriter(),
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
+                DeltaHour = SystemAPI.GetSingleton<WorldTimeData>().deltaHour,
                 UnitAttrLookup = _unitAttrLookup,
                 EnemyConjuringLookUp = _enemyConjuringDataLookUp,
                 GeneralAttrLookup = _generalAttrLookup
@@ -84,7 +84,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                     ecb.AddComponent<ConjuringTag>(request.BuildingEntity);
                 // Add task to building buffer
                 var timeCost = request.Count * SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab)
-                    .ConjureSpeedSecondPerUnit;
+                    .ConjureSpeedHoursPerUnit;
                 int i;
                 for (i = 0; i < buffer.Length; i++)
                 {
@@ -102,15 +102,15 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                         ConjuringEntity = request.UnitPrefab,
                         TargetAmount = request.Count,
                         ConjuredAmount = 0,
-                        Counter = 0,
-                        RemainingTimeSeconds = timeCost
+                        AccumulatedHours = 0,
+                        RemainingTimeHours = timeCost
                     });
                 }
                 else
                 {
                     var data = buffer[i];
                     data.TargetAmount += request.Count;
-                    data.RemainingTimeSeconds += timeCost;
+                    data.RemainingTimeHours += timeCost;
                     buffer[i] = data;
                 }
 
@@ -124,14 +124,14 @@ namespace SparFlame.Systems.SubGameplay.Conjure
         private partial struct ConjureJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            public float DeltaTime;
+            public float DeltaHour;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<AIConjureShrineData> EnemyConjuringLookUp;
 
             private void Execute([ChunkIndexInQuery] int index, in ConjureAttr conjureAttr,
                 ref DynamicBuffer<ConjuringData> conjuringData,
-                in LocalTransform transform, 
+                in LocalTransform transform,
                 Entity selfEntity)
             {
                 var selfGeneralAttr = GeneralAttrLookup[selfEntity];
@@ -142,67 +142,74 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 }
 
                 var data = conjuringData[0];
-                var speed = 1 / UnitAttrLookup[data.ConjuringEntity].ConjureSpeedSecondPerUnit;
-                data.Counter += DeltaTime * speed;
-                data.RemainingTimeSeconds -= DeltaTime;
-                conjuringData[0] = data;
-                // Conjure unit when time arrived
-                if (data.Counter >= 1)
+
+                data.AccumulatedHours += DeltaHour;
+                data.RemainingTimeHours -= DeltaHour;
+                data.RemainingTimeHours = math.max(0, data.RemainingTimeHours);
+
+                var hoursPerUnit = UnitAttrLookup[data.ConjuringEntity].ConjureSpeedHoursPerUnit;
+                if (data.AccumulatedHours >= hoursPerUnit)
                 {
-                    var unit = ECB.Instantiate(index, data.ConjuringEntity);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, unit);
-                    var generalAttr = GeneralAttrLookup[data.ConjuringEntity];
-                    generalAttr.SubFaction = selfGeneralAttr.SubFaction;
-                    ECB.SetComponent(index, unit, generalAttr);
-                    
-                    var transformCopy = transform;
-                    var pos = transformCopy.TransformPoint(conjureAttr.ConjurePositionBias);
-                    // var pos = transform.Position + conjureAttr.ConjurePositionBias;
-                    ECB.SetComponent(index, unit, new LocalTransform
+                    var count = (int)(data.AccumulatedHours / hoursPerUnit);
+                    data.AccumulatedHours %= hoursPerUnit;
+                    count = math.min(count, data.TargetAmount - data.ConjuredAmount);
+                    data.ConjuredAmount += count;
+
+                    for (var i = 0; i < count; i++)
                     {
-                        Position = pos, 
-                        Rotation = quaternion.identity,
-                        Scale = 1f
-                    });
-                    data.Counter = 0;
-                    data.ConjuredAmount++;
-                    if (data.ConjuredAmount >= data.TargetAmount)
-                    {
-                        conjuringData.RemoveAt(0);
-                    }
-                    else
-                    {
-                        conjuringData[0] = data;
-                    }
-                    
-                    // Add Enemy Base Data for AI system
-                    if (EnemyConjuringLookUp.TryGetComponent(selfEntity, out var enemyConjureShrineData))
-                    {
-                        ECB.AddComponent(index,unit,new AIUnitBelongsTo
+                        var unit = ECB.Instantiate(index, data.ConjuringEntity);
+                        ECB.AddComponent<SubGameplayEntityTag>(index, unit);
+                        var generalAttr = GeneralAttrLookup[data.ConjuringEntity];
+                        generalAttr.SubFaction = selfGeneralAttr.SubFaction;
+                        ECB.SetComponent(index, unit, generalAttr);
+
+                        var transformCopy = transform;
+                        var pos = transformCopy.TransformPoint(conjureAttr.ConjurePositionBias);
+                        // var pos = transform.Position + conjureAttr.ConjurePositionBias;
+                        ECB.SetComponent(index, unit, new LocalTransform
                         {
-                            Base = enemyConjureShrineData.Base
+                            Position = pos,
+                            Rotation = quaternion.identity,
+                            Scale = 1f
+                        });
+
+                        // Add Enemy Base Data for AI system
+                        if (EnemyConjuringLookUp.TryGetComponent(selfEntity, out var enemyConjureShrineData))
+                        {
+                            ECB.AddComponent(index, unit, new AIUnitBelongsTo
+                            {
+                                Base = enemyConjureShrineData.Base
+                            });
+                        }
+
+                        var vfxRequest = ECB.CreateEntity(index);
+                        ECB.AddComponent<SubGameplayEntityTag>(index, vfxRequest);
+                        ECB.AddComponent(index, vfxRequest, new VFXRequest
+                        {
+                            ParabolaTargetPosition = default,
+                            Filter = new VFXSubFilter
+                            {
+                                Faction = selfGeneralAttr.Faction,
+                                FactionFilterEnable = true,
+                                Tier = default,
+                                TierFilterEnable = false
+                            },
+                            KeepDuration = 0,
+                            SpawnPosition = pos,
+                            StatChangeRequest = default,
+                            VFXName = VFXName.ConjureUnit,
+                            VFXTrackTarget = Entity.Null,
+                            RequestType = VFXRequestType.Spawn
                         });
                     }
-
-                    var vfxRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, vfxRequest);
-                    ECB.AddComponent(index, vfxRequest, new VFXRequest
-                    {
-                        ParabolaTargetPosition = default,
-                        Filter = new VFXSubFilter
-                        {
-                            Faction = selfGeneralAttr.Faction,
-                            FactionFilterEnable = true,
-                            Tier = default,
-                            TierFilterEnable = false
-                        },
-                        KeepDuration = 0,
-                        SpawnPosition = pos,
-                        StatChangeRequest = default,
-                        VFXName = VFXName.ConjureUnit,
-                        VFXTrackTarget = Entity.Null,
-                        RequestType = VFXRequestType.Spawn
-                    });
+                }
+                if (data.ConjuredAmount >= data.TargetAmount)
+                {
+                    conjuringData.RemoveAt(0);
+                }
+                else
+                {
+                    conjuringData[0] = data;
                 }
             }
         }

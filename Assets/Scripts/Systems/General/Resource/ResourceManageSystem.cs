@@ -19,7 +19,7 @@ namespace SparFlame.Systems.General.Resource
             state.RequireForUpdate<GlobalResourceDataTag>();
             state.RequireForUpdate<DarkResourceDataTag>();
             state.RequireForUpdate<LightResourceDataTag>();
-            state.RequireForUpdate<ResourceManageSystemConfig>();
+            state.RequireForUpdate<PopulationResourceConfig>();
             state.RequireForUpdate<GameStatusData>();
             _globalResourceDataCenter =
                 new NativeHashMap<int, ResourceTypeToAvailableAmount>(5, Allocator.Persistent);
@@ -138,7 +138,7 @@ namespace SparFlame.Systems.General.Resource
                     pData.TotalAmount = request.RequestType ==
                                         ResourceRequestType.DwellingDestroyConsume
                         ? pData.TotalAmount - absAmount
-                        : pData.TotalAmount + absAmount; 
+                        : pData.TotalAmount + absAmount;
                     SystemAPI.SetComponent(targetCenter, pData);
                 }
 
@@ -180,13 +180,13 @@ namespace SparFlame.Systems.General.Resource
             var globalInitBuffer =
                 SystemAPI.GetBuffer<ResourceTypeToInitAmount>(SystemAPI.GetSingletonEntity<GlobalResourceDataTag>());
             var buffer2 = SystemAPI.GetSingletonBuffer<RenewableResourceType>();
-            var config = SystemAPI.GetSingleton<ResourceManageSystemConfig>();
+            var populationResourceConfig = SystemAPI.GetSingleton<PopulationResourceConfig>();
             for (var i = 0; i < globalInitBuffer.Length; i++)
             {
                 var data = new ResourceTypeToAvailableAmount
                 {
                     ResourceType = (ResourceType)i,
-                    Amount = 0 // Global resource data should be zeror
+                    Amount = 0 // Global resource should be 0 at start
                 };
                 _globalResourceDataCenter[i] = data;
             }
@@ -196,10 +196,8 @@ namespace SparFlame.Systems.General.Resource
                 _renewableResources.Add((int)type.resourceType);
             }
 
-            foreach (var type in config.PopulationResourceTypes)
-            {
-                _populationResources.Add((int)type);
-            }
+
+            _populationResources.Add((int)populationResourceConfig.PopulationResourceType);
 
             var allyDataCenter = SystemAPI.GetSingletonEntity<LightResourceDataTag>();
             var enemyDataCenter = SystemAPI.GetSingletonEntity<DarkResourceDataTag>();
@@ -207,21 +205,60 @@ namespace SparFlame.Systems.General.Resource
             var enemyInitBuffer = SystemAPI.GetBuffer<ResourceTypeToInitAmount>(enemyDataCenter);
             var allyAvailableBuffer = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(allyDataCenter);
             var enemyAvailableBuffer = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyDataCenter);
-            for (int i = 0; i < allyInitBuffer.Length; i++)
+            
+            SystemAPI.SetComponent(allyDataCenter, new PopulationSpecialData
             {
-                allyAvailableBuffer[i] = new ResourceTypeToAvailableAmount
+                OccupiedAmount = 0,
+                TotalAmount = populationResourceConfig.LightInitPopulation
+            });
+            SystemAPI.SetComponent(enemyDataCenter, new PopulationSpecialData
+            {
+                OccupiedAmount = 0,
+                TotalAmount = populationResourceConfig.DarkInitPopulation
+            });
+            allyAvailableBuffer[(int)populationResourceConfig.PopulationResourceType] =
+                new ResourceTypeToAvailableAmount
                 {
-                    ResourceType = allyInitBuffer[i].ResourceType,
-                    Amount = allyInitBuffer[i].Amount
+                    Amount = populationResourceConfig.LightInitPopulation,
+                    ResourceType = populationResourceConfig.PopulationResourceType
+                };
+            enemyAvailableBuffer[(int)populationResourceConfig.PopulationResourceType] =
+                new ResourceTypeToAvailableAmount
+                {
+                    Amount = populationResourceConfig.DarkInitPopulation,
+                    ResourceType = populationResourceConfig.PopulationResourceType
+                };
+            
+            foreach (var typeToInitAmount in allyInitBuffer)
+            {
+                var resourceType = typeToInitAmount.ResourceType;
+
+                if (populationResourceConfig.PopulationResourceType == resourceType)
+                {
+                    // This should never happen, unless you try to config population resource in data center authoring
+                    continue;
+                }
+
+                allyAvailableBuffer[(int)typeToInitAmount.ResourceType] = new ResourceTypeToAvailableAmount
+                {
+                    ResourceType = typeToInitAmount.ResourceType,
+                    Amount = typeToInitAmount.Amount
                 };
             }
 
-            for (int i = 0; i < enemyInitBuffer.Length; i++)
+            foreach (var typeToInitAmount in enemyInitBuffer)
             {
-                enemyAvailableBuffer[i] = new ResourceTypeToAvailableAmount
+                var resourceType = typeToInitAmount.ResourceType;
+
+                if (populationResourceConfig.PopulationResourceType == resourceType)
                 {
-                    ResourceType = enemyInitBuffer[i].ResourceType,
-                    Amount = enemyInitBuffer[i].Amount
+                    continue;
+                }
+
+                enemyAvailableBuffer[(int)typeToInitAmount.ResourceType] = new ResourceTypeToAvailableAmount
+                {
+                    ResourceType = typeToInitAmount.ResourceType,
+                    Amount = typeToInitAmount.Amount
                 };
             }
         }

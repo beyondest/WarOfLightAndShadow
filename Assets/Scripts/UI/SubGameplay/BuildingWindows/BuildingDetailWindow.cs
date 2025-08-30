@@ -318,8 +318,8 @@ namespace SparFlame.UI.SubGameplay
             if (Em.HasComponent<ConstructingData>(_targetEntity))
             {
                 constructingPanel.SetActive(true);
-                var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTime;
-                constructTimeText.text = UIMathMethods.FormatTime((int)time);
+                var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTimeHours;
+                constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)time);
                 _ifConstructing = true;
                 foreach (var slot in Slots)
                 {
@@ -361,7 +361,7 @@ namespace SparFlame.UI.SubGameplay
             {
                 case BuildingType.Generators:
                     generatePanel.SetActive(true);
-                    var generateResourceType = ResourceType.SoulPact;
+                    var generateResourceType = ResourceType.Essence;
                     var generateSpeed = 0f;
                     var minRequiredUnit = 0;
                     
@@ -369,13 +369,13 @@ namespace SparFlame.UI.SubGameplay
                     {
                         var plantAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
                         generateResourceType = plantAttr.GenerateResourceType;
-                        generateSpeed = plantAttr.GenerateSpeed;
+                        generateSpeed = plantAttr.GenerateSpeedHoursPerUnit;
                     }
                     else if (_buildingAttr.SubTypeIndex == (int)GeneratorType.ResourceMine)
                     {
                         var resourceMineAttr = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
                         generateResourceType = resourceMineAttr.GenerateResourceType;
-                        generateSpeed = resourceMineAttr.CurGenerateSpeed;
+                        generateSpeed = resourceMineAttr.GenerateSpeedHoursPerUnit;
                         minRequiredUnit = resourceMineAttr.MinCultivatorsRequireToGenerate;
                     }
                     generateResourceIcon.sprite =
@@ -490,9 +490,9 @@ namespace SparFlame.UI.SubGameplay
                 }
                 else
                 {
-                    var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTime;
+                    var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTimeHours;
                     
-                    constructTimeText.text = UIMathMethods.FormatTime((int)time);
+                    constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)time);
                     return;   
                 }
             }
@@ -514,12 +514,12 @@ namespace SparFlame.UI.SubGameplay
                     if (Em.HasComponent<ResourceMineGenerateAttr>(_targetEntity))
                     {
                         var generateAttribute = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
-                        generateSpeed = generateAttribute.CurGenerateSpeed;
+                        generateSpeed = generateAttribute.GenerateSpeedHoursPerUnit;
                     }
                     else if(Em.HasComponent<PlantGenerateAttr>(_targetEntity))
                     {
                         var plantGenerateAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
-                        generateSpeed = plantGenerateAttr.GenerateSpeed;
+                        generateSpeed = plantGenerateAttr.GenerateSpeedHoursPerUnit;
                     }
                     generateSpeedText.text = $"{generateSpeed}";
                    

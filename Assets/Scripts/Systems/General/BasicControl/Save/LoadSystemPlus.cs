@@ -90,7 +90,8 @@ namespace SparFlame.Systems.General.BasicControl
                 _initialized = true;
                 SaveLoadController.Instance.OnEcsLoadCitySubData += LoadCitySubData;
                 SaveLoadController.Instance.OnEcsLoadArmyGroupSubData += LoadArmyGroupSubData;
-                SaveLoadController.Instance.OnEcsLoadGeneralGameData += LoadMainGameplayData;
+                SaveLoadController.Instance.OnEcsLoadGameMainData += LoadGameMainData;
+                SaveLoadController.Instance.OnEcsLoadMainGameplayData += LoadMainGameplayMainData;
             }
         }
 
@@ -120,6 +121,7 @@ namespace SparFlame.Systems.General.BasicControl
                     EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SaveSystemPlus.SaveTmpTag>());
                 }
             }
+
             armyGroupAttrs.Dispose();
 
             _movableDataLookup.Update(this);
@@ -150,7 +152,8 @@ namespace SparFlame.Systems.General.BasicControl
                 _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
             }
 
-            foreach (var (armyGroupAttr, entity) in SystemAPI.Query<RefRO<ArmyGroupAttr>>().WithAll<InSubGameTag>().WithEntityAccess())
+            foreach (var (armyGroupAttr, entity) in SystemAPI.Query<RefRO<ArmyGroupAttr>>().WithAll<InSubGameTag>()
+                         .WithEntityAccess())
             {
                 _tmpIdxToInstances.Add(armyGroupAttr.ValueRO.saveId, entity);
             }
@@ -268,12 +271,11 @@ namespace SparFlame.Systems.General.BasicControl
             ecb3.Dispose();*/
         }
 
-        private void LoadMainGameplayData()
+        private void LoadMainGameplayMainData()
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
             var cityMainDataPath = SaveUtilities.GetCityMainDataPath(playerSaveSlot);
             var armyGroupMainDataPath = SaveUtilities.GetArmyGroupMainDataPath(playerSaveSlot);
-            var gameMainDataPath = SaveUtilities.GetGameMainDataPath(playerSaveSlot);
 
 
             // Load city data
@@ -362,9 +364,12 @@ namespace SparFlame.Systems.General.BasicControl
             ecb2.Playback(EntityManager);
             ecb2.Dispose();
             _tmpIdxToInstances.Clear();
+        }
 
-
-            // Load game main data
+        private void LoadGameMainData()
+        {
+            var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
+            var gameMainDataPath = SaveUtilities.GetGameMainDataPath(playerSaveSlot);
             if (File.Exists(gameMainDataPath))
             {
                 using (var deserializeWorld = new World("Deserialization World"))
@@ -409,6 +414,11 @@ namespace SparFlame.Systems.General.BasicControl
                         var typeToAvailableAmount = savedDarkResourceDatas[i];
                         darkResourceDatas[i] = typeToAvailableAmount;
                     }
+
+                    // Set world time data
+                    var worldTimeData = dem.CreateEntityQuery(typeof(WorldTimeData))
+                        .GetSingleton<WorldTimeData>();
+                    SystemAPI.SetSingleton(worldTimeData);
                 }
             }
             else

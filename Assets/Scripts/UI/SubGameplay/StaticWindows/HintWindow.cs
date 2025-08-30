@@ -21,6 +21,7 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private float hintXWhenConstructWindowOpen;
         [SerializeField, AssetsOnly] private GameObject hintPrefab;
         [SerializeField] private int maxHints = 5; // 最大条数
+        [Tooltip("Max preserve seconds. Not real seconds, but game time seconds (can be scaled) ")]
         [SerializeField] private float maxDuration = 5f; // 残留最大时间（秒）
         [SerializeField] private float fadeDuration = 1f; // 淡出动画时长
         [SerializeField] private List<HintTypeConfig> colorConfigs;

@@ -17,7 +17,7 @@ namespace SparFlame.Systems.General.BasicControl.Battle
 
         protected override void OnStartRunning()
         {
-            if (!_initialized)
+            if (!_initialized && GameController.Instance)
             {
                 GameController.Instance.OnEcsDealInSubGameTag += DealInSubGameTag;
                 _initialized = true;
