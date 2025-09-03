@@ -1,6 +1,7 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Entities.Serialization;
@@ -16,18 +17,21 @@ namespace SparFlame.Systems.General.BasicControl
 
         public struct SaveTmpTag : IComponentData
         {
-            public bool Value;
+            public bool NoUseButCannotDelete;
         }
 
         private BufferLookup<GarrisonEntity> _garrisonEntitiesLookup;
         private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
+        private BufferLookup<ConjuringData> _conjuringDataLookup;
+        
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<PhysicsMass> _physicsMassLookup;
         private ComponentLookup<ArmyGroupMovingTag> _movingTagLookup;
         private ComponentLookup<ArmyGroupCalculateEnable> _calculateEnableLookup;
         private ComponentLookup<ArmyGroupInGarrison> _armyGroupInGarrisonLookup;
         private ComponentLookup<ArmyGroupAttr> _armyGroupAttrLookup;
-
+        private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
+        private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
 
         private bool _initialized;
 
@@ -38,12 +42,17 @@ namespace SparFlame.Systems.General.BasicControl
             RequireForUpdate<SubGameStatusData>();
             _garrisonEntitiesLookup = GetBufferLookup<GarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
+            _conjuringDataLookup = GetBufferLookup<ConjuringData>(true);
+            
             _inGarrisonLookup = GetComponentLookup<InGarrison>(true);
             _physicsMassLookup = GetComponentLookup<PhysicsMass>(true);
             _movingTagLookup = GetComponentLookup<ArmyGroupMovingTag>(true);
             _calculateEnableLookup = GetComponentLookup<ArmyGroupCalculateEnable>(true);
             _armyGroupInGarrisonLookup = GetComponentLookup<ArmyGroupInGarrison>(true);
             _armyGroupAttrLookup = GetComponentLookup<ArmyGroupAttr>(true);
+            _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
+            _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
+            
             _saveArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>().Build();
         }
 
@@ -98,7 +107,7 @@ namespace SparFlame.Systems.General.BasicControl
                         scale = transform.Scale,
                     });
                     
-                    ecb.AddComponent(saveEntity, new SeGlobalId { value = generalAttr.ID });
+                    ecb.AddComponent(saveEntity, new SeGlobalId { value = generalAttr.PrefabID });
                     ecb.AddComponent(saveEntity, new SeTmpId { value = unitTmpId });
                     ecb.AddComponent(saveEntity, statData);
                     ecb.AddComponent(saveEntity, expData);
@@ -154,7 +163,9 @@ namespace SparFlame.Systems.General.BasicControl
             _garrisonTypeDataLookup.Update(this);
             _inGarrisonLookup.Update(this);
             _physicsMassLookup.Update(this);
-
+            _constructingTimerLookup.Update(this);
+            _conjuringDataLookup.Update(this);
+            _cityTaskUniqueIdLookup.Update(this);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
             var saveJob = new SaveSubGameplayJob
@@ -162,8 +173,11 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB = ecbP,
                 GarrisonEntitiesLookup = _garrisonEntitiesLookup,
                 GarrisonTypeDataLookup = _garrisonTypeDataLookup,
+                ConjuringDataLookup =   _conjuringDataLookup,
                 InGarrisonLookup = _inGarrisonLookup,
                 PhysicsMassLookup = _physicsMassLookup,
+                ConstructingTimerLookup = _constructingTimerLookup,
+                CityTaskUniqueIdLookup = _cityTaskUniqueIdLookup,
             }.ScheduleParallel(Dependency);
             saveJob.Complete();
             using (var serializeWorld = new World("Serialization World"))
@@ -250,10 +264,9 @@ namespace SparFlame.Systems.General.BasicControl
 
             var entities = new NativeList<Entity>(Allocator.Temp);
             entities.Add( SystemAPI.GetSingletonEntity<PlayerFactionData>());
-            entities.Add(SystemAPI.GetSingletonEntity<LightResourceDataTag>());
-            entities.Add(SystemAPI.GetSingletonEntity<DarkResourceDataTag>());
             entities.Add(SystemAPI.GetSingletonEntity<WorldTimeData>());
-            
+            entities.Add(SystemAPI.GetSingletonEntity<LastUniqueId>());
+            entities.Add(SystemAPI.GetSingletonEntity<ResourceData>());
             using (var serializeWorld = new World("Serialization World"))
             {
                 EntityManager seEm = serializeWorld.EntityManager;

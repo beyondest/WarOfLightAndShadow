@@ -269,9 +269,5 @@ namespace SparFlame.Systems.General.BasicControl
     
     
 
-    public struct IdData : IComponentData
-    {
-        public int Value;
-    }
-    
+
 }

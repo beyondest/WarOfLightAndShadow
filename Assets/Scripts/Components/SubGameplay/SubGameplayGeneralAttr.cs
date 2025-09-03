@@ -15,7 +15,7 @@ namespace SparFlame.Components.SubGameplay
         public BaseTag BaseTag;
         public FactionTag Faction;
         public SubFactionTag SubFaction;
-        public int ID;
+        public int PrefabID;
     }
 
     public struct BoxColliderSize : IComponentData

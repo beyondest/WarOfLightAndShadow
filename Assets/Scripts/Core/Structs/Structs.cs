@@ -9,6 +9,6 @@ namespace SparFlame.Core.Structs
         public float lower;
         public float upper;
     }
-    
+
    
 }

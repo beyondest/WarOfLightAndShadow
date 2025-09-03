@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
@@ -87,11 +87,11 @@ namespace SparFlame.UI.SubGameplay
             _targetEntity = Entity.Null;
         }
 
-        public void UpDatePlayerGlobalResourceData(DynamicBuffer<ResourceTypeToAvailableAmount> playerResources)
+        public void UpDatePlayerGlobalResourceData(DynamicBuffer<CityResourceEntry> cityResourceEntries)
         {
-            foreach (var costList in playerResources)
+            foreach (var cityResourceEntry in cityResourceEntries)
             {
-                _playerResources[costList.ResourceType] = costList.Amount;
+                _playerResources[cityResourceEntry.resourceData.resourceType] = cityResourceEntry.resourceData.availableAmount;
             }
         }
 
@@ -145,7 +145,7 @@ namespace SparFlame.UI.SubGameplay
         {
             var isCrystal = _buildingAttr is
                 { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
-            var isConstructing = Em.HasComponent<ConstructingData>(_targetEntity);
+            var isConstructing = Em.HasComponent<ConstructingTimer>(_targetEntity);
             var isUnderAttack = Em.IsComponentEnabled<OocTag>(_targetEntity);
             if (isUnderAttack ||
                 isConstructing
@@ -184,7 +184,7 @@ namespace SparFlame.UI.SubGameplay
             var isCrystal = _buildingAttr is
                 { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.Crystal };
             var isUnderAttack = Em.IsComponentEnabled<OocTag>(_targetEntity);
-            var isConstructing = Em.HasComponent<ConstructingData>(_targetEntity);
+            var isConstructing = Em.HasComponent<ConstructingTimer>(_targetEntity);
 
             if (isCrystal || isUnderAttack || isConstructing)
             {
@@ -211,9 +211,9 @@ namespace SparFlame.UI.SubGameplay
             EcsGetExpStaticConfig?.Invoke(_targetEntity);
             var list = CalculateUpgradeCostList();
             var oriInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
-                Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity).ID);
+                Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity).PrefabID);
             var upGradeInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
-                Em.GetComponentData<SubGameplayGeneralAttr>(ExpStaticConfig.NextTierPrefab).ID);
+                Em.GetComponentData<SubGameplayGeneralAttr>(ExpStaticConfig.NextTierPrefab).PrefabID);
             BuildingUpgradePopUpWindow.Instance.PopUp(list,oriInfo,upGradeInfo,_targetEntity);
         }
 
@@ -275,8 +275,9 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateStaticData()
         {
+            var currentTotalHours = Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
-            var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(generalAttr.ID);
+            var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(generalAttr.PrefabID);
             // Visualize faction info
             if (generalAttr.Faction == FactionTag.Neutral)
             {
@@ -303,7 +304,7 @@ namespace SparFlame.UI.SubGameplay
             generalTypeIcon.sprite =
                 BuildingWindowResourceManager.Instance.BuildingGeneralTypeSprites[_buildingAttr.Type];
             idSingleIcon.sprite = BuildingWindowResourceManager.Instance
-                .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.ID).Sprite;
+                .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.PrefabID).Sprite;
             
             
 
@@ -315,11 +316,12 @@ namespace SparFlame.UI.SubGameplay
             upgradePanel.SetActive(false);
             constructingPanel.SetActive(false);
             
-            if (Em.HasComponent<ConstructingData>(_targetEntity))
+            if (Em.HasComponent<ConstructingTimer>(_targetEntity))
             {
                 constructingPanel.SetActive(true);
-                var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTimeHours;
-                constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)time);
+                var leftTime = Em.GetComponentData<ConstructingTimer>(_targetEntity).builtUpTargetTotalHours - currentTotalHours;
+                leftTime = leftTime < 0? 0 : leftTime;
+                constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)leftTime);
                 _ifConstructing = true;
                 foreach (var slot in Slots)
                 {
@@ -353,7 +355,7 @@ namespace SparFlame.UI.SubGameplay
                     var nextTierGeneralAttr = Em.GetComponentData<SubGameplayGeneralAttr>(prefab);
                     var buildingAttr = Em.GetComponentData<BuildingAttr>(prefab);
                     nextTierImage.sprite = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(buildingAttr.Type,
-                        nextTierGeneralAttr.ID).Sprite;
+                        nextTierGeneralAttr.PrefabID).Sprite;
                 }
             }
             
@@ -369,21 +371,22 @@ namespace SparFlame.UI.SubGameplay
                     {
                         var plantAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
                         generateResourceType = plantAttr.GenerateResourceType;
-                        generateSpeed = plantAttr.GenerateSpeedHoursPerUnit;
+                        generateSpeed =1f/ plantAttr.GenerateSpeedHoursPerUnit;
                     }
                     else if (_buildingAttr.SubTypeIndex == (int)GeneratorType.ResourceMine)
                     {
                         var resourceMineAttr = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
                         generateResourceType = resourceMineAttr.GenerateResourceType;
-                        generateSpeed = resourceMineAttr.GenerateSpeedHoursPerUnit;
+                        generateSpeed = 1f/resourceMineAttr.GenerateSpeedHoursPerUnit;
                         minRequiredUnit = resourceMineAttr.MinCultivatorsRequireToGenerate;
                     }
                     generateResourceIcon.sprite =
                         BasicUIResourceManager.Instance.ResourceSprites[generateResourceType];
                     generateTypeText.text = generateResourceType.ToString();
+                    generateMinRequireUnitsText.enabled = minRequiredUnit != 0;
                     generateMinRequireUnitsText.text = minRequiredUnit.ToString();
                     if (!isMainInfoSingleton)
-                        generateSpeedText.text = $"{generateSpeed}";
+                        generateSpeedText.text = $"+{generateSpeed:F2}/h";
                     break;
                 case BuildingType.Fortifications:
                     interactAbilityPanel.SetActive(true);
@@ -469,11 +472,11 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateDynamicData()
         {
-            
+            var currentTotalHours = Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
             _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
             // Visualize function panel and doingThings panel
             var underAttack = Em.HasComponent<OocTag>(_targetEntity) && Em.IsComponentEnabled<OocTag>(_targetEntity);
-            var constructing = Em.HasComponent<ConstructingData>(_targetEntity);
+            var constructing = Em.HasComponent<ConstructingTimer>(_targetEntity);
             var generating = Em.HasComponent<GeneratingTag>(_targetEntity);
             var conjuring = Em.HasComponent<ConjuringTag>(_targetEntity);
             var currentState = BuildingUtils.GetBuildingState(underAttack, constructing, conjuring, generating);
@@ -482,7 +485,7 @@ namespace SparFlame.UI.SubGameplay
             buildingStateText.text = currentState.ToString();
             if (_ifConstructing)
             {
-                if (!Em.HasComponent<ConstructingData>(_targetEntity))
+                if (!Em.HasComponent<ConstructingTimer>(_targetEntity))
                 {
                     ActiveNecessaryPanels(Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity));
                     _ifConstructing = false;
@@ -490,9 +493,9 @@ namespace SparFlame.UI.SubGameplay
                 }
                 else
                 {
-                    var time = Em.GetComponentData<ConstructingData>(_targetEntity).LastTimeHours;
-                    
-                    constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)time);
+                    var leftTime = Em.GetComponentData<ConstructingTimer>(_targetEntity).builtUpTargetTotalHours - currentTotalHours;
+                    leftTime = leftTime < 0? 0 : leftTime;
+                    constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)leftTime);
                     return;   
                 }
             }
@@ -514,14 +517,15 @@ namespace SparFlame.UI.SubGameplay
                     if (Em.HasComponent<ResourceMineGenerateAttr>(_targetEntity))
                     {
                         var generateAttribute = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
-                        generateSpeed = generateAttribute.GenerateSpeedHoursPerUnit;
+                        generateSpeed = 1/generateAttribute.GenerateSpeedHoursPerUnit;
+                       
                     }
                     else if(Em.HasComponent<PlantGenerateAttr>(_targetEntity))
                     {
                         var plantGenerateAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
-                        generateSpeed = plantGenerateAttr.GenerateSpeedHoursPerUnit;
+                        generateSpeed = 1/plantGenerateAttr.GenerateSpeedHoursPerUnit;
                     }
-                    generateSpeedText.text = $"{generateSpeed}";
+                    generateSpeedText.text = $"+{generateSpeed:F2}/h";
                    
                     break;
                 }

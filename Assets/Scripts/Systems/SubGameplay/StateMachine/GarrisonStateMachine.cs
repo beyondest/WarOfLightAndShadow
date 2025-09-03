@@ -29,7 +29,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
         private ComponentLookup<GarrisonStateTag> _garrisonStateTagLookup;
         private ComponentLookup<OocTag> _oocTagLookup;
-        private ComponentLookup<ConstructingData> _constructingTagLookup;
+        private ComponentLookup<ConstructingTimer> _constructingTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -46,7 +46,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
             _garrisonStateTagLookup = state.GetComponentLookup<GarrisonStateTag>(true);
             _oocTagLookup = state.GetComponentLookup<OocTag>(true);
-            _constructingTagLookup = state.GetComponentLookup<ConstructingData>(true);
+            _constructingTagLookup = state.GetComponentLookup<ConstructingTimer>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
             _selectedAttrLookup = state.GetComponentLookup<Selected>();
         }
@@ -242,7 +242,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
             [ReadOnly] public BufferLookup<AllowGarrisonUnit> AllowGarrisonUnitLookup;
             [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
-            [ReadOnly] public ComponentLookup<ConstructingData> ConstructingTagLookup;
+            [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTagLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<Selected> SelectedLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
 
@@ -331,7 +331,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ECB.AddComponent(index, request, new GarrisonInBuildingRequest
                 {
                     BuildingEntity = stateData.TargetEntity,
-                    Id = subGameplayGeneralAttr.ID,
+                    Id = subGameplayGeneralAttr.PrefabID,
                     UnitType = unitAttr.Type,
                     UnitEntity = selfEntity
                 });

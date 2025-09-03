@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.Components.General;
 using Unity.Entities;
 
 namespace SparFlame.Components.MainGameplay
@@ -32,4 +33,36 @@ namespace SparFlame.Components.MainGameplay
         public Entity Prefab;
         public int GlobalIdx;
     }
+
+    public enum CityTaskType
+    {
+        StorageAdd = 0,
+        PlantGenerator = 1,
+        ConjureUnits = 2,
+    }
+
+
+    
+    [Serializable]
+    public struct CityTask : IBufferElementData
+    {
+        public ResourceType resourceType;
+        public int storageAddAmount;
+        public float finishTotalHours;
+        public int fromBuildingUniqueId;
+        public float hoursPerUnit;
+        public int remainingConjuredUnitCount;
+        public CityTaskType taskType;
+    }
+    
+    
+    [Serializable]
+    public struct CityResourceEntry : IBufferElementData
+    {
+        public ResourceData resourceData;
+        public float accumulatedHours;
+    }
+    
+    
+
 }

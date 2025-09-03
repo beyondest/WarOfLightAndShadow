@@ -1,7 +1,10 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Linq;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
+// ReSharper disable ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
 
 namespace SparFlame.UI.SubGameplay
 {
@@ -11,7 +14,7 @@ namespace SparFlame.UI.SubGameplay
         protected override void OnCreate()
         {
             RequireForUpdate<GameStatusData>();
-            RequireForUpdate<ResourceTypeToAvailableAmount>();
+            RequireForUpdate<ResourceData>();
             RequireForUpdate<UnitSelectionData>();
             RequireForUpdate<PlayerFactionData>();
         }
@@ -22,27 +25,37 @@ namespace SparFlame.UI.SubGameplay
         protected override void OnUpdate()
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
-            var entity = playerFaction switch
-            {
-                FactionTag.Light =>
-                    SystemAPI.GetSingletonEntity<LightResourceDataTag>(),
-                FactionTag.Dark =>
-                    SystemAPI.GetSingletonEntity<DarkResourceDataTag>(),
-                FactionTag.Neutral => default,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            var datas = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(entity);
+            
+         
+            var generalResourceDatas = SystemAPI.GetSingletonBuffer<ResourceData>();
+            var datas = new List<ResourceData>();
             if (gameStatusData.Value == GameStatus.Init)
             {
+                foreach (var resourceData in generalResourceDatas)
+                {
+                    datas.Add(resourceData);
+                }
                 ResourceInfoWindow.Instance.UpdateStaticData(datas);
             }
             if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming )return;
-            
-            var data = SystemAPI.GetComponent<PopulationSpecialData>(entity);
-            ResourceInfoWindow.Instance.occupiedPopulationValue =data
-                .OccupiedAmount;
-            ResourceInfoWindow.Instance.totalAmount = data.TotalAmount;
+
+            if (gameStatusData.Value == GameStatus.MainGaming)
+            {
+                foreach (var resourceData in generalResourceDatas)
+                {
+                    datas.Add(resourceData);
+                }
+            }
+            else
+            {
+                var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+                var cityEntries = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
+                foreach (var cityEntry in cityEntries)
+                {
+                    datas.Add(cityEntry.resourceData);
+                }
+            }
+
             ResourceInfoWindow.Instance.UpdateDynamicData(datas);
         }
     }

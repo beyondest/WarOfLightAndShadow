@@ -35,7 +35,7 @@ namespace SparFlame.Systems.General.Input
             _customInputActions.ModeSwitch.Disable();
             _customInputActions.UnitControl.Disable();
             _customInputActions.Construct.Disable();
-            _customInputActions.InfoWindow.Disable();
+            _customInputActions.GeneralShortcut.Disable();
             _customInputActions.Conjure.Disable();
             _customInputActions.CameraFlyMode.Disable();
             _customInputActions.CameraNormalMode.Disable();
@@ -47,7 +47,7 @@ namespace SparFlame.Systems.General.Input
             
             _customInputActions.UnitControl.Enable();
             _customInputActions.ModeSwitch.Enable();
-            _customInputActions.InfoWindow.Enable();
+            _customInputActions.GeneralShortcut.Enable();
             _customInputActions.Conjure.Enable();
             
             _customInputActions.ArmyGroupControl.Disable();
@@ -57,7 +57,7 @@ namespace SparFlame.Systems.General.Input
         {
             _customInputActions.CameraNormalMode.Enable();
             _customInputActions.ArmyGroupControl.Enable();
-            _customInputActions.InfoWindow.Enable();
+            _customInputActions.GeneralShortcut.Enable();
 
             _customInputActions.UnitControl.Disable();
             _customInputActions.ModeSwitch.Disable();

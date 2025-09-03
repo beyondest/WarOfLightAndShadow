@@ -1,6 +1,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
+using SparFlame.Core.Utils;
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Mathematics;
@@ -21,6 +22,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
@@ -56,7 +58,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             var job = new ConjureJob
             {
                 ECB = ecbp.AsParallelWriter(),
-                DeltaHour = SystemAPI.GetSingleton<WorldTimeData>().deltaHour,
+                CurTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours,
                 UnitAttrLookup = _unitAttrLookup,
                 EnemyConjuringLookUp = _enemyConjuringDataLookUp,
                 GeneralAttrLookup = _generalAttrLookup
@@ -69,6 +71,8 @@ namespace SparFlame.Systems.SubGameplay.Conjure
         private void CheckConjureUnitsRequest(ref SystemState state, EntityCommandBuffer ecb)
         {
             _alreadyTagged.Clear();
+            var curTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours;
+            var city = SystemAPI.GetSingleton<SubGameStatusData>().City;
             foreach (var (ro, entity) in SystemAPI.Query<RefRO<ConjureRequest>>().WithEntityAccess())
             {
                 var request = ro.ValueRO;
@@ -82,9 +86,24 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 var buffer = SystemAPI.GetBuffer<ConjuringData>(request.BuildingEntity);
                 if (_alreadyTagged.Add(request.BuildingEntity))
                     ecb.AddComponent<ConjuringTag>(request.BuildingEntity);
+                var hoursPerUnit = SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab).ConjureSpeedHoursPerUnit;
+                var uniqueId = SystemAPI.GetComponent<CityTaskUniqueId>(request.BuildingEntity).value;
+                
+                // Add task to city buffer
+                var resourceChangeRequest = ecb.CreateEntity();
+                ecb.AddComponent(resourceChangeRequest, new ResourceChangeRequest
+                {
+                    City = city,
+                    ResourceType = ResourceType.SoulPact,
+                    RequestType = ResourceRequestType.ConjureUnitByTask,
+                    AbsAmount = request.Count,
+                    HoursPerUnit = hoursPerUnit,
+                    FromBuildingUniqueId = uniqueId,
+                });
+                ecb.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
+                
                 // Add task to building buffer
-                var timeCost = request.Count * SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab)
-                    .ConjureSpeedHoursPerUnit;
+                var timeCost = request.Count * hoursPerUnit ;
                 int i;
                 for (i = 0; i < buffer.Length; i++)
                 {
@@ -100,17 +119,18 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                     buffer.Add(new ConjuringData
                     {
                         ConjuringEntity = request.UnitPrefab,
+                        UnitGlobalId = SystemAPI.GetComponent<SubGameplayGeneralAttr>(request.UnitPrefab).PrefabID,
                         TargetAmount = request.Count,
                         ConjuredAmount = 0,
-                        AccumulatedHours = 0,
-                        RemainingTimeHours = timeCost
+                        LastCheckTotalHours = curTotalHours,
+                        ThisTaskRemainingTime = timeCost
                     });
                 }
                 else
                 {
                     var data = buffer[i];
                     data.TargetAmount += request.Count;
-                    data.RemainingTimeHours += timeCost;
+                    data.ThisTaskRemainingTime += timeCost;
                     buffer[i] = data;
                 }
 
@@ -119,47 +139,57 @@ namespace SparFlame.Systems.SubGameplay.Conjure
         }
 
         [BurstCompile]
-        [WithNone(typeof(OocTag))]
         [WithAll(typeof(ConjuringTag))]
         private partial struct ConjureJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            public float DeltaHour;
+            public float CurTotalHours;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<AIConjureShrineData> EnemyConjuringLookUp;
 
             private void Execute([ChunkIndexInQuery] int index, in ConjureAttr conjureAttr,
-                ref DynamicBuffer<ConjuringData> conjuringData,
+                ref DynamicBuffer<ConjuringData> conjuringDatas,
                 in LocalTransform transform,
                 Entity selfEntity)
             {
                 var selfGeneralAttr = GeneralAttrLookup[selfEntity];
-                if (conjuringData.Length == 0)
+                if (conjuringDatas.Length == 0)
                 {
                     ECB.RemoveComponent<ConjuringTag>(index, selfEntity);
                     return;
                 }
 
-                var data = conjuringData[0];
+                var deltaHours = CurTotalHours - conjuringDatas[0].LastCheckTotalHours;
 
-                data.AccumulatedHours += DeltaHour;
-                data.RemainingTimeHours -= DeltaHour;
-                data.RemainingTimeHours = math.max(0, data.RemainingTimeHours);
-
-                var hoursPerUnit = UnitAttrLookup[data.ConjuringEntity].ConjureSpeedHoursPerUnit;
-                if (data.AccumulatedHours >= hoursPerUnit)
+                while (conjuringDatas.Length != 0)
                 {
-                    var count = (int)(data.AccumulatedHours / hoursPerUnit);
-                    data.AccumulatedHours %= hoursPerUnit;
-                    count = math.min(count, data.TargetAmount - data.ConjuredAmount);
-                    data.ConjuredAmount += count;
+                    var firstData = conjuringDatas[0];
+                    var hoursPerUnit = UnitAttrLookup[firstData.ConjuringEntity].ConjureSpeedHoursPerUnit;
+                    var maxCount = firstData.TargetAmount - firstData.ConjuredAmount;
+                    firstData.ThisTaskRemainingTime = math.max(0, maxCount * hoursPerUnit - deltaHours);
 
-                    for (var i = 0; i < count; i++)
+                    if (deltaHours < hoursPerUnit)
                     {
-                        var unit = ECB.Instantiate(index, data.ConjuringEntity);
+                        conjuringDatas[0] = firstData;
+                        break;
+                    }
+
+                    var count = (int)(deltaHours / hoursPerUnit);
+                    var validCount = math.min(count, maxCount);
+                    var validHours = validCount * hoursPerUnit;
+                    firstData.LastCheckTotalHours += validHours;
+                    deltaHours -= validHours;
+
+                    firstData.ConjuredAmount += validCount;
+
+                    // Spawn units
+                    for (var i = 0; i < validCount; i++)
+                    {
+                        var unit = ECB.Instantiate(index, firstData.ConjuringEntity);
                         ECB.AddComponent<SubGameplayEntityTag>(index, unit);
-                        var generalAttr = GeneralAttrLookup[data.ConjuringEntity];
+
+                        var generalAttr = GeneralAttrLookup[firstData.ConjuringEntity];
                         generalAttr.SubFaction = selfGeneralAttr.SubFaction;
                         ECB.SetComponent(index, unit, generalAttr);
 
@@ -202,14 +232,22 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                             RequestType = VFXRequestType.Spawn
                         });
                     }
-                }
-                if (data.ConjuredAmount >= data.TargetAmount)
-                {
-                    conjuringData.RemoveAt(0);
-                }
-                else
-                {
-                    conjuringData[0] = data;
+
+                    // Pass conjuring queue
+                    if (firstData.ConjuredAmount >= firstData.TargetAmount)
+                    {
+                        conjuringDatas.RemoveAt(0);
+                        if (conjuringDatas.Length > 0)
+                        {
+                            var newConjuringData = conjuringDatas[0];
+                            newConjuringData.LastCheckTotalHours = firstData.LastCheckTotalHours;
+                            conjuringDatas[0] = newConjuringData;
+                        }
+                    }
+                    else
+                    {
+                        conjuringDatas[0] = firstData;
+                    }
                 }
             }
         }

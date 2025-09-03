@@ -1,10 +1,8 @@
-﻿using SparFlame.Components.ComponentUtils;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Rendering;
 
 namespace SparFlame.Systems.General.VFX

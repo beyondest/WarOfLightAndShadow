@@ -21,10 +21,10 @@ namespace SparFlame.Systems.SubGameplay.Construct
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct ConstructSystem : ISystem
     {
-
         private BufferLookup<CostList> _costLookup;
 
         private EntityQuery _buildingQuery;
+
         // private EntityQuery _playerBaseQuery;
         private NativeList<Entity> _grids;
         private ComponentLookup<ConstructableTag> _constructableLookup;
@@ -32,10 +32,10 @@ namespace SparFlame.Systems.SubGameplay.Construct
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WorldTimeData>();
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<ConstructSystemConfig>();
             state.RequireForUpdate<PlayerFactionData>();
-            state.RequireForUpdate<DarkResourceDataTag>();
-            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputMouseData>();
@@ -58,13 +58,11 @@ namespace SparFlame.Systems.SubGameplay.Construct
         {
             if (_grids.IsCreated)
                 _grids.Dispose();
-            
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>().Value;
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
 
@@ -89,42 +87,37 @@ namespace SparFlame.Systems.SubGameplay.Construct
                 ClearGrid(ref state);
             }
 
-            if (/*_playerBaseQuery.IsEmpty ||*/ data.CommandType == ConstructCommandType.None) return;
+            if ( /*_playerBaseQuery.IsEmpty ||*/ data.CommandType == ConstructCommandType.None) return;
 
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             // var playerBaseTrans = _playerBaseQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
 
-            
+
             CheckConstructionCommand(ref state,
-                ecb/*, playerBaseTrans*/);
+                ecb /*, playerBaseTrans*/);
             // playerBaseTrans.Dispose();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
         private void CheckConstructionCommand(ref SystemState state,
-            EntityCommandBuffer ecb/*,
+            EntityCommandBuffer ecb /*,
             in NativeArray<LocalTransform> playerBaseTrans*/)
         {
             var gridSize = SystemAPI.GetSingleton<ConstructSystemConfig>().ConstructionGridSize;
             var prefabs = SystemAPI.GetSingleton<ConstructSystemPrefabs>();
             var customInputData = SystemAPI.GetSingleton<InputMouseData>();
-            var allyResourceData =
-                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI.GetSingletonEntity<LightResourceDataTag>());
-            var enemyResourceData =
-                SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(SystemAPI
-                    .GetSingletonEntity<DarkResourceDataTag>());
             ref var data = ref SystemAPI.GetSingletonRW<ConstructCommandData>().ValueRW;
-            var resourceData = data.Faction == FactionTag.Light ? allyResourceData : enemyResourceData;
             var boxColliderSize = SystemAPI.GetComponent<BoxColliderSize>(data.TargetBuilding);
             var buildingAttr = SystemAPI.GetComponent<BuildingAttr>(data.TargetBuilding);
-     
+            
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             // Light faction can only build buildings in light ness, including beacon
-       
-            
+            var worldTimeData = SystemAPI.GetSingleton<WorldTimeData>();
+            var cityResourceEntries = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
+
             switch (data.CommandType)
             {
                 case ConstructCommandType.Drag:
@@ -135,7 +128,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     {
                         foreach (var cost in _costLookup[data.TargetBuilding])
                         {
-                            if (resourceData[(int)cost.Type].Amount < cost.Amount)
+                            if (cityResourceEntries[(int)cost.Type].resourceData.availableAmount < cost.Amount)
                             {
                                 SwitchBuildingState(ref state, ref data, PlacementStateType.NotEnoughResources,
                                     in prefabs, false);
@@ -155,14 +148,15 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     // Dark crystal can construct anywhere except for light faction tile
 
                     // If not on constructable plane or this place is occupied by enemy then not constructable
-                    if (!_constructableLookup.HasComponent(customInputData.HitEntity) || !_constructableLookup.IsComponentEnabled(customInputData.HitEntity))
+                    if (!_constructableLookup.HasComponent(customInputData.HitEntity) ||
+                        !_constructableLookup.IsComponentEnabled(customInputData.HitEntity))
                     {
                         SwitchBuildingState(ref state, ref data, PlacementStateType.NotConstructable, in prefabs,
                             false);
                         valid = false;
                     }
-                    
-             
+
+
                     if (valid)
                         SwitchBuildingState(ref state, ref data, PlacementStateType.Valid, in prefabs, false);
 
@@ -176,13 +170,13 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         ref SystemAPI.GetComponentRW<LocalTransform>(data.PreviewCube).ValueRW;
                     // Get Target Transform
                     var targetTransform = ghostTransform;
-                    
+
                     var rotationDelta = quaternion.RotateY(math.radians(data.RotationAngle));
                     targetTransform.Scale = 1;
                     targetTransform.Rotation =
                         math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
                     var rotationAbsAngle = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                    MathUtils.GetSnapGridPosition(customInputData.HitPosition,rotationAbsAngle , boxColliderSize.Value,
+                    MathUtils.GetSnapGridPosition(customInputData.HitPosition, rotationAbsAngle, boxColliderSize.Value,
                         gridSize, out var snapPosition);
                     // targetTransform.Position = customInputData.HitPosition;
                     targetTransform.Position = snapPosition;
@@ -241,7 +235,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     {
                         state.EntityManager.SetComponentData(data.TargetBuilding, data.OriTransform);
                     }
-                    
+
                     ClearPreview(ref state, ref data);
                     DestroyPriorGhost(ref state, ref data);
                     data.CommandType = ConstructCommandType.None;
@@ -255,39 +249,105 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         // Reduce resources
                         foreach (var cost in _costLookup[data.TargetBuilding])
                         {
-                            var r = resourceData[(int)cost.Type];
-                            r.Amount -= cost.Amount;
-                            resourceData[(int)cost.Type] = r;
+                            var r = cityResourceEntries[(int)cost.Type];
+                            r.resourceData.availableAmount -= cost.Amount;
+                            cityResourceEntries[(int)cost.Type] = r;
                         }
 
                         // Create building
                         var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
                         state.EntityManager.AddComponent<SubGameplayEntityTag>(targetBuilding);
+
+                        
+                        // Add city task for storage add
+                        if (buildingAttr.Type == BuildingType.Dwellings)
+                        {
+                            var dwellingAttr = SystemAPI.GetComponent<DwellingAttr>(targetBuilding);
+                            state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
+                            var uniqueId =
+                                UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
+                            SystemAPI.SetComponent(targetBuilding, new CityTaskUniqueId
+                            {
+                                value = uniqueId
+                            });
+                            var resourceChangeRequest = state.EntityManager.CreateEntity();
+                            state.EntityManager.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
+                            state.EntityManager.AddComponent<ResourceChangeRequest>(resourceChangeRequest);
+                            state.EntityManager.SetComponentData(resourceChangeRequest, new ResourceChangeRequest
+                            {
+                                City = subGameStatusData.City,
+                                FinishTotalHours = worldTimeData.totalHours + buildingAttr.ConstructTimeHours,
+                                FromBuildingUniqueId = uniqueId,
+                                ResourceType = dwellingAttr.ResourceType,
+                                AbsAmount = dwellingAttr.Amount,
+                                RequestType = ResourceRequestType.StorageAddByTask,
+                            });
+                            
+                        }
+
+                        // Add city task for generate speed add
+                        if (buildingAttr is { Type: BuildingType.Generators, SubTypeIndex: (int)GeneratorType.PlantGenerator })
+                        {
+                            var generatorAttr = SystemAPI.GetComponent<PlantGenerateAttr>(targetBuilding);
+                            state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
+                            var uniqueId =
+                                UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
+                            SystemAPI.SetComponent(targetBuilding, new CityTaskUniqueId
+                            {
+                                value = uniqueId
+                            });
+                            var resourceChangeRequest = state.EntityManager.CreateEntity();
+                            state.EntityManager.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
+                            state.EntityManager.AddComponent<ResourceChangeRequest>(resourceChangeRequest);
+                            state.EntityManager.SetComponentData(resourceChangeRequest, new ResourceChangeRequest
+                            {
+                                City = subGameStatusData.City,
+                                FinishTotalHours = worldTimeData.totalHours + buildingAttr.ConstructTimeHours,
+                                FromBuildingUniqueId = uniqueId,
+                                ResourceType = generatorAttr.GenerateResourceType,
+                                RequestType = ResourceRequestType.GenerateSpeedAddByTask,
+                                HoursPerUnit = generatorAttr.GenerateSpeedHoursPerUnit,
+                            });
+                        }
+                        
+                        // Add city task unique id for conjuring buildings
+                        if (buildingAttr.Type == BuildingType.ConjuringShrines)
+                        {
+                            var uniqueId =
+                                UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
+                            state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
+                            SystemAPI.SetComponent(targetBuilding, new CityTaskUniqueId
+                            {
+                                value = uniqueId
+                            });
+                        }
+                        
+
+
                         SystemAPI.SetComponent(targetBuilding, newTransform);
                         var generalAttr = state.EntityManager.GetComponentData<SubGameplayGeneralAttr>(targetBuilding);
                         var cityGeneralAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(subGameStatusData.City);
                         generalAttr.SubFaction = cityGeneralAttr.subFaction;
                         SystemAPI.SetComponent(targetBuilding, generalAttr);
-                        
+
                         // Make the building in constructing state
-                        state.EntityManager.AddComponent<ConstructingData>(targetBuilding);
+                        state.EntityManager.AddComponent<ConstructingTimer>(targetBuilding);
                         var attr = state.EntityManager.GetComponentData<BuildingAttr>(targetBuilding);
-                        SystemAPI.SetComponent(targetBuilding, new ConstructingData
+                        SystemAPI.SetComponent(targetBuilding, new ConstructingTimer
                         {
-                            LastTimeHours = attr.ConstructTimeHours
+                            builtUpTargetTotalHours = worldTimeData.totalHours + attr.ConstructTimeHours
                         });
-                        if(buildingAttr.Type == BuildingType.Dwellings)
-                            state.EntityManager.SetComponentEnabled<DwellingGeneratePopulationTag>(targetBuilding,false);
-                        state.EntityManager.SetComponentEnabled<VolumeObstacleSpawnRequest>(targetBuilding,false);
-                        
-                        
+                      
+                            
+
+
                         // Exchange grid preview
                         _grids.Add(data.PreviewCube);
                         GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Value, gridSize,
                             out data.PreviewCube);
-                        
+
                         data.CommandType = ConstructCommandType.Drag; // Continue building
-                        
+
                         var vfxRequest = ecb.CreateEntity();
                         ecb.AddComponent<SubGameplayEntityTag>(vfxRequest);
                         ecb.AddComponent(vfxRequest, new VFXRequest
@@ -307,8 +367,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
                             VFXName = VFXName.Construct,
                             VFXTrackTarget = Entity.Null
                         });
-
-                     
                     }
                     else
                     {
@@ -337,7 +395,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
         private void ClearPreview(ref SystemState state, ref ConstructCommandData data)
         {
-           
             if (data.PreviewCube != Entity.Null)
                 state.EntityManager.DestroyEntity(data.PreviewCube);
             if (data.PreviewAttackRangeEntity != Entity.Null)
@@ -409,7 +466,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
             }
         }
 
-   
 
         private void VisualizeGrid(ref SystemState state)
         {
@@ -431,7 +487,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     out var cubeParent);
 
                 // 3. 计算吸附位置（根据旋转决定对齐）
-                MathUtils.GetSnapGridPosition(tran.Position, yRotDeg , boxColliderSize, gridSize, out var gridPosition);
+                MathUtils.GetSnapGridPosition(tran.Position, yRotDeg, boxColliderSize, gridSize, out var gridPosition);
 
                 // 4. 设置 cubeParent 的位置和旋转
                 state.EntityManager.SetComponentData(cubeParent, new LocalTransform
@@ -445,7 +501,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
                 _grids.Add(cubeParent);
             }
         }
-
 
 
         private void DestroyPriorGhost(ref SystemState state, ref ConstructCommandData data)
@@ -479,6 +534,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
             ChangeMaterialRecursively(ref state, data.PreviewCube, targetMaterial);
             // }
         }
+
         private void ChangeMaterialRecursively(ref SystemState state, Entity entity, int newMaterial)
         {
             var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
@@ -508,7 +564,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                 //     }
                 // }
             }
-           
+
             // if (!SystemAPI.HasBuffer<LinkedEntityGroup>(entity)) return;
             // for (int i = 1; i < buffer.Length; i++)
             // {
@@ -601,7 +657,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
             return newParentEntity;
         }
 
- 
 
         // private void VisualizeGrid(ref SystemState state,
         //     float gridSize,

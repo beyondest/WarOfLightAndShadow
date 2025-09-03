@@ -35,7 +35,7 @@ namespace SparFlame.Database
                     BaseTag = item.baseTag,
                     Faction = item.factionTag,
                     SubFaction = SubFactionTag.None,
-                    ID = item.id,
+                    PrefabID = item.id,
                 });
                 AddComponent(entity, new BoxColliderSize
                 {

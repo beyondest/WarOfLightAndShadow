@@ -28,6 +28,7 @@ namespace SparFlame.UI.General
             var hours = math.ceil( totalHours % 24);
             return $"{days} days : {hours} h";
         }
+        
 
         public static async void AnimateColorAsync(Image image, Color from, Color to, float duration)
         {

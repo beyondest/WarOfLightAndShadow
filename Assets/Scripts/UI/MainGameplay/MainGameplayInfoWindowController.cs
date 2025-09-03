@@ -55,7 +55,6 @@ namespace SparFlame.UI.MainGameplay
         }
 
         private bool _minimizeWindow;
-        private CustomInputActions _customInputActions;
         private bool _ifLastTimePlayerCloseByEsc;
 
         private Entity _closeUpTarget;
@@ -64,6 +63,7 @@ namespace SparFlame.UI.MainGameplay
         private EntityQuery _customMouseDataQuery;
         private EntityQuery _cursorData;
         private EntityQuery _selectedData;
+        private EntityQuery _generalShortcutData;
 
         private void Awake()
         {
@@ -80,7 +80,7 @@ namespace SparFlame.UI.MainGameplay
             _customMouseDataQuery = _em.CreateEntityQuery(typeof(InputMouseData));
             _cursorData = _em.CreateEntityQuery(typeof(MainGameplayCursorData));
             _selectedData = _em.CreateEntityQuery(typeof(ArmyGroupSelectionData));
-            _customInputActions = InputListener.Instance.GetCustomInputActions();
+            _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
         }
 
@@ -93,10 +93,10 @@ namespace SparFlame.UI.MainGameplay
             var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<MainGameplayCursorData>();
             var selectedData = _selectedData.GetSingleton<ArmyGroupSelectionData>();
-
+            var generalShortcutData = _generalShortcutData.GetSingleton<InputGeneralShortcutData>();
             // Check left click event
             // Valid when left click on interactable entity
-            var checkInfoPerformed = _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame();
+            var checkInfoPerformed = generalShortcutData.CheckInfo;
             var leftClickOnValid = !inputMouseData.IsOverUI
                                    && checkInfoPerformed
                                    && cursorData.CursorType != MainGameplayCursorType.None
@@ -178,7 +178,7 @@ namespace SparFlame.UI.MainGameplay
                     CityDetailWindow.Instance.Hide();
             }
 
-            var closeByEsc = _customInputActions.InfoWindow.CloseWindow.WasPerformedThisFrame();
+            var closeByEsc = generalShortcutData.CloseWindow;
             var shouldHideInfoWindow = leftClickOnInvalid
                                        || closeByEsc
                                        || (!ArmyGroupDetailWindow.Instance.HasTarget()
@@ -231,13 +231,5 @@ namespace SparFlame.UI.MainGameplay
             // ConjureWindow.Instance.ClearCloseUpTarget();
         }
 
-
-        private void ScrollUpWindow()
-        {
-        }
-
-        private void ScrollDownWindow()
-        {
-        }
     }
 }

@@ -110,10 +110,7 @@ namespace SparFlame.Database
                         item.costs = new List<CostResourceTypeAmountPair>();
                         foreach (var cost in lightItem.costs)
                         {
-                            var costCopy = cost;
-                            if (ResourceUtils.GetCorrespondingResource(cost.type, out var correspondingResourceType))
-                                costCopy.type = correspondingResourceType;
-                            item.costs.Add(costCopy);
+                            item.costs.Add(cost);
                         }
                     }
                     else

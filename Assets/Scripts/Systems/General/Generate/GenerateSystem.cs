@@ -1,10 +1,8 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Components.VFX;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.Generate
@@ -17,7 +15,7 @@ namespace SparFlame.Systems.Generate
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<WorldTimeData>();
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<BuildingGenerateSystemConfig>();
             state.RequireForUpdate<SubGamingTag>();
@@ -33,143 +31,64 @@ namespace SparFlame.Systems.Generate
             // var config = SystemAPI.GetSingleton<BuildingGenerateSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            var worldTimeData = SystemAPI.GetSingleton<WorldTimeData>();
-             new ResourceMineGenerateJob
+            new ResourceMineGenerateJob
             {
                 ECB = ecb,
                 GeneratingTagLookup = _generatingTagLookup,
-                // HarvestAbilityLookup = _harvestAbilityLookup,
-                // Config = config,
-                DeltaHour = worldTimeData.deltaHour
-            }.ScheduleParallel();
-
-            new PlantGenerateJob
-            {
-                ECB = ecb,
-                // Config = config,
-                DeltaHour = worldTimeData.deltaHour
+                City = SystemAPI.GetSingleton<SubGameStatusData>().City
             }.ScheduleParallel();
         }
 
 
         [BurstCompile]
-        [WithNone(typeof(OocTag))]
-        [WithNone(typeof(ConstructingData))]
-        [WithAll(typeof(PlayerTag))]
-        private partial struct PlantGenerateJob : IJobEntity
-        {
-            public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public float DeltaHour;
-            // [ReadOnly] public BuildingGenerateSystemConfig Config;
-
-            private void Execute([ChunkIndexInQuery] int index, ref PlantGenerateAttr plantGenerateAttr, ref GenerateData data,
-               in BuildingAttr buildingAttr, in SubGameplayGeneralAttr subGameplayGeneralAttr, in LocalTransform transform)
-            {
-                data.AccumulatedHours += DeltaHour;
-                
-                // Generate resource
-                if (data.AccumulatedHours >=  plantGenerateAttr.GenerateSpeedHoursPerUnit)
-                {
-                    var amount = (int)(data.AccumulatedHours /  plantGenerateAttr.GenerateSpeedHoursPerUnit);
-                    data.AccumulatedHours %= plantGenerateAttr.GenerateSpeedHoursPerUnit;
-                    // Generate resource
-                    var request = ECB.CreateEntity(index);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, request);
-                    ECB.AddComponent(index, request, new ResourceChangeRequest
-                    {
-                        Type = plantGenerateAttr.GenerateResourceType,
-                        FromFaction = subGameplayGeneralAttr.Faction,
-                        AbsAmount = amount,
-                        RequestType = ResourceRequestType.Generate
-                    });
-                    // Generate Pop Number VFX
-                    var popNumberRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, popNumberRequest);
-                    ECB.AddComponent(index, popNumberRequest, new PopNumberRequest
-                    {
-                        ColorId = subGameplayGeneralAttr.Faction == FactionTag.Light
-                            ? (int)PopNumberType.LightGenerate
-                            : (int)PopNumberType.DarkGenerate,
-                        Position = transform.Position,
-                        Scale = 1f,
-                        Value = amount,
-                    });
-                }
-            }
-        }
-         [BurstCompile]
-        [WithNone(typeof(OocTag))]
-        [WithNone(typeof(ConstructingData))]
+        [WithNone(typeof(ConstructingTimer))]
         [WithAll(typeof(PlayerTag))]
         private partial struct ResourceMineGenerateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
-            // [ReadOnly] public ComponentLookup<HarvestAbility> HarvestAbilityLookup;
-            [ReadOnly] public float DeltaHour;
-            // [ReadOnly] public BuildingGenerateSystemConfig Config;
 
-            private void Execute([ChunkIndexInQuery] int index, ref ResourceMineGenerateAttr resourceMineGenerateAttr, ref GenerateData data,
-                in DynamicBuffer<GarrisonEntity> entities, in BuildingAttr buildingAttr, in SubGameplayGeneralAttr subGameplayGeneralAttr,
+            [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
+
+            [ReadOnly] public Entity City;
+
+            private void Execute([ChunkIndexInQuery] int index, ref ResourceMineGenerateAttr resourceMineGenerateAttr,
+                in DynamicBuffer<GarrisonEntity> entities, in BuildingAttr buildingAttr,
+                in SubGameplayGeneralAttr subGameplayGeneralAttr,
                 in LocalTransform transform,
                 Entity entity)
             {
-         
-                // Not enough workers
+                // Not enough workers, decrease city generate speed if it has been already added.
                 if (entities.Length < resourceMineGenerateAttr.MinCultivatorsRequireToGenerate)
                 {
                     resourceMineGenerateAttr.GenerateSpeedHoursPerUnit = 0f;
                     if (GeneratingTagLookup.HasComponent(entity))
+                    {
                         ECB.RemoveComponent<GeneratingTag>(index, entity);
+                        var decreaseGenerateSpeedRequest = ECB.CreateEntity(index);
+                        ECB.AddComponent<SubGameplayEntityTag>(index, decreaseGenerateSpeedRequest);
+                        ECB.AddComponent(index, decreaseGenerateSpeedRequest, new ResourceChangeRequest
+                        {
+                            ResourceType = resourceMineGenerateAttr.GenerateResourceType,
+                            RequestType = ResourceRequestType.DecreaseGenerateSpeedForResourceMine,
+                            City = City,
+                            HoursPerUnit = resourceMineGenerateAttr.GenerateSpeedHoursPerUnit
+                        });
+                    }
                     return;
                 }
 
-                // Generating
+                // Increase city generate speed if it has not been added yet.
                 if (!GeneratingTagLookup.HasComponent(entity))
-                    ECB.AddComponent<GeneratingTag>(index, entity);
-
-                #region GenerateSpeed not influneced by garrison count. Deprecated
-
-                
-
-                // Calculate speed
-                // var speed = 0f;
-                // foreach (var garrisonEntity in entities)
-                // {
-                //     var harvestAbility = HarvestAbilityLookup[garrisonEntity.Value];
-                //     speed += harvestAbility.Amount * harvestAbility.Speed;
-                // }
-                // resourceMineGenerateAttr.CurGenerateSpeed = speed;
-                
-                // Generate resource
-                #endregion
-
-                data.AccumulatedHours += DeltaHour;
-                if ( data.AccumulatedHours>= resourceMineGenerateAttr.GenerateSpeedHoursPerUnit)
                 {
-                    var amount = (int)(data.AccumulatedHours / resourceMineGenerateAttr.GenerateSpeedHoursPerUnit);
-                    data.AccumulatedHours %= resourceMineGenerateAttr.GenerateSpeedHoursPerUnit;
-                    // Generate resource
-                    var request = ECB.CreateEntity(index);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, request);
-                    ECB.AddComponent(index, request, new ResourceChangeRequest
+                    ECB.AddComponent<GeneratingTag>(index, entity);
+                    var decreaseGenerateSpeedRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<SubGameplayEntityTag>(index, decreaseGenerateSpeedRequest);
+                    ECB.AddComponent(index, decreaseGenerateSpeedRequest, new ResourceChangeRequest
                     {
-                        Type = resourceMineGenerateAttr.GenerateResourceType,
-                        FromFaction = subGameplayGeneralAttr.Faction,
-                        AbsAmount = amount,
-                        RequestType = ResourceRequestType.Generate
-                    });
-                    // Generate Pop Number VFX
-                    var popNumberRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, popNumberRequest);
-                    ECB.AddComponent(index, popNumberRequest, new PopNumberRequest
-                    {
-                        ColorId = subGameplayGeneralAttr.Faction == FactionTag.Light
-                            ? (int)PopNumberType.LightGenerate
-                            : (int)PopNumberType.DarkGenerate,
-                        Position = transform.Position,
-                        Scale = 1f,
-                        Value = amount,
+                        ResourceType = resourceMineGenerateAttr.GenerateResourceType,
+                        RequestType = ResourceRequestType.DecreaseGenerateSpeedForResourceMine,
+                        City = City,
+                        HoursPerUnit = resourceMineGenerateAttr.GenerateSpeedHoursPerUnit
                     });
                 }
             }

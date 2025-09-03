@@ -85,15 +85,15 @@ namespace SparFlame.UI.SubGameplay
                     Slots[i].SetActive(true);
                     var slotComponent = SlotComponents[i];
                     var conjureData = conjuringDatas[i];
-                    var generalAttr = _em.GetComponentData<SubGameplayGeneralAttr>(conjureData.ConjuringEntity);
+                    var subGameplayGeneralAttr = _em.GetComponentData<SubGameplayGeneralAttr>(conjureData.ConjuringEntity);
                     var info = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(conjureAttribute.ConjuringType,
-                        generalAttr.ID);
+                        subGameplayGeneralAttr.PrefabID);
                     slotComponent.unitNameText.text = info.GameplayName;
                     slotComponent.button!.image.sprite = info.Sprite;
                     slotComponent.remainedCountText.text =
                         $"{conjureData.ConjuredAmount} / {conjureData.TargetAmount}";
                     slotComponent.remainedTimeText.text =
-                        UIMathMethods.FormatTimeFromHours((int)conjureData.RemainingTimeHours);
+                        UIMathMethods.FormatTimeFromHours((int)conjureData.ThisTaskRemainingTime);
                 }
                 else
                 {

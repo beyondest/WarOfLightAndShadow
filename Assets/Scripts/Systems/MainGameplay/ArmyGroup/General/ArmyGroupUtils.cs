@@ -1,10 +1,7 @@
-﻿using SparFlame.Components.ComponentUtils;
-using SparFlame.Components.General;
-using SparFlame.Components.Input;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {

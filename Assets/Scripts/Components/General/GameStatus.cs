@@ -1,5 +1,4 @@
-﻿using SparFlame.Components.MainGameplay;
-using Unity.Entities;
+﻿using Unity.Entities;
 
 namespace SparFlame.Components.General
 {

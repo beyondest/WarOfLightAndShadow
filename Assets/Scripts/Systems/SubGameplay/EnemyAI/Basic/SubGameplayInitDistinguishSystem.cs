@@ -1,7 +1,5 @@
 ﻿using System;
-using SparFlame.Components.ComponentUtils;
 using SparFlame.Components.General;
-using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;

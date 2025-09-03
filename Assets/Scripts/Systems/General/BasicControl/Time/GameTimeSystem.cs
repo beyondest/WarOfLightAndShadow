@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿
+using SparFlame.Components.General;
 using Unity.Entities;
 
 namespace SparFlame.Systems.General.BasicControl
@@ -15,6 +16,7 @@ namespace SparFlame.Systems.General.BasicControl
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<GameTimeConfig>();
+            state.RequireForUpdate<WaitInfo>();
         }
 
         public void OnUpdate(ref SystemState state)
@@ -37,6 +39,7 @@ namespace SparFlame.Systems.General.BasicControl
                 gameTimeScale.ValueRW.Value = 1f;
                 fixedStepGroup.Timestep = gameBasicConfig.basicFixStep;
                 worldTimeData.ValueRW = gameTimeConfig.initWorldTimeData;
+                worldTimeData.ValueRW.totalHours = TimeUtils.GetTotalHoursFromWorldTimeData(worldTimeData.ValueRO);
                 return;
             }
 
@@ -56,20 +59,38 @@ namespace SparFlame.Systems.General.BasicControl
             }
             worldTimeData.ValueRW.deltaHour =  gameTimeData.ValueRO.DeltaTime * gameTimeConfig.gameTimeSecondToWorldTimeHour;
             worldTimeData.ValueRW.hour += worldTimeData.ValueRO.deltaHour;
+            worldTimeData.ValueRW.totalHours += worldTimeData.ValueRO.deltaHour;
             if (worldTimeData.ValueRO.hour >= 24)
             {
                 worldTimeData.ValueRW.hour = 0;
                 worldTimeData.ValueRW.day += 1;
-                if (worldTimeData.ValueRO.day > 30)
+                if (TimeUtils.ShouldMonthAdd(worldTimeData.ValueRO.month, worldTimeData.ValueRO.day))
                 {
-                    worldTimeData.ValueRW.day = 0;
+                    worldTimeData.ValueRW.day = 1;
                     worldTimeData.ValueRW.month += 1;
                     if (worldTimeData.ValueRO.month > 12)
                     {
-                        worldTimeData.ValueRW.month = 0;
+                        worldTimeData.ValueRW.month = 1;
                         worldTimeData.ValueRW.year += 1;
                     }
                 }
+            }
+
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            switch (waitInfo.WaitType)
+            {
+                case WaitType.Personalize:
+                    if (worldTimeData.ValueRO.totalHours >= waitInfo.TargetTotalHours)
+                    {
+                        waitInfo.WaitType = WaitType.None;
+                        waitInfo.TargetTotalHours = 0f;
+                        SystemAPI.SetSingleton(waitInfo);
+                        gameTimeScale.ValueRW.Value = 1f;
+                    }
+                    break;
+                case WaitType.None:
+                case WaitType.UntilBattle:
+                    break;
             }
         }
     }

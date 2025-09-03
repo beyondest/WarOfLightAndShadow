@@ -20,31 +20,26 @@ namespace SparFlame.Systems.SubGameplay.Construct
         {
             new ConstructingTimerJob
             {
-                DeltaHours = SystemAPI.GetSingleton<WorldTimeData>().deltaHour,
+                CurrentTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
             }.ScheduleParallel();
         }
 
-     
+
         [BurstCompile]
         public partial struct ConstructingTimerJob : IJobEntity
         {
-            [ReadOnly] public float DeltaHours;
+            [ReadOnly] public float CurrentTotalHours;
+            
             public EntityCommandBuffer.ParallelWriter ECB;
-            private void Execute([ChunkIndexInQuery]int index,ref ConstructingData constructingTimer,
+
+            private void Execute([ChunkIndexInQuery] int index, ref ConstructingTimer constructingTimer,
                 Entity selfEntity, in BuildingAttr buildingAttr)
             {
-                constructingTimer.LastTimeHours -= DeltaHours;
-                if (constructingTimer.LastTimeHours <= 0)
-                {
-                    ECB.RemoveComponent<ConstructingData>(index, selfEntity);
-                    if(buildingAttr.Type == BuildingType.Dwellings)
-                        ECB.SetComponentEnabled<DwellingGeneratePopulationTag>(index, selfEntity, true);
-                    ECB.SetComponentEnabled<VolumeObstacleSpawnRequest>(index, selfEntity, true);
-                }
+                if (constructingTimer.builtUpTargetTotalHours > CurrentTotalHours) return;
+                ECB.RemoveComponent<ConstructingTimer>(index, selfEntity);
             }
         }
-    
     }
 }

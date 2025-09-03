@@ -119,4 +119,12 @@ namespace SparFlame.Components.Input
         public bool MoveOutSameIdUnits;
         public bool ClassSelection;
     }
+
+    public struct InputGeneralShortcutData : IComponentData
+    {
+        public bool Wait;
+        public bool CheckInfo;
+        public bool CloseWindow;
+
+    }
 }

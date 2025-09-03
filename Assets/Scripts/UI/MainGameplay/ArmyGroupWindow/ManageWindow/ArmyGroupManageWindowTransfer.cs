@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using SparFlame.Components.ComponentUtils;
+﻿using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -8,7 +6,6 @@ using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 // ReSharper disable Unity.Entities.MustBeSurroundedWithRefRwRo
@@ -222,7 +219,7 @@ namespace SparFlame.UI.MainGameplay
                 for (i = 0; i < datas.Length; i++)
                 {
                     var data = datas[i];
-                    if (data.Id == generalAttr.ValueRO.ID)
+                    if (data.Id == generalAttr.ValueRO.PrefabID)
                     {
                         break;
                     }
@@ -234,7 +231,7 @@ namespace SparFlame.UI.MainGameplay
                     datas.Add(new ArmyGroupUnitTypeData
                     {
                         UnitType = unitAttr.ValueRO.Type,
-                        Id = generalAttr.ValueRO.ID,
+                        Id = generalAttr.ValueRO.PrefabID,
                         Count = 1
                     });
                 }
@@ -249,7 +246,7 @@ namespace SparFlame.UI.MainGameplay
                 units.Add(new ArmyGroupUnit
                 {
                     Unit = unit,
-                    GlobalId = generalAttr.ValueRO.ID
+                    GlobalId = generalAttr.ValueRO.PrefabID
                 });
             }
 

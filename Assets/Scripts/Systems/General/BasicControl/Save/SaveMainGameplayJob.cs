@@ -155,6 +155,8 @@ namespace SparFlame.Systems.General.BasicControl
             in LocalTransform transform, in CityAttr cityAttr,
             in DynamicBuffer<CityGarrisonEntity> cityGarrisonEntities,
             in DynamicBuffer<CityGarrisonTypeData> cityGarrisonTypeDatas,
+            in DynamicBuffer<CityResourceEntry> cityResourceEntries,
+            in DynamicBuffer<CityTask> cityTasks,
             Entity selfEntity)
         {
             var saveEntity = ECB.CreateEntity(index);
@@ -171,6 +173,18 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB.AppendToBuffer(index, saveEntity, typeData);
             }
 
+            ECB.AddBuffer<CityResourceEntry>(index, saveEntity);
+            foreach (var cityResourceEntry in cityResourceEntries)
+            {
+                ECB.AppendToBuffer(index, saveEntity, cityResourceEntry);
+            }
+
+            ECB.AddBuffer<CityTask>(index, saveEntity);
+            foreach (var cityTask in cityTasks)
+            {
+                ECB.AppendToBuffer(index, saveEntity, cityTask);
+            }
+            
             // Check if it needs to save garrison data
             if (cityGarrisonEntities.Length > 0)
             {
@@ -281,6 +295,8 @@ namespace SparFlame.Systems.General.BasicControl
         private void Execute([ChunkIndexInQuery] int index,
             in SeTransform transform, in CityAttr cityAttr,
             in DynamicBuffer<CityGarrisonTypeData> cityGarrisonTypeDatas,
+            in DynamicBuffer<CityResourceEntry> cityResourceEntries,
+            in DynamicBuffer<CityTask> cityTasks,
             Entity selfEntity)
         {
             ECB.DestroyEntity(index, selfEntity);
@@ -296,9 +312,22 @@ namespace SparFlame.Systems.General.BasicControl
                 Scale = transform.scale
             });
 
+            ECB.SetBuffer<CityGarrisonTypeData>(index, city);
             foreach (var cityGarrisonTypeData in cityGarrisonTypeDatas)
             {
                 ECB.AppendToBuffer(index, city, cityGarrisonTypeData);
+            }
+
+            ECB.SetBuffer<CityResourceEntry>(index,city);
+            foreach (var cityResourceEntry in cityResourceEntries)
+            {
+                ECB.AppendToBuffer(index, city, cityResourceEntry);
+            }
+
+            ECB.SetBuffer<CityTask>(index, city);
+            foreach (var cityTask in cityTasks)
+            {
+                ECB.AppendToBuffer(index, city, cityTask);
             }
 
             if (CityGarrisonEntitiesLookup.TryGetBuffer(selfEntity, out var cityGarrisonEntities))

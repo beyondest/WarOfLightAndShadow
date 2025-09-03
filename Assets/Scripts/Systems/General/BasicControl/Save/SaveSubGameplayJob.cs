@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -44,6 +45,15 @@ namespace SparFlame.Systems.General.BasicControl
         public long armyGroupSaveId;
     }
 
+    [Serializable]
+    public struct SeConjuringData : IBufferElementData
+    {
+        public int unitGlobalId;
+        public int targetAmount;
+        public int conjuredAmount;
+        public float remainingTimeHours;
+        public float accumulatedHours;
+    }
 
     [BurstCompile]
     [WithNone(typeof(InArmyGroup))]
@@ -53,8 +63,12 @@ namespace SparFlame.Systems.General.BasicControl
 
         [ReadOnly] public BufferLookup<GarrisonEntity> GarrisonEntitiesLookup;
         [ReadOnly] public BufferLookup<GarrisonTypeData> GarrisonTypeDataLookup;
+        [ReadOnly] public BufferLookup<ConjuringData> ConjuringDataLookup;
+        
         [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
         [ReadOnly] public ComponentLookup<PhysicsMass> PhysicsMassLookup;
+        [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTimerLookup;
+        [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
 
         private void Execute([ChunkIndexInQuery] int index, in SubGameplayGeneralAttr generalAttr,
             in LocalTransform transform,
@@ -67,7 +81,7 @@ namespace SparFlame.Systems.General.BasicControl
                 rotation = transform.Rotation,
                 scale = transform.Scale,
             });
-            ECB.AddComponent(index, saveEntity, new SeGlobalId { value = generalAttr.ID });
+            ECB.AddComponent(index, saveEntity, new SeGlobalId { value = generalAttr.PrefabID });
             ECB.AddComponent(index, saveEntity, statData);
             if (generalAttr.BaseTag == BaseTag.Units)
             {
@@ -88,6 +102,12 @@ namespace SparFlame.Systems.General.BasicControl
             }
             else if (generalAttr.BaseTag == BaseTag.Buildings)
             {
+                // Save city task unique id
+                if (CityTaskUniqueIdLookup.TryGetComponent(selfEntity, out var cityTaskUniqueId))
+                {
+                    ECB.AddComponent(index,saveEntity,cityTaskUniqueId);
+                }
+                // Save garrison data
                 if (GarrisonEntitiesLookup.TryGetBuffer(selfEntity, out var garrisonEntities)
                     && garrisonEntities.Length > 0)
                 {
@@ -111,6 +131,30 @@ namespace SparFlame.Systems.General.BasicControl
                     ECB.AddComponent(index, saveEntity,
                         new SeTmpId { value = SaveUtilities.GetTmpIdForSaving(selfEntity) });
                 }
+                
+                // Save conjuring data
+                if (ConjuringDataLookup.TryGetBuffer(selfEntity, out var conjuringDataBuffer) && conjuringDataBuffer.Length > 0)
+                {
+                    ECB.AddBuffer<SeConjuringData>(index, saveEntity);
+                    foreach (var conjuringData in conjuringDataBuffer)
+                    {
+                        ECB.AppendToBuffer(index, saveEntity, new SeConjuringData
+                        {
+                            accumulatedHours = conjuringData.LastCheckTotalHours,
+                            conjuredAmount = conjuringData.ConjuredAmount,
+                            remainingTimeHours = conjuringData.ThisTaskRemainingTime,
+                            targetAmount = conjuringData.TargetAmount,
+                            unitGlobalId = conjuringData.UnitGlobalId
+                        });
+                    }
+                }
+                
+                // Save constructing timer data
+                if (ConstructingTimerLookup.TryGetComponent(selfEntity, out var constructingTimer))
+                {
+                    ECB.AddComponent(index, saveEntity, constructingTimer);
+                }
+                
             }
         }
     }
@@ -188,12 +232,15 @@ namespace SparFlame.Systems.General.BasicControl
     public partial struct LoadSubGameplayJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
+        
+        // Component lookups
         [ReadOnly] public ComponentLookup<ExpData> ExpLookup;
         [ReadOnly] public ComponentLookup<SeInGarrison> InGarrisonLookup;
         [ReadOnly] public ComponentLookup<SeInverseMass> InverseMassLookup;
         [ReadOnly] public ComponentLookup<PhysicsMass> PhysicsMassLookup;
+        [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTimerLookup;
+        [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
 
-        // Upgrade component lookups
         [ReadOnly] public ComponentLookup<MovableData> MovableDataLookup;
         [ReadOnly] public ComponentLookup<AttackAbility> AttackAbilityLookup;
         [ReadOnly] public ComponentLookup<HealAbility> HealAbilityLookup;
@@ -201,8 +248,10 @@ namespace SparFlame.Systems.General.BasicControl
 
         [ReadOnly] public ComponentLookup<SeTmpId> TmpIdLookup;
 
+        // Buffer lookups
         [ReadOnly] public BufferLookup<SeGarrisonEntity> GarrisonEntitiesLookup;
         [ReadOnly] public BufferLookup<GarrisonTypeData> GarrisonTypeDataLookup;
+        [ReadOnly] public BufferLookup<SeConjuringData> SeConjuringDataLookup;
 
         [ReadOnly] public NativeHashMap<int, Entity> GlobalIdxToPrefabs;
         [ReadOnly] public NativeHashMap<int, ExpStaticConfig> ExpDatabase;
@@ -294,11 +343,43 @@ namespace SparFlame.Systems.General.BasicControl
                 }
             }
 
+            // Set conjuring data
+            if (SeConjuringDataLookup.TryGetBuffer(selfEntity, out var seConjuringDatas))
+            {
+                ECB.AddComponent<ConjuringTag>(index, instance);
+                foreach (var seConjuringData in seConjuringDatas)
+                {
+                    ECB.AppendToBuffer(index, instance, new ConjuringData
+                    {
+                        UnitGlobalId = seConjuringData.unitGlobalId,
+                        TargetAmount = seConjuringData.targetAmount,
+                        ConjuredAmount = seConjuringData.conjuredAmount,
+                        ThisTaskRemainingTime = seConjuringData.remainingTimeHours,
+                        LastCheckTotalHours = seConjuringData.accumulatedHours,
+                        ConjuringEntity = GlobalIdxToPrefabs[seConjuringData.unitGlobalId]
+                    });
+                }
+            }
+            
+            // Set constructing timer data
+            if (ConstructingTimerLookup.TryGetComponent(selfEntity, out var constructingTimer))
+            {
+                ECB.AddComponent(index, instance, constructingTimer);
+            }
+            
+            // Set city task unique id
+            if (CityTaskUniqueIdLookup.TryGetComponent(selfEntity, out var cityTaskUniqueId))
+            {
+                ECB.AddComponent(index, instance, cityTaskUniqueId);
+            }
+            
             // Set tmp id
             if (TmpIdLookup.TryGetComponent(selfEntity, out var tmpId))
             {
                 ECB.AddComponent(index, instance, tmpId);
             }
+            
+            
         }
     }
 

@@ -104,7 +104,7 @@ namespace SparFlame.UI.SubGameplay
             resourceTypeIcon.sprite = BasicUIResourceManager.Instance.ResourceSprites[resourceAttr.Type];
             resourceTypeText.text = resourceAttr.Type.ToString();
             resourceAmountText.text = resourceAttr.AmountRange.lower + " - " + resourceAttr.AmountRange.upper;
-            descriptionText.text = DatabaseManager.ResourceDatabaseSo.GetItemById(generalAttr.ID).description;
+            descriptionText.text = DatabaseManager.ResourceDatabaseSo.GetItemById(generalAttr.PrefabID).description;
         }
 
         private void UpdateDynamicInfo()

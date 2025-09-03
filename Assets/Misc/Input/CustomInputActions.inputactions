@@ -2257,7 +2257,7 @@
             ]
         },
         {
-            "name": "InfoWindow",
+            "name": "GeneralShortcut",
             "id": "41cb7778-5fb7-4516-9aa2-f17454a0f828",
             "actions": [
                 {
@@ -2273,6 +2273,15 @@
                     "name": "CloseWindow",
                     "type": "Button",
                     "id": "488a5faa-f392-49ce-812c-24a8a0b9aef5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Wait",
+                    "type": "Button",
+                    "id": "55b503fe-ae08-41c2-b676-6af1a750544a",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -2299,6 +2308,17 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "CloseWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5dcf06e2-c435-4287-8690-44923b4c5872",
+                    "path": "<Keyboard>/t",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Wait",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

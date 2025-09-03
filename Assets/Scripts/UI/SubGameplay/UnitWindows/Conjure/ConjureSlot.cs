@@ -74,7 +74,7 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateDynamicData()
         {
-            var maxCount = GameplayUIUtils.CalMaxCountForConjureOrConstruct(_faction,
+            var maxCount = GameplayUIUtils.CalMaxCountForConjureOrConstruct(
                 _em, _targetEntity);
 
             // Cannot conjure this unit even for one

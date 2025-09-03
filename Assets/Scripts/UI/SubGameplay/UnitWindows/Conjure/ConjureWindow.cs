@@ -147,7 +147,7 @@ namespace SparFlame.UI.SubGameplay
             _currentTier = maxTier;
             tierFilterIcon.color = Color.gray;
             var customInputActions = InputListener.Instance.GetCustomInputActions();
-            customInputActions.InfoWindow.CloseWindow.performed += _ => Hide();
+            customInputActions.GeneralShortcut.CloseWindow.performed += _ => Hide();
         }
         #endregion
 

@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.Garrison;
 using SparFlame.Systems.SubGameplay.Ooc;
 using Unity.Burst;
@@ -43,17 +44,18 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<BuildingGarrisonBuff> _buildingGarrisonBuffLookup;
         private ComponentLookup<UnitGarrisonBuff> _unitGarrisonBuffLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
+        private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
+        private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<GarrisonBuffConfig>();
             state.RequireForUpdate<CavalryMoveBuffConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
-            state.RequireForUpdate<DarkResourceDataTag>();
-            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<StatSystemConfig>();
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<OocSystemConfig>();
@@ -86,6 +88,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _cavalryMoveBuffLookup = state.GetComponentLookup<CavalryMoveBuff>(true);
             _buildingGarrisonBuffLookup = state.GetComponentLookup<BuildingGarrisonBuff>(true);
             _unitGarrisonBuffLookup = state.GetComponentLookup<UnitGarrisonBuff>(true);
+            _constructingTimerLookup = state.GetComponentLookup<ConstructingTimer>(true);
+            _cityTaskUniqueIdLookup = state.GetComponentLookup<CityTaskUniqueId>(true);
+            
         }
 
         [BurstCompile]
@@ -120,7 +125,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _cavalryMoveBuffLookup.Update(ref state);
             _buildingGarrisonBuffLookup.Update(ref state);
             _unitGarrisonBuffLookup.Update(ref state);
-            
+            _constructingTimerLookup.Update(ref state);
+            _cityTaskUniqueIdLookup.Update(ref state);
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             var oocSystemConfig = SystemAPI.GetSingleton<OocSystemConfig>();
             // var config = SystemAPI.GetSingleton<StatSystemConfig>();
@@ -181,7 +187,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 SightConfig = autoChooseTargetSystemConfig,
                 OocConfig = oocSystemConfig,
                 PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
-
+                CurrentCity = SystemAPI.GetSingleton<SubGameStatusData>().City,
+                
                 // Debug
                 StatDebug = statDebug,
 
@@ -200,7 +207,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 InTeamTagLookup = _inTeamTagLookup,
                 UnitAttrLookup = _unitAttrLookup,
                 DwellingAttrLookup = _dwellingAttrLookup,
-                ExpDataLookup = _expDataLookup
+                ExpDataLookup = _expDataLookup,
+                ConstructingTimerLookup =_constructingTimerLookup,
+                CityTaskUniqueIdLookup =_cityTaskUniqueIdLookup 
             }.Schedule();
         }
     }

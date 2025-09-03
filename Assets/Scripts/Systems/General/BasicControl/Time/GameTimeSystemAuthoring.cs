@@ -14,6 +14,10 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, authoring.config);
+                AddComponent(entity, new WaitInfo
+                {
+                    WaitType = WaitType.None
+                });
             }
         }
     }

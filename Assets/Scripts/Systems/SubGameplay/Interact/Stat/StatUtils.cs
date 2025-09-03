@@ -1,4 +1,6 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using Unity.Entities;
@@ -23,21 +25,21 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ecb.AddComponent<SubGameplayEntityTag>(index, request);
         }
 
-        public static void GenerateHarvestResourceRequest(in StatChangeRequest request,
-            in SubGameplayGeneralAttr interactorAttr,
-            in ResourceAttr resourceAttr, int index, EntityCommandBuffer.ParallelWriter ecb,
-            int absAmount)
-        {
-            var entity = ecb.CreateEntity(index);
-            ecb.AddComponent(index, entity, new ResourceChangeRequest
-            {
-                Type = resourceAttr.Type,
-                AbsAmount = absAmount,
-                FromFaction = interactorAttr.Faction,
-                RequestType = ResourceRequestType.Harvest
-            });
-            ecb.AddComponent<SubGameplayEntityTag>(index, entity);
-        }
+        // public static void GenerateHarvestResourceRequest(in StatChangeRequest request,
+        //     in SubGameplayGeneralAttr interactorAttr,
+        //     in ResourceAttr resourceAttr, int index, EntityCommandBuffer.ParallelWriter ecb,
+        //     int absAmount)
+        // {
+        //     var entity = ecb.CreateEntity(index);
+        //     ecb.AddComponent(index, entity, new ResourceChangeRequest
+        //     {
+        //         ResourceType = resourceAttr.Type,
+        //         AbsAmount = absAmount,
+        //         FromFaction = interactorAttr.Faction,
+        //         RequestType = ResourceRequestType.Harvest
+        //     });
+        //     ecb.AddComponent<SubGameplayEntityTag>(index, entity);
+        // }
 
         public static void GeneratePopNumberRequest(ref ComponentLookup<LocalTransform> transformLookup,
             in StatChangeRequest request,
@@ -82,7 +84,24 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ecb.AddComponent<SubGameplayEntityTag>(index, destroyObstacleRequest);
         }
 
-
+        public static void GenerateCityTaskCancelRequest(
+            int index, 
+            int uniqueId,
+            Entity city,
+            ResourceRequestType requestType,
+            EntityCommandBuffer.ParallelWriter ecb
+            )
+        {
+            var request = ecb.CreateEntity(index);
+            ecb.AddComponent(index, request, new ResourceChangeRequest
+            {
+                AbsAmount = 0,
+                RequestType = requestType,
+                FromBuildingUniqueId = uniqueId,
+                City = city,
+            });
+            ecb.AddComponent<SubGameplayEntityTag>(index, request);
+        }
         public static void GenerateGarrisonUnitDieRequest(Entity interacteeEntity, int index,
             in SubGameplayGeneralAttr interacteeAttr,
             ref ComponentLookup<InGarrison> inGarrisonLookup, EntityCommandBuffer.ParallelWriter ecb)
@@ -93,13 +112,13 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 BuildingEntity = inGarrison.BuildingEntity,
                 UnitEntity = interacteeEntity,
-                Id = interacteeAttr.ID
+                Id = interacteeAttr.PrefabID
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, garrisonUnitDieRequest);
         }
 
         public static void GenerateReleasePopulationRequest(Entity interacteeEntity, int index,
-            in SubGameplayGeneralAttr interacteeAttr,
+            Entity city,
             ref BufferLookup<CostList> costListLookup, EntityCommandBuffer.ParallelWriter ecb)
         {
             var releasePopulationRequest = ecb.CreateEntity(index);
@@ -113,9 +132,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ecb.AddComponent(index, releasePopulationRequest, new ResourceChangeRequest
             {
                 AbsAmount = math.abs(amount),
-                FromFaction = interacteeAttr.Faction,
-                RequestType = ResourceRequestType.Release,
-                Type = ResourceType.SoulPact
+                City = city,
+                RequestType = ResourceRequestType.PopulationRelease,
+                ResourceType = ResourceType.SoulPact,
+                
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, releasePopulationRequest);
         }
@@ -123,16 +143,19 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
 
 
-        public static void GenerateDwellingDestroyResourceChangeRequest(Entity interacteeEntity, int index,
-            in SubGameplayGeneralAttr interacteeAttr, in DwellingAttr dwellingAttr, EntityCommandBuffer.ParallelWriter ecb)
+        public static void GenerateStorageDecreaseRequest( int index,
+            Entity city,
+            ResourceType resourceType,
+            int decreaseAmount,
+            EntityCommandBuffer.ParallelWriter ecb)
         {
             var request = ecb.CreateEntity(index);
             ecb.AddComponent(index, request, new ResourceChangeRequest
             {
-                Type = dwellingAttr.ResourceType,
-                AbsAmount = math.abs(dwellingAttr.Amount),
-                FromFaction = interacteeAttr.Faction,
-                RequestType = ResourceRequestType.DwellingDestroyConsume
+                ResourceType = resourceType,
+                AbsAmount = decreaseAmount,
+                City = city,
+                RequestType =ResourceRequestType.ResourceBuildingDestroyedAfterConstruction,
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, request);
         }

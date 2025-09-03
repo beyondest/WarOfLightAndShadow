@@ -9,9 +9,6 @@ namespace SparFlame.Components.SubGameplay
         public int Amount;
     }
 
-    public struct DwellingGeneratePopulationTag : IComponentData,IEnableableComponent
-    {
-        
-    }
+
 
 }

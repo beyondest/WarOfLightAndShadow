@@ -24,10 +24,11 @@ namespace SparFlame.Components.SubGameplay
     public struct ConjuringData : IBufferElementData
     {
         public Entity ConjuringEntity;
+        public int UnitGlobalId;
         public int TargetAmount;
         public int ConjuredAmount;
-        public float RemainingTimeHours;
-        public float AccumulatedHours;
+        public float ThisTaskRemainingTime;
+        public float LastCheckTotalHours;
     }
 
 }

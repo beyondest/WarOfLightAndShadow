@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Entities.Serialization;
@@ -32,11 +33,14 @@ namespace SparFlame.Systems.General.BasicControl
         private ComponentLookup<AttackAbility> _attackAbilityLookup;
         private ComponentLookup<HealAbility> _healAbilityLookup;
         private ComponentLookup<HarvestAbility> _harvestAbilityLookup;
+        private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
+        
+        private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
 
         private BufferLookup<SeGarrisonEntity> _garrisonEntitiesLookup;
         private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
+        private BufferLookup<SeConjuringData> _seConjuringDataLookup;
 
-        // private ComponentLookup<VolumeObstacleSpawnRequest> _volumeObstacleSpawnRequestsLookup;
 
         // Main gameplay component lookup
         private ComponentLookup<SeArmyGroupInGarrison> _armyGroupInGarrisonLookup;
@@ -61,10 +65,12 @@ namespace SparFlame.Systems.General.BasicControl
             _attackAbilityLookup = GetComponentLookup<AttackAbility>(true);
             _healAbilityLookup = GetComponentLookup<HealAbility>(true);
             _harvestAbilityLookup = GetComponentLookup<HarvestAbility>(true);
-
+            _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
+            _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
+            
             _garrisonEntitiesLookup = GetBufferLookup<SeGarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
-            // _volumeObstacleSpawnRequestsLookup = GetComponentLookup<VolumeObstacleSpawnRequest>(true);
+            _seConjuringDataLookup = GetBufferLookup<SeConjuringData>(true);
 
             _armyGroupInGarrisonLookup = GetComponentLookup<SeArmyGroupInGarrison>(true);
             _cityGarrisonEntitiesLookup = GetBufferLookup<SeCityGarrisonEntity>(true);
@@ -91,7 +97,7 @@ namespace SparFlame.Systems.General.BasicControl
                 SaveLoadController.Instance.OnEcsLoadCitySubData += LoadCitySubData;
                 SaveLoadController.Instance.OnEcsLoadArmyGroupSubData += LoadArmyGroupSubData;
                 SaveLoadController.Instance.OnEcsLoadGameMainData += LoadGameMainData;
-                SaveLoadController.Instance.OnEcsLoadMainGameplayData += LoadMainGameplayMainData;
+                SaveLoadController.Instance.OnEcsLoadMainGameplayData += LoadMainGameplayData;
             }
         }
 
@@ -211,9 +217,12 @@ namespace SparFlame.Systems.General.BasicControl
             _attackAbilityLookup.Update(this);
             _healAbilityLookup.Update(this);
             _harvestAbilityLookup.Update(this);
+            _constructingTimerLookup.Update(this);
+            _cityTaskUniqueIdLookup.Update(this);
 
             _garrisonEntitiesLookup.Update(this);
             _garrisonTypeDataLookup.Update(this);
+            _seConjuringDataLookup.Update(this);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
 
 
@@ -233,6 +242,9 @@ namespace SparFlame.Systems.General.BasicControl
                 HarvestAbilityLookup = _harvestAbilityLookup,
                 MovableDataLookup = _movableDataLookup,
                 ExpDatabase = _expDatabase,
+                ConstructingTimerLookup = _constructingTimerLookup,
+                SeConjuringDataLookup = _seConjuringDataLookup,
+                CityTaskUniqueIdLookup = _cityTaskUniqueIdLookup,
             }.ScheduleParallel(Dependency);
             loadJob.Complete();
             ecb.Playback(EntityManager);
@@ -271,7 +283,7 @@ namespace SparFlame.Systems.General.BasicControl
             ecb3.Dispose();*/
         }
 
-        private void LoadMainGameplayMainData()
+        private void LoadMainGameplayData()
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
             var cityMainDataPath = SaveUtilities.GetCityMainDataPath(playerSaveSlot);
@@ -389,36 +401,27 @@ namespace SparFlame.Systems.General.BasicControl
                         .GetSingleton<PlayerFactionData>();
                     SystemAPI.SetSingleton(factionData);
 
-                    // Set light resource data
-                    var savedLightResourceDatas = dem.CreateEntityQuery(typeof(LightResourceDataTag),
-                            typeof(ResourceTypeToAvailableAmount))
-                        .GetSingletonBuffer<ResourceTypeToAvailableAmount>();
-                    var lightResourceDatas =
-                        SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(
-                            SystemAPI.GetSingletonEntity<LightResourceDataTag>());
-                    for (var i = 0; i < savedLightResourceDatas.Length; i++)
+                    // Set resource data
+                    var savedResourceDatas = dem.CreateEntityQuery(typeof(ResourceData))
+                        .GetSingletonBuffer<ResourceData>();
+                    var currentResourceDatas =
+                        SystemAPI.GetSingletonBuffer<ResourceData>();
+                    for (var i = 0; i < savedResourceDatas.Length; i++)
                     {
-                        var typeToAvailableAmount = savedLightResourceDatas[i];
-                        lightResourceDatas[i] = typeToAvailableAmount;
+                        var savedResourceData = savedResourceDatas[i];
+                        currentResourceDatas[i] = savedResourceData;
                     }
 
-                    // Set dark resource data
-                    var savedDarkResourceDatas = dem.CreateEntityQuery(typeof(DarkResourceDataTag),
-                            typeof(ResourceTypeToAvailableAmount))
-                        .GetSingletonBuffer<ResourceTypeToAvailableAmount>();
-                    var darkResourceDatas =
-                        SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(
-                            SystemAPI.GetSingletonEntity<DarkResourceDataTag>());
-                    for (var i = 0; i < savedDarkResourceDatas.Length; i++)
-                    {
-                        var typeToAvailableAmount = savedDarkResourceDatas[i];
-                        darkResourceDatas[i] = typeToAvailableAmount;
-                    }
 
                     // Set world time data
                     var worldTimeData = dem.CreateEntityQuery(typeof(WorldTimeData))
                         .GetSingleton<WorldTimeData>();
                     SystemAPI.SetSingleton(worldTimeData);
+                    
+                    // Set Unique Id
+                    var uniqueIdData = dem.CreateEntityQuery(typeof(LastUniqueId))
+                        .GetSingleton<LastUniqueId>();
+                    SystemAPI.SetSingleton(uniqueIdData);
                 }
             }
             else

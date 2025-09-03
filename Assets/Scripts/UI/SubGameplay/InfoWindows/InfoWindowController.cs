@@ -1,7 +1,6 @@
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Systems.General.Input;
 using Unity.Entities;
 using UnityEngine;
 
@@ -74,7 +73,6 @@ namespace SparFlame.UI.SubGameplay
         }
 
         private bool _minimizeWindow;
-        private CustomInputActions _customInputActions;
         private bool _ifLastTimePlayerCloseByEsc;
 
         private Entity _closeUpTarget;
@@ -83,6 +81,7 @@ namespace SparFlame.UI.SubGameplay
         private EntityQuery _customMouseDataQuery;
         private EntityQuery _cursorData;
         private EntityQuery _selectedData;
+        private EntityQuery _generalShortcutData;
 
 
         private void Awake()
@@ -100,7 +99,7 @@ namespace SparFlame.UI.SubGameplay
             _customMouseDataQuery = _em.CreateEntityQuery(typeof(InputMouseData));
             _cursorData = _em.CreateEntityQuery(typeof(SubGameplayCursorData));
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
-            _customInputActions = InputListener.Instance.GetCustomInputActions();
+            _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
         }
 
@@ -113,17 +112,16 @@ namespace SparFlame.UI.SubGameplay
             var inputMouseData = _customMouseDataQuery.GetSingleton<InputMouseData>();
             var cursorData = _cursorData.GetSingleton<SubGameplayCursorData>();
             var selectedData = _selectedData.GetSingleton<UnitSelectionData>();
-            
-            
+            var generalShortcutData = _generalShortcutData.GetSingleton<InputGeneralShortcutData>();
               
                 
             // Check left click event
             // Valid when left click on interactable entity
             var leftClickOnValid = !inputMouseData.IsOverUI
-                                   && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
+                                   && generalShortcutData.CheckInfo
                                    && cursorData.LeftCursorType is not (SubGameplayCursorType.None);
             var leftClickOnInvalid = !inputMouseData.IsOverUI
-                                     && _customInputActions.InfoWindow.CheckInfo.WasPerformedThisFrame()
+                                     && generalShortcutData.CheckInfo
                                      && cursorData.LeftCursorType is (SubGameplayCursorType.None);
 
             // Check should switch close up target
@@ -214,7 +212,7 @@ namespace SparFlame.UI.SubGameplay
                     ResourceDetailWindow.Instance.Hide();
             }
 
-            var closeByEsc = _customInputActions.InfoWindow.CloseWindow.WasPerformedThisFrame();
+            var closeByEsc = generalShortcutData.CloseWindow;
             var shouldHideInfoWindow = leftClickOnInvalid
                                        || closeByEsc
                                        || (!UnitDetailWindow.Instance.HasTarget()
@@ -270,12 +268,6 @@ namespace SparFlame.UI.SubGameplay
         }
 
 
-        private void ScrollUpWindow()
-        {
-        }
 
-        private void ScrollDownWindow()
-        {
-        }
     }
 }

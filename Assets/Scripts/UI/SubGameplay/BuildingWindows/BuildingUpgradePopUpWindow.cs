@@ -89,7 +89,7 @@ namespace SparFlame.UI.SubGameplay
 
         private void Update()
         {
-            if (_actions.InfoWindow.CloseWindow.WasPerformedThisFrame())
+            if (_actions.GeneralShortcut.CloseWindow.WasPerformedThisFrame())
             {
                 OnClickCancel();
             }

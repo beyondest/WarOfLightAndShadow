@@ -233,9 +233,9 @@ namespace SparFlame.UI.SubGameplay
             _closeUpTargetColliderSize = _em.GetComponentData<BoxColliderSize>(_targetEntity).Value;
             closeUpTargetName.text = attr.BaseTag switch
             {
-                BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(attr.ID).gameplayName,
-                BaseTag.Buildings => DatabaseManager.BuildingDatabaseSo.GetItemById(attr.ID).gameplayName,
-                BaseTag.Resources => DatabaseManager.ResourceDatabaseSo.GetItemById(attr.ID).gameplayName,
+                BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(attr.PrefabID).gameplayName,
+                BaseTag.Buildings => DatabaseManager.BuildingDatabaseSo.GetItemById(attr.PrefabID).gameplayName,
+                BaseTag.Resources => DatabaseManager.ResourceDatabaseSo.GetItemById(attr.PrefabID).gameplayName,
                 _ => throw new ArgumentOutOfRangeException()
             };
             if (_em.HasComponent<ExpData>(_targetEntity))

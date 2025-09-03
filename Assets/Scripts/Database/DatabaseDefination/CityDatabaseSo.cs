@@ -65,6 +65,8 @@ namespace SparFlame.Database
         [VerticalGroup("Gameplay"), HideLabel, FoldoutGroup("Gameplay/Max Garrison Army Count", expanded: true)]
         public int maxGarrisonArmyCount;
 
+        [VerticalGroup("Gameplay"), HideLabel] public List<ResourceData> initResources; 
+
         [VerticalGroup("SceneGroup"), HideLabel, LabelText("Env")]
         public SceneGroup envSceneGroup;
         

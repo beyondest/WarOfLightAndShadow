@@ -55,6 +55,8 @@ namespace SparFlame.Systems.General.BasicControl
                 BattleTriggerRequest = default
             });
             EntityManager.CreateSingleton(new PlayerSaveSlot());
+
+            EntityManager.CreateSingleton(new LastUniqueId());
         }
 
         protected override void OnStartRunning()

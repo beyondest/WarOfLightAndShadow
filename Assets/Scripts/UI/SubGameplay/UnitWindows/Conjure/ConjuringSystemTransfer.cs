@@ -46,17 +46,6 @@ namespace SparFlame.UI.SubGameplay
                 if (MiniConjureWindow.Instance.TryGetConjureInfo(_inputConjureData.HotKeyIndex, out var index))
                 {
                     MiniConjureWindow.Instance.OnClickSlot(index);
-                    // if (maxConjureCount == 0)
-                    // {
-                    //     var hintRequest = EntityManager.CreateEntity();
-                    //     EntityManager.AddComponent<HintRequest>(hintRequest);
-                    //     EntityManager.SetComponentData(hintRequest, new HintRequest
-                    //     {
-                    //         Name = HintName.NotEnoughResource,
-                    //     });
-                    //     return;
-                    // }
-                    // ConjureUnits(unit,  1, building,maxConjureCount);
                 }
             }
         }
@@ -74,7 +63,7 @@ namespace SparFlame.UI.SubGameplay
                 UnitPrefab = conjureUnit
             });
             ecb.AddComponent<SubGameplayEntityTag>(conjureRequest);
-            
+            var city = SystemAPI.GetSingleton<SubGameStatusData>().City;
             var costList = SystemAPI.GetBuffer<CostList>(conjureUnit);
             foreach (var cost in costList)
             {
@@ -82,8 +71,8 @@ namespace SparFlame.UI.SubGameplay
                 ecb.AddComponent(costRequest, new ResourceChangeRequest
                 {
                     AbsAmount = math.abs(cost.Amount * actualConjureCount),
-                    FromFaction = SystemAPI.GetComponent<SubGameplayGeneralAttr>(buildingEntity).Faction,
-                    Type = cost.Type,
+                    City = city,
+                    ResourceType = cost.Type,
                     RequestType = ResourceRequestType.Consume
                 });
                 ecb.AddComponent<SubGameplayEntityTag>(conjureRequest);

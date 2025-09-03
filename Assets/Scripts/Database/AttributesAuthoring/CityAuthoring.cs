@@ -1,4 +1,6 @@
-﻿using SparFlame.Components.MainGameplay;
+﻿using System;
+using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
 using Unity.Entities;
@@ -24,15 +26,51 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                     faction = item.faction,
                     baseTag = MainGameBaseTag.City,
                     subFaction = item.subFactionTag,
-                    
                 });
                 AddComponent(entity, new CityAttr
                 {
                     globalId = authoring.globalIdx,
                     maxGarrisonCount = item.maxGarrisonArmyCount,
-                    
                 });
                 
+                // City Tasks and Resources
+                AddBuffer<CityTask>(entity);
+                var resourceDatas = AddBuffer<CityResourceEntry>(entity);
+                foreach (ResourceType type in Enum.GetValues(typeof(ResourceType)))
+                {
+                    var init = false;
+                    foreach (var resourceData in item.initResources)
+                    {
+                        if (resourceData.resourceType == type)
+                        {
+                            var copy = resourceData;
+                            copy.hoursPerUnit = -1;
+                            init = true;
+                            resourceDatas.Add(new CityResourceEntry
+                            {
+                                accumulatedHours = 0,
+                                resourceData = copy
+                            });
+                            break;
+                        }
+                    }
+
+                    if (!init)
+                    {
+                        resourceDatas.Add(new CityResourceEntry
+                        {
+                            accumulatedHours = 0,
+                            resourceData = new ResourceData
+                            {
+                                resourceType = type,
+                                storage = 0,
+                                availableAmount = 0,
+                                hoursPerUnit = -1
+                            }
+                        });
+                    }
+                   
+                }                
                 
                 // Garrison 
                 AddBuffer<CityGarrisonEntity>(entity);
@@ -51,6 +89,8 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                     RequestFromFaction = item.faction,
                 });
                 SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
+                
+                
             }
         }
     }

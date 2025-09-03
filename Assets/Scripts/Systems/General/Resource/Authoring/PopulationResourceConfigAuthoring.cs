@@ -9,8 +9,6 @@ namespace SparFlame.Systems.General.Resource
     public class PopulationResourceConfigAuthoring : MonoBehaviour
     {
         public ResourceType populationResourceType = ResourceType.SoulPact;
-        public int lightInitPopulation;
-        public int darkInitPopulation;
 
 
         private class ResourceSystemAuthoringBaker : Baker<PopulationResourceConfigAuthoring>
@@ -19,11 +17,9 @@ namespace SparFlame.Systems.General.Resource
             {
                 var entity = GetEntity(TransformUsageFlags.None);
           
-                AddComponent(entity, new PopulationResourceConfig
+                AddComponent(entity, new PopulationResourceType
                 {
-                   PopulationResourceType = authoring.populationResourceType,
-                   LightInitPopulation = authoring.lightInitPopulation,
-                   DarkInitPopulation = authoring.darkInitPopulation
+                   Value = authoring.populationResourceType,
                 });
             }
         }
@@ -34,13 +30,7 @@ namespace SparFlame.Systems.General.Resource
   
 
     
-    public struct PopulationResourceConfig : IComponentData
-    {
-        public ResourceType PopulationResourceType;
-        public int LightInitPopulation;
-        public int DarkInitPopulation;
 
-    }
 
 
  

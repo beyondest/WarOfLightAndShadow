@@ -125,8 +125,6 @@ namespace SparFlame.Database
                     ResourceType = data.dwellingResourceType,
                     Amount = data.dwellingAmount
                 });
-                AddComponent<DwellingGeneratePopulationTag>(entity);
-                SetComponentEnabled<DwellingGeneratePopulationTag>(entity,true);
             }
 
             private void BakeOrnamentAttr(BuildingDataItem item, Entity entity)

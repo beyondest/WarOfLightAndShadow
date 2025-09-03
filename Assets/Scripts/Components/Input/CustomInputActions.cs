@@ -2345,7 +2345,7 @@ namespace SparFlame.Components.Input
             ]
         },
         {
-            ""name"": ""InfoWindow"",
+            ""name"": ""GeneralShortcut"",
             ""id"": ""41cb7778-5fb7-4516-9aa2-f17454a0f828"",
             ""actions"": [
                 {
@@ -2361,6 +2361,15 @@ namespace SparFlame.Components.Input
                     ""name"": ""CloseWindow"",
                     ""type"": ""Button"",
                     ""id"": ""488a5faa-f392-49ce-812c-24a8a0b9aef5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Wait"",
+                    ""type"": ""Button"",
+                    ""id"": ""55b503fe-ae08-41c2-b676-6af1a750544a"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -2387,6 +2396,17 @@ namespace SparFlame.Components.Input
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""CloseWindow"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5dcf06e2-c435-4287-8690-44923b4c5872"",
+                    ""path"": ""<Keyboard>/t"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Wait"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -2673,10 +2693,11 @@ namespace SparFlame.Components.Input
             m_ModeSwitch_SwitchBuild = m_ModeSwitch.FindAction("SwitchBuild", throwIfNotFound: true);
             m_ModeSwitch_SwitchCameraFly = m_ModeSwitch.FindAction("SwitchCameraFly", throwIfNotFound: true);
             m_ModeSwitch_Pause = m_ModeSwitch.FindAction("Pause", throwIfNotFound: true);
-            // InfoWindow
-            m_InfoWindow = asset.FindActionMap("InfoWindow", throwIfNotFound: true);
-            m_InfoWindow_CheckInfo = m_InfoWindow.FindAction("CheckInfo", throwIfNotFound: true);
-            m_InfoWindow_CloseWindow = m_InfoWindow.FindAction("CloseWindow", throwIfNotFound: true);
+            // GeneralShortcut
+            m_GeneralShortcut = asset.FindActionMap("GeneralShortcut", throwIfNotFound: true);
+            m_GeneralShortcut_CheckInfo = m_GeneralShortcut.FindAction("CheckInfo", throwIfNotFound: true);
+            m_GeneralShortcut_CloseWindow = m_GeneralShortcut.FindAction("CloseWindow", throwIfNotFound: true);
+            m_GeneralShortcut_Wait = m_GeneralShortcut.FindAction("Wait", throwIfNotFound: true);
             // Conjure
             m_Conjure = asset.FindActionMap("Conjure", throwIfNotFound: true);
             m_Conjure_FullConjure = m_Conjure.FindAction("FullConjure", throwIfNotFound: true);
@@ -2693,7 +2714,7 @@ namespace SparFlame.Components.Input
             UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, CustomInputActions.UI.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_CameraFlyMode.enabled, "This will cause a leak and performance issues, CustomInputActions.CameraFlyMode.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_ModeSwitch.enabled, "This will cause a leak and performance issues, CustomInputActions.ModeSwitch.Disable() has not been called.");
-            UnityEngine.Debug.Assert(!m_InfoWindow.enabled, "This will cause a leak and performance issues, CustomInputActions.InfoWindow.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_GeneralShortcut.enabled, "This will cause a leak and performance issues, CustomInputActions.GeneralShortcut.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_Conjure.enabled, "This will cause a leak and performance issues, CustomInputActions.Conjure.Disable() has not been called.");
         }
 
@@ -4162,34 +4183,39 @@ namespace SparFlame.Components.Input
         /// </summary>
         public ModeSwitchActions @ModeSwitch => new ModeSwitchActions(this);
 
-        // InfoWindow
-        private readonly InputActionMap m_InfoWindow;
-        private List<IInfoWindowActions> m_InfoWindowActionsCallbackInterfaces = new List<IInfoWindowActions>();
-        private readonly InputAction m_InfoWindow_CheckInfo;
-        private readonly InputAction m_InfoWindow_CloseWindow;
+        // GeneralShortcut
+        private readonly InputActionMap m_GeneralShortcut;
+        private List<IGeneralShortcutActions> m_GeneralShortcutActionsCallbackInterfaces = new List<IGeneralShortcutActions>();
+        private readonly InputAction m_GeneralShortcut_CheckInfo;
+        private readonly InputAction m_GeneralShortcut_CloseWindow;
+        private readonly InputAction m_GeneralShortcut_Wait;
         /// <summary>
-        /// Provides access to input actions defined in input action map "InfoWindow".
+        /// Provides access to input actions defined in input action map "GeneralShortcut".
         /// </summary>
-        public struct InfoWindowActions
+        public struct GeneralShortcutActions
         {
             private @CustomInputActions m_Wrapper;
 
             /// <summary>
             /// Construct a new instance of the input action map wrapper class.
             /// </summary>
-            public InfoWindowActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
+            public GeneralShortcutActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
             /// <summary>
-            /// Provides access to the underlying input action "InfoWindow/CheckInfo".
+            /// Provides access to the underlying input action "GeneralShortcut/CheckInfo".
             /// </summary>
-            public InputAction @CheckInfo => m_Wrapper.m_InfoWindow_CheckInfo;
+            public InputAction @CheckInfo => m_Wrapper.m_GeneralShortcut_CheckInfo;
             /// <summary>
-            /// Provides access to the underlying input action "InfoWindow/CloseWindow".
+            /// Provides access to the underlying input action "GeneralShortcut/CloseWindow".
             /// </summary>
-            public InputAction @CloseWindow => m_Wrapper.m_InfoWindow_CloseWindow;
+            public InputAction @CloseWindow => m_Wrapper.m_GeneralShortcut_CloseWindow;
+            /// <summary>
+            /// Provides access to the underlying input action "GeneralShortcut/Wait".
+            /// </summary>
+            public InputAction @Wait => m_Wrapper.m_GeneralShortcut_Wait;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
-            public InputActionMap Get() { return m_Wrapper.m_InfoWindow; }
+            public InputActionMap Get() { return m_Wrapper.m_GeneralShortcut; }
             /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
             public void Enable() { Get().Enable(); }
             /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
@@ -4197,9 +4223,9 @@ namespace SparFlame.Components.Input
             /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
             public bool enabled => Get().enabled;
             /// <summary>
-            /// Implicitly converts an <see ref="InfoWindowActions" /> to an <see ref="InputActionMap" /> instance.
+            /// Implicitly converts an <see ref="GeneralShortcutActions" /> to an <see ref="InputActionMap" /> instance.
             /// </summary>
-            public static implicit operator InputActionMap(InfoWindowActions set) { return set.Get(); }
+            public static implicit operator InputActionMap(GeneralShortcutActions set) { return set.Get(); }
             /// <summary>
             /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
             /// </summary>
@@ -4207,17 +4233,20 @@ namespace SparFlame.Components.Input
             /// <remarks>
             /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
             /// </remarks>
-            /// <seealso cref="InfoWindowActions" />
-            public void AddCallbacks(IInfoWindowActions instance)
+            /// <seealso cref="GeneralShortcutActions" />
+            public void AddCallbacks(IGeneralShortcutActions instance)
             {
-                if (instance == null || m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Contains(instance)) return;
-                m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Add(instance);
+                if (instance == null || m_Wrapper.m_GeneralShortcutActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_GeneralShortcutActionsCallbackInterfaces.Add(instance);
                 @CheckInfo.started += instance.OnCheckInfo;
                 @CheckInfo.performed += instance.OnCheckInfo;
                 @CheckInfo.canceled += instance.OnCheckInfo;
                 @CloseWindow.started += instance.OnCloseWindow;
                 @CloseWindow.performed += instance.OnCloseWindow;
                 @CloseWindow.canceled += instance.OnCloseWindow;
+                @Wait.started += instance.OnWait;
+                @Wait.performed += instance.OnWait;
+                @Wait.canceled += instance.OnWait;
             }
 
             /// <summary>
@@ -4226,8 +4255,8 @@ namespace SparFlame.Components.Input
             /// <remarks>
             /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
             /// </remarks>
-            /// <seealso cref="InfoWindowActions" />
-            private void UnregisterCallbacks(IInfoWindowActions instance)
+            /// <seealso cref="GeneralShortcutActions" />
+            private void UnregisterCallbacks(IGeneralShortcutActions instance)
             {
                 @CheckInfo.started -= instance.OnCheckInfo;
                 @CheckInfo.performed -= instance.OnCheckInfo;
@@ -4235,15 +4264,18 @@ namespace SparFlame.Components.Input
                 @CloseWindow.started -= instance.OnCloseWindow;
                 @CloseWindow.performed -= instance.OnCloseWindow;
                 @CloseWindow.canceled -= instance.OnCloseWindow;
+                @Wait.started -= instance.OnWait;
+                @Wait.performed -= instance.OnWait;
+                @Wait.canceled -= instance.OnWait;
             }
 
             /// <summary>
-            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="InfoWindowActions.UnregisterCallbacks(IInfoWindowActions)" />.
+            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="GeneralShortcutActions.UnregisterCallbacks(IGeneralShortcutActions)" />.
             /// </summary>
-            /// <seealso cref="InfoWindowActions.UnregisterCallbacks(IInfoWindowActions)" />
-            public void RemoveCallbacks(IInfoWindowActions instance)
+            /// <seealso cref="GeneralShortcutActions.UnregisterCallbacks(IGeneralShortcutActions)" />
+            public void RemoveCallbacks(IGeneralShortcutActions instance)
             {
-                if (m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Remove(instance))
+                if (m_Wrapper.m_GeneralShortcutActionsCallbackInterfaces.Remove(instance))
                     UnregisterCallbacks(instance);
             }
 
@@ -4253,21 +4285,21 @@ namespace SparFlame.Components.Input
             /// <remarks>
             /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
             /// </remarks>
-            /// <seealso cref="InfoWindowActions.AddCallbacks(IInfoWindowActions)" />
-            /// <seealso cref="InfoWindowActions.RemoveCallbacks(IInfoWindowActions)" />
-            /// <seealso cref="InfoWindowActions.UnregisterCallbacks(IInfoWindowActions)" />
-            public void SetCallbacks(IInfoWindowActions instance)
+            /// <seealso cref="GeneralShortcutActions.AddCallbacks(IGeneralShortcutActions)" />
+            /// <seealso cref="GeneralShortcutActions.RemoveCallbacks(IGeneralShortcutActions)" />
+            /// <seealso cref="GeneralShortcutActions.UnregisterCallbacks(IGeneralShortcutActions)" />
+            public void SetCallbacks(IGeneralShortcutActions instance)
             {
-                foreach (var item in m_Wrapper.m_InfoWindowActionsCallbackInterfaces)
+                foreach (var item in m_Wrapper.m_GeneralShortcutActionsCallbackInterfaces)
                     UnregisterCallbacks(item);
-                m_Wrapper.m_InfoWindowActionsCallbackInterfaces.Clear();
+                m_Wrapper.m_GeneralShortcutActionsCallbackInterfaces.Clear();
                 AddCallbacks(instance);
             }
         }
         /// <summary>
-        /// Provides a new <see cref="InfoWindowActions" /> instance referencing this action map.
+        /// Provides a new <see cref="GeneralShortcutActions" /> instance referencing this action map.
         /// </summary>
-        public InfoWindowActions @InfoWindow => new InfoWindowActions(this);
+        public GeneralShortcutActions @GeneralShortcut => new GeneralShortcutActions(this);
 
         // Conjure
         private readonly InputActionMap m_Conjure;
@@ -4960,11 +4992,11 @@ namespace SparFlame.Components.Input
             void OnPause(InputAction.CallbackContext context);
         }
         /// <summary>
-        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InfoWindow" which allows adding and removing callbacks.
+        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "GeneralShortcut" which allows adding and removing callbacks.
         /// </summary>
-        /// <seealso cref="InfoWindowActions.AddCallbacks(IInfoWindowActions)" />
-        /// <seealso cref="InfoWindowActions.RemoveCallbacks(IInfoWindowActions)" />
-        public interface IInfoWindowActions
+        /// <seealso cref="GeneralShortcutActions.AddCallbacks(IGeneralShortcutActions)" />
+        /// <seealso cref="GeneralShortcutActions.RemoveCallbacks(IGeneralShortcutActions)" />
+        public interface IGeneralShortcutActions
         {
             /// <summary>
             /// Method invoked when associated input action "CheckInfo" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
@@ -4980,6 +5012,13 @@ namespace SparFlame.Components.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnCloseWindow(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Wait" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnWait(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Conjure" which allows adding and removing callbacks.

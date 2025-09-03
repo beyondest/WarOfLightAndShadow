@@ -90,7 +90,8 @@ namespace SparFlame.Database
             foreach (var item in items)
             {
                 if (item.factionTag == FactionTag.Light)
-                    if(!dict.TryAdd((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()), item))
+                    if (!dict.TryAdd((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()),
+                            item))
                         Debug.LogError($"{item.gameplayName} / {item.id} : Duplicate key found");
             }
 
@@ -98,7 +99,8 @@ namespace SparFlame.Database
             {
                 if (item.factionTag == FactionTag.Dark)
                 {
-                    if (dict.TryGetValue((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()), out var lightItem))
+                    if (dict.TryGetValue((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()),
+                            out var lightItem))
                     {
                         item.stat = lightItem.stat;
                         item.statPerLevel = lightItem.statPerLevel;
@@ -136,10 +138,7 @@ namespace SparFlame.Database
                         item.costs = new List<CostResourceTypeAmountPair>();
                         foreach (var cost in lightItem.costs)
                         {
-                            var costCopy = cost;
-                            if (ResourceUtils.GetCorrespondingResource(cost.type, out var correspondingResourceType))
-                                costCopy.type = correspondingResourceType;
-                            item.costs.Add(costCopy);
+                            item.costs.Add(cost);
                         }
                     }
                     else
@@ -153,6 +152,7 @@ namespace SparFlame.Database
             Debug.Log("Copy light data to dark done");
 #endif
         }
+
         // 要统一设置的目标成本列表（你可以在 Inspector 中直接配置）
         [BoxGroup("Tools"), LabelText("Target cost"), SerializeField]
         private List<CostResourceTypeAmountPair> targetCosts;
@@ -177,13 +177,14 @@ namespace SparFlame.Database
 #endif
         }
     }
-    
+
 
     [Serializable]
     public class BuildingDataItem : GeneralDataItem
     {
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("building type")]
         public BuildingType type;
+
         [VerticalGroup("Cost"), HorizontalGroup("Cost/0"), ListDrawerSettings(DraggableItems = true),
          TableColumnWidth(250, false), TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
@@ -226,7 +227,8 @@ namespace SparFlame.Database
         {
             return type switch
             {
-                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower || (FortificationType)GetSubtypeIndex()== FortificationType.BigTower,
+                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower ||
+                                               (FortificationType)GetSubtypeIndex() == FortificationType.BigTower,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
                 BuildingType.ConjuringShrines or BuildingType.Dwellings or BuildingType.Ornaments => false,
@@ -253,7 +255,8 @@ namespace SparFlame.Database
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("Fortification type")]
         public FortificationType fortificationType;
 
-        public override bool IsAttackable() => fortificationType is FortificationType.Tower or FortificationType.BigTower;
+        public override bool IsAttackable() =>
+            fortificationType is FortificationType.Tower or FortificationType.BigTower;
 
         public override int GetSubtypeIndex() => (int)fortificationType;
 
@@ -263,7 +266,6 @@ namespace SparFlame.Database
             if (type == default)
                 type = BuildingType.Fortifications;
         }
-
     }
 
     [Serializable]
@@ -274,9 +276,10 @@ namespace SparFlame.Database
 
         [VerticalGroup("EnumValues"), HideLabel, ShowIf(nameof(IsResourceMine))]
         public ResourceMineType resourceMineType;
+
         [VerticalGroup("EnumValues"), HideLabel, ShowIf(nameof(IsPlantGenerator))]
         public PlantGeneratorType plantGeneratorType;
-        
+
         [FoldoutGroup("Gameplay/Generator"), HorizontalGroup("Gameplay/Generator/0"), HideLabel,
          Tooltip("generate resource type")]
         public ResourceType generateResourceType;
@@ -301,7 +304,6 @@ namespace SparFlame.Database
         private bool IsPlantGenerator() => generatorType == GeneratorType.PlantGenerator;
         private bool IsResourceMine() => generatorType == GeneratorType.ResourceMine;
         public override int GetSubSubTypeIndex() => IsResourceMine() ? (int)resourceMineType : (int)plantGeneratorType;
-
     }
 
     [Serializable]
@@ -316,7 +318,7 @@ namespace SparFlame.Database
         public UnitType conjureUnitType = UnitType.Shield;
 
         [FoldoutGroup("Gameplay/ConjuringShrine"), HorizontalGroup("Gameplay/ConjuringShrine/2"), HideLabel,
-        LabelText("Pos")]
+         LabelText("Pos")]
         public float3 conjurePositionBias;
 
 

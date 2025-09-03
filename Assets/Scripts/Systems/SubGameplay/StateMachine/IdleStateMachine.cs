@@ -42,7 +42,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         [BurstCompile]
         [WithAll(typeof(IdleStateTag))]
         [WithNone(typeof(UnitDeadTag))]
-        [WithNone(typeof(ConstructingData))]
+        [WithNone(typeof(ConstructingTimer))]
         public partial struct IdleStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;

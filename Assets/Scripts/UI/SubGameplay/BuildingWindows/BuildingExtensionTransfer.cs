@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.Audio;
 using SparFlame.Systems.SubGameplay.Construct;
@@ -13,12 +14,10 @@ namespace SparFlame.UI.SubGameplay
     public partial class BuildingExtensionTransfer :  SystemBase
     {
         private bool _isEventInit;
-        private FactionTag _playerFaction;
         private NativeHashMap<int, ExpStaticConfig> _expDatabase;
         protected override void OnCreate()
         {
             RequireForUpdate<SubGamingTag>();
-            // RequireForUpdate<ExpStaticConfig>();
         }
 
         protected override void OnDestroy()
@@ -45,17 +44,13 @@ namespace SparFlame.UI.SubGameplay
                     _expDatabase.Add(config.GlobalIdx, config);
                 }
             }
-            _playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
-
         }
 
         protected override void OnUpdate()
         {
-            var entity = _playerFaction == FactionTag.Light
-                ? SystemAPI.GetSingletonEntity<LightResourceDataTag>()
-                : SystemAPI.GetSingletonEntity<DarkResourceDataTag>();
-            var playerResources = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(entity);
-            BuildingDetailWindow.Instance.UpDatePlayerGlobalResourceData(playerResources);
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            var cityResourceEntries = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
+            BuildingDetailWindow.Instance.UpDatePlayerGlobalResourceData(cityResourceEntries);
         }
 
         private void RecycleBuilding(Entity entity)
@@ -67,6 +62,7 @@ namespace SparFlame.UI.SubGameplay
             var list = new NativeList<CostList>(Allocator.Temp);    
             list.AddRange(buffer.AsNativeArray());
             var scale = SystemAPI.GetSingleton<ConstructSystemConfig>().RecycleScale;
+            var city = SystemAPI.GetSingleton<SubGameStatusData>().City;
             foreach (var cost in list )
             {
                 var request = EntityManager.CreateEntity();
@@ -74,10 +70,11 @@ namespace SparFlame.UI.SubGameplay
                 EntityManager.AddComponent<ResourceChangeRequest>(request);
                 EntityManager.SetComponentData(request, new ResourceChangeRequest
                 {
-                    FromFaction =_playerFaction,
-                    Type = cost.Type,
+                    City = city,
+                    ResourceType = cost.Type,
                     AbsAmount = (int)(cost.Amount * scale),
-                    RequestType = ResourceRequestType.Generate
+                    RequestType = ResourceRequestType.Generate,
+                    
                 });
             }
 
@@ -98,6 +95,7 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpgradeBuilding(List<CostList> costs, Entity entity)
         {
+            var city = SystemAPI.GetSingleton<SubGameStatusData>().City;
             foreach (var cost in costs)
             {
                 var request = EntityManager.CreateEntity();
@@ -105,8 +103,8 @@ namespace SparFlame.UI.SubGameplay
                 EntityManager.AddComponent<ResourceChangeRequest>(request);
                 EntityManager.SetComponentData(request, new ResourceChangeRequest
                 {
-                    FromFaction =_playerFaction,
-                    Type = cost.Type,
+                    City = city,
+                    ResourceType = cost.Type,
                     AbsAmount = cost.Amount,
                     RequestType = ResourceRequestType.Consume
                 });
@@ -123,7 +121,7 @@ namespace SparFlame.UI.SubGameplay
         private void UpdateExpStaticConfig(Entity targetEntity)
         {
             var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(targetEntity);
-            BuildingDetailWindow.Instance.ExpStaticConfig = _expDatabase[generalAttr.ID];
+            BuildingDetailWindow.Instance.ExpStaticConfig = _expDatabase[generalAttr.PrefabID];
         }
     }
     

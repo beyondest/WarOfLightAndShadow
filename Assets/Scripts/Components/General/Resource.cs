@@ -22,17 +22,11 @@ namespace SparFlame.Components.General
 
     public enum ResourceType
     {
-        SoulPact = 0, // Basic Population
-        Essence = 1, // Everywhere, generate and harvest 
-
-        LightEnergy = 2, // Only generate
-        DarkEnergy = 3, // Only generate
-
-        Luminite = 4, //Only Harvest
-        Obsidian = 5, // Only Harvest
-
-        Aetherium = 6, // Only Harvest
-
+        SoulPact = 0, 
+        Essence = 1,  
+        Mana = 2,
+        Crystal = 3,
+        Aetherium = 4,
     }
 
     public struct ResourceAttr : IComponentData
@@ -61,92 +55,77 @@ namespace SparFlame.Components.General
     }
 
 
-    /// <summary>
-    /// In sequence of (int)resourceType, can get through index
-    /// </summary>
-    public struct ResourceTypeToAvailableAmount : IBufferElementData
+ 
+
+    [Serializable]
+    public struct ResourceData : IBufferElementData
     {
-        public ResourceType ResourceType;
-        public int Amount;
+        public ResourceType resourceType;
+        public int availableAmount;
+        public int storage;
+        public float hoursPerUnit;
+        
+        // These 2 fields are for population resource type only
+        public int virtualOccupiedCount;
+        public int occupiedCount;
     }
 
-    public struct ResourceTypeToInitAmount : IBufferElementData
-    {
-        public ResourceType ResourceType;
-        public int Amount;
-    }
+  
 
-    public struct PopulationSpecialData : IComponentData
-    {
-        public int OccupiedAmount;
-        public int TotalAmount;
-    }
+ 
 
-    public struct LightResourceDataTag : IComponentData
-    {
-    }
 
-    public struct DarkResourceDataTag : IComponentData
-    {
-    }
-
-    public struct GlobalResourceDataTag : IComponentData
-    {
-    }
 
 
     public enum ResourceRequestType
     {
-        Harvest = 0,
-        Generate = 1,
-        Consume = 2,
-        Release = 3,
-        DwellingDestroyConsume = 4
+        Generate = 0,
+        Consume = 1,
+        PopulationRelease = 2,
+        ResourceBuildingDestroyedWhenConstructing  = 4,
+        ResourceBuildingDestroyedAfterConstruction = 5,
+        StorageAddByTask = 6,
+        GenerateSpeedAddByTask = 7,
+        DecreaseGenerateSpeedForResourceMine = 8,
+        IncreaseGenerateSpeedForResourceMine = 9,
+        ConjureUnitByTask = 10,
+        ConjureBuildingDestroyed = 11,
+        
+        // Storage add will not be used because it is handled by city resource system, in tasks method
+        // StorageAdd = 5,
     }
 
+    // public enum ResourceBuildingDestroyType
+    // {
+    //     ConstructionStateDestroyed = 0,
+    //     StorageDecreaseOnly = 1
+    // }
+    
     public struct ResourceChangeRequest : IComponentData
     {
-        public ResourceType Type;
-        public FactionTag FromFaction;
+        public ResourceType ResourceType;
+        public Entity City;
 
         /// <summary>
         /// This value must be positive
         /// </summary>
         public int AbsAmount;
+        public float HoursPerUnit;
 
         public ResourceRequestType RequestType;
+        
+        public int FromBuildingUniqueId;
+        public float FinishTotalHours;
+        // public ResourceBuildingDestroyType DestroyType;
     }
-
-
-    public struct ResourceUtils
+    
+    
+    public struct PopulationResourceType : IComponentData
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool GetCorrespondingResource(ResourceType resourceType,
-            out ResourceType correspondingResourceType)
-        {
-            correspondingResourceType = resourceType;
-            switch (resourceType)
-            {
-                case ResourceType.SoulPact:
-                case ResourceType.Essence:
-                case ResourceType.Aetherium:
-                    return false;
-                case ResourceType.LightEnergy:
-                    correspondingResourceType = ResourceType.DarkEnergy;
-                    return true;
-                case ResourceType.DarkEnergy:
-                    correspondingResourceType = ResourceType.LightEnergy;
-                    return true;
-                case ResourceType.Luminite:
-                    correspondingResourceType = ResourceType.Obsidian;
-                    return true;
-                case ResourceType.Obsidian:
-                    correspondingResourceType = ResourceType.Luminite;
-                    return true;
-              
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(resourceType), resourceType, null);
-            }
-        }
+        public ResourceType Value;
+
     }
+
+
+  
 }

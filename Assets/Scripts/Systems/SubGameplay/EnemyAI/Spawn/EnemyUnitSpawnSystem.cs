@@ -12,8 +12,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
     {
         private NativeList<int> _wavePoints;
         private NativeHashMap<int, NativeHashMap<int, int>> _wavePoint2Type2Interval;
-        private NativeHashMap<int, NativeParallelMultiHashMap<int, PrefabEntryUtils.ProbabilityPrefabEntry>> _wavePoint2Type2Entries;
-        private BufferLookup<CostList> _costListLookup;
+
+        private NativeHashMap<int, NativeParallelMultiHashMap<int, PrefabEntryUtils.ProbabilityPrefabEntry>>
+            _wavePoint2Type2Entries;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -21,14 +22,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             state.RequireForUpdate<DarkEnemyDatabaseTag>();
             state.RequireForUpdate<LightEnemyDatabaseTag>();
             state.RequireForUpdate<GameTimeData>();
-            state.RequireForUpdate<LightResourceDataTag>();
             state.RequireForUpdate<PlayerFactionData>();
-            state.RequireForUpdate<DarkResourceDataTag>();
             state.RequireForUpdate<GameWaveData>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<EnemySpawnSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            _costListLookup = state.GetBufferLookup<CostList>(true);
         }
 
         [BurstCompile]
@@ -42,42 +40,35 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 Initialize(ref state);
                 return;
             }
-            if(gameStatus != GameStatus.SubGaming)return;
+
+            if (gameStatus != GameStatus.SubGaming) return;
             // var config = SystemAPI.GetSingleton<EnemySpawnSystemConfig>();
             // Only when enemy population not exceeds, will conjure unit
-            var curPlayerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
-            var enemyResourceDataCenter = curPlayerFaction == FactionTag.Light
-                ? SystemAPI.GetSingletonEntity<DarkResourceDataTag>()
-                : SystemAPI.GetSingletonEntity<LightResourceDataTag>();
-            var enemyResourceData = SystemAPI.GetBuffer<ResourceTypeToAvailableAmount>(enemyResourceDataCenter);
-            if (enemyResourceData[(int)ResourceType.SoulPact].Amount > 0)
+
+
+            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
+            var curWave = SystemAPI.GetSingleton<GameWaveData>().CurWaveIndex;
+            var curPoint = PointDataUtils.GetPoint(curWave, _wavePoints);
+            var curPointType2Interval = _wavePoint2Type2Interval[curPoint];
+            var curPointType2Entries = _wavePoint2Type2Entries[curPoint];
+
+            if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out EnemyAIDebug debug)))
             {
-                _costListLookup.Update(ref state);
-                var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-                var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
-                var curWave = SystemAPI.GetSingleton<GameWaveData>().CurWaveIndex;
-                var curPoint = PointDataUtils.GetPoint(curWave, _wavePoints);
-                var curPointType2Interval = _wavePoint2Type2Interval[curPoint];
-                var curPointType2Entries = _wavePoint2Type2Entries[curPoint];
-
-                if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out EnemyAIDebug debug)))
+                debug = new EnemyAIDebug
                 {
-                    debug = new EnemyAIDebug
-                    {
-                        enabled = false
-                    };
-                }
-
-                new EnemyUnitSpawnJob
-                {
-                    ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                    CurTime = curTime,
-                    Type2Interval = curPointType2Interval,
-                    Type2Entries = curPointType2Entries,
-                    CostListLookup = _costListLookup,
-                    EnemyAIDebug = debug
-                }.ScheduleParallel();
+                    enabled = false
+                };
             }
+
+            new EnemyUnitSpawnJob
+            {
+                ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                CurTime = curTime,
+                Type2Interval = curPointType2Interval,
+                Type2Entries = curPointType2Entries,
+                EnemyAIDebug = debug
+            }.ScheduleParallel();
         }
 
         [BurstCompile]
@@ -88,7 +79,6 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             [ReadOnly] public float CurTime;
             [ReadOnly] public NativeHashMap<int, int> Type2Interval;
             [ReadOnly] public NativeParallelMultiHashMap<int, PrefabEntryUtils.ProbabilityPrefabEntry> Type2Entries;
-            [ReadOnly] public BufferLookup<CostList> CostListLookup;
 
             private void Execute([ChunkIndexInQuery] int index, in SubGameplayGeneralAttr subGameplayGeneralAttr,
                 ref AIConjureShrineData data,
@@ -110,20 +100,20 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                     BuildingEntity = selfEntity,
                     Count = conjureCount
                 });
-                var costList = CostListLookup[entry.Prefab];
-   
-                foreach (var cost in costList)
-                {
-                    var costRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent(index, costRequest, new ResourceChangeRequest
-                    {
-                        AbsAmount = math.abs(cost.Amount * conjureCount),
-                        FromFaction = subGameplayGeneralAttr.Faction,
-                        Type = cost.Type,
-                        RequestType = ResourceRequestType.Consume
-                    });
-                    ECB.AddComponent<SubGameplayEntityTag>(index, selfEntity);
-                }
+                // var costList = CostListLookup[entry.Prefab];
+                //
+                // foreach (var cost in costList)
+                // {
+                //     var costRequest = ECB.CreateEntity(index);
+                //     ECB.AddComponent(index, costRequest, new ResourceChangeRequest
+                //     {
+                //         AbsAmount = math.abs(cost.Amount * conjureCount),
+                //         FromFaction = subGameplayGeneralAttr.Faction,
+                //         ResourceType = cost.Type,
+                //         RequestType = ResourceRequestType.Consume
+                //     });
+                //     ECB.AddComponent<SubGameplayEntityTag>(index, selfEntity);
+                // }
             }
         }
 
@@ -161,7 +151,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 if (!_wavePoint2Type2Entries.ContainsKey(data.WavePoint))
                 {
                     _wavePoint2Type2Entries.Add(data.WavePoint,
-                        new NativeParallelMultiHashMap<int, PrefabEntryUtils.ProbabilityPrefabEntry>(10, Allocator.Persistent));
+                        new NativeParallelMultiHashMap<int, PrefabEntryUtils.ProbabilityPrefabEntry>(10,
+                            Allocator.Persistent));
                 }
 
                 var type2Entry = _wavePoint2Type2Entries[data.WavePoint];

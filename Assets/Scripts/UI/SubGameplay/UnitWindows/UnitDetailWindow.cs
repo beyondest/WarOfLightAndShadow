@@ -133,10 +133,10 @@ namespace SparFlame.UI.SubGameplay
                 generalFactionImage.color = color;
                 subFactionImage.color = color;
             }
-            description.text = DatabaseManager.UnitDatabaseSo.GetItemById(generalAttr.ID).description;
+            description.text = DatabaseManager.UnitDatabaseSo.GetItemById(generalAttr.PrefabID).description;
             generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.Type];
             generalTypeText.text = unitAttr.Type.ToString();
-            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, generalAttr.ID).Sprite;
+            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, generalAttr.PrefabID).Sprite;
             UpdateCostSlots();
         }
         public virtual void UpdateCostSlots()
