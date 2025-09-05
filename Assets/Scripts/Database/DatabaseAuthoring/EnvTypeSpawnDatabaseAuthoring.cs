@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SparFlame.GamePlaySystem.RandomSpawn;
+using SparFlame.Components.SubGameplay;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -23,7 +23,7 @@ namespace SparFlame.Database
                     if (!set.Add(item.type))
                         throw new ArgumentException("Env spawn config wrong, duplicated env type ");
                 }
-
+                
                 if (items.Count != Enum.GetValues(typeof(EnvType)).Length)
                 {
                     var totalSet = new HashSet<EnvType>();
@@ -31,16 +31,16 @@ namespace SparFlame.Database
                     {
                         totalSet.Add(type);
                     }
-
+                
                     var e = totalSet.Except(set);
                     foreach (var t in e)
                     {
                         Debug.Log($"Miss : {t}");
                     }
                     throw new ArgumentException("Env spawn config wrong, Not enough env type, ");
-
+                
                 }
-
+                
                 var buffer2 = AddBuffer<EnvTileTypeSpecialData>(entity);
                 foreach (var item in items)
                 {

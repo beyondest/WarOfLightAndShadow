@@ -20,6 +20,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 003b6e79c5d75994d897bdc9064a6a89
+    m_Address: LightManaHutTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 028b9e33fc2dded428683cd9f28eda82
+    m_Address: DarkCrystalHutTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 02ecbaa6b7035404c8b9c1d518b093aa
     m_Address: EnemyAssembleFlagGather
     m_ReadOnly: 0
@@ -50,6 +60,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 173720657f5fe904883da703aa713863
+    m_Address: LightManaHutTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 183eeb5a1fae4884aa93ae6fb995b15f
     m_Address: DarkTerraNexusTier1
     m_ReadOnly: 0
@@ -57,6 +72,16 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 19ac58e9a0027934fa0fd500d0a9f604
     m_Address: LightVineTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1a11f6929f8b70646aa4beeb54e27a94
+    m_Address: LightManaHutTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2017713ef59f9e94bbb76a0b6e3e2c17
+    m_Address: DarkManaHutTier1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -86,7 +111,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2b6a4a23c4b222347969683727c44a00
-    m_Address: Dwellings
+    m_Address: CapacityBuildings
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -135,6 +160,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4717550bc6f902448a23b6b1960dbd8b
+    m_Address: DarkManaHutTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4a934eec5c163b74288ed8879d67e6e8
     m_Address: LightPhantomGateTier2
     m_ReadOnly: 0
@@ -145,6 +175,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4d07988dcaa701f4c97c12c13ac03841
+    m_Address: LightCrystalHutTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4d1c67ab68b30b342949280bbac5ec10
     m_Address: LightTerraNexusTier3
     m_ReadOnly: 0
@@ -152,6 +187,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4f3829f568f318644b6d15313e0e16d1
     m_Address: DarkEldritchSealTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 508945788abf34b44b08085206ece515
+    m_Address: DarkCrystalHutTier1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -192,6 +232,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5eeb6b3c65cefe942851d5f9ca2ad989
     m_Address: DarkTerraNexusTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5f5fe3d4b366c624b8d42293d412c3f5
+    m_Address: DarkManaHutTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -275,6 +320,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 86725ade68fcdfa4e80fd7aca00ca4ab
+    m_Address: LightCrystalHutTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 88a07853eef3d824686a41bb2ce98dc7
     m_Address: EnemyAssembleFlagAttack
     m_ReadOnly: 0
@@ -327,6 +377,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9ca6400d6f088274a88ba805e1bd535f
     m_Address: DarkPhantomGateTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9df7c64ff77b6f748af9c6d619b76446
+    m_Address: LightCrystalHutTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -487,6 +542,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f37cbce3dd310824184ae4ae636dbb5e
     m_Address: LightFlameDwellingTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f53c2505470d37e42b8a8c73a68c44c9
+    m_Address: DarkCrystalHutTier3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

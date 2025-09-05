@@ -4,23 +4,21 @@ using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Mathematics;
 using UnityEngine;
 
 // ReSharper disable RedundantJumpStatement
 
-namespace SparFlame.GamePlaySystem.Building
+namespace SparFlame.Database
 {
     [CreateAssetMenu(fileName = "BuildingDatabase", menuName = "GameData/BuildingDatabase", order = 0)]
     public class BuildingDatabaseSo : GeneralDatabase<BuildingDataItem>
     {
-        
-        [ TableList(ShowIndexLabels = true,AlwaysExpanded = false),TableColumnWidth(50, Resizable = true),
-         SerializeReference, HideLabel,ListDrawerSettings(DraggableItems = true) ]
+        [TableList(ShowIndexLabels = true, AlwaysExpanded = false), TableColumnWidth(50, Resizable = true),
+         SerializeReference, HideLabel, ListDrawerSettings(DraggableItems = true)]
         private List<BuildingDataItem> items;
 
         [SerializeField, ValueDropdown(nameof(GetTypeOptions))]
@@ -30,12 +28,14 @@ namespace SparFlame.GamePlaySystem.Building
         {
             return GetAllTypes().Select(t => t.FullName);
         }
+
         private IEnumerable<Type> GetAllTypes()
         {
             return Assembly.GetAssembly(typeof(BuildingDataItem))
                 .GetTypes()
                 .Where(t => t.IsSubclassOf(typeof(BuildingDataItem)) && !t.IsAbstract);
         }
+
         [Button("Add Building")]
         private void AddSelectedBuilding()
         {
@@ -44,34 +44,32 @@ namespace SparFlame.GamePlaySystem.Building
                 Debug.LogWarning("No type selected.");
                 return;
             }
+
             var type = Type.GetType(selectedTypeName);
             if (type == null)
             {
                 Debug.LogError($"Type not found: {selectedTypeName}");
                 return;
             }
+
             if (Activator.CreateInstance(type) is BuildingDataItem instance)
             {
                 items.Add(instance);
             }
         }
-        
-        
+
+
         public override List<BuildingDataItem> Items => items;
 
         private bool _shouldCheckValid;
 
-        private void ShouldCheckValid()
-        {
-            _shouldCheckValid = true;
-        }
-        
+
         [Button]
         private void CheckBuildingConfigValid()
         {
             foreach (var item in items)
             {
-                if (item.HasSight() )
+                if (item.HasSight())
                 {
                     if (item.IsAttackable() && !Mathf.Approximately(item.attackRange, item.sightRange)
                         || item.IsHealable() && !Mathf.Approximately(item.healRange, item.sightRange)
@@ -80,44 +78,133 @@ namespace SparFlame.GamePlaySystem.Building
                         item.attackRange = item.harvestRange = item.healRange = item.sightRange;
                     }
                 }
+            }
 
-                if (item.type is BuildingType.ConjuringShrines or BuildingType.Generators)
+            _shouldCheckValid = false;
+            if (_shouldCheckValid) return;
+        }
+
+        [Button("Copy Light Data to Dark")]
+        private void CopyLightDataToDark()
+        {
+            var dict = new Dictionary<(BuildingType, int, Tier, int), BuildingDataItem>();
+            foreach (var item in items)
+            {
+                if (item.factionTag == FactionTag.Light)
+                    if (!dict.TryAdd((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()),
+                            item))
+                        Debug.LogError($"{item.gameplayName} / {item.id} : Duplicate key found");
+            }
+
+            foreach (var item in items)
+            {
+                if (item.factionTag == FactionTag.Dark)
                 {
-                    if (!item.upgradable)
+                    if (dict.TryGetValue((item.type, item.GetSubtypeIndex(), item.curTier, item.GetSubSubTypeIndex()),
+                            out var lightItem))
                     {
-                        Debug.LogError($"{item.gameplayName} / {item.id} : ConjuringShrine and Generators must be upgradable");
-                        item.upgradable = true;
+                        item.stat = lightItem.stat;
+                        item.statPerLevel = lightItem.statPerLevel;
+                        item.expMaxValue = lightItem.expMaxValue;
+                        item.expGainPerLevel = lightItem.expGainPerLevel;
+                        item.maxLevel = lightItem.maxLevel;
+
+                        item.attackAmount = lightItem.attackAmount;
+                        item.attackAmountPerLevel = lightItem.attackAmountPerLevel;
+                        item.attackSpeed = lightItem.attackSpeed;
+                        item.attackSpeedPerLevel = lightItem.attackSpeedPerLevel;
+                        item.attackRange = lightItem.attackRange;
+                        item.attackRangePerLevel = lightItem.attackRangePerLevel;
+                        item.attackTargets = lightItem.attackTargets;
+                        item.attackTargetsPerLevel = lightItem.attackTargetsPerLevel;
+
+                        item.healAmount = lightItem.healAmount;
+                        item.healAmountPerLevel = lightItem.healAmountPerLevel;
+                        item.healSpeed = lightItem.healSpeed;
+                        item.healSpeedPerLevel = lightItem.healSpeedPerLevel;
+                        item.healRange = lightItem.healRange;
+                        item.healRangePerLevel = lightItem.healRangePerLevel;
+                        item.healTargets = lightItem.healTargets;
+                        item.healTargetsPerLevel = lightItem.healTargetsPerLevel;
+
+                        item.harvestAmount = lightItem.harvestAmount;
+                        item.harvestAmountPerLevel = lightItem.harvestAmountPerLevel;
+                        item.harvestSpeed = lightItem.harvestSpeed;
+                        item.harvestSpeedPerLevel = lightItem.harvestSpeedPerLevel;
+                        item.harvestRange = lightItem.harvestRange;
+                        item.harvestRangePerLevel = lightItem.harvestRangePerLevel;
+                        item.harvestTargets = lightItem.harvestTargets;
+                        item.harvestTargetsPerLevel = lightItem.harvestTargetsPerLevel;
+
+                        item.costs = new List<CostResourceTypeAmountPair>();
+                        foreach (var cost in lightItem.costs)
+                        {
+                            item.costs.Add(cost);
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"No light unit found for {item.type} {item.GetSubtypeIndex()} {item.curTier}");
                     }
                 }
             }
-            _shouldCheckValid = false;
-            if(_shouldCheckValid)return;
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("Copy light data to dark done");
+#endif
+        }
+
+        // 要统一设置的目标成本列表（你可以在 Inspector 中直接配置）
+        [BoxGroup("Tools"), LabelText("Target cost"), SerializeField]
+        private List<CostResourceTypeAmountPair> targetCosts;
+
+        [BoxGroup("Tools"), Button("Change all cost")]
+        private void ApplyCostsToAllUnits()
+        {
+            if (targetCosts == null)
+            {
+                Debug.LogWarning("Target cost is null, please set change to target first！");
+                return;
+            }
+
+            foreach (var item in items)
+            {
+                // 创建一个新列表副本，防止多个引用共享一个列表实例
+                item.costs = new List<CostResourceTypeAmountPair>(targetCosts);
+            }
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("All unit costs changed");
+#endif
         }
     }
+
 
     [Serializable]
     public class BuildingDataItem : GeneralDataItem
     {
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("building type")]
         public BuildingType type;
-  
-        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Cost"),ListDrawerSettings(DraggableItems = true)]
+
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/0"), ListDrawerSettings(DraggableItems = true),
+         TableColumnWidth(250, false), TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
 
-        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Cost")]
-        public float constructTime = 10f;
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/1"), Tooltip("Construction time hours")]
+        public float constructTimeHours = 10f;
 
 
         [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/1"),
-        Tooltip("This count should grow with tier, using this to avoid player put all units in a weak tower")]
+         Tooltip("This count should grow with tier, using this to avoid player put all units in a weak tower")]
         public int maxGarrisonCount;
-        
+
         [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/2")]
         public float3 outPositionBias;
-        
-        [ShowIf(nameof(IsGarrisonEnable)),FoldoutGroup("Gameplay/Garrison"),HorizontalGroup("Gameplay/Garrison/3") ,ListDrawerSettings(DraggableItems = true)]
+
+        [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/3"),
+         ListDrawerSettings(DraggableItems = true)]
         public List<GarrisonUnitData> garrisonUnits;
-        
+
         public override int GetGeneralTypeIndex()
         {
             return (int)type;
@@ -130,22 +217,31 @@ namespace SparFlame.GamePlaySystem.Building
             {
                 baseTag = BaseTag.Buildings;
             }
+
             if (factionTag == default)
             {
-                factionTag = FactionTag.Ally;
+                factionTag = FactionTag.Light;
             }
         }
-        
+
         public bool IsGarrisonEnable()
         {
             return type switch
             {
-                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower,
-                BuildingType.Generators => true,
-                BuildingType.ConjuringShrines or BuildingType.Dwellings or BuildingType.Ornaments => false,
-                _ => throw new ArgumentOutOfRangeException()
+                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower ||
+                                               (FortificationType)GetSubtypeIndex() == FortificationType.BigTower,
+                BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
+                BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
+                BuildingType.ConjuringShrines or BuildingType.CapacityBuildings or BuildingType.Ornaments => false,
+                _ => BurstSafe.UnexpectedEnum(type,false)
             };
         }
+
+        public virtual int GetSubSubTypeIndex()
+        {
+            return 0;
+        }
+
         [Serializable]
         public struct GarrisonUnitData
         {
@@ -160,9 +256,11 @@ namespace SparFlame.GamePlaySystem.Building
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("Fortification type")]
         public FortificationType fortificationType;
 
-        public override bool IsAttackable() => fortificationType is FortificationType.Tower ;
+        public override bool IsAttackable() =>
+            fortificationType is FortificationType.Tower or FortificationType.BigTower;
 
         public override int GetSubtypeIndex() => (int)fortificationType;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -177,19 +275,26 @@ namespace SparFlame.GamePlaySystem.Building
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("generator type")]
         public GeneratorType generatorType;
 
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/0"),HideLabel, Tooltip("generate resource type")] 
-        public ResourceType generateResourceType;
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/1")] 
-        public int minCultivatorCounts;
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/2"),Tooltip("All the cultivator generate speed bonus multiply this initial speed to " +
-             "calculate the cur speed, not the cur speed")] 
-        public float initGenerateSpeed;
-        [ShowIf(nameof(IsBloom)),FoldoutGroup("Gameplay/Bloom"),HorizontalGroup("Gameplay/Bloom/3")] 
-        public float maxGenerateSpeed;
+        [VerticalGroup("EnumValues"), HideLabel, ShowIf(nameof(IsResourceMine))]
+        public ResourceMineType resourceMineType;
 
-        [ShowIf(nameof(IsConvertor)), FoldoutGroup("Gameplay/Convertor"), HorizontalGroup("Gameplay/Convertor/0")]
-        public ResourceType convertToType;
+        [VerticalGroup("EnumValues"), HideLabel, ShowIf(nameof(IsPlantGenerator))]
+        public PlantGeneratorType plantGeneratorType;
+
+        [FoldoutGroup("Gameplay/Generator"), HorizontalGroup("Gameplay/Generator/0"), HideLabel,
+         Tooltip("generate resource type")]
+        public ResourceType generateResourceType;
+
+        [ShowIf(nameof(IsPlantGenerator)), FoldoutGroup("Gameplay/Generator"), HorizontalGroup("Gameplay/Generator/2"),
+         Tooltip("Generate speed hours per unit")]
+        public float generateSpeedHoursPerUnit;
+
+        [ShowIf(nameof(IsResourceMine)), FoldoutGroup("Gameplay/Generator"), HorizontalGroup("Gameplay/Generator/1")]
+        public int minWorkersCount = 1;
+
+
         public override int GetSubtypeIndex() => (int)generatorType;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -197,23 +302,26 @@ namespace SparFlame.GamePlaySystem.Building
                 type = BuildingType.Generators;
         }
 
-        private bool IsBloom() => generatorType == GeneratorType.BloomSpire;
-        private bool IsConvertor() => generatorType == GeneratorType.Converter;
+        private bool IsPlantGenerator() => generatorType == GeneratorType.PlantGenerator;
+        private bool IsResourceMine() => generatorType == GeneratorType.ResourceMine;
+        public override int GetSubSubTypeIndex() => IsResourceMine() ? (int)resourceMineType : (int)plantGeneratorType;
     }
 
     [Serializable]
     public class ConjuringShrineData : BuildingDataItem
     {
-        [VerticalGroup("EnumValues"), HideLabel, Tooltip("conjuring shrine type"),OnValueChanged(nameof(SetConjureUnitType))]
+        [VerticalGroup("EnumValues"), HideLabel, Tooltip("conjuring shrine type"),
+         OnValueChanged(nameof(SetConjureUnitType))]
         public ConjuringShrineType conjuringShrineType = ConjuringShrineType.AegisShrine;
-        
+
         [FoldoutGroup("Gameplay/ConjuringShrine"), HorizontalGroup("Gameplay/ConjuringShrine/1"), HideLabel,
-        ReadOnly, Tooltip("Conjure unit type")]
+         ReadOnly, Tooltip("Conjure unit type")]
         public UnitType conjureUnitType = UnitType.Shield;
-        
-        [FoldoutGroup("Gameplay/ConjuringShrine"), HorizontalGroup("Gameplay/ConjuringShrine/2")]
+
+        [FoldoutGroup("Gameplay/ConjuringShrine"), HorizontalGroup("Gameplay/ConjuringShrine/2"), HideLabel,
+         LabelText("Pos")]
         public float3 conjurePositionBias;
-        
+
 
         public override int GetSubtypeIndex() => (int)conjuringShrineType;
 
@@ -221,6 +329,7 @@ namespace SparFlame.GamePlaySystem.Building
         {
             conjureUnitType = (UnitType)conjuringShrineType;
         }
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -230,22 +339,24 @@ namespace SparFlame.GamePlaySystem.Building
     }
 
     [Serializable]
-    public class DwellingData : BuildingDataItem
+    public class CapacityBuildingsData : BuildingDataItem
     {
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("Dwelling type")]
-        public DwellingType dwellingType;
-        
-        [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/1"),HideLabel]
-        public ResourceType dwellingResourceType = ResourceType.SoulPact;
+        public CapacityBuildingType capacityBuildingType;
+
+        [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/1"), HideLabel]
+        public ResourceType storageResourceType = ResourceType.SoulPact;
+
         [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/2")]
-        public int dwellingAmount;
-        
-        public override int GetSubtypeIndex() => (int)dwellingType;
+        public int amount = 2;
+
+        public override int GetSubtypeIndex() => (int)capacityBuildingType;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
             if (type == default)
-                type = BuildingType.Dwellings;
+                type = BuildingType.CapacityBuildings;
         }
     }
 
@@ -257,8 +368,8 @@ namespace SparFlame.GamePlaySystem.Building
 
         [FoldoutGroup("Gameplay/Ornament"), HorizontalGroup("Gameplay/Ornament/0")]
         public bool hasBuff;
-        
-        [ShowIf(nameof(hasBuff)),FoldoutGroup("Gameplay/Ornament"), HorizontalGroup("Gameplay/Ornament/1"),HideLabel]
+
+        [ShowIf(nameof(hasBuff)), FoldoutGroup("Gameplay/Ornament"), HorizontalGroup("Gameplay/Ornament/1"), HideLabel]
         public BuffType ornamentBuffType;
 
         [ShowIf(nameof(hasBuff)), FoldoutGroup("Gameplay/Ornament"), HorizontalGroup("Gameplay/Ornament/2")]
@@ -268,10 +379,9 @@ namespace SparFlame.GamePlaySystem.Building
         public float buffLastTimeSeconds;
 
 
-       
-        
         public override int GetSubtypeIndex() => (int)ornamentType;
         public override bool IsAttackable() => ornamentType is OrnamentType.Crystal or OrnamentType.Beacon;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();

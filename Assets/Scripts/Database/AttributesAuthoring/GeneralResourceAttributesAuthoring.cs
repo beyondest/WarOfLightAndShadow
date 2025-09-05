@@ -1,12 +1,10 @@
-﻿using SparFlame.GamePlaySystem.Fow;
-using SparFlame.GamePlaySystem.Resource;
+﻿using SparFlame.Components.General;
 using Unity.Entities;
 
 namespace SparFlame.Database
 {
     public class GeneralResourceAttributesAuthoring : GeneralDataItemAuthoring
     {
-        public bool debugShow;
         protected class Baker : GeneralDataItemBaker<GeneralResourceAttributesAuthoring>
         {
             public override void Bake(GeneralResourceAttributesAuthoring authoring)
@@ -25,17 +23,11 @@ namespace SparFlame.Database
                     AddComponent(entity, new RenewableData
                     {
                         RegeneratingLeftTime = 0f,
-                        RegenerationTimeSeconds =  item.regenerationTimeSeconds,
+                        RegeneratingTimeHours =  item.regenerationTimeHours,
                     });
                 }
                 BakeVolumeObstacleAttr(item, entity);
-                if (!authoring.debugShow)
-                {
-                    AddComponent(entity, new HideFowAgentRequest
-                    {
-                        Hide = true
-                    });
-                }
+           
             }
         }
     }

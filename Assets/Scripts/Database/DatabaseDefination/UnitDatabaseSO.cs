@@ -4,9 +4,8 @@ using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.Units;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using UnityEngine;
 
 namespace SparFlame.Database
@@ -14,24 +13,26 @@ namespace SparFlame.Database
     [CreateAssetMenu(fileName = "UnitDatabase", menuName = "GameData/UnitDatabase", order = 0)]
     public class UnitDatabaseSo : GeneralDatabase<UnitDataItem>
     {
-        [SerializeReference,TableList(ShowIndexLabels = true),HideLabel,ListDrawerSettings(DraggableItems = true)] 
+        [SerializeReference, TableList(ShowIndexLabels = true), HideLabel, ListDrawerSettings(DraggableItems = true)]
         private List<UnitDataItem> items;
 
-        
+
         [SerializeField, ValueDropdown(nameof(GetTypeOptions))]
         private string selectedTypeName;
 
-       
+
         private IEnumerable<string> GetTypeOptions()
         {
             return GetAllUnitTypes().Select(t => t.FullName);
         }
+
         private IEnumerable<Type> GetAllUnitTypes()
         {
             return Assembly.GetAssembly(typeof(UnitDataItem))
                 .GetTypes()
                 .Where(t => t.IsSubclassOf(typeof(UnitDataItem)) && !t.IsAbstract);
         }
+
         [Button("Add Unit")]
         private void AddSelectedUnit()
         {
@@ -40,19 +41,94 @@ namespace SparFlame.Database
                 Debug.LogWarning("No type selected.");
                 return;
             }
+
             var type = Type.GetType(selectedTypeName);
             if (type == null)
             {
                 Debug.LogError($"Type not found: {selectedTypeName}");
                 return;
             }
+
             if (Activator.CreateInstance(type) is UnitDataItem instance)
             {
                 items.Add(instance);
             }
         }
+
+        [Button("Copy Light Data to Dark")]
+        private void CopyLightDataToDark()
+        {
+            var dict = new Dictionary<(UnitType, int, Tier), UnitDataItem>();
+            foreach (var item in items)
+            {
+                if (item.factionTag == FactionTag.Light)
+                    dict.Add((item.type, item.GetSubtypeIndex(), item.curTier), item);
+            }
+
+            foreach (var item in items)
+            {
+                if (item.factionTag == FactionTag.Dark)
+                {
+                    if (dict.TryGetValue((item.type, item.GetSubtypeIndex(), item.curTier), out var lightItem))
+                    {
+                        item.moveSpeed = lightItem.moveSpeed;
+                        item.moveSpeedPerLevel = lightItem.moveSpeedPerLevel;
+                        item.stat = lightItem.stat;
+                        item.statPerLevel = lightItem.statPerLevel;
+                        item.expMaxValue = lightItem.expMaxValue;
+                        item.expGainPerLevel = lightItem.expGainPerLevel;
+                        item.maxLevel = lightItem.maxLevel;
+
+                        item.attackAmount = lightItem.attackAmount;
+                        item.attackAmountPerLevel = lightItem.attackAmountPerLevel;
+                        item.attackSpeed = lightItem.attackSpeed;
+                        item.attackSpeedPerLevel = lightItem.attackSpeedPerLevel;
+                        item.attackRange = lightItem.attackRange;
+                        item.attackRangePerLevel = lightItem.attackRangePerLevel;
+                        item.attackTargets = lightItem.attackTargets;
+                        item.attackTargetsPerLevel = lightItem.attackTargetsPerLevel;
+
+                        item.healAmount = lightItem.healAmount;
+                        item.healAmountPerLevel = lightItem.healAmountPerLevel;
+                        item.healSpeed = lightItem.healSpeed;
+                        item.healSpeedPerLevel = lightItem.healSpeedPerLevel;
+                        item.healRange = lightItem.healRange;
+                        item.healRangePerLevel = lightItem.healRangePerLevel;
+                        item.healTargets = lightItem.healTargets;
+                        item.healTargetsPerLevel = lightItem.healTargetsPerLevel;
+
+                        item.harvestAmount = lightItem.harvestAmount;
+                        item.harvestAmountPerLevel = lightItem.harvestAmountPerLevel;
+                        item.harvestSpeed = lightItem.harvestSpeed;
+                        item.harvestSpeedPerLevel = lightItem.harvestSpeedPerLevel;
+                        item.harvestRange = lightItem.harvestRange;
+                        item.harvestRangePerLevel = lightItem.harvestRangePerLevel;
+                        item.harvestTargets = lightItem.harvestTargets;
+                        item.harvestTargetsPerLevel = lightItem.harvestTargetsPerLevel;
+
+                        item.conjureSpeedHoursPerUnit = lightItem.conjureSpeedHoursPerUnit;
+                        item.costs = new List<CostResourceTypeAmountPair>();
+                        foreach (var cost in lightItem.costs)
+                        {
+                            item.costs.Add(cost);
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"No light unit found for {item.type} {item.GetSubtypeIndex()} {item.curTier}");
+                    }
+                }
+                
+            }
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("Copy light data to dark done");
+#endif
+            
+        }
+
         // 要统一设置的目标成本列表（你可以在 Inspector 中直接配置）
-        [BoxGroup("Tools"), LabelText("Target cost"),SerializeField]
+        [BoxGroup("Tools"), LabelText("Target cost"), SerializeField]
         private List<CostResourceTypeAmountPair> targetCosts;
 
         [BoxGroup("Tools"), Button("Change all units cost")]
@@ -69,14 +145,14 @@ namespace SparFlame.Database
                 // 创建一个新列表副本，防止多个引用共享一个列表实例
                 item.costs = new List<CostResourceTypeAmountPair>(targetCosts);
             }
-            // // 标记为已更改（以便在编辑器中保存）
-            // UnityEditor.EditorUtility.SetDirty(this);
-            // Debug.Log("All unit costs changed");
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("All unit costs changed");
+#endif
         }
-        
-        
-        public override List<UnitDataItem> Items => items;
 
+
+        public override List<UnitDataItem> Items => items;
     }
 
 
@@ -88,29 +164,33 @@ namespace SparFlame.Database
 
         #region Movement
 
-        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Movement")]
+        [VerticalGroup("Gameplay"), FoldoutGroup("Gameplay/MoveSpeed", expanded: true),
+         HorizontalGroup("Gameplay/MoveSpeed/0"), HideLabel]
         public float moveSpeed;
+
+        [VerticalGroup("Gameplay"), FoldoutGroup("Gameplay/MoveSpeed", expanded: true),
+         HorizontalGroup("Gameplay/MoveSpeed/0"), HideLabel]
+        public float moveSpeedPerLevel;
+
 
         [ShowIf(nameof(enableAdditionalConfig)), VerticalGroup("Additional"), HorizontalGroup("Additional/Movement"),
          Tooltip("how long interval will the nav system calculate the path for this unit")]
         public float movementCalculationInterval = 1.0f;
 
-       
         #endregion
 
-        [ FoldoutGroup("Gameplay/Cost"),HorizontalGroup("Gameplay/Cost/1"),ListDrawerSettings(DraggableItems = true)]
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/1"), ListDrawerSettings(DraggableItems = true),
+         TableColumnWidth(200, false),
+         TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
 
-        [FoldoutGroup("Gameplay/Cost"), HorizontalGroup("Gameplay/Cost/2")]
-        public float conjureSpeedSecondPerUnit;
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/2"),Tooltip("Conjure speed hours per unit")]
+        public float conjureSpeedHoursPerUnit;
 
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/Animation"),
-         HorizontalGroup("Additional/Animation/1"),Tooltip("This is the index of go which has a animator in linked entity group of " +
-                                                           "basic go. Due to the physics shape will count as one entity in the first place," +
-                                                           "indicator will be placed at seconde place, this root should be 3")]
-        public int animatedRootIndex = 3; 
- 
-        
+        [ShowIf(nameof(HasLightGroupBuff)), FoldoutGroup("Additional/Buff"),
+         AssetsOnly, Tooltip("Light shield and light cavalry will raise buff by aoe trigger")]
+        public GameObject lightGroupAoeTrigger;
+
         public override int GetGeneralTypeIndex()
         {
             return (int)type;
@@ -121,8 +201,13 @@ namespace SparFlame.Database
             base.InitDefaults();
             if (baseTag == default)
                 baseTag = BaseTag.Units;
-            if(factionTag == default)
-                factionTag = FactionTag.Ally;
+            if (factionTag == default)
+                factionTag = FactionTag.Light;
+        }
+
+        public bool HasLightGroupBuff()
+        {
+            return factionTag == FactionTag.Light && type is UnitType.Shield or UnitType.Cavalry;
         }
     }
 
@@ -139,6 +224,7 @@ namespace SparFlame.Database
         public override bool IsHarvestable() => false;
 
         public override bool IsHealable() => shieldType == ShieldType.Paladin;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -160,6 +246,7 @@ namespace SparFlame.Database
         public override bool IsHarvestable() => false;
 
         public override bool IsHealable() => false;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -178,6 +265,7 @@ namespace SparFlame.Database
         public override bool IsAttackable() => magicType != MagicType.Cleric;
         public override bool IsHarvestable() => false;
         public override bool IsHealable() => magicType is MagicType.Cleric or MagicType.Prophet;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -197,6 +285,7 @@ namespace SparFlame.Database
         public override bool IsAttackable() => true;
         public override bool IsHarvestable() => false;
         public override bool IsHealable() => false;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();
@@ -213,12 +302,13 @@ namespace SparFlame.Database
 
         [ShowIf(nameof(IsAttuner)), FoldoutGroup("Gameplay/Attuner")]
         public float generateSpeedBonus;
-        
+
         public override int GetSubtypeIndex() => (int)workerType;
         public override bool IsAttackable() => true;
         public override bool IsHarvestable() => true;
         public override bool IsHealable() => false;
         private bool IsAttuner() => workerType == WorkerType.Attuner;
+
         protected override void InitDefaults()
         {
             base.InitDefaults();

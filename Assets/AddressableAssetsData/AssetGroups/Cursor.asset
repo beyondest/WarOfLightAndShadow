@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Cursor
   m_GUID: 949084bbaef47d24cbabaeac5d6d9544
   m_SerializeEntries:
+  - m_GUID: 0177c557142f9cf44884be469f979919
+    m_Address: GarrisonMainCursor
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0b0248e1dafd72046acbc4953f74bb83
     m_Address: ArrowLeftDown
     m_ReadOnly: 0
@@ -30,6 +35,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 366bb8efbd844a14b9887c966ce0b83d
+    m_Address: InvadeMainCursor
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 45aac879c552b7a4fb35decc01686d6c
+    m_Address: InterceptMainCursor
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4a3632426882a3246b0e22bbca548490
     m_Address: ArrowLeftUp
     m_ReadOnly: 0
@@ -42,6 +57,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4ef0e98acca740e4bbe3bc73f23866b0
     m_Address: ArrowUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a583617dab90a6418bc4b1bebb5da61
+    m_Address: SupportMainCursor
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -70,6 +90,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 898cfcae369632f47a019e5ee01bf696
+    m_Address: CheckInfoMainCursor
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a6e3fab2ef4acf54489342031cc3d141
     m_Address: March
     m_ReadOnly: 0
@@ -77,6 +102,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ac3c6dc5253aa684b9279efb2f5c6dbe
     m_Address: Attack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ac742d38766f5814185a58ecaf06bda6
+    m_Address: MarchMainCursor
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -112,6 +142,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cfb5129d831017c4fbabac432bc3da6b
     m_Address: UI
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee5cb563b6ea17948a74cf372e8cceca
+    m_Address: NoneMainCursor
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

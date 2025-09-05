@@ -1,10 +1,6 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CameraControl;
-using SparFlame.GamePlaySystem.Fow;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Movement;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Physics.Authoring;
 using UnityEngine;
 
@@ -12,9 +8,7 @@ namespace SparFlame.Database
 {
     public class GeneralEnvAttributesAuthoring : MonoBehaviour
     {
-        public float disappearInFowThreshold = 0.1f;
-        public bool ifInverseAgent;
-        public bool debugShow;
+
         private class Baker : Baker<GeneralEnvAttributesAuthoring>
         {
             public override void Bake(GeneralEnvAttributesAuthoring authoring)
@@ -35,40 +29,7 @@ namespace SparFlame.Database
                     });
                     SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
                 }
-                // if (!authoring.debugShow)
-                // {
-                //     var fowAgentData = new FowAgentData
-                //     {
-                //         SightRange = 0,
-                //         SightCos = Mathf.Cos(360f * 0.5f * Mathf.Deg2Rad),
-                //         DisappearAlphaThreshold = authoring.disappearInFowThreshold,
-                //         IsInsight = false, 
-                //     };
-                //     AddComponent(entity, fowAgentData);
-                //     if (authoring.ifInverseAgent)
-                //     {
-                //         AddComponent<InverseDisappearTag>(entity);
-                //     }
-                //     else
-                //     {
-                //         AddComponent(entity, new HideFowAgentRequest
-                //         {
-                //             Hide = true
-                //         });
-                //     }
-                //     AddComponent(entity, new ScreenPos
-                //     {
-                //         ScreenPosition = float2.zero
-                //     });
-                //     AddComponent<InCameraView>(entity);
-                //     AddComponent<InCameraExtendView>(entity);
-                //     SetComponentEnabled<InCameraView>(entity, false);
-                //     SetComponentEnabled<InCameraExtendView>(entity, false);
-                //     AddComponent<DisappearInFowTag>(entity);
-                //
-                //     AddComponent<InDarknessTag>(entity);
-                //     SetComponentEnabled<InDarknessTag>(entity, false);
-                // }
+               
             }
         }
     }

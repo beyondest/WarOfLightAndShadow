@@ -1,0 +1,32 @@
+﻿{
+  "name": "SparFlame.Systems.General.BasicControl",
+  "rootNamespace": "SparFlame",
+  "references": [
+    "Unity.Burst",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.Entities.Hybrid",
+    "Unity.Collections",
+    "Unity.Transforms",
+    "Unity.Physics",
+    "Unity.Physics.Custom",
+    "Unity.Scenes",
+    "Unity.InputSystem",
+    "Unity.ResourceManager",
+    "Unity.Addressables",
+    "SparFlame.Core",
+    "SparFlame.Components",
+    "SparFlame.Systems.General.Input",
+    "SparFlame.Database",
+    "SparFlame.Systems.General.Audio"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

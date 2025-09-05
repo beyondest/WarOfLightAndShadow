@@ -1,0 +1,26 @@
+﻿{
+  "name": "SparFlame.Systems.SubGameplay.Command",
+  "rootNamespace": "SparFlame",
+  "references": [
+    "Unity.Burst",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.Entities.Hybrid",
+    "Unity.Collections",
+    "Unity.Transforms",
+    "SparFlame.Core",
+    "SparFlame.Components",
+    "SparFlame.Systems.SubGameplay.Movement",
+    "SparFlame.Systems.SubGameplay.StateMachine",
+    "SparFlame.Systems.SubGameplay.Interact"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

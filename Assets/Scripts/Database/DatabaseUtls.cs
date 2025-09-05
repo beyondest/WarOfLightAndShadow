@@ -1,14 +1,10 @@
-﻿using GamePlaySystem.Database;
-using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CameraControl;
-using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.Fow;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Movement;
-using SparFlame.GamePlaySystem.Ooc;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.GamePlaySystem.State;
+﻿using System.Collections.Generic;
+using GamePlaySystem.Database;
+using Sirenix.OdinInspector;
+using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Components.VFX;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
@@ -16,6 +12,15 @@ using UnityEngine;
 
 namespace SparFlame.Database
 {
+    // TODO Change all databases to this variant
+    public class BaseDatabase<TItem> : ScriptableObject
+    {
+        [TableList]
+        public List<TItem> items;
+        public int idStart;
+    }
+    
+    
     public class GeneralDataItemAuthoring : MonoBehaviour
     {
         [SerializeField] public int globalIdx;
@@ -25,19 +30,23 @@ namespace SparFlame.Database
             protected void BakeGeneralDataItem(Entity entity, GeneralDataItem item)
             {
                 // General
-                AddComponent(entity, new GeneralAttr
+                AddComponent(entity, new SubGameplayGeneralAttr
                 {
                     BaseTag = item.baseTag,
-                    FactionTag = item.factionTag,
-                    ID = item.id,
-                    BoxColliderSize = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
+                    Faction = item.factionTag,
+                    SubFaction = SubFactionTag.None,
+                    PrefabID = item.id,
+                });
+                AddComponent(entity, new BoxColliderSize
+                {
+                    Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
                 });
 
                 // Stat 
                 AddComponent(entity, new StatData
                 {
-                    MaxValue = item.stat,
-                    CurValue = item.stat
+                    maxValue = item.stat,
+                    curValue = item.stat
                 });
                 if (item.baseTag != BaseTag.Resources)
                 {
@@ -61,16 +70,16 @@ namespace SparFlame.Database
                 AddBuffer<TrackedByBuff>(entity);
 
                 // Exp
-                if (item.upgradable)
+                if (item.IsUpgradable())
                 {
                     AddComponent(entity, new ExpData
                     {
-                        CurTier = item.curTier,
-                        MaxTier = item.maxTier,
-                        CurValue = 0,
-                        MaxValue = item.statMaxValue,
-                        NextTierPrefab = GetEntity(item.nextTierPrefab, TransformUsageFlags.Dynamic)
+                        curTier = item.curTier,
+                        curValue = 0,
+                        maxValue = item.expMaxValue,
+                        curLevel = 0
                     });
+                    
                 }
 
                 // Sight
@@ -84,13 +93,6 @@ namespace SparFlame.Database
                     AddComponent(entity, new GenerateSightRequest
                     {
                         SightPrefab = GetEntity(item.sightPrefab, TransformUsageFlags.Dynamic),
-                        // SightRange = item.sightRange,
-                        // Filter = new CollisionFilter
-                        // {
-                        //     BelongsTo = item.sightBelongsTo.Value,
-                        //     CollidesWith = item.sightCollidesWith.Value,
-                        //     GroupIndex = 0
-                        // }
                     });
                 }
 
@@ -107,6 +109,7 @@ namespace SparFlame.Database
                     });
                     AddComponent<IdleStateTag>(entity);
                     SetComponentEnabled<IdleStateTag>(entity, true);
+                    AddComponent<InteractAbilityBonus>(entity);
                 }
 
                 // Interact Ability 
@@ -118,7 +121,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.attackAmount,
                         Speed = item.attackSpeed,
-                        RangeSq = item.attackRange * item.attackRange,
+                        Range = item.attackRange ,
                         Targets = item.attackTargets,
                         InteractType = InteractType.Attack
                     });
@@ -132,7 +135,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.healAmount,
                         Speed = item.healSpeed,
-                        RangeSq = item.healRange * item.healRange,
+                        Range = item.healRange ,
                         Targets = item.healTargets,
                         InteractType = InteractType.Heal
                     });
@@ -146,47 +149,21 @@ namespace SparFlame.Database
                     {
                         Amount = item.harvestAmount,
                         Speed = item.harvestSpeed,
-                        RangeSq = item.harvestRange * item.harvestRange,
+                        Range = item.harvestRange ,
                         Targets = item.harvestTargets,
                         InteractType = InteractType.Harvest
                     });
                 }
 
 
-                if (item.baseTag == BaseTag.Units || (item.baseTag == BaseTag.Buildings &&
-                                                      item.GetGeneralTypeIndex() == (int)BuildingType.Ornaments
-                                                      &&( item.GetSubtypeIndex() == (int)OrnamentType.Crystal ||
-                                                      item.GetSubtypeIndex() == (int)OrnamentType.Beacon)))
-                {
-                    var fogOfWarSightRange = item.fogSightRange;
-                    // Fog of War VFX
-                    var fowAgentData = new FowAgentData
-                    {
-                        SightRange = fogOfWarSightRange,
-                        SightCos = Mathf.Cos(item.fogSightAngle * 0.5f * Mathf.Deg2Rad),
-                        DisappearAlphaThreshold = item.disappearAlphaThreshold,
-                        IsInsight = true
-                    };
-                    AddComponent(entity, fowAgentData);
-                    AddComponent<DisappearInFowTag>(entity);
-
-                    AddComponent<InDarknessTag>(entity);
-                    SetComponentEnabled<InDarknessTag>(entity, false);
-                }
+          
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
             {
-                // if (item.IsAttackable())
-                // {
-                //     volumeRadius = item.attackRange;
-                //     areaType = (AreaType)((int)item.curTier + 10);
-                // }
-                // else
-                // {
+              
                 const float volumeRadius = 0f;
                 var areaType = (AreaType)item.curTier;
-                // }
                 var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();
                 AddComponent<VolumeObstacleTag>(entity);
                 AddComponent(entity, new VolumeObstacleSpawnRequest
@@ -199,6 +176,16 @@ namespace SparFlame.Database
                 });
                 SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
             }
+        }
+    }
+
+    public static class DatabaseUtils
+    {
+        public static CityDataItem GetCityDataItemById(int id)
+        {
+            var idStart = DatabaseManager.CityDatabaseSo.idStart;
+            var cityItem = DatabaseManager.CityDatabaseSo.items[id - idStart];
+            return cityItem;
         }
     }
 }

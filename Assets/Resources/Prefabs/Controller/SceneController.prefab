@@ -44,16 +44,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27bf95da8f3c43048d53426f1aaa58b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneGroups:
-  - groupName: MainMenuGroup
+  initSceneGroup:
+    scenes: []
+    subscenes: []
+  mainWorldSceneGroup:
     scenes:
     - sceneRef:
-        asset: {fileID: 102900000, guid: 7b949d47f8e5dc345894ee36c991eb97, type: 3}
-        guid: 7b949d47f8e5dc345894ee36c991eb97
-      sceneType: 3
-  - groupName: GamingGroup
+        asset: {fileID: 102900000, guid: fbc41771134a005489fd612fd5fbac27, type: 3}
+        guid: fbc41771134a005489fd612fd5fbac27
+      sceneType: 0
+    subscenes:
+    - sceneRef: {fileID: 0}
+    - sceneRef: {fileID: 0}
+    - sceneRef: {fileID: 0}
+  generalSubWorldSceneGroup:
     scenes:
     - sceneRef:
-        asset: {fileID: 102900000, guid: 45f2ced9a3b26b04099cff6974a4354e, type: 3}
-        guid: 45f2ced9a3b26b04099cff6974a4354e
-      sceneType: 5
+        asset: {fileID: 102900000, guid: e7f8348869f1de14b90c24b16d8c8156, type: 3}
+        guid: e7f8348869f1de14b90c24b16d8c8156
+      sceneType: 0
+    subscenes: []
+  checkInterval: 0.1

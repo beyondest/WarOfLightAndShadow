@@ -1,4 +1,4 @@
-﻿using SparFlame.GamePlaySystem.Interact;
+﻿using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using UnityEngine;
 

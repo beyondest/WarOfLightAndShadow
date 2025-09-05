@@ -4,10 +4,10 @@ using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Resource;
-using SparFlame.Utils;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using UnityEngine;
+using Range = SparFlame.Core.Structs.Range;
 
 namespace SparFlame.Database
 {
@@ -90,7 +90,7 @@ namespace SparFlame.Database
 
         [FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/0"), Tooltip("resource amount range, " +
              "this is used for system automatically regenerate resource")]
-        public CustomDs.Range amountRange;
+        public Range amountRange;
         
         [FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/1"), Tooltip("resource amount range, " +
                                                                                             "this is used for system automatically regenerate resource")]
@@ -100,7 +100,7 @@ namespace SparFlame.Database
         public bool renewable;
         
         [ShowIf(nameof(renewable)),FoldoutGroup("Gameplay/Resource"), HorizontalGroup("Gameplay/Resource/2")]
-        public int regenerationTimeSeconds;
+        public int regenerationTimeHours;
         protected override void InitDefaults()
         {
             base.InitDefaults();

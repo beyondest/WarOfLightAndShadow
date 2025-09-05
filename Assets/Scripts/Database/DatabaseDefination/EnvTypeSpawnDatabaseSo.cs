@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.Map;
-using SparFlame.GamePlaySystem.RandomSpawn;
+using SparFlame.Components.SubGameplay;
 using UnityEngine;
 
 namespace SparFlame.Database

@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using Sirenix.OdinInspector;
-using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Interact;
+using SparFlame.Components.General;
+using SparFlame.Components.VFX;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-namespace SparFlame.Database.Database.DatabaseDefination
+namespace SparFlame.Database
 {
     [CreateAssetMenu(fileName = "VFXDatabase", menuName = "GameData/VFXDatabase", order = 0)]
     public class VFXDatabaseSo : ScriptableObject

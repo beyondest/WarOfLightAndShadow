@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.GamePlaySystem.EnemyAI;
-using SparFlame.GamePlaySystem.General;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -35,12 +36,12 @@ namespace SparFlame.Database
                 var items = DatabaseManager.EnemyAIDatabaseSo.items;
                 foreach (var item in items)
                 {
-                    var buffer1 = item.faction == FactionTag.Ally? lightBuffer1 : darkBuffer1;
-                    var buffer2 = item.faction == FactionTag.Ally ? lightBuffer2 : darkBuffer2;
-                    var buffer3 = item.faction == FactionTag.Ally ? lightBuffer3 : darkBuffer3;
-                    var buffer4 = item.faction == FactionTag.Ally ? lightBuffer4 : darkBuffer4;
-                    var buffer5 = item.faction == FactionTag.Ally ? lightBuffer5 : darkBuffer5;
-                    var buffer6 = item.faction == FactionTag.Ally ? lightBuffer6 : darkBuffer6;
+                    var buffer1 = item.faction == FactionTag.Light? lightBuffer1 : darkBuffer1;
+                    var buffer2 = item.faction == FactionTag.Light ? lightBuffer2 : darkBuffer2;
+                    var buffer3 = item.faction == FactionTag.Light ? lightBuffer3 : darkBuffer3;
+                    var buffer4 = item.faction == FactionTag.Light ? lightBuffer4 : darkBuffer4;
+                    var buffer5 = item.faction == FactionTag.Light ? lightBuffer5 : darkBuffer5;
+                    var buffer6 = item.faction == FactionTag.Light ? lightBuffer6 : darkBuffer6;
                     // Bake Unit Spawn Data
                     foreach (var unitTypeSpawnData in item.unitTypeSpawnDatas)
                     {
@@ -56,7 +57,7 @@ namespace SparFlame.Database
                             {
                                 WavePoint = item.wavePoint,
                                 UnitType = unitTypeSpawnData.type,
-                                ProbabilityPrefab = new ProbabilityPrefabEntry
+                                ProbabilityPrefab = new PrefabEntryUtils.ProbabilityPrefabEntry
                                 {
                                     Prefab = GetEntity(entry.prefab, TransformUsageFlags.Dynamic),
                                     Probability = entry.probability,
@@ -132,7 +133,7 @@ namespace SparFlame.Database
                         buffer6.Add(new EnemyBuildingPackData
                         {
                             WavePoint = item.wavePoint,
-                            ProbabilityPrefab = new ProbabilityPrefabEntry
+                            ProbabilityPrefab = new PrefabEntryUtils.ProbabilityPrefabEntry
                             {
                                 Prefab = GetEntity(entry.prefab, TransformUsageFlags.Dynamic),
                                 Probability = entry.probability,

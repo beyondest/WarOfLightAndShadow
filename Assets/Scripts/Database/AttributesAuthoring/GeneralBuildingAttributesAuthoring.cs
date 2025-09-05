@@ -1,24 +1,20 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.Conjure;
-using SparFlame.GamePlaySystem.Garrison;
-using SparFlame.GamePlaySystem.General;
-using SparFlame.GamePlaySystem.Generate;
-using SparFlame.GamePlaySystem.Interact;
-using SparFlame.GamePlaySystem.Resource;
+﻿using System;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace SparFlame.Database
 {
     public class GeneralBuildingAttributesAuthoring : GeneralDataItemAuthoring
     {
         public bool ifInBuildingPack;
-
         protected class Baker : GeneralDataItemBaker<GeneralBuildingAttributesAuthoring>
         {
             public override void Bake(GeneralBuildingAttributesAuthoring authoring)
             {
                 if (authoring.globalIdx == 0) return;
+            
                 var item = DatabaseManager.BuildingDatabaseSo.GetItemById(authoring.globalIdx);
                 var entity = GetEntity(authoring.ifInBuildingPack
                     ? TransformUsageFlags.WorldSpace
@@ -31,7 +27,7 @@ namespace SparFlame.Database
                 {
                     SubTypeIndex = item.GetSubtypeIndex(),
                     Type = item.type,
-                    ConstructTime = item.constructTime
+                    ConstructTimeHours = item.constructTimeHours
                 });
                 
 
@@ -41,7 +37,7 @@ namespace SparFlame.Database
                     buffer.Add(new CostList
                     {
                         Amount = cost.amount,
-                        Type = cost.costResourceType
+                        Type = cost.type
                     });
                 }
 
@@ -74,21 +70,41 @@ namespace SparFlame.Database
                             SubTypeIndex = data.subTypeIndex
                         });
                     }
+
+                    if (item.type == BuildingType.Fortifications)
+                    {
+                        AddComponent<BuildingGarrisonBuff>(entity);
+                        SetComponentEnabled<BuildingGarrisonBuff>(entity, false);
+                    }
+                        
                 }
             }
 
             private void BakeGenerateAttr(BuildingDataItem item, Entity entity)
             {
                 if (item is not GeneratorData generatorData) return;
-                AddComponent(entity, new GenerateAttr
+                switch (generatorData.generatorType)
                 {
-                    GenerateResourceType = generatorData.generateResourceType,
-                    GenerateInitialSpeed = generatorData.initGenerateSpeed,
-                    MaxGenerateSpeed = generatorData.maxGenerateSpeed,
-                    CurGenerateSpeed = generatorData.initGenerateSpeed,
-                    MinCultivatorsRequireToGenerate = generatorData.minCultivatorCounts
-                });
-                AddComponent<GenerateData>(entity);
+                    case GeneratorType.PlantGenerator:
+                        AddComponent(entity, new GenerateAttr
+                        {
+                            GenerateResourceType = generatorData.generateResourceType,
+                            GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit,
+                            MinCultivatorsRequireToGenerate = 0
+                        });
+                        break;
+                    case GeneratorType.ResourceMine:
+                        AddComponent(entity, new GenerateAttr
+                        {
+                            GenerateResourceType = generatorData.generateResourceType,
+                            GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit,
+                            MinCultivatorsRequireToGenerate = generatorData.minWorkersCount < 1 ? 1 : generatorData.minWorkersCount
+                        });
+                        break;
+                    default:
+                        BurstSafe.UnexpectedEnum(generatorData.generatorType);
+                        break;
+                }
             }
 
             private void BakeConjureAttr(BuildingDataItem item, Entity entity)
@@ -104,14 +120,12 @@ namespace SparFlame.Database
 
             private void BakeDwellingAttr(BuildingDataItem item, Entity entity)
             {
-                if (item is not DwellingData data) return;
-                AddComponent(entity, new DwellingAttr
+                if (item is not CapacityBuildingsData data) return;
+                AddComponent(entity, new CapacityBuildingAttr
                 {
-                    ResourceType = data.dwellingResourceType,
-                    Amount = data.dwellingAmount
+                    ResourceType = data.storageResourceType,
+                    StorageAmount = data.amount
                 });
-                AddComponent<DwellingGeneratePopulationTag>(entity);
-                SetComponentEnabled<DwellingGeneratePopulationTag>(entity,true);
             }
 
             private void BakeOrnamentAttr(BuildingDataItem item, Entity entity)
@@ -121,23 +135,11 @@ namespace SparFlame.Database
                 {
                     
                 }
-                if (ornamentData.ornamentType is OrnamentType.Crystal or OrnamentType.Beacon)
+                if (ornamentData.ornamentType is OrnamentType.Crystal)
                 {
-                    AddComponent(entity, new CoreCrystalTag
-                    {
-                        Faction = item.factionTag
-                    });
-                    AddComponent(entity, new ChangeOccupiedTagRequest
-                    {
-                        CrystalFaction = item.factionTag,
-                        IsDestroyed = false,
-                        CrystalPos = float3.zero
-                    });
+                    AddComponent(entity, new CrystalDef());
                 }
-                if (item.factionTag == FactionTag.Ally && ornamentData.ornamentType == OrnamentType.Crystal)
-                {
-                    AddComponent<LightSingleCrystalTag>(entity);
-                }
+            
             }
         }
     }

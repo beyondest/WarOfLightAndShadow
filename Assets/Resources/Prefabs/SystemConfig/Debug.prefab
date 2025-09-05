@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1923089248678778047}
+  - component: {fileID: 1795570453256848981}
   m_Layer: 0
   m_Name: Debug
   m_TagString: Untagged
@@ -29,57 +30,78 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5527819850170294753}
   - {fileID: 2441193159132522612}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8157812133717055963
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5527819850170294753}
-  - component: {fileID: 8377294431466103540}
-  m_Layer: 0
-  m_Name: TestPopNumber
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5527819850170294753
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8157812133717055963}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1923089248678778047}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8377294431466103540
+--- !u!114 &1795570453256848981
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8157812133717055963}
+  m_GameObject: {fileID: 4789393812463663521}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df0748bd186cfbc428bbe50153c86c07, type: 3}
+  m_Script: {fileID: 11500000, guid: 2362aa9e1f12419686070a1000a6d5a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnPosition: {fileID: 0}
-  entitiesPerFrame: 1
-  initialScale: 1
+  globalDebugEnable: 1
+  movement:
+    enabled: 0
+    playerMovementScale: 1
+    aiMovementScale: 1
+    playerArmyGroupMovementScale: 0
+    nonPlayerArmyGroupMovementScale: 0
+  stat:
+    enabled: 1
+    playerStatGeneralInfinite: 0
+    playerStatGeneralZero: 0
+    playerCrystalStatInfinite: 0
+    playerCrystalStatZero: 0
+    playerUnitStatInfinite: 0
+    playerUnitStatZero: 0
+    playerBuildingStatInfinite: 0
+    playerBuildingStatZero: 0
+    aiStatGeneralInfinite: 1
+    aiStatGeneralZero: 0
+    aiCrystalStatInfinite: 0
+    aiCrystalStatZero: 0
+    aiUnitStatInfinite: 0
+    aiUnitStatZero: 0
+    aiBuildingStatInfinite: 0
+    aiBuildingStatZero: 0
+    resourceStatInfinite: 0
+    resourceStatZero: 0
+  interactAbility:
+    enabled: 0
+    playerAttackAmountInfinite: 0
+    aiAttackAmountInfinite: 0
+    playerAttackAmountZero: 0
+    aiAttackAmountZero: 0
+    playerHealAmountInfinite: 0
+    aiHealAmountInfinite: 0
+    playerHealAmountZero: 0
+    aiHealAmountZero: 0
+    playerHarvestAmountInfinite: 0
+    aiHarvestAmountInfinite: 0
+    playerHarvestAmountZero: 0
+    aiHarvestAmountZero: 0
+  aiDebug:
+    enabled: 1
+    unitSpawnSpeedScale: 0.01
+    buildingSpawnSpeedScale: 1
+    enableFixBuildingSpawnPos: 0
+    buildingFixSpawnPos:
+      x: 0
+      y: 0
+      z: 0
+  waveDebug:
+    enabled: 0
+    waveSpeedUpScale: 0.01
+  expDebug:
+    enabled: 0
+    playerExpGainScale: 0
+    aiExpGainScale: 0
 --- !u!1 &8376618133934346560
 GameObject:
   m_ObjectHideFlags: 0

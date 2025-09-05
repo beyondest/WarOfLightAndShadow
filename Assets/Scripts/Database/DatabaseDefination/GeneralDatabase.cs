@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
-using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.General;
 using Unity.Physics.Authoring;
-
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 // ReSharper disable RedundantJumpStatement
@@ -25,20 +24,22 @@ namespace GamePlaySystem.Database
     {
         #region General
 
-        [VerticalGroup("General"), Tooltip("gameplayName")]
+        [VerticalGroup("General"), Tooltip("gameplayName"), HorizontalGroup("General/0"), TableColumnWidth(200, false)]
         public string gameplayName;
 
-        [VerticalGroup("General"), Tooltip("global single id")]
+        [VerticalGroup("General"), Tooltip("global single id"), HorizontalGroup("General/1")]
         public int id;
 
-        [VerticalGroup("Asset"), PreviewField] public AssetReferenceSprite sprite2D;
+        [VerticalGroup("General"), PreviewField,HorizontalGroup("General/2"), HideLabel] 
+        public AssetReferenceSprite sprite2D;
 
-        [VerticalGroup("Asset"), PreviewField, OnValueChanged(nameof(OnGamePrefabChanged))]
+        [VerticalGroup("General"), PreviewField,HorizontalGroup("General/2"),HideLabel]
         public GameObject prefab;
 
-        [VerticalGroup("General"), HideLabel, Tooltip("Description"),TextArea(3, 10)] public string description;
+        [VerticalGroup("General"), HideLabel, Tooltip("Description"), TextArea(3, 10), HorizontalGroup("General/3")]
+        public string description;
 
-        [VerticalGroup("EnumValues"), HideLabel, Tooltip("base Tag")]
+        [VerticalGroup("EnumValues"), HideLabel, Tooltip("base Tag"), TableColumnWidth(100,false)]
         public BaseTag baseTag;
 
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("Faction Tag")]
@@ -48,146 +49,168 @@ namespace GamePlaySystem.Database
 
         #region Stat
 
-        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Stat")]
+        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Stat0"),TableColumnWidth(200,false)]
         public int stat;
+
+        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/Stat1"), ShowIf(nameof(IsStatUpGradable))]
+        public int statPerLevel;
 
         #endregion
 
         #region Exp
 
-        [VerticalGroup("Gameplay")] 
-        public bool upgradable;
 
-        
-        [ShowIf(nameof(upgradable)), VerticalGroup("Gameplay"),FoldoutGroup("Gameplay/Exp"), HorizontalGroup("Gameplay/Exp/1"),
-         Tooltip("curTier")]
+        [ShowIf(nameof(IsUpgradable)), VerticalGroup("EnumValues")]
         public Tier curTier = Tier.Tier1;
 
-        [ShowIf(nameof(upgradable)), VerticalGroup("Gameplay"), FoldoutGroup("Gameplay/Exp"),HorizontalGroup("Gameplay/Exp/2"),
-         Tooltip("maxTier"), ReadOnly]
+        [ShowIf(nameof(IsUpgradable)), VerticalGroup("EnumValues"), ReadOnly]
         public Tier maxTier;
 
-        [ShowIf(nameof(upgradable)), VerticalGroup("Gameplay"),FoldoutGroup("Gameplay/Exp"), HorizontalGroup("Gameplay/Exp/3"),]
-        public int statMaxValue;
+        [ShowIf(nameof(IsStatUpGradable)), VerticalGroup("Gameplay"),
+         HorizontalGroup("Gameplay/Exp0")]
+        public int expMaxValue;
 
-        [ShowIf(nameof(upgradable)), VerticalGroup("Gameplay"),FoldoutGroup("Gameplay/Exp"), HorizontalGroup("Gameplay/Exp/4"),] [CanBeNull]
-        public GameObject nextTierPrefab;
+        [ShowIf(nameof(IsStatUpGradable)), VerticalGroup("Gameplay"),
+         HorizontalGroup("Gameplay/Exp1")]
+        public int expGainPerLevel;
 
-        #endregion
-
-        #region Sight
-
-        [ FoldoutGroup("Gameplay/Sight", Expanded = false),
-         HorizontalGroup("Gameplay/Sight/0"),
-         Tooltip(
-             "This value determines the attack/heal/harvest value of this object, the higher " +
-             "the value, the first to be attacked/healed/harvested")]
-        public int sightPriority;
+        [ShowIf(nameof(IsStatUpGradable)), VerticalGroup("Gameplay"),
+         HorizontalGroup("Gameplay/Exp2")]
+        public int maxLevel;
         
-        
-        [ShowIf(nameof(HasSight)), FoldoutGroup("Gameplay/Sight",Expanded = false),
-         HorizontalGroup("Gameplay/Sight/1"),
-         OnValueChanged(nameof(OnSightPrefabChanged)), HideLabel]
-        public GameObject sightPrefab;
-
-        [FoldoutGroup("Gameplay/Sight", Expanded = false)]
-        [ShowIf(nameof(HasSight))]
-        [HorizontalGroup("Gameplay/Sight/2"), LabelText("Range"),ReadOnly]
-        public float sightRange;
-
-        [FoldoutGroup("Gameplay/Sight", Expanded = false)]
-        [ShowIf(nameof(HasSight))]
-        [HorizontalGroup("Gameplay/Sight/3"), LabelText("Belongs To"),ReadOnly]
-        public PhysicsCategoryTags sightBelongsTo;
-
-        [FoldoutGroup("Gameplay/Sight", Expanded = false)]
-        [ShowIf(nameof(HasSight))]
-        [HorizontalGroup("Gameplay/Sight/4"), LabelText("Collides With"),ReadOnly]
-        public PhysicsCategoryTags sightCollidesWith;
-
         #endregion
 
         #region InteractAbility
 
-        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Attack"), HorizontalGroup("InteractAbility/Attack/0")]
+        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/0"), TableColumnWidth(250,false),HideLabel,LabelText("Amount")]
         public int attackAmount;
 
-        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Attack"), HorizontalGroup("InteractAbility/Attack/1")]
+        [ShowIf(nameof(IsAttackUpGradable)), VerticalGroup("InteractAbility"),
+         FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/0"), HideLabel,LabelText("PerLevel")]
+        public int attackAmountPerLevel;
+
+        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/1"), HideLabel,LabelText("Speed")]
         public float attackSpeed;
 
-        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Attack"), HorizontalGroup("InteractAbility/Attack/2")]
+        [ShowIf(nameof(IsAttackUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/1"),HideLabel, LabelText("PerLevel")]
+        public float attackSpeedPerLevel;
+
+        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/2"), HideLabel, LabelText("Range")]
         public float attackRange;
+        [ShowIf(nameof(IsAttackUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/2"),HideLabel, LabelText("PerLevel")]
+        public float attackRangePerLevel;
 
-        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Attack"), HorizontalGroup("InteractAbility/Attack/3")]
+        [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/3"), HideLabel, LabelText("Targets")]
         public int attackTargets;
+        [ShowIf(nameof(IsAttackUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
+         HorizontalGroup("InteractAbility/Attack/3"),HideLabel, LabelText("PerLevel")]
+        public int attackTargetsPerLevel;
 
-        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Heal"), HorizontalGroup("InteractAbility/Heal/0")]
+        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/0"), HideLabel, LabelText("Amount")]
         public int healAmount;
+        [ShowIf(nameof(IsHealUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/0"),HideLabel, LabelText("PerLevel")]
+        public int healAmountPerLevel;
 
-        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Heal"), HorizontalGroup("InteractAbility/Heal/1")]
+        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/1"), HideLabel, LabelText("Speed")]
         public float healSpeed;
+        [ShowIf(nameof(IsHealUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/1"),HideLabel, LabelText("PerLevel")]
+        public float healSpeedPerLevel;
 
-        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Heal"), HorizontalGroup("InteractAbility/Heal/2")]
+        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/2"), HideLabel, LabelText("Range")]
         public float healRange;
+        [ShowIf(nameof(IsHealUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/2"),HideLabel, LabelText("PerLevel")]
+        public float healRangePerLevel;
 
-        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Heal"), HorizontalGroup("InteractAbility/Heal/3")]
+        [ShowIf(nameof(IsHealable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/3"), HideLabel, LabelText("Targets")]
         public int healTargets;
+        [ShowIf(nameof(IsHealUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Heal"),
+         HorizontalGroup("InteractAbility/Heal/3"),HideLabel, LabelText("PerLevel")]
+        public int healTargetsPerLevel;
 
-        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Harvest"), HorizontalGroup("InteractAbility/Harvest/0")]
+        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/0"), HideLabel, LabelText("Amount")]
         public int harvestAmount;
+        [ShowIf(nameof(IsHarvestUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/0"),HideLabel, LabelText("PerLevel")]
+        public int harvestAmountPerLevel;
 
-        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Harvest"), HorizontalGroup("InteractAbility/Harvest/1")]
+        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/1"), HideLabel, LabelText("Speed")]
         public float harvestSpeed;
+        [ShowIf(nameof(IsHarvestUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/1"),HideLabel, LabelText("PerLevel")]
+        public float harvestSpeedPerLevel;
 
-        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Harvest"), HorizontalGroup("InteractAbility/Harvest/2")]
+        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/2"), HideLabel, LabelText("Range")]
         public float harvestRange;
+        [ShowIf(nameof(IsHarvestUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/2"),HideLabel, LabelText("PerLevel")]
+        public float harvestRangePerLevel;
 
-        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"),FoldoutGroup("InteractAbility/Harvest"), HorizontalGroup("InteractAbility/Harvest/3")]
+        [ShowIf(nameof(IsHarvestable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/3"), HideLabel, LabelText("Targets")]
         public int harvestTargets;
-
-        #endregion
-
-        #region Physics
-
-        [VerticalGroup("Physics"),Tooltip("Collide Belongs to"),ReadOnly]
-        public PhysicsCategoryTags collideBelongsTo;
-
-        [VerticalGroup("Physics"), Tooltip("Collide With"),ReadOnly]
-        public PhysicsCategoryTags collideWith;
+        [ShowIf(nameof(IsHarvestUpGradable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Harvest"),
+         HorizontalGroup("InteractAbility/Harvest/3"),HideLabel, LabelText("PerLevel")]
+        public int harvestTargetsPerLevel;
 
         #endregion
 
         #region Additional
+        
+        [ShowIf(nameof(IsUpgradable)), VerticalGroup("Additional"), HorizontalGroup("Additional/Exp"),]
+        [CanBeNull]
+        public GameObject nextTierPrefab;
+        
+        [VerticalGroup("Additional"),
+         HorizontalGroup("Additional/Sight1"),
+         Tooltip(
+             "This value determines the attack/heal/harvest value of this object, the higher " +
+             "the value, the first to be attacked/healed/harvested")]
+        public int sightPriority;
 
-        [VerticalGroup("Additional")] public bool enableAdditionalConfig;
+        [ShowIf(nameof(HasSight)), FoldoutGroup("Additional/Sight", Expanded = false),
+         OnValueChanged(nameof(OnSightPrefabChanged)), HideLabel]
+        public GameObject sightPrefab;
 
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-         HorizontalGroup("Additional/FogOfWar/0")]
-        public float fogSightRange = 30;
-        
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-         HorizontalGroup("Additional/FogOfWar/1")]
-        public float fogSightAngle = 360;
-        
-        [ShowIf(nameof(enableAdditionalConfig)), FoldoutGroup("Additional/FogOfWar"),
-         HorizontalGroup("Additional/FogOfWar/2")]
-        public float disappearAlphaThreshold = 0.1f;
-        
-        
-        
+        [FoldoutGroup("Additional/Sight", Expanded = false)]
+        [ShowIf(nameof(HasSight))]
+        [ LabelText("Range"), ReadOnly,HideLabel]
+        public float sightRange;
+
+        [VerticalGroup("Additional"), HideLabel, LabelText("ExtraConfig"),TableColumnWidth(200, false)] public bool enableAdditionalConfig;
+
         #endregion
 
         #region Public Interface
 
         public virtual int GetGeneralTypeIndex()
         {
-            throw new ArgumentException("This method should be overridden in derived classes to return the correct type index.");
+            throw new ArgumentException(
+                "This method should be overridden in derived classes to return the correct type index.");
         }
+
         public virtual int GetSubtypeIndex()
         {
-            throw new ArgumentException("This method should be overridden in derived classes to return the correct type index.");
-
+            throw new ArgumentException(
+                "This method should be overridden in derived classes to return the correct type index.");
         }
+
         public bool HasSight()
         {
             return IsAttackable() || IsHealable() || IsHarvestable();
@@ -198,15 +221,40 @@ namespace GamePlaySystem.Database
             return false;
         }
 
+        public bool IsAttackUpGradable()
+        {
+            return IsAttackable() && baseTag == BaseTag.Units && IsUpgradable();
+        }
+
         public virtual bool IsHealable()
         {
             return false;
+        }
+        public bool IsHealUpGradable()
+        {
+            return IsHealable() && baseTag == BaseTag.Units && IsUpgradable();
         }
 
         public virtual bool IsHarvestable()
         {
             return false;
         }
+        
+        public bool IsHarvestUpGradable()
+        {
+            return IsHarvestable() && baseTag == BaseTag.Units && IsUpgradable();
+        }
+
+        public bool IsStatUpGradable()
+        {
+            return baseTag == BaseTag.Units && IsUpgradable();
+        }
+
+        public bool IsUpgradable()
+        {
+            return baseTag is BaseTag.Buildings or BaseTag.Units;
+        }
+
         #endregion
 
         #region Automatic methods
@@ -220,33 +268,18 @@ namespace GamePlaySystem.Database
             }
         }
 
-        private void OnGamePrefabChanged()
-        {
-            var authoring = prefab.GetComponent<PhysicsShapeAuthoring>();
-            collideBelongsTo = authoring.BelongsTo;
-            collideWith = authoring.CollidesWith;
-        }
-
         private void OnSightPrefabChanged()
         {
             var authoring = sightPrefab.GetComponent<PhysicsShapeAuthoring>();
             sightRange = authoring.GetCylinderRadius();
-            sightBelongsTo = authoring.BelongsTo;
-            sightCollidesWith = authoring.CollidesWith;
         }
 
-        
-     
-
         #endregion
-
-
     }
 
     public abstract class GeneralDatabase<TDataItem> : ScriptableObject where TDataItem : GeneralDataItem
     {
         public int idStart;
-
 
 
         public abstract List<TDataItem> Items { get; }
@@ -259,6 +292,7 @@ namespace GamePlaySystem.Database
                 // Debug.Log($"true id : {trueId}, Items count : {Items.Count}, idStart : {idStart}");
                 throw new ArgumentException($"{typeof(TDataItem).Name} with id {id} does not exist");
             }
+
             return Items[id - idStart];
         }
 
@@ -266,12 +300,12 @@ namespace GamePlaySystem.Database
         private int _preLength;
 
 
-
         [Button("Reassign all id and ReBake")]
         private void ReassignAllIDs()
         {
             if (Items.Count > 30)
-                throw new ArgumentException($"Max count is 30, item count is {Items.Count}, please split the database.");
+                throw new ArgumentException(
+                    $"Max count is 30, item count is {Items.Count}, please split the database.");
 
             for (int i = 0; i < Items.Count; i++)
             {
@@ -287,7 +321,7 @@ namespace GamePlaySystem.Database
                 if (Items[i] is ResourceDataItem)
                     authoring = go.GetComponent<GeneralResourceAttributesAuthoring>();
 
-                if (authoring != null)
+                if (authoring)
                 {
                     var so = new SerializedObject(authoring);
                     so.FindProperty("globalIdx").intValue = Items[i].id;
@@ -307,27 +341,33 @@ namespace GamePlaySystem.Database
             for (var i = 0; i < Items.Count; i++)
             {
                 var item = Items[i];
-                if (!item.upgradable) continue;
+                if (!item.IsUpgradable()) continue;
                 if (item.curTier != Tier.Tier1)
                 {
-                    if(item.maxTier == default)Debug.LogError($"{item.gameplayName}/{item.id} has wrong place, because its tier not match sequence");
+                    if (item.maxTier == default)
+                        Debug.LogError(
+                            $"{item.gameplayName}/{item.id} has wrong place, because its tier not match sequence");
                     // Only check the tier1 of all objects or will duplicate
                     continue;
                 }
+
                 var j = i;
                 var preGo = Items[i].prefab;
-                while (Items[j].nextTierPrefab != null)
+                while (Items[j].nextTierPrefab)
                 {
                     if ((int)Items[j].curTier != 3 + j - i || Items[j].prefab != preGo)
                     {
-                        Debug.LogError("Database Upgrade settings wrong, all tier prefabs of same object should in sequence in database\n" +
-                                       $"{Items[j].gameplayName}/{Items[j].id} is in wrong position\n"
-                                       );
+                        Debug.LogError(
+                            "Database Upgrade settings wrong, all tier prefabs of same object should in sequence in database\n" +
+                            $"{Items[j].gameplayName}/{Items[j].id} is in wrong position\n"
+                        );
                         return;
                     }
+
                     preGo = Items[j].nextTierPrefab;
                     j++;
                 }
+
                 for (int k = i; k <= j; k++)
                 {
                     Items[k].maxTier = (Tier)(j - i + 3);
@@ -335,24 +375,23 @@ namespace GamePlaySystem.Database
             }
 
             _shouldCheckExp = false;
-            if(_shouldCheckExp)return ;
-            return ;
+            if (_shouldCheckExp) return;
+            return;
         }
-        
+
 #if UNITY_EDITOR
         [Button("Auto assign Addressable Sprite")]
         private void AutoAssignSpritesFromAddressables()
         {
-
             foreach (var item in Items)
             {
-                if (item.prefab == null)
+                if (!item.prefab)
                 {
                     Debug.LogWarning($"empty prefab in id {item.id}");
                     continue;
                 }
 
-                string key = item.prefab.name;
+                var key = item.prefab.name;
                 var settings = AddressableAssetSettingsDefaultObject.Settings;
                 var entry = settings.groups
                     .SelectMany(g => g.entries)

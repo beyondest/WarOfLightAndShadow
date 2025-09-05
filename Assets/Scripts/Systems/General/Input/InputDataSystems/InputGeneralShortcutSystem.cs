@@ -1,0 +1,35 @@
+﻿using SparFlame.Components.Input;
+using Unity.Entities;
+
+namespace SparFlame.Systems.General.Input
+{
+    public partial class InputGeneralShortcutSystem : SystemBase
+    {
+        private CustomInputActions _customInputActions;
+        
+        protected override void OnCreate()
+        {
+            RequireForUpdate<InputGeneralShortcutData>();
+        }
+
+        protected override void OnStartRunning()
+        {
+            _customInputActions = InputListener.Instance.GetCustomInputActions();
+        }
+
+        protected override void OnUpdate()
+        {
+            if (!_customInputActions.GeneralShortcut.enabled)
+            {
+                SystemAPI.SetSingleton(new InputGeneralShortcutData());
+                return;
+            }
+            SystemAPI.SetSingleton(new InputGeneralShortcutData
+            {
+                Wait = _customInputActions.GeneralShortcut.Wait.WasPerformedThisFrame(),
+                CheckInfo = _customInputActions.GeneralShortcut.CheckInfo.WasPerformedThisFrame(),
+                CloseWindow = _customInputActions.GeneralShortcut.CloseWindow.WasPerformedThisFrame(),
+            });
+        }
+    }
+}

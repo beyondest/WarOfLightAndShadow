@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: d369d20acd80d48459c490b3f50b2963
   m_SerializeEntries:
   - m_GUID: 15811ac7c8dc17b458e0dea0472eaf33
-    m_Address: AllyHp
+    m_Address: LightHp
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -26,7 +26,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 912904e125c034c459979bbcf90e9d51
-    m_Address: EnemyHp
+    m_Address: DarkHp
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
