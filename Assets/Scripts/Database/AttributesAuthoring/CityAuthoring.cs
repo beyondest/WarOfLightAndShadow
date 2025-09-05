@@ -43,13 +43,11 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                     {
                         if (resourceData.resourceType == type)
                         {
-                            var copy = resourceData;
-                            copy.hoursPerUnit = -1;
                             init = true;
                             resourceDatas.Add(new CityResourceEntry
                             {
                                 accumulatedHours = 0,
-                                resourceData = copy
+                                resourceData = resourceData,
                             });
                             break;
                         }
@@ -65,7 +63,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                                 resourceType = type,
                                 storage = 0,
                                 availableAmount = 0,
-                                hoursPerUnit = -1
+                                amountPerHour = 0,
                             }
                         });
                     }

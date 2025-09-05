@@ -57,6 +57,7 @@ namespace SparFlame.Systems.General.BasicControl
             EntityManager.CreateSingleton(new PlayerSaveSlot());
 
             EntityManager.CreateSingleton(new LastUniqueId());
+            EntityManager.CreateSingleton(new SaveCityId());
         }
 
         protected override void OnStartRunning()

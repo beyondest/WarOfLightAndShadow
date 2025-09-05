@@ -38,7 +38,6 @@ namespace SparFlame.Components.MainGameplay
     {
         StorageAdd = 0,
         PlantGenerator = 1,
-        ConjureUnits = 2,
     }
 
 

@@ -21,7 +21,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         private NavMeshWorld _navMeshWorld;
         private NativeList<NavMeshQuery> _navMeshQueries;
-        private EntityQuery _entityQuery;
+        private EntityQuery _validArmyGroupQuery;
         
 
         [BurstCompile]
@@ -29,7 +29,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             state.RequireForUpdate<ArmyGroupNavConfig>();
             state.RequireForUpdate<MainGamingTag>();
-            _entityQuery = SystemAPI.QueryBuilder()
+            _validArmyGroupQuery = SystemAPI.QueryBuilder()
                 .WithAllRW<NavAgentComponent>()
                 .WithAll<ArmyGroupCalculatePathData>()
                 .WithAll<ArmyGroupCalculateEnable>()
@@ -47,8 +47,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 InitNavMeshQueries( config);
             }
             
-            if (_entityQuery.IsEmpty) return;
-            var entities = _entityQuery.ToEntityArray(Allocator.TempJob);
+            if (_validArmyGroupQuery.IsEmpty) return;
+            var entities = _validArmyGroupQuery.ToEntityArray(Allocator.TempJob);
             if (entities.Length > _navMeshQueries.Length)
             {
                 ExtendNavMeshQueries(entities.Length - _navMeshQueries.Length, in config);
@@ -60,9 +60,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             }
             var jobHandles = new NativeArray<JobHandle>(entities.Length, Allocator.TempJob);
             var calculationPathDatas =
-                _entityQuery.ToComponentDataArray<ArmyGroupCalculatePathData>(Allocator.TempJob);
+                _validArmyGroupQuery.ToComponentDataArray<ArmyGroupCalculatePathData>(Allocator.TempJob);
             var navAgents =
-            _entityQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
+            _validArmyGroupQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
             
             for (var i = 0; i < entities.Length; i++)
             {

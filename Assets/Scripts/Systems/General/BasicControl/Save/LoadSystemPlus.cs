@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.GlobalMono;
 using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
@@ -412,6 +413,24 @@ namespace SparFlame.Systems.General.BasicControl
                         currentResourceDatas[i] = savedResourceData;
                     }
 
+                    var populationResourceData = dem.CreateEntityQuery(typeof(PopulationResourceData))
+                        .GetSingleton<PopulationResourceData>();
+                    SystemAPI.SetSingleton(populationResourceData);
+                    var populationStorageAddTasks = dem.CreateEntityQuery(typeof(PopulationStorageAddTask))
+                        .GetSingletonBuffer<PopulationStorageAddTask>();
+                    var curPopulationStorageAddTasks = SystemAPI.GetSingletonBuffer<PopulationStorageAddTask>();
+                    foreach (var task in populationStorageAddTasks)
+                    {
+                        curPopulationStorageAddTasks.Add(task);
+                    }
+                    var populationConjureTasks = dem.CreateEntityQuery(typeof(PopulationConjureTask))
+                        .GetSingletonBuffer<PopulationConjureTask>();
+                    var curPopulationConjureTasks = SystemAPI.GetSingletonBuffer<PopulationConjureTask>();
+                    foreach (var task in populationConjureTasks)
+                    {
+                        curPopulationConjureTasks.Add(task);
+                    }
+
 
                     // Set world time data
                     var worldTimeData = dem.CreateEntityQuery(typeof(WorldTimeData))
@@ -422,6 +441,23 @@ namespace SparFlame.Systems.General.BasicControl
                     var uniqueIdData = dem.CreateEntityQuery(typeof(LastUniqueId))
                         .GetSingleton<LastUniqueId>();
                     SystemAPI.SetSingleton(uniqueIdData);
+                    
+                    // Set sub game status data
+                    var saveCityId = dem.CreateEntityQuery(typeof(SaveCityId))
+                        .GetSingleton<SaveCityId>();
+                    if (saveCityId.value != 0) // Player save in city sub gameplay
+                    {
+                        FrameDelayInvoker.Instance.InvokeAfterFrames(1,
+                            () =>
+                            {
+                                GameController.Instance.EnterPlayerCity(Entity.Null, true);
+                            });
+                    }
+                    SystemAPI.SetSingleton(new SaveCityId
+                    {
+                        mainGameplayTransition = saveCityId.value != 0, // If player save exist in city last time, menu out controller should not hide loading screen
+                        value = saveCityId.value
+                    });
                 }
             }
             else

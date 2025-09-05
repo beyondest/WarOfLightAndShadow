@@ -22,7 +22,7 @@ namespace SparFlame.Systems.General.Input
             var customInputActions = InputListener.Instance.GetCustomInputActions();
 
             if ((gameStatus != GameStatus.SubGaming && gameStatus != GameStatus.MainGaming)
-                || !customInputActions.CameraNormalMode.enabled)
+                || !customInputActions.CameraNormalMode.enabled||SystemAPI.GetSingleton<IsOverInputText>().IsOver)
             {
                 SystemAPI.SetSingleton(new InputCameraNormalData());
                 return;

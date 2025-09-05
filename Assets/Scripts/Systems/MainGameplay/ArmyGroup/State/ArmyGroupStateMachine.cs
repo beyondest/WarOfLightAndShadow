@@ -18,9 +18,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<MainGamingTag>();
             state.RequireForUpdate<ArmyGroupSightTarget>();
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _generalAttrLookup = state.GetComponentLookup<MainGameplayGeneralAttr>(true);
@@ -30,6 +30,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
             _localTransformLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             _supportFightTagLookup.Update(ref state);
@@ -62,7 +64,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 Entity selfEntity)
             {
                 var generalAttr = GeneralAttrLookup[selfEntity];
-                
+
                 if (movableData.movementInfo == ArmyGroupMovementInfo.Complete)
                 {
                     movableData.movementInfo = ArmyGroupMovementInfo.None;
@@ -79,7 +81,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             var relationship = FactionUtils.GetRelationship(PlayerFactionData, generalAttr.faction,
                                 generalAttr.subFaction);
                             BattleUtils.BeginBattle(
-                                relationship == Relationship.Player ? SubGameStatus.PlayerSiege : SubGameStatus.PlayerDefend,
+                                relationship == Relationship.Player
+                                    ? SubGameStatus.PlayerSiege
+                                    : SubGameStatus.PlayerDefend,
                                 selfEntity, stateData.Target, index, ECB
                             );
                             break;
@@ -106,9 +110,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     stateData.CurState = ArmyGroupState.Idle;
                     stateData.Target = Entity.Null;
                 }
+
                 // Only check sight target when army group is idle or moving
-                if(stateData.CurState != ArmyGroupState.Idle || stateData.CurState != ArmyGroupState.Moving)return;
-                
+                if (stateData.CurState != ArmyGroupState.Idle || stateData.CurState != ArmyGroupState.Moving) return;
+
                 // Check should trigger encounter battle
                 var finalTarget = Entity.Null;
                 if (targets.Length > 1)
@@ -124,12 +129,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         if (relationship is Relationship.Ally or Relationship.Player or Relationship.Neutral)
                         {
                             // Record the last passing by city
-                            if(targetGeneralAttr.baseTag == MainGameBaseTag.City
-                               && relationship is Relationship.Ally or Relationship.Player)
+                            if (targetGeneralAttr.baseTag == MainGameBaseTag.City
+                                && relationship is Relationship.Ally or Relationship.Player)
                                 lastCity.City = target;
                             // Exclude same faction army group
                             continue;
                         }
+
                         var dis = math.distancesq(TransformLookup[target].Position,
                             TransformLookup[selfEntity].Position);
                         if (dis < minDisSq)
@@ -139,9 +145,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         }
                     }
                 }
+
                 if (finalTarget != Entity.Null)
                 {
-                    BattleUtils.BeginBattle(SubGameStatus.Encounter, selfEntity,finalTarget, index, ECB);
+                    BattleUtils.BeginBattle(SubGameStatus.Encounter, selfEntity, finalTarget, index, ECB);
                 }
             }
         }

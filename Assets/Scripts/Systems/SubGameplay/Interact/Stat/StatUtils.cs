@@ -84,7 +84,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ecb.AddComponent<SubGameplayEntityTag>(index, destroyObstacleRequest);
         }
 
-        public static void GenerateCityTaskCancelRequest(
+        public static void GenerateResourceTaskRemoveRequest(
             int index, 
             int uniqueId,
             Entity city,
@@ -143,7 +143,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
 
 
-        public static void GenerateStorageDecreaseRequest( int index,
+        public static void GenerateDecreaseStorageRequest( int index,
             Entity city,
             ResourceType resourceType,
             int decreaseAmount,
@@ -155,7 +155,22 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ResourceType = resourceType,
                 AbsAmount = decreaseAmount,
                 City = city,
-                RequestType =ResourceRequestType.ResourceBuildingDestroyedAfterConstruction,
+                RequestType =ResourceRequestType.DecreaseStorage,
+            });
+            ecb.AddComponent<SubGameplayEntityTag>(index, request);
+        }
+
+        public static void GenerateDecreaseGenerateSpeedRequest(int index,
+            Entity city, ResourceType resourceType, float hoursPerUnit,
+            EntityCommandBuffer.ParallelWriter ecb)
+        {
+            var request = ecb.CreateEntity(index);
+            ecb.AddComponent(index, request, new ResourceChangeRequest
+            {
+                ResourceType = resourceType,
+                HoursPerUnit = hoursPerUnit,
+                City = city,
+                RequestType = ResourceRequestType.DecreaseGenerateSpeed,
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, request);
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using SparFlame.Components.General;
+using SparFlame.Core.Utils;
 using Unity.Entities;
 using UnityEngine;
 
@@ -86,7 +87,8 @@ namespace SparFlame.Systems.General.BasicControl
                     OnEcsLoadArmyGroupSubData?.Invoke();
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(targetSubGameStatusData.SubGameStatus);
+                    break;
             }
         }
 

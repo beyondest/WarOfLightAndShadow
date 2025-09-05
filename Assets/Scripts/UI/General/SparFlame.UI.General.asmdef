@@ -17,7 +17,8 @@
     "Unity.InputSystem",
     "SparFlame.Core",
     "SparFlame.Components",
-    "SparFlame.Systems.General.BasicControl"
+    "SparFlame.Systems.General.BasicControl",
+    "SparFlame.Database"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

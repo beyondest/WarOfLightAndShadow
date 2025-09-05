@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Entities;
 using UnityEngine;
 using SparFlame.UI.General;
@@ -175,7 +176,8 @@ namespace SparFlame.UI.SubGameplay
                     UpdateInteractAbilityInfo(Em.GetComponentData<HarvestAbility>(_targetEntity));
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(_currentBar);
+                    break;
             }
         }
 
@@ -187,7 +189,7 @@ namespace SparFlame.UI.SubGameplay
                 InteractType.Attack => "Attack",
                 InteractType.Heal => "Heal",
                 InteractType.Harvest => "Harvest",
-                _ => throw new ArgumentOutOfRangeException()
+                _ => BurstSafe.UnexpectedEnum(interactAbility.InteractType, "Wrong")
             };
             
             amountLabelText.text = prefix + " AbsAmount";

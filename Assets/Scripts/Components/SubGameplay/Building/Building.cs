@@ -33,7 +33,7 @@ namespace SparFlame.Components.SubGameplay
         Fortifications = 0,
         Generators = 1,
         ConjuringShrines = 2,
-        Dwellings = 3,
+        CapacityBuildings = 3,
         Ornaments = 4,
     }
 
@@ -46,11 +46,11 @@ namespace SparFlame.Components.SubGameplay
         TerraNexus = 4 // Rune Pad（符文阵盘）, Soul Anchor（灵魂锚点）, Golem Crucible（魔像熔炉）
     }
 
-    public enum DwellingType
+    public enum CapacityBuildingType
     {
-        CommonDwelling = 0, // Hut（小屋）, Lodge（山屋）, Hall（大厅）
-        FlameDwelling = 1, // Hearth（炉台）, Crucible（熔炉）, Pyrelord Hall（火主大厅）
-        MysticDwelling = 2, // Chapel（礼拜堂）, Sanctum（密室）, Sanctuary（圣域）
+        Dwelling = 0,
+        ManaPool = 1,
+        CrystalStoreHouse = 2,
     }
 
 
@@ -100,6 +100,12 @@ namespace SparFlame.Components.SubGameplay
         public BuildingType Type { get; set; }
         public int GlobalIdx { get; set; }
     }
+    public struct CapacityBuildingAttr : IComponentData
+    {
+        public ResourceType ResourceType;
+        public int StorageAmount;
+    }
+
 
 
     public struct BuildingUtils

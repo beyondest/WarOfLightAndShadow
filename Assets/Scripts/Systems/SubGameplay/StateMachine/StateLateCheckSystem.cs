@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Animation;
 using SparFlame.Systems.General;
 using SparFlame.Systems.SubGameplay.Interact;
@@ -92,7 +93,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         Heal.SetComponentEnabled(selfEntity, true);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(state.CurState);
+                        break;
                 }
      
             }

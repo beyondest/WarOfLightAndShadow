@@ -16,7 +16,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ArmyGroupGarrisonRequest>();
             state.RequireForUpdate<ArmyGroupGarrisonSystemConfig>();
             _requestQuery = SystemAPI.QueryBuilder().WithAll<ArmyGroupGarrisonRequest>().Build();
@@ -25,11 +24,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
-            if (gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming) return;
+            
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-
-
             DealGarrisonRequest(ref state, ecb);
 
 
@@ -51,8 +47,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                 var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(request.City);
                 var garrisonDatas = SystemAPI.GetBuffer<CityGarrisonTypeData>(request.City);
-
-
+                
                 int i;
                 // Add unit type count if this unit type already exists
                 for (i = 0; i < garrisonDatas.Length; i++)

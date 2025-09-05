@@ -10,7 +10,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
-    public partial struct ArmyGroupPathVisualizer : ISystem
+    public partial struct ArmyGroupPathVisualizeSystem : ISystem
     {
         private ComponentLookup<ArmyGroupMovingTag> _movingTagLookup;
 
@@ -21,6 +21,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             state.RequireForUpdate<InputArmyGroupControlData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<ArmyGroupPathVisualizeConfig>();
+            state.RequireForUpdate<MainGamingTag>();
             _movingTagLookup = state.GetComponentLookup<ArmyGroupMovingTag>(true);
         }
 

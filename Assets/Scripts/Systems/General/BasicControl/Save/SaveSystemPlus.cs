@@ -7,6 +7,7 @@ using Unity.Entities;
 using Unity.Entities.Serialization;
 using Unity.Physics;
 using Unity.Transforms;
+
 // ReSharper disable ConvertToUsingDeclaration
 
 namespace SparFlame.Systems.General.BasicControl
@@ -92,8 +93,7 @@ namespace SparFlame.Systems.General.BasicControl
                     var unitTmpId = SaveUtilities.GetTmpIdForSaving(unit);
                     armyGroupUnit.SaveTmpId = unitTmpId;
                     armyGroupUnits[index] = armyGroupUnit;
-
-
+                    
                     var transform = SystemAPI.GetComponent<LocalTransform>(unit);
                     var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(unit);
                     var statData = SystemAPI.GetComponent<StatData>(unit);
@@ -115,22 +115,6 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         armyGroupSaveId = armyGroupAttr.saveId
                     });
-
-                    // Units in army group cannot be in garrison state
-                    // if (SystemAPI.HasComponent<InGarrison>(unit))
-                    // {
-                    //     var inGarrison = SystemAPI.GetComponent<InGarrison>(unit);
-                    //     var physicsMass = SystemAPI.GetComponent<PhysicsMass>(unit);
-                    //     ecb.AddComponent(saveEntity, new SeInverseMass { value = physicsMass.InverseMass });
-                    //     ecb.AddComponent(saveEntity, new SeInGarrison
-                    //     {
-                    //         buildingTmpId = SaveUtilities.GetTmpIdForSaving(inGarrison.BuildingEntity),
-                    //         inBuilding = inGarrison.InBuilding,
-                    //         priorMass = inGarrison.PriorMass,
-                    //     });
-                    //     ecb.AddComponent(saveEntity,
-                    //         new SeTmpId { value = unitTmpId });
-                    // }
                 }
 
                 using (var serializeWorld = new World("Serialization World"))
@@ -267,6 +251,26 @@ namespace SparFlame.Systems.General.BasicControl
             entities.Add(SystemAPI.GetSingletonEntity<WorldTimeData>());
             entities.Add(SystemAPI.GetSingletonEntity<LastUniqueId>());
             entities.Add(SystemAPI.GetSingletonEntity<ResourceData>());
+            entities.Add(SystemAPI.GetSingletonEntity<PopulationResourceData>());
+            entities.Add(SystemAPI.GetSingletonEntity<PopulationStorageAddTask>());
+            entities.Add(SystemAPI.GetSingletonEntity<PopulationConjureTask>());
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            if (subGameStatusData.SubGameStatus != SubGameStatus.None)
+            {
+                var cityAttr = SystemAPI.GetComponent<CityAttr>(subGameStatusData.City);
+                SystemAPI.SetSingleton(new SaveCityId
+                {
+                    value = cityAttr.globalId,
+                    mainGameplayTransition = false
+                });
+            }
+            else
+            {
+                SystemAPI.SetSingleton(new SaveCityId());
+            }
+            entities.Add(SystemAPI.GetSingletonEntity<SaveCityId>());
+            
+            
             using (var serializeWorld = new World("Serialization World"))
             {
                 EntityManager seEm = serializeWorld.EntityManager;

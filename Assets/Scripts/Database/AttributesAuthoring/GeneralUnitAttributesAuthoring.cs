@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics.Authoring;
@@ -54,7 +55,8 @@ namespace SparFlame.Database
                         AddComponent<WorkerTag>(entity);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(item.type);
+                        break;
                 }
                 var buffer = AddBuffer<CostList>(entity);
                 foreach (var cost in item.costs)

@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.EnemyAI;
@@ -145,7 +144,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                         needCalHarass = true;
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(teamData.TeamType);
+                        break;
                 }
             }
 
@@ -298,7 +298,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                         }
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(teamData.TeamType);
+                        break;
                 }
             }
 

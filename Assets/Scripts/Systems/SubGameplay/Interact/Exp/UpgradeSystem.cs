@@ -32,7 +32,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<PhysicsMass> _physicsMassLookup;
         private ComponentLookup<UnitAttr> _unitAttrLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
-        private ComponentLookup<DwellingAttr> _dwellingAttrLookup;
+        private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
         private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
 
         private ComponentLookup<StatData> _statDataLookup;
@@ -60,7 +60,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _physicsMassLookup = state.GetComponentLookup<PhysicsMass>(true);
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
-            _dwellingAttrLookup = state.GetComponentLookup<DwellingAttr>(true);
+            _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
             _cityTaskUniqueIdLookup = state.GetComponentLookup<CityTaskUniqueId>(true);
 
             _statDataLookup = state.GetComponentLookup<StatData>();
@@ -154,7 +154,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<PhysicsMass> PhysicsMassLookup;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
-            [ReadOnly] public ComponentLookup<DwellingAttr> DwellingAttrLookup;
+            [ReadOnly] public ComponentLookup<CapacityBuildingAttr> DwellingAttrLookup;
             [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
 
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatDataLookup;
@@ -299,10 +299,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             builtUpTargetTotalHours = BuildingAttrLookup[expStaticConfig.NextTierPrefab]
                                 .ConstructTimeHours + CurrentTotalHours
                         });
-                        if (buildingAttr.Type == BuildingType.Dwellings)
+                        if (buildingAttr.Type == BuildingType.CapacityBuildings)
                         {
                             
-                            var dwellingAttr = DwellingAttrLookup[expStaticConfig.NextTierPrefab];
+                            var capacityBuildingAttr = DwellingAttrLookup[expStaticConfig.NextTierPrefab];
                             ECB.AddComponent(index, nextTierEntity, CityTaskUniqueIdLookup[request.FromEntity]);
                             
                             var cityTaskAddRequest = ECB.CreateEntity(index);
@@ -310,8 +310,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             ECB.AddComponent(index,cityTaskAddRequest,new ResourceChangeRequest
                             {
                                 City = City,
-                                AbsAmount = dwellingAttr.Amount,
-                                ResourceType = dwellingAttr.ResourceType,
+                                AbsAmount = capacityBuildingAttr.StorageAmount,
+                                ResourceType = capacityBuildingAttr.ResourceType,
                                 FinishTotalHours = BuildingAttrLookup[expStaticConfig.NextTierPrefab]
                                     .ConstructTimeHours + CurrentTotalHours,
                                 FromBuildingUniqueId = CityTaskUniqueIdLookup[request.FromEntity].value,

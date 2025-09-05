@@ -1,6 +1,8 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
+using SparFlame.Systems.General.Resource;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -16,18 +18,25 @@ namespace SparFlame.Systems.MainGameplay.City
     [BurstCompile]
     public partial struct ResourceSystem : ISystem
     {
+        private ComponentLookup<GeneratingTag> _generatingTagLookup;
+
+        
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<PopulationResourceType>();
+            state.RequireForUpdate<SubGameStatusData>();
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<PopulationResourceData>();
             state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ResourceData>();
+            _generatingTagLookup = state.GetComponentLookup<GeneratingTag>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>();
             var worldTimeData = SystemAPI.GetSingleton<WorldTimeData>();
             if (gameStatus.Value == GameStatus.Init)
@@ -38,13 +47,39 @@ namespace SparFlame.Systems.MainGameplay.City
 
             if (gameStatus.Value != GameStatus.MainGaming && gameStatus.Value != GameStatus.SubGaming) return;
 
+            
             DealResourceChangeRequest(ref state);
+            CheckPopulationResourceTask(ref state);
             CalPlayerGeneralResourceData(ref state);
 
-            new CityResourceCheckJob
+            var generalResourceDatas = SystemAPI.GetSingletonBuffer<ResourceData>();
+            var globalResourceAvailableDatas = new NativeHashMap<int, int>(3, Allocator.TempJob);
+            globalResourceAvailableDatas.Add((int)ResourceType.SoulPact,
+                generalResourceDatas[(int)ResourceType.SoulPact].availableAmount);
+            globalResourceAvailableDatas.Add((int)ResourceType.Essence,
+                generalResourceDatas[(int)ResourceType.Essence].availableAmount);
+            globalResourceAvailableDatas.Add((int)ResourceType.Aetherium,
+                generalResourceDatas[(int)ResourceType.Aetherium].availableAmount);
+
+           
+            _generatingTagLookup.Update(ref state);
+            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            new ResourceMineGenerateJob
+            {
+                ECB = ecb,
+                GeneratingTagLookup = _generatingTagLookup,
+                City = SystemAPI.GetSingleton<SubGameStatusData>().City
+            }.ScheduleParallel();
+            
+            var job = new CityResourceCheckJob
             {
                 CurrentTotalHours = worldTimeData.totalHours,
-            }.ScheduleParallel();
+                ResourceTypeToGlobalAvailableAmount = globalResourceAvailableDatas,
+            }.ScheduleParallel(state.Dependency);
+            job.Complete();
+            globalResourceAvailableDatas.Dispose();
+            
         }
 
 
@@ -52,39 +87,50 @@ namespace SparFlame.Systems.MainGameplay.City
         {
             var resourceDatas = SystemAPI.GetSingletonBuffer<ResourceData>();
             // Reset 
-            for (var i = 0; i < resourceDatas.Length; i++)
+
+            var manaResourceData = new ResourceData
             {
-                var resource = resourceDatas[i];
-                resource.availableAmount = 0;
-                resource.storage = 0;
-                resource.hoursPerUnit = -1f;
-                resource.virtualOccupiedCount = 0;
-                resource.occupiedCount = 0;
-                resourceDatas[i] = resource;
-            }
+                resourceType = ResourceType.Mana,
+                availableAmount = 0,
+                amountPerHour = 0,
+                storage = 0
+            };
+            var crystalResourceData = new ResourceData
+            {
+                resourceType = ResourceType.Crystal,
+                availableAmount = 0,
+                amountPerHour = 0,
+                storage = 0
+            };
 
             // Calculate
             foreach (var cityResourceEntries in
                      SystemAPI.Query<DynamicBuffer<CityResourceEntry>>().WithAll<PlayerTag>())
             {
-                foreach (var cityResourceEntry in cityResourceEntries)
-                {
-                    var resourceKey = (int)cityResourceEntry.resourceData.resourceType;
-                    var resourceData = resourceDatas[resourceKey];
-                    resourceData.storage += cityResourceEntry.resourceData.storage;
-                    resourceData.availableAmount += cityResourceEntry.resourceData.availableAmount;
-                    resourceData.virtualOccupiedCount += cityResourceEntry.resourceData.virtualOccupiedCount;
-                    resourceData.occupiedCount += cityResourceEntry.resourceData.occupiedCount;
-                    var curSpeed = resourceData.hoursPerUnit < 0 ? 0 : 1f / resourceData.hoursPerUnit;
-                    var addSpeed = cityResourceEntry.resourceData.hoursPerUnit < 0
-                        ? 0
-                        : 1f / cityResourceEntry.resourceData.hoursPerUnit;
-                    curSpeed += addSpeed;
-                    if (math.abs(curSpeed) < 0.001f) resourceData.hoursPerUnit = -1f;
-                    else resourceData.hoursPerUnit = 1f / curSpeed;
-                    resourceDatas[resourceKey] = resourceData;
-                }
+                var manaResourceEntry = cityResourceEntries[(int)ResourceType.Mana];
+                manaResourceData.storage += manaResourceEntry.resourceData.storage;
+                manaResourceData.availableAmount += manaResourceEntry.resourceData.availableAmount;
+                manaResourceData.amountPerHour += manaResourceEntry.resourceData.amountPerHour;
+
+                var crystalResourceEntry = cityResourceEntries[(int)ResourceType.Crystal];
+                crystalResourceData.storage += crystalResourceEntry.resourceData.storage;
+                crystalResourceData.availableAmount += crystalResourceEntry.resourceData.availableAmount;
+                crystalResourceData.amountPerHour += crystalResourceEntry.resourceData.amountPerHour;
             }
+
+            resourceDatas[(int)ResourceType.Mana] = manaResourceData;
+            resourceDatas[(int)ResourceType.Crystal] = crystalResourceData;
+
+            var populationResourceData = SystemAPI.GetSingleton<PopulationResourceData>();
+            resourceDatas[(int)populationResourceData.populationResourceType] = new ResourceData
+            {
+                resourceType = populationResourceData.populationResourceType,
+                availableAmount = math.max(0,
+                    populationResourceData.storage - populationResourceData.occupiedCount -
+                    populationResourceData.virtualOccupiedCount),
+                amountPerHour = 0,
+                storage = populationResourceData.storage,
+            };
         }
 
 
@@ -92,60 +138,115 @@ namespace SparFlame.Systems.MainGameplay.City
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var curTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours;
-            var populationResourceType = SystemAPI.GetSingleton<PopulationResourceType>().Value;
+            ref var populationResourceData = ref SystemAPI.GetSingletonRW<PopulationResourceData>().ValueRW;
+            var generalResourceDatas = SystemAPI.GetSingletonBuffer<ResourceData>();
+            var populationStorageTasks = SystemAPI.GetSingletonBuffer<PopulationStorageAddTask>();
+
+
             foreach (var (requestRO, entity) in SystemAPI.Query<RefRO<ResourceChangeRequest>>().WithEntityAccess())
             {
+                ecb.DestroyEntity(entity);
+
                 var request = requestRO.ValueRO;
                 var resourceKey = (int)request.ResourceType;
-                var absAmount = request.AbsAmount;
 
                 var cityResourceEntries = SystemAPI.GetBuffer<CityResourceEntry>(request.City);
                 var cityResourceEntry = cityResourceEntries[resourceKey];
 
+                var populationConjureTasks = SystemAPI.GetSingletonBuffer<PopulationConjureTask>();
                 var cityTasks = SystemAPI.GetBuffer<CityTask>(request.City);
 
                 switch (request.RequestType)
                 {
                     // Consume minus available amount
                     case ResourceRequestType.Consume:
-                        var consumeAmount = math.min(cityResourceEntry.resourceData.availableAmount, absAmount);
-                        cityResourceEntry.resourceData.availableAmount -= consumeAmount;
-                        cityResourceEntry.resourceData.availableAmount = math.max(0, cityResourceEntry.resourceData.availableAmount);
-                        if (populationResourceType == request.ResourceType)
+
+                        switch (request.ResourceType)
                         {
-                            cityResourceEntry.resourceData.virtualOccupiedCount += consumeAmount;
+                            case ResourceType.SoulPact:
+                                populationResourceData.virtualOccupiedCount += request.AbsAmount;
+
+                                break;
+
+                            case ResourceType.Mana:
+                            case ResourceType.Crystal:
+                                var consumeAmount = math.min(cityResourceEntry.resourceData.availableAmount,
+                                    request.AbsAmount);
+                                cityResourceEntry.resourceData.availableAmount -= consumeAmount;
+                                cityResourceEntry.resourceData.availableAmount =
+                                    math.max(0, cityResourceEntry.resourceData.availableAmount);
+                                cityResourceEntries[resourceKey] = cityResourceEntry;
+                                break;
+                            case ResourceType.Aetherium:
+                            case ResourceType.Essence:
+                                var generalResourceData = generalResourceDatas[resourceKey];
+                                generalResourceData.availableAmount -= request.AbsAmount;
+                                generalResourceData.availableAmount = math.max(0, generalResourceData.availableAmount);
+                                generalResourceDatas[resourceKey] = generalResourceData;
+                                break;
+                            default:
+                                BurstSafe.UnexpectedEnum(request.ResourceType);
+                                break;
                         }
-                        cityResourceEntries[resourceKey] = cityResourceEntry;
+
 
                         break;
                     // Generate and population release will add available amount
                     case ResourceRequestType.Generate:
-                        var maxAddAmount = cityResourceEntry.resourceData.storage -
-                                           cityResourceEntry.resourceData.availableAmount;
-                        maxAddAmount = math.max(0, maxAddAmount);
-                        cityResourceEntry.resourceData.availableAmount += math.min(maxAddAmount, absAmount);
-                        cityResourceEntries[resourceKey] = cityResourceEntry;
+                        switch (request.ResourceType)
+                        {
+                            case ResourceType.SoulPact: 
+                                // This happens when system give player some special units
+                                populationResourceData.occupiedCount += request.AbsAmount;
+                                break;
+                            case ResourceType.Mana:
+                            case ResourceType.Crystal:
+                                var maxAddAmount = cityResourceEntry.resourceData.storage -
+                                                   cityResourceEntry.resourceData.availableAmount;
+                                maxAddAmount = math.max(0, maxAddAmount);
+                                cityResourceEntry.resourceData.availableAmount += math.min(maxAddAmount, request.AbsAmount);
+                                cityResourceEntries[resourceKey] = cityResourceEntry;
+                                break;
+                            case ResourceType.Essence:
+                            case ResourceType.Aetherium:
+                                var generalResourceData = generalResourceDatas[resourceKey];
+                                generalResourceData.availableAmount += request.AbsAmount;
+                                generalResourceDatas[resourceKey] = generalResourceData;
+                                break;
+                            default:
+                                BurstSafe.UnexpectedEnum(request.ResourceType);
+                                break;
+                        }
                         break;
                     case ResourceRequestType.PopulationRelease:
-                        cityResourceEntry.resourceData.occupiedCount -= absAmount;
-                        cityResourceEntry.resourceData.occupiedCount = math.max(0, cityResourceEntry.resourceData.occupiedCount);
-                        cityResourceEntry.resourceData.availableAmount = math.max(0, 
-                            cityResourceEntry.resourceData.storage
-                            - cityResourceEntry.resourceData.occupiedCount
-                            - cityResourceEntry.resourceData.virtualOccupiedCount);
-                        cityResourceEntries[resourceKey] = cityResourceEntry;
+                        populationResourceData.occupiedCount -= request.AbsAmount;
+                        populationResourceData.occupiedCount = math.max(0, populationResourceData.occupiedCount);
                         break;
                     // Storage add happens when player construct/upgrade a new dwelling or storage building.
                     case ResourceRequestType.StorageAddByTask:
-                        ecb.AppendToBuffer(request.City, new CityTask
+                        if (request.ResourceType == populationResourceData.populationResourceType)
                         {
-                            resourceType = request.ResourceType,
-                            finishTotalHours = request.FinishTotalHours,
-                            storageAddAmount = request.AbsAmount,
-                            fromBuildingUniqueId = request.FromBuildingUniqueId,
-                        });
+                            populationStorageTasks.Add(new PopulationStorageAddTask
+                            {
+                                finishTotalHours = request.FinishTotalHours,
+                                fromBuildingUniqueId = request.FromBuildingUniqueId,
+                                addAmount = request.AbsAmount,
+                            });
+                        }
+                        else
+                        {
+                            ecb.AppendToBuffer(request.City, new CityTask
+                            {
+                                resourceType = request.ResourceType,
+                                finishTotalHours = request.FinishTotalHours,
+                                storageAddAmount = request.AbsAmount,
+                                fromBuildingUniqueId = request.FromBuildingUniqueId,
+                            });
+                        }
+
                         break;
                     case ResourceRequestType.GenerateSpeedAddByTask:
+
                         ecb.AppendToBuffer(request.City, new CityTask
                         {
                             resourceType = request.ResourceType,
@@ -155,61 +256,68 @@ namespace SparFlame.Systems.MainGameplay.City
                             taskType = CityTaskType.PlantGenerator,
                         });
                         break;
-                    case ResourceRequestType.ResourceBuildingDestroyedWhenConstructing:
-                        for (var i = cityTasks.Length - 1; i >= 0; i--)
+
+                    case ResourceRequestType.ConstructingBuildingDestroyedAndRemoveTask:
+
+                        if (request.ResourceType == populationResourceData.populationResourceType)
                         {
-                            var task = cityTasks[i];
-                            if (task.fromBuildingUniqueId != request.FromBuildingUniqueId) continue;
-                            cityTasks.RemoveAt(i);
-                            break;
+                            for (var i = populationStorageTasks.Length - 1; i >= 0; i--)
+                            {
+                                var task = populationStorageTasks[i];
+                                if (task.fromBuildingUniqueId != request.FromBuildingUniqueId) continue;
+                                populationStorageTasks.RemoveAt(i);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            for (var i = cityTasks.Length - 1; i >= 0; i--)
+                            {
+                                var task = cityTasks[i];
+                                if (task.fromBuildingUniqueId != request.FromBuildingUniqueId) continue;
+                                cityTasks.RemoveAt(i);
+                                break;
+                            }
                         }
 
                         break;
-                    case ResourceRequestType.ResourceBuildingDestroyedAfterConstruction:
-                        cityResourceEntry.resourceData.storage -= absAmount;
-                        cityResourceEntry.resourceData.storage =
-                            math.max(0, cityResourceEntry.resourceData.storage);
-                        if (populationResourceType == request.ResourceType)
+                    case ResourceRequestType.DecreaseStorage:
+                        if (populationResourceData.populationResourceType == request.ResourceType)
                         {
-                            cityResourceEntry.resourceData.availableAmount = math.max(0,
-                                cityResourceEntry.resourceData.storage 
-                                - cityResourceEntry.resourceData.occupiedCount
-                                - cityResourceEntry.resourceData.virtualOccupiedCount);
+                            populationResourceData.storage -= request.AbsAmount;
+                        }
+                        else
+                        {
+                            cityResourceEntry.resourceData.storage -= request.AbsAmount;
+                            cityResourceEntry.resourceData.storage =
+                                math.max(0, cityResourceEntry.resourceData.storage);
+                            cityResourceEntries[resourceKey] = cityResourceEntry;
                         }
 
+                        break;
+
+                    case ResourceRequestType.DecreaseGenerateSpeed:
+                        cityResourceEntry.resourceData.amountPerHour -= 1 / request.HoursPerUnit;
                         cityResourceEntries[resourceKey] = cityResourceEntry;
                         break;
 
-                    case ResourceRequestType.DecreaseGenerateSpeedForResourceMine:
-                        var currentSpeed = cityResourceEntry.resourceData.hoursPerUnit > 0
-                            ? 1f / cityResourceEntry.resourceData.hoursPerUnit
-                            : 0f;
-                        var newSpeed = currentSpeed - 1f / request.HoursPerUnit;
-                        cityResourceEntry.resourceData.hoursPerUnit = math.abs(newSpeed) > 0.001f ? 1f / newSpeed : -1f;
+                    case ResourceRequestType.IncreaseGenerateSpeed:
+                        cityResourceEntry.resourceData.amountPerHour += 1 / request.HoursPerUnit;
                         cityResourceEntries[resourceKey] = cityResourceEntry;
                         break;
 
-                    case ResourceRequestType.IncreaseGenerateSpeedForResourceMine:
-                        var curSpeed = cityResourceEntry.resourceData.hoursPerUnit > 0
-                            ? 1 / cityResourceEntry.resourceData.hoursPerUnit
-                            : 0;
-                        var nSpeed = curSpeed + 1f / request.HoursPerUnit;
-                        cityResourceEntry.resourceData.hoursPerUnit = 1f / nSpeed;
-                        cityResourceEntries[resourceKey] = cityResourceEntry;
-                        break;
                     case ResourceRequestType.ConjureUnitByTask:
-
                         var find = false;
 
                         // Find whether task already exist
-                        for (var i = 0; i < cityTasks.Length; i++)
+                        for (var i = 0; i < populationConjureTasks.Length; i++)
                         {
-                            var task = cityTasks[i];
+                            var task = populationConjureTasks[i];
                             if (task.fromBuildingUniqueId == request.FromBuildingUniqueId
                                 && math.abs(task.hoursPerUnit - request.HoursPerUnit) < 0.01f)
                             {
                                 task.remainingConjuredUnitCount += request.AbsAmount;
-                                cityTasks[i] = task;
+                                populationConjureTasks[i] = task;
                                 find = true;
                                 break;
                             }
@@ -217,28 +325,24 @@ namespace SparFlame.Systems.MainGameplay.City
 
                         if (!find)
                         {
-                            ecb.AppendToBuffer(request.City, new CityTask
+                            populationConjureTasks.Add(new PopulationConjureTask
                             {
-                                resourceType = request.ResourceType,
                                 hoursPerUnit = request.HoursPerUnit,
                                 fromBuildingUniqueId = request.FromBuildingUniqueId,
-                                taskType = CityTaskType.ConjureUnits,
                                 remainingConjuredUnitCount = request.AbsAmount,
-                                finishTotalHours = curTotalHours + request.HoursPerUnit,
+                                accumulatedHours = curTotalHours,
                             });
                         }
 
                         break;
                     case ResourceRequestType.ConjureBuildingDestroyed:
-                        for (var i = cityTasks.Length - 1; i >= 0; i--)
+                        for (var i = populationConjureTasks.Length - 1; i >= 0; i--)
                         {
-                            var task = cityTasks[i];
+                            var task = populationConjureTasks[i];
                             if (task.fromBuildingUniqueId == request.FromBuildingUniqueId)
                             {
-                                cityTasks.RemoveAt(i);
-                                cityResourceEntry.resourceData.virtualOccupiedCount -= task.remainingConjuredUnitCount;
-                                cityResourceEntry.resourceData.availableAmount += task.remainingConjuredUnitCount;
-                                cityResourceEntries[resourceKey] = cityResourceEntry;
+                                populationConjureTasks.RemoveAt(i);
+                                populationResourceData.virtualOccupiedCount -= task.remainingConjuredUnitCount;
                             }
                         }
 
@@ -247,105 +351,51 @@ namespace SparFlame.Systems.MainGameplay.City
                         BurstSafe.UnexpectedEnum(request.RequestType);
                         break;
                 }
-
-                ecb.DestroyEntity(entity);
             }
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
-    }
 
-
-    [BurstCompile]
-    [WithAll(typeof(PlayerTag))]
-    public partial struct CityResourceCheckJob : IJobEntity
-    {
-        [ReadOnly] public float CurrentTotalHours;
-
-        private void Execute(ref DynamicBuffer<CityTask> tasks,
-            ref DynamicBuffer<CityResourceEntry> cityResourceEntries
-        )
+        private void CheckPopulationResourceTask(ref SystemState state)
         {
-            // Check tasks
-            for (var i = tasks.Length - 1; i >= 0; i--)
+            ref var populationResourceData = ref SystemAPI.GetSingletonRW<PopulationResourceData>().ValueRW;
+            var storageAddTasks = SystemAPI.GetSingletonBuffer<PopulationStorageAddTask>();
+            var conjureTasks = SystemAPI.GetSingletonBuffer<PopulationConjureTask>();
+            var curTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours;
+            for (var i = storageAddTasks.Length - 1; i >= 0; i--)
             {
-                var task = tasks[i];
-                if (task.finishTotalHours <= CurrentTotalHours)
+                var task = storageAddTasks[i];
+                if (task.finishTotalHours <= curTotalHours)
                 {
-                    var resourceKey = (int)task.resourceType;
-                    var cityResourceEntry = cityResourceEntries[resourceKey];
-                    switch (task.taskType)
-                    {
-                        case CityTaskType.StorageAdd:
-                            cityResourceEntry.resourceData.storage += task.storageAddAmount;
-
-                            // Population available amount will increase when storage increases.
-                            if (task.resourceType == ResourceType.SoulPact)
-                            {
-                                cityResourceEntry.resourceData.availableAmount = math.max(0,
-                                    cityResourceEntry.resourceData.storage -
-                                    cityResourceEntry.resourceData.occupiedCount -
-                                    cityResourceEntry.resourceData.virtualOccupiedCount);
-                            }
-                            tasks.RemoveAt(i);
-                            break;
-                        case CityTaskType.PlantGenerator:
-                            var curSpeed = cityResourceEntry.resourceData.hoursPerUnit > 0
-                                ? 1 / cityResourceEntry.resourceData.hoursPerUnit
-                                : 0;
-                            var newSpeed = curSpeed + 1f / task.hoursPerUnit;
-                            cityResourceEntry.resourceData.hoursPerUnit = 1f / newSpeed;
-                            tasks.RemoveAt(i);
-                            break;
-                        case CityTaskType.ConjureUnits:
-
-                            var deltaHours = CurrentTotalHours - (task.finishTotalHours - task.hoursPerUnit);
-
-                            var count = (int)(deltaHours / task.hoursPerUnit);
-                            var validCount = math.min(count, task.remainingConjuredUnitCount);
-                            task.finishTotalHours += validCount * task.hoursPerUnit;
-                            task.remainingConjuredUnitCount -= validCount;
-                            cityResourceEntry.resourceData.virtualOccupiedCount -= validCount;
-                            cityResourceEntry.resourceData.occupiedCount += validCount;
-                            if (task.remainingConjuredUnitCount <= 0)
-                            {
-                                tasks.RemoveAt(i);
-                            }
-                            else
-                            {
-                                tasks[i] = task;
-                            }
-                            break;
-                        default:
-                            BurstSafe.UnexpectedEnum(task.taskType);
-                            break;
-                    }
-                    cityResourceEntries[resourceKey] = cityResourceEntry;
+                    populationResourceData.storage += task.addAmount;
+                    storageAddTasks.RemoveAt(i);
                 }
             }
 
-            // Generate resource
-            for (var i = 0; i < cityResourceEntries.Length; i++)
+            for (var i = conjureTasks.Length - 1; i >= 0; i--)
             {
-                var cityResourceEntry = cityResourceEntries[i];
-                if (cityResourceEntry.resourceData.hoursPerUnit < 0) continue; // This resource is not generating.
-
-                var deltaTime = CurrentTotalHours - cityResourceEntry.accumulatedHours;
-                if (deltaTime >= cityResourceEntry.resourceData.hoursPerUnit)
+                var task = conjureTasks[i];
+                var deltaHours = curTotalHours - task.accumulatedHours;
+                if (deltaHours >= task.hoursPerUnit)
                 {
-                    var amount = (int)(deltaTime / cityResourceEntry.resourceData.hoursPerUnit);
-                    var maxAddAmount = cityResourceEntry.resourceData.storage -
-                                       cityResourceEntry.resourceData.availableAmount;
-                    maxAddAmount = math.max(0, maxAddAmount);
-                    cityResourceEntry.resourceData.availableAmount += math.min(maxAddAmount, amount);
+                    var validAmount = math.min(task.remainingConjuredUnitCount, (int)(deltaHours / task.hoursPerUnit));
+                    populationResourceData.occupiedCount += validAmount;
+                    populationResourceData.virtualOccupiedCount -= validAmount;
+                    task.accumulatedHours += validAmount * task.hoursPerUnit;
+                    task.remainingConjuredUnitCount -= validAmount;
 
-                    cityResourceEntry.accumulatedHours +=
-                        deltaTime - deltaTime % cityResourceEntry.resourceData.hoursPerUnit;
+                    if (task.remainingConjuredUnitCount <= 0)
+                        conjureTasks.RemoveAt(i);
+                    else
+                    {
+                        conjureTasks[i] = task;
+                    }
                 }
-
-                cityResourceEntries[i] = cityResourceEntry;
             }
         }
     }
+
+
+  
 }

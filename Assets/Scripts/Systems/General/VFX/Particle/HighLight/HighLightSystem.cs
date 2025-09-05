@@ -19,6 +19,7 @@ namespace SparFlame.Systems.General.VFX
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WaitInfo>();
             state.RequireForUpdate<HighLightSystemConfig>();
             state.RequireForUpdate<HighLightData>();
             state.RequireForUpdate<PlayerFactionData>();
@@ -35,6 +36,9 @@ namespace SparFlame.Systems.General.VFX
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
+            
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var config = SystemAPI.GetSingleton<HighLightSystemConfig>();

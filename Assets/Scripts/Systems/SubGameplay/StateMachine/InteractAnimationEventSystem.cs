@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
@@ -377,7 +376,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 name = AudioName.WorkerHarvest;
                                 break;
                             default:
-                                throw new ArgumentOutOfRangeException();
+                                BurstSafe.UnexpectedEnum(unitAttr.Type);
+                                break;
                         }
 
                         if (name != AudioName.None)

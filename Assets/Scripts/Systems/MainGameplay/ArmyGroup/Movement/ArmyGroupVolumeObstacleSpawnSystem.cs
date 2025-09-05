@@ -7,7 +7,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
@@ -36,6 +35,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
         protected override void OnUpdate()
         {
+            // This system only update when there is update city navmesh request
             SpawnVolumeObstacleInMainScene();
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<UpdateCityNavMeshRequest>());
         }

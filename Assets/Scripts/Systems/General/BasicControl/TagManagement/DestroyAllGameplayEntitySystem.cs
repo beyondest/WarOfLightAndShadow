@@ -1,7 +1,5 @@
 ﻿using System;
 using SparFlame.Components.General;
-using SparFlame.Components.MainGameplay;
-using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -51,13 +49,6 @@ namespace SparFlame.Systems.General.BasicControl
                         }
                     };
             }
-        }
-
-        public void OnUpdate(ref SystemState state)
-        {
-           
-           
-            
         }
 
         private void ClearMainGameplayEntities()

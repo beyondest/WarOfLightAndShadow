@@ -1,26 +1,27 @@
-﻿{
-  "name": "SparFlame.Systems.General.Input",
-  "rootNamespace": "SparFlame",
-  "references": [
-    "Unity.Burst",
-    "Unity.Entities",
-    "Unity.Mathematics",
-    "Unity.Entities.Hybrid",
-    "Unity.Collections",
-    "Unity.Transforms",
-    "Unity.Physics",
-    "Unity.Physics.Custom",
-    "Unity.InputSystem",
-    "SparFlame.Core",
-    "SparFlame.Components"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+{
+    "name": "SparFlame.Systems.General.Input",
+    "rootNamespace": "SparFlame",
+    "references": [
+        "Unity.Burst",
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.Entities.Hybrid",
+        "Unity.Collections",
+        "Unity.Transforms",
+        "Unity.Physics",
+        "Unity.Physics.Custom",
+        "Unity.InputSystem",
+        "SparFlame.Core",
+        "SparFlame.Components",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

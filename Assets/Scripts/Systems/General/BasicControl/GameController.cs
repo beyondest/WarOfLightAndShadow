@@ -6,6 +6,7 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -114,8 +115,24 @@ namespace SparFlame.Systems.General.BasicControl
             _em.CreateSingleton<UpdateCityNavMeshRequest>();
         }
 
-        public void EnterPlayerCity(Entity city)
+        public void EnterPlayerCity(Entity city, bool mainGameplayTransition = false)
         {
+            // This is used for enter player city directly after load game
+            if (mainGameplayTransition)
+            {
+                var saveCityId = _em.CreateEntityQuery(typeof(SaveCityId)).GetSingletonRW<SaveCityId>();
+                var query = _em.CreateEntityQuery(typeof(CityAttr));
+                var cities = query.ToEntityArray(Allocator.Temp);
+                var cityAttrs = query.ToComponentDataArray<CityAttr>(Allocator.Temp);
+                for (var i = 0; i < cityAttrs.Length; i++)
+                {
+                    var cityAttr = cityAttrs[i];
+                    if (cityAttr.globalId == saveCityId.ValueRO.value)
+                        city = cities[i];
+                }
+                saveCityId.ValueRW.value = 0; // Reset save city id
+                saveCityId.ValueRW.mainGameplayTransition = false;
+            }
             // Set status change type
             _targetSubGameStatusData = new SubGameStatusData
             {

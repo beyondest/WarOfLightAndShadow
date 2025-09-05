@@ -16,13 +16,20 @@ namespace SparFlame.Systems.General.Animation
             // state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AnimationPlayData>();
-
+            state.RequireForUpdate<WaitInfo>();
+            state.RequireForUpdate<GameStatusData>();
             _bufferLookup = state.GetBufferLookup<AnimationEventData>();
             _stateLookup = state.GetComponentLookup<AnimationStateData>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
+            if(waitInfo.WaitType != WaitType.None)return;
+            
+            
             _bufferLookup.Update(ref state);
             _stateLookup.Update(ref state);
             var data = SystemAPI.GetSingletonRW<AnimationPlayData>();

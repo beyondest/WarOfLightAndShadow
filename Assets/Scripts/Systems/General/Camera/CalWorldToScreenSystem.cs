@@ -15,6 +15,7 @@ namespace SparFlame.Systems.General.Camera
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WaitInfo>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ScreenPos>();
@@ -30,7 +31,11 @@ namespace SparFlame.Systems.General.Camera
             _inCameraViewLookup.Update(ref state);
             _inCameraExtendViewLookup.Update(ref state);
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
             if (gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming) return;
+            if(waitInfo.WaitType != WaitType.None)return;
+            
+            
             var cameraData = SystemAPI.GetSingleton<CameraData>();
             // Calculate VP Matrix First
             var vpMatrix = math.mul(cameraData.ProjectionMatrix, cameraData.ViewMatrix);

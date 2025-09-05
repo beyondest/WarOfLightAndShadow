@@ -9,8 +9,6 @@ namespace SparFlame.Components.General
         Forest = 2,
     }
     
- 
-    
     public struct BattleTriggerRequest : IComponentData
     {
         public Entity Attacker;

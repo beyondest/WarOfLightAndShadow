@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -21,6 +22,7 @@ namespace SparFlame.Systems.General.VFX
             RequireForUpdate<GameStatusData>();
             RequireForUpdate<CParticleSystemConfig>();
             RequireForUpdate<VFXConfigData>();
+            RequireForUpdate<WaitInfo>();
             _requestQuery = SystemAPI.QueryBuilder().WithAll<VFXRequest>().Build();
         }
 
@@ -65,6 +67,9 @@ namespace SparFlame.Systems.General.VFX
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
+            
             if (_requestQuery.IsEmpty) return;
             CheckVFXRequest();
         }
@@ -243,7 +248,8 @@ namespace SparFlame.Systems.General.VFX
                         }
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(request.RequestType);
+                        break;
                 }
             }
 

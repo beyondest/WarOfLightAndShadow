@@ -74,7 +74,6 @@ namespace SparFlame.UI.MainGameplay
 
         public void OnClickEnterCity()
         {
-            var cityAttr = _em.GetComponentData<CityAttr>(_targetEntity);
             GameController.Instance.EnterPlayerCity(_targetEntity);
         }
         

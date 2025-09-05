@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SparFlame.Components.General;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
 using Unity.Entities;
@@ -12,14 +14,10 @@ namespace SparFlame.UI.SubGameplay
         public static ResourceInfoWindow Instance;
 
 
-        private ResourceType _populationResourceType;
-
         public void UpdateStaticData(List<ResourceData> datas)
         {
             var count = datas.Count;
-            _populationResourceType = World.DefaultGameObjectInjectionWorld.EntityManager
-                .CreateEntityQuery(typeof(PopulationResourceType))
-                .GetSingleton<PopulationResourceType>().Value;
+
             for (var i = 0; i < Slots.Count; i++)
             {
                 if (i < count)
@@ -36,7 +34,7 @@ namespace SparFlame.UI.SubGameplay
             }
         }
 
-        public void UpdateDynamicData(List<ResourceData> datas)
+        public void UpdateDynamicData(List<ResourceData> datas, in PopulationResourceData populationResourceData)
         {
             var count = datas.Count;
 
@@ -47,21 +45,34 @@ namespace SparFlame.UI.SubGameplay
                     Slots[i].SetActive(true);
                     var slot = SlotComponents[i];
                     var data = datas[i];
-                    var speed = data.hoursPerUnit < 0 ? 0 : 1f / data.hoursPerUnit;
+                    var speed = data.amountPerHour;
 
-                    if (data.resourceType == _populationResourceType)
+                    switch (data.resourceType)
                     {
-                        // Population resource : summoned unit count (+ conjuring unit count) / total storage
-                        slot.value.text = $"{data.occupiedCount}(+{data.virtualOccupiedCount})/{data.storage}\n ";
-                        slot.value.color = data.availableAmount <= 0 ? Color.red : Color.white;
+                        case ResourceType.SoulPact:
+                            // Population resource : summoned unit count (+ conjuring unit count) / total storage
+                            slot.value.text =
+                                $"{populationResourceData.occupiedCount}(+{populationResourceData.virtualOccupiedCount})/{populationResourceData.storage}\n ";
+                            slot.value.color = data.availableAmount <= 0 ? Color.red : Color.white;
+                            break;
+                        
+                        case ResourceType.Mana:
+                        case ResourceType.Crystal:
+                            var preNum = data.availableAmount;
+                            slot.value.text = $"{preNum}/{data.storage}\n (+{speed:F2}/h)";
+                            slot.value.color = preNum >= data.storage ? Color.red : Color.white;
+                            break;
+                        case ResourceType.Aetherium:
+                        case ResourceType.Essence:
+                            slot.value.text = $"{data.availableAmount}";
+                            slot.value.color = Color.white;
+                            break;
+                        default:
+                            BurstSafe.UnexpectedEnum(data.resourceType);
+                            break;
                     }
-                    else
-                    {
-                        var preNum = data.availableAmount;
-                        slot.value.text = $"{preNum}/{data.storage}\n (+{speed:F2}/h)";
-                        slot.value.color = preNum >= data.storage ? Color.red : Color.white;
-                    }
-                    // Population resource amount accounts for available value, not total value
+                  
+               
                 }
                 else
                 {
@@ -70,7 +81,6 @@ namespace SparFlame.UI.SubGameplay
             }
         }
 
-       
 
         private void Awake()
         {

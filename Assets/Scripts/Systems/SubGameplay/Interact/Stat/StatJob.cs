@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
@@ -37,9 +36,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public ComponentLookup<ResourceAttr> ResourceAttrLookup;
         [ReadOnly] public ComponentLookup<RenewableData> RenewableResourceDataLookup;
         [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
-        [ReadOnly] public ComponentLookup<DwellingAttr> DwellingAttrLookup;
+        [ReadOnly] public ComponentLookup<CapacityBuildingAttr> CapacityBuildingAttrLookup;
         [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTimerLookup;
         [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
+        [ReadOnly] public ComponentLookup<ConjuringTag> ConjuringTagLookup;
+        [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
+        [ReadOnly] public ComponentLookup<GenerateAttr> GenerateAttrLookup;
 
 
         [ReadOnly] public BufferLookup<CostList> CostListLookup; // For population release
@@ -77,7 +79,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     statInteractee.curValue = 0;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(request.Type);
+                    break;
             }
 
             if (StatDebug.enabled)
@@ -225,7 +228,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 case StatChangeType.SimpleCleanUsedAsUpgrade:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(request.Type);
+                    break;
             }
         }
 
@@ -267,40 +271,45 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     var buildingAttr = BuildingAttrLookup[request.Interactee];
 
 
-
-                    // If a constructing building is destroyoed
                     if (ConstructingTimerLookup.HasComponent(request.Interactee))
                     {
-                        if (buildingAttr.Type == BuildingType.Dwellings)
+                        // If a constructing building is destroyed, remove task
+                        if (buildingAttr is { Type: BuildingType.CapacityBuildings } or
+                            { Type: BuildingType.Generators, SubTypeIndex: (int)GeneratorType.PlantGenerator })
                         {
                             var uniqueId = CityTaskUniqueIdLookup[request.Interactee].value;
-                            StatUtils.GenerateCityTaskCancelRequest(index, uniqueId,
-                                CurrentCity,ResourceRequestType.ResourceBuildingDestroyedWhenConstructing,  ECB);
+                            StatUtils.GenerateResourceTaskRemoveRequest(index, uniqueId,
+                                CurrentCity, ResourceRequestType.ConstructingBuildingDestroyedAndRemoveTask, ECB);
                         }
                     }
                     else
                     {
-                        // If resource storage building is destroyed, decrease storage amount
-
-                        if (buildingAttr.Type == BuildingType.Dwellings)
+                        // If constructed resource storage building is destroyed, decrease storage amount
+                        if (buildingAttr.Type == BuildingType.CapacityBuildings)
                         {
-                            var dwellingAttr = DwellingAttrLookup[request.Interactee];
-                            var resourceType = dwellingAttr.ResourceType;
-                            var amount = dwellingAttr.Amount;
-                            StatUtils.GenerateStorageDecreaseRequest(index,
+                            var capacityBuildingAttr = CapacityBuildingAttrLookup[request.Interactee];
+                            StatUtils.GenerateDecreaseStorageRequest(index,
                                 CurrentCity,
-                                resourceType,
-                                amount,
+                                capacityBuildingAttr.ResourceType,
+                                capacityBuildingAttr.StorageAmount,
                                 ECB);
                         }
 
-                        if (buildingAttr.Type == BuildingType.ConjuringShrines)
+                        // If constructed conjuring building is destroyed, remove city task
+                        if (buildingAttr.Type == BuildingType.ConjuringShrines &&
+                            ConjuringTagLookup.HasComponent(request.Interactee))
                         {
                             var uniqueId = CityTaskUniqueIdLookup[request.Interactee].value;
-                            StatUtils.GenerateCityTaskCancelRequest(index,
-                                uniqueId,CurrentCity, ResourceRequestType.ConjureBuildingDestroyed,ECB );
+                            StatUtils.GenerateResourceTaskRemoveRequest(index,
+                                uniqueId, CurrentCity, ResourceRequestType.ConjureBuildingDestroyed, ECB);
                         }
-
+                        // If constructed and generating building is destroyed, decrease generate speed
+                        if (GeneratingTagLookup.HasComponent(request.Interactee))
+                        {
+                            var generateAttr = GenerateAttrLookup[request.Interactee];
+                            StatUtils.GenerateDecreaseGenerateSpeedRequest(index, CurrentCity, generateAttr.GenerateResourceType,
+                                generateAttr.GenerateSpeedHoursPerUnit,ECB);
+                        }
                     }
 
 
@@ -334,7 +343,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(interacteeAttr.BaseTag);
+                    break;
             }
         }
 

@@ -62,7 +62,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         {
                             _pendingUpDataAlly = true;
                             continue;
-                        };
+                        }
                         ifUpdateAlly = true;
                         break;
                     }

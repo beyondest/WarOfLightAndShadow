@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Audio;
 using SparFlame.Systems.SubGameplay.Construct;
 using SparFlame.UI.SubGameplay;
@@ -137,7 +138,8 @@ namespace SparFlame.Systems.Construction
                 case PlacementStateType.NotConstructable:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(data.State);
+                    break;
             }
         }
 

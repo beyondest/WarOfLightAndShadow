@@ -18,9 +18,10 @@ namespace SparFlame.Systems.General.Camera
         
         protected override void OnCreate()
         {
-            RequireForUpdate<SubGamingTag>();
             RequireForUpdate<InputCameraFlyData>();
             RequireForUpdate<FlyCameraControlConfig>();
+            RequireForUpdate<GameStatusData>();
+            RequireForUpdate<WaitInfo>();
         }
 
         protected override void OnStartRunning()
@@ -30,6 +31,11 @@ namespace SparFlame.Systems.General.Camera
 
         protected override void OnUpdate()
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus!= GameStatus.SubGaming)return;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
+            
             var deltaTime = SystemAPI.Time.DeltaTime;
             var inputData = SystemAPI.GetSingleton<InputCameraFlyData>();
             var inputNormalData = SystemAPI.GetSingleton<InputCameraNormalData>();

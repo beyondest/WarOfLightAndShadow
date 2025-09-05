@@ -16,17 +16,24 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<ArmyGroupMovingSystemConfig>();
-            state.RequireForUpdate<MainGamingTag>();
+            state.RequireForUpdate<GameStatusData>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            if(GameStatusUtils.IsInBattle(subGameStatusData))return;
+            
+            
             var debug = new MovementDebug();
             if (SystemAPI.HasSingleton<DebugTag>())
             {

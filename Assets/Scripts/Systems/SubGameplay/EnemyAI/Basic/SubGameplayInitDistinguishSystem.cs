@@ -1,6 +1,6 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -137,7 +137,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                     case BaseTag.Resources:
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(attr.BaseTag);
+                        break;
                 }
             }
         }

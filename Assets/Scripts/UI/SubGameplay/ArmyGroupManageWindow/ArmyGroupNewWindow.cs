@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
-using SparFlame.Systems.General.Input;
 using SparFlame.UI.General;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace SparFlame.UI.MainGameplay
@@ -31,14 +28,14 @@ namespace SparFlame.UI.MainGameplay
             {
                 slot.SetActive(false);
             }
-            InputListener.Instance.GetCustomInputActions().CameraNormalMode.Disable();
+ 
         }
 
         public override void Hide()
         {
             armyGroupNewPanel.SetActive(false);
             selectIconPanel.SetActive(false);
-            InputListener.Instance.GetCustomInputActions().CameraNormalMode.Enable();
+ 
         }
 
         #region ButtonMethods

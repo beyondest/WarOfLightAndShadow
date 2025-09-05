@@ -1,6 +1,6 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Animation;
 using Unity.Burst;
 using Unity.Collections;
@@ -143,7 +143,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             data.PlaySpeed = (HealLookup[selfEntity].Speed + bonus.SpeedBonus) * targetPair.speedScale;
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            BurstSafe.UnexpectedEnum(basicStateData.CurState);
+                            break;
                     }
 
 

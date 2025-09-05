@@ -63,7 +63,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
             SpawnVolumeObstacle(ref shouldUpdateAllyMesh,  ref shouldUpdateEnemyMesh,ref ecb);
 
-            DestroyVolumeObstacleInMainScene(ref shouldUpdateAllyMesh,  ref shouldUpdateEnemyMesh,ref ecb);
+            DealDestroyVolumeObstacleRequest(ref shouldUpdateAllyMesh,  ref shouldUpdateEnemyMesh,ref ecb);
 
             SyncObstaclePosition(ecb, ref shouldUpdateAllyMesh,ref shouldUpdateEnemyMesh);
 
@@ -120,7 +120,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
             }
         }
 
-        private void DestroyVolumeObstacleInMainScene(ref bool shouldUpdateAllyMesh,ref bool shouldUpdateEnemyMesh,ref EntityCommandBuffer ecb)
+        private void DealDestroyVolumeObstacleRequest(ref bool shouldUpdateAllyMesh,ref bool shouldUpdateEnemyMesh,ref EntityCommandBuffer ecb)
         {
             // Destroy game object correspond with destroyed entity
             foreach (var (request, entity) in SystemAPI
@@ -138,7 +138,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 {
                     var (obstacle, volume) = _entityMap[destroyReq.FromEntity];
                     _entityMap.Remove(destroyReq.FromEntity);
-                    if (volume != null)
+                    if (volume)
                     {
                         // request from ally or enemy, then both need to update, because one is not walkable, one is high cost volume
                         shouldUpdateAllyMesh = true;
@@ -146,7 +146,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         Object.Destroy(volume);
                     }
 
-                    if (obstacle != null)
+                    if (obstacle)
                     {
                         shouldUpdateAllyMesh = true;
                         shouldUpdateEnemyMesh = true;
@@ -183,8 +183,8 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 // Ally or Enemy
                 else
                 {
-                    GameObject volumeNotWalkable = null;
-                    GameObject volumeHighCost = null;
+                    GameObject volumeNotWalkable;
+                    GameObject volumeHighCost;
                     // if (!req.NotGenerateNotWalkableVolume)
                     {
                         // request from ally, then this building is ally, then this building is not walkable volume for ally
@@ -258,11 +258,11 @@ namespace SparFlame.Systems.SubGameplay.Movement
                          .Query<RefRO<DoorControlRequest>>())
             {
                 var (obstacle, volume) = _entityMap[doorControl.ValueRO.FromEntity];
-                if (obstacle != null)
+                if (obstacle)
                 {
                     obstacle.SetActive(doorControl.ValueRO.OpenOrClose);
                 }
-                if (volume != null)
+                if (volume)
                 {
                     volume.SetActive(doorControl.ValueRO.OpenOrClose);
                     if(doorControl.ValueRO.RequestFromFaction == FactionTag.Light)

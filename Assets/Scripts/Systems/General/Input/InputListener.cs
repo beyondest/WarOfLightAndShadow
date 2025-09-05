@@ -1,12 +1,16 @@
-﻿using SparFlame.Components.Input;
+﻿using System;
+using SparFlame.Components.Input;
+using TMPro;
+using Unity.Entities;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace SparFlame.Systems.General.Input
 {
     public class InputListener : MonoBehaviour
     {
         public static InputListener Instance;
-        
+
         public CustomInputActions GetCustomInputActions()
         {
             return _customInputActions;
@@ -44,12 +48,12 @@ namespace SparFlame.Systems.General.Input
         public void EnableSubGameMaps()
         {
             _customInputActions.CameraNormalMode.Enable();
-            
+
             _customInputActions.UnitControl.Enable();
             _customInputActions.ModeSwitch.Enable();
             _customInputActions.GeneralShortcut.Enable();
             _customInputActions.Conjure.Enable();
-            
+
             _customInputActions.ArmyGroupControl.Disable();
         }
 
@@ -68,6 +72,7 @@ namespace SparFlame.Systems.General.Input
 
 
         private CustomInputActions _customInputActions;
+        private EntityQuery _overInputText;
 
         private void Awake()
         {
@@ -77,8 +82,35 @@ namespace SparFlame.Systems.General.Input
                 Destroy(gameObject);
             _customInputActions = new CustomInputActions();
         }
-        
 
+        private void Start()
+        {
+            _overInputText =
+                World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(IsOverInputText));
+        }
 
+        private void Update()
+        {
+            if(_overInputText.IsEmpty)return;
+            var rw = _overInputText.GetSingletonRW<IsOverInputText>();
+            rw.ValueRW.IsOver = IsTextInputActive();
+        }
+
+        public bool IsTextInputActive()
+        {
+            if (!EventSystem.current) return false;
+            var go = EventSystem.current.currentSelectedGameObject;
+            if (!go) return false;
+
+            // 原生 UI InputField
+            if (go.GetComponent<UnityEngine.UI.InputField>())
+                return true;
+
+            // TextMeshPro InputField
+            if (go.GetComponent<TMP_InputField>())
+                return true;
+
+            return false;
+        }
     }
 }

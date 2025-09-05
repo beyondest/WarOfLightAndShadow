@@ -4,6 +4,7 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
+using SparFlame.UI.SubGameplay.StaticWindows.Buttons;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -39,6 +40,7 @@ namespace SparFlame.UI.MainGameplay
                     SelectAllUnitsWithNoArmyGroupAndGarrisoned;
                 
                 ArmyGroupManageCompositionWindow.Instance.OnEcsRemoveSelectedFromArmyGroup += RemoveSelectedUnitTypeFromArmyGroup;
+                ButtonBackToMainWorld.Instance.OnEcsDeleteArmyGroup += DeleteArmyGroup;
                 _initialized = true;
             }
         }

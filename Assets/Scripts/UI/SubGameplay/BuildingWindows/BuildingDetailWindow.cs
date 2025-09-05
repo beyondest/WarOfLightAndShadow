@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
@@ -14,7 +15,8 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.SubGameplay
 {
-    public class BuildingDetailWindow : MultiSlotWindowUtils.MultiSlotsWindow<AttributeSlot>, MultiSlotWindowUtils.ISingleTargetWindow
+    public class BuildingDetailWindow : MultiSlotWindowUtils.MultiSlotsWindow<AttributeSlot>,
+        MultiSlotWindowUtils.ISingleTargetWindow
     {
         // Config
         [Header("General Information")] [SerializeField]
@@ -27,7 +29,7 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private GameObject interactAbilityPanel;
         [SerializeField] private Image generalFactionImage;
         [SerializeField] private Image subFactionImage;
-        
+
         [Header("Building detail")] [SerializeField]
         private Image buildingStateIcon;
 
@@ -66,21 +68,24 @@ namespace SparFlame.UI.SubGameplay
 
         [SerializeField] private Image ornamentBuffImage;
         [SerializeField] private TMP_Text ornamentBuffDescriptionText;
-        [Header("Construct Panel")]
-        [SerializeField] private GameObject constructPanel;
+
+        [Header("Construct Panel")] [SerializeField]
+        private GameObject constructPanel;
+
         [SerializeField] private GameObject upgradeButton;
-        
-        [Header("Upgrade Panel")]
-        [SerializeField] private GameObject upgradePanel;
+
+        [Header("Upgrade Panel")] [SerializeField]
+        private GameObject upgradePanel;
+
         [SerializeField] private Image nextTierImage;
         [SerializeField] private Color notUpgradableColor = Color.red;
-        
+
         // Interface
         public static BuildingDetailWindow Instance;
         public Action<Entity> EcsGhostShowTarget;
         public Action<Entity> EcsRecycleTarget;
         public Action<Entity> EcsGetExpStaticConfig;
-        
+
         public override void Hide()
         {
             base.Hide();
@@ -91,7 +96,8 @@ namespace SparFlame.UI.SubGameplay
         {
             foreach (var cityResourceEntry in cityResourceEntries)
             {
-                _playerResources[cityResourceEntry.resourceData.resourceType] = cityResourceEntry.resourceData.availableAmount;
+                _playerResources[cityResourceEntry.resourceData.resourceType] =
+                    cityResourceEntry.resourceData.availableAmount;
             }
         }
 
@@ -121,6 +127,7 @@ namespace SparFlame.UI.SubGameplay
         {
             _targetEntity = Entity.Null;
         }
+
         public override void LoadResources()
         {
             base.LoadResources();
@@ -150,7 +157,7 @@ namespace SparFlame.UI.SubGameplay
             if (isUnderAttack ||
                 isConstructing
                 || isCrystal || _hasGarrisonUnits
-                )
+               )
             {
                 var hintName = HintName.None;
                 if (isCrystal)
@@ -163,6 +170,7 @@ namespace SparFlame.UI.SubGameplay
                 }
                 else if (isUnderAttack) hintName = HintName.CannotRelocateWhenUnderAttack;
                 else if (isConstructing) hintName = HintName.CannotRelocateWhenConstructing;
+
                 var hintRequest = Em.CreateEntity();
                 Em.AddComponent<HintRequest>(hintRequest);
                 Em.SetComponentData(hintRequest, new HintRequest
@@ -171,13 +179,12 @@ namespace SparFlame.UI.SubGameplay
                 });
                 return;
             }
-            
+
             if (!ConstructWindow.Instance.IsOpened())
                 ConstructWindow.Instance.EnterConstruct();
             EcsGhostShowTarget?.Invoke(_targetEntity);
         }
 
-        
 
         public void OnClickRecycle()
         {
@@ -195,6 +202,7 @@ namespace SparFlame.UI.SubGameplay
                 }
                 else if (isUnderAttack) hintName = HintName.CannotRecycleWhenUnderAttack;
                 else hintName = HintName.CannotRecycleWhenConstructing;
+
                 var hintRequest = Em.CreateEntity();
                 Em.AddComponent<HintRequest>(hintRequest);
                 Em.SetComponentData(hintRequest, new HintRequest
@@ -203,6 +211,7 @@ namespace SparFlame.UI.SubGameplay
                 });
                 return;
             }
+
             EcsRecycleTarget?.Invoke(_targetEntity);
         }
 
@@ -214,7 +223,7 @@ namespace SparFlame.UI.SubGameplay
                 Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity).PrefabID);
             var upGradeInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
                 Em.GetComponentData<SubGameplayGeneralAttr>(ExpStaticConfig.NextTierPrefab).PrefabID);
-            BuildingUpgradePopUpWindow.Instance.PopUp(list,oriInfo,upGradeInfo,_targetEntity);
+            BuildingUpgradePopUpWindow.Instance.PopUp(list, oriInfo, upGradeInfo, _targetEntity);
         }
 
         #endregion
@@ -246,8 +255,7 @@ namespace SparFlame.UI.SubGameplay
                 Destroy(gameObject);
         }
 
-        
-       
+
         protected override void Start()
         {
             base.Start();
@@ -255,7 +263,7 @@ namespace SparFlame.UI.SubGameplay
             _gamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
             _playerFactionQuery = Em.CreateEntityQuery(typeof(PlayerFactionData));
         }
-        
+
         protected virtual void Update()
         {
             if (_gamingTag.IsEmpty || _playerFactionQuery.IsEmpty) return;
@@ -267,6 +275,7 @@ namespace SparFlame.UI.SubGameplay
                 _targetEntity = Entity.Null;
                 return;
             }
+
             UpdateDynamicData();
         }
 
@@ -275,7 +284,8 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateStaticData()
         {
-            var currentTotalHours = Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
+            var currentTotalHours =
+                Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
             var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(generalAttr.PrefabID);
             // Visualize faction info
@@ -287,16 +297,19 @@ namespace SparFlame.UI.SubGameplay
             else
             {
                 generalFactionImage.enabled = true;
-                subFactionImage.enabled = generalAttr.SubFaction != SubFactionTag.None; 
-                
-                generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.Faction];
+                subFactionImage.enabled = generalAttr.SubFaction != SubFactionTag.None;
+
+                generalFactionImage.sprite =
+                    BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.Faction];
                 subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.SubFaction];
                 var color = generalFactionImage.color;
-                color.a = generalAttr.Faction == FactionTag.Light ? GlobalUIConfigger.Instance.lightGeneralFactionAlpha : GlobalUIConfigger.Instance.darkGeneralFactionAlpha;
+                color.a = generalAttr.Faction == FactionTag.Light
+                    ? GlobalUIConfigger.Instance.lightGeneralFactionAlpha
+                    : GlobalUIConfigger.Instance.darkGeneralFactionAlpha;
                 generalFactionImage.color = color;
                 subFactionImage.color = color;
             }
-            
+
             _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
             description.text = dataItem.description;
             // Visualize type attributes
@@ -305,8 +318,7 @@ namespace SparFlame.UI.SubGameplay
                 BuildingWindowResourceManager.Instance.BuildingGeneralTypeSprites[_buildingAttr.Type];
             idSingleIcon.sprite = BuildingWindowResourceManager.Instance
                 .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.PrefabID).Sprite;
-            
-            
+
 
             interactAbilityPanel.SetActive(false);
             generatePanel.SetActive(false);
@@ -315,20 +327,23 @@ namespace SparFlame.UI.SubGameplay
             ornamentPanel.SetActive(false);
             upgradePanel.SetActive(false);
             constructingPanel.SetActive(false);
-            
+
             if (Em.HasComponent<ConstructingTimer>(_targetEntity))
             {
                 constructingPanel.SetActive(true);
-                var leftTime = Em.GetComponentData<ConstructingTimer>(_targetEntity).builtUpTargetTotalHours - currentTotalHours;
-                leftTime = leftTime < 0? 0 : leftTime;
+                var leftTime = Em.GetComponentData<ConstructingTimer>(_targetEntity).builtUpTargetTotalHours -
+                               currentTotalHours;
+                leftTime = leftTime < 0 ? 0 : leftTime;
                 constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)leftTime);
                 _ifConstructing = true;
                 foreach (var slot in Slots)
                 {
                     slot.SetActive(false);
                 }
+
                 return;
             }
+
             if (multiSlotEnabled)
                 VisualizeCostSlots();
             ActiveNecessaryPanels(generalAttr);
@@ -354,36 +369,25 @@ namespace SparFlame.UI.SubGameplay
                     upgradePanel.SetActive(true);
                     var nextTierGeneralAttr = Em.GetComponentData<SubGameplayGeneralAttr>(prefab);
                     var buildingAttr = Em.GetComponentData<BuildingAttr>(prefab);
-                    nextTierImage.sprite = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(buildingAttr.Type,
+                    nextTierImage.sprite = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(
+                        buildingAttr.Type,
                         nextTierGeneralAttr.PrefabID).Sprite;
                 }
             }
-            
+
             switch (_buildingAttr.Type)
             {
                 case BuildingType.Generators:
                     generatePanel.SetActive(true);
-                    var generateResourceType = ResourceType.Essence;
-                    var generateSpeed = 0f;
-                    var minRequiredUnit = 0;
-                    
-                    if (_buildingAttr.SubTypeIndex == (int)GeneratorType.PlantGenerator)
-                    {
-                        var plantAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
-                        generateResourceType = plantAttr.GenerateResourceType;
-                        generateSpeed =1f/ plantAttr.GenerateSpeedHoursPerUnit;
-                    }
-                    else if (_buildingAttr.SubTypeIndex == (int)GeneratorType.ResourceMine)
-                    {
-                        var resourceMineAttr = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
-                        generateResourceType = resourceMineAttr.GenerateResourceType;
-                        generateSpeed = 1f/resourceMineAttr.GenerateSpeedHoursPerUnit;
-                        minRequiredUnit = resourceMineAttr.MinCultivatorsRequireToGenerate;
-                    }
+
+                    var resourceMineAttr = Em.GetComponentData<GenerateAttr>(_targetEntity);
+                    var generateResourceType = resourceMineAttr.GenerateResourceType;
+                    var generateSpeed = 1f / resourceMineAttr.GenerateSpeedHoursPerUnit;
+                    var minRequiredUnit = resourceMineAttr.MinCultivatorsRequireToGenerate;
                     generateResourceIcon.sprite =
                         BasicUIResourceManager.Instance.ResourceSprites[generateResourceType];
                     generateTypeText.text = generateResourceType.ToString();
-                    generateMinRequireUnitsText.enabled = minRequiredUnit != 0;
+                    generateMinRequireUnitsText.enabled = _buildingAttr.SubTypeIndex == (int)GeneratorType.ResourceMine;
                     generateMinRequireUnitsText.text = minRequiredUnit.ToString();
                     if (!isMainInfoSingleton)
                         generateSpeedText.text = $"+{generateSpeed:F2}/h";
@@ -393,7 +397,7 @@ namespace SparFlame.UI.SubGameplay
 
                     break;
                 case BuildingType.ConjuringShrines:
-                   
+
                     // Player can only control player self buildings
                     if (relationship != Relationship.Player) break;
                     conjurePanel.SetActive(true);
@@ -405,12 +409,12 @@ namespace SparFlame.UI.SubGameplay
                         : UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[conjureAttribute.ConjuringType];
                     conjureTypeNameText.text = conjureAttribute.ConjuringType + "Conjuration";
                     break;
-                case BuildingType.Dwellings:
+                case BuildingType.CapacityBuildings:
                     dwellingPanel.SetActive(true);
-                    var dwellingAttr = Em.GetComponentData<DwellingAttr>(_targetEntity);
-                    dwellingCountText.text = dwellingAttr.Amount.ToString();
+                    var capacityBuildingAttr = Em.GetComponentData<CapacityBuildingAttr>(_targetEntity);
+                    dwellingCountText.text = capacityBuildingAttr.StorageAmount.ToString();
                     dwellingResourceIcon.sprite =
-                        BasicUIResourceManager.Instance.ResourceSprites[dwellingAttr.ResourceType];
+                        BasicUIResourceManager.Instance.ResourceSprites[capacityBuildingAttr.ResourceType];
 
                     break;
                 case BuildingType.Ornaments:
@@ -427,14 +431,15 @@ namespace SparFlame.UI.SubGameplay
                     // }
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(_buildingAttr.Type);
+                    break;
             }
 
             // Check should open these control windows for player
             if (relationship == Relationship.Player)
             {
                 constructPanel.SetActive(true);
-                if (isMainInfoSingleton )
+                if (isMainInfoSingleton)
                     ShouldOpenGarrisonInfoConjureQueueAndMiniConjure();
             }
             else
@@ -472,7 +477,8 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateDynamicData()
         {
-            var currentTotalHours = Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
+            var currentTotalHours =
+                Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
             _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
             // Visualize function panel and doingThings panel
             var underAttack = Em.HasComponent<OocTag>(_targetEntity) && Em.IsComponentEnabled<OocTag>(_targetEntity);
@@ -493,12 +499,14 @@ namespace SparFlame.UI.SubGameplay
                 }
                 else
                 {
-                    var leftTime = Em.GetComponentData<ConstructingTimer>(_targetEntity).builtUpTargetTotalHours - currentTotalHours;
-                    leftTime = leftTime < 0? 0 : leftTime;
+                    var leftTime = Em.GetComponentData<ConstructingTimer>(_targetEntity).builtUpTargetTotalHours -
+                                   currentTotalHours;
+                    leftTime = leftTime < 0 ? 0 : leftTime;
                     constructTimeText.text = UIMathMethods.FormatTimeFromHours((int)leftTime);
-                    return;   
+                    return;
                 }
             }
+
             // Check garrison data
             _hasGarrisonUnits = false;
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
@@ -513,32 +521,24 @@ namespace SparFlame.UI.SubGameplay
             {
                 case BuildingType.Generators:
                 {
-                    var generateSpeed = 0f;
-                    if (Em.HasComponent<ResourceMineGenerateAttr>(_targetEntity))
-                    {
-                        var generateAttribute = Em.GetComponentData<ResourceMineGenerateAttr>(_targetEntity);
-                        generateSpeed = 1/generateAttribute.GenerateSpeedHoursPerUnit;
-                       
-                    }
-                    else if(Em.HasComponent<PlantGenerateAttr>(_targetEntity))
-                    {
-                        var plantGenerateAttr = Em.GetComponentData<PlantGenerateAttr>(_targetEntity);
-                        generateSpeed = 1/plantGenerateAttr.GenerateSpeedHoursPerUnit;
-                    }
+                    var generateAttr = Em.GetComponentData<GenerateAttr>(_targetEntity);
+                    var generateSpeed = 1 / generateAttr.GenerateSpeedHoursPerUnit;
+
                     generateSpeedText.text = $"+{generateSpeed:F2}/h";
-                   
+
                     break;
                 }
                 case BuildingType.ConjuringShrines:
                 case BuildingType.Fortifications:
-                case BuildingType.Dwellings:
+                case BuildingType.CapacityBuildings:
                 case BuildingType.Ornaments:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(_buildingAttr.Type);
+                    break;
             }
-            
-            if(isMainInfoSingleton)
+
+            if (isMainInfoSingleton)
                 VisualizeCostSlots();
         }
 
@@ -577,7 +577,7 @@ namespace SparFlame.UI.SubGameplay
                         Slots[i].SetActive(true);
                         var cost = list[i];
                         var costSlot = SlotComponents[i];
-                        
+
                         costSlot.icon.sprite = BasicUIResourceManager.Instance.ResourceSprites[cost.Type];
                         costSlot.label.text = cost.Type.ToString();
                         costSlot.value.text = $"x{cost.Amount}";
@@ -592,17 +592,15 @@ namespace SparFlame.UI.SubGameplay
                             costSlot.label.color = Color.white;
                             costSlot.value.color = Color.white;
                         }
-                        
                     }
                     else
                     {
                         Slots[i].SetActive(false);
                     }
                 }
-                
-                upgradeButton.SetActive(isUpgradable); 
+
+                upgradeButton.SetActive(isUpgradable);
             }
-           
         }
 
         private List<CostList> CalculateUpgradeCostList()
@@ -626,10 +624,12 @@ namespace SparFlame.UI.SubGameplay
                                 e.Amount = math.clamp(e.Amount - curCostList.Amount, 0, e.Amount);
                             }
                         }
+
                         list.Add(e);
                     }
                 }
             }
+
             return list;
         }
     }

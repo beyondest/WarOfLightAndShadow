@@ -87,6 +87,7 @@ namespace SparFlame.UI.General
             }
             else
             {
+                SaveLoadController.Instance.SyncSaveGame();
                 GameController.Instance.ExitGame();
             }
         }
@@ -215,12 +216,19 @@ namespace SparFlame.UI.General
 
         private void MainGameStartForPlayer()
         {
-            HideLoadingScreen();
-            selectMenu.SetActive(false);
-            selectMenuElements.SetActive(false);
-            mainGameplayUI.SetActive(true);
+            var saveCityId = _em.CreateEntityQuery(typeof(SaveCityId)).GetSingletonRW<SaveCityId>();
             staticWindowPanel.SetActive(true);
-            subGameplayUI.SetActive(false);
+            if (!saveCityId.ValueRO.mainGameplayTransition)
+            {
+                HideLoadingScreen();
+                selectMenu.SetActive(false);
+                selectMenuElements.SetActive(false);
+                mainGameplayUI.SetActive(true);
+                subGameplayUI.SetActive(false);
+            }
+            else
+                saveCityId.ValueRW.mainGameplayTransition = false;
+            
         }
 
         private void WinnerWin(FactionTag winner)

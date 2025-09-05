@@ -13,7 +13,6 @@ namespace SparFlame.Systems.General.Audio
         private EntityQuery _audioRequestQuery;
         protected override void OnCreate()
         {
-            RequireForUpdate<SubGamingTag>();
             RequireForUpdate<AudioTransferConfig>();
             _audioRequestQuery = SystemAPI.QueryBuilder().WithAll<AudioRequest>().Build();
         }
@@ -21,6 +20,7 @@ namespace SparFlame.Systems.General.Audio
 
         protected override void OnUpdate()
         {
+            
             if(_audioRequestQuery.IsEmpty)return;
             var config = SystemAPI.GetSingleton<AudioTransferConfig>();
             var cameraData = SystemAPI.GetSingleton<CameraData>();

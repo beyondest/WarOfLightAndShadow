@@ -1,12 +1,10 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.Audio;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 // ReSharper disable UseIndexFromEndExpression
@@ -29,6 +27,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<InputMouseData>();
             state.RequireForUpdate<InputArmyGroupControlData>();
+            state.RequireForUpdate<MainGamingTag>();
             _armyGroupMovingTagLookup = state.GetComponentLookup<ArmyGroupMovingTag>(true);
             _flags = new NativeList<Entity>(Allocator.Persistent);
         }
@@ -47,6 +46,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             var config = SystemAPI.GetSingleton<ArmyGroupCommandSystemConfig>();
             var armyGroupSelectionData = SystemAPI.GetSingleton<ArmyGroupSelectionData>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
+            
             // Clear flags if no army group selected
             if (armyGroupSelectionData.CurrentSelectCount <= 0)
             {
@@ -66,6 +66,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var ecbP = ecb.AsParallelWriter();
+
+
+            #region Check army group command shortcut
+
+            
+
+            // Set army group moving target
             if (inputArmyGroupData.SetTarget)
             {
                 var flag = state.EntityManager.Instantiate(config.FlagPrefab);
@@ -127,6 +134,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             }
 
 
+            // Set selected army group start moving
             if (inputArmyGroupData.StartMoving)
             {
                 new ArmyGroupStartMovingJob
@@ -179,6 +187,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     ECB = ecbP
                 }.ScheduleParallel();
             }
+            #endregion
+
         }
     }
 }

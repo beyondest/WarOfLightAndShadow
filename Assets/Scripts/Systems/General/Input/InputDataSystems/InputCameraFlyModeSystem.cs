@@ -21,7 +21,7 @@ namespace SparFlame.Systems.General.Input
 
         protected override void OnUpdate()
         {
-            if (!_customInputActions.CameraFlyMode.enabled)
+            if (!_customInputActions.CameraFlyMode.enabled ||SystemAPI.GetSingleton<IsOverInputText>().IsOver )
             {
                 SystemAPI.SetSingleton(new InputCameraFlyData());
                 return;

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Audio;
 using Unity.Entities;
 using Unity.Collections;
@@ -418,7 +418,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     InteractType.Attack => InteractState.Attacking,
                     InteractType.Heal => InteractState.Healing,
                     InteractType.Harvest => InteractState.Harvesting,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => BurstSafe.UnexpectedEnum(ability.InteractType, InteractState.Idle)
                 };
             }
 

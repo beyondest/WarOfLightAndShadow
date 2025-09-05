@@ -22,6 +22,15 @@ namespace SparFlame.Systems.General.Input
 
         protected override void OnUpdate()
         {
+            var isOverInput = SystemAPI.GetSingleton<IsOverInputText>().IsOver;
+            if (!_customInputActions.Construct.enabled|| isOverInput)
+            {
+                SystemAPI.SetSingleton(new InputConstructData
+                {
+                    Enter = _customInputActions.ModeSwitch.SwitchBuild.WasPerformedThisFrame() && !isOverInput,
+                });
+                return;
+            }
             var rotate = _customInputActions.Construct.Rotate.ReadValue<float>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             SystemAPI.SetSingleton(new InputConstructData

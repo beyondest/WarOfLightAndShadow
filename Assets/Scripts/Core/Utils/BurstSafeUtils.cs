@@ -11,6 +11,14 @@ namespace SparFlame.Core.Utils
             Debug.LogError($"Unexpected enum value: {value} ");
 #endif
         }
+        
+        public static TReturn UnexpectedEnum<T,TReturn>(T value, TReturn defaultReturn) where T : Enum
+        {
+#if UNITY_EDITOR
+            Debug.LogError($"Unexpected enum value: {value} ");
+#endif
+            return defaultReturn;
+        }
     }
 
 }

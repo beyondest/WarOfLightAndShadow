@@ -21,7 +21,7 @@ namespace SparFlame.Systems.General.Input
 
         protected override void OnUpdate()
         {
-            if (!_customInputActions.UnitControl.enabled)
+            if (!_customInputActions.UnitControl.enabled||SystemAPI.GetSingleton<IsOverInputText>().IsOver)
             {
                 SystemAPI.SetSingleton(new InputUnitControlData());
                 return;

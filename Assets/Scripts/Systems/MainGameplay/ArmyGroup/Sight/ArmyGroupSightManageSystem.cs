@@ -26,7 +26,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<MainGamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ArmyGroupSightConfig>();
             _transformLookup = state.GetComponentLookup<LocalTransform>();
         }
@@ -34,6 +34,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
             _transformLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();

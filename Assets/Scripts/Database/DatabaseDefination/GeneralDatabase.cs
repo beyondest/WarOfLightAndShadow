@@ -80,8 +80,6 @@ namespace GamePlaySystem.Database
         
         #endregion
 
-     
-
         #region InteractAbility
 
         [ShowIf(nameof(IsAttackable)), VerticalGroup("InteractAbility"), FoldoutGroup("InteractAbility/Attack"),
@@ -172,8 +170,6 @@ namespace GamePlaySystem.Database
         public int harvestTargetsPerLevel;
 
         #endregion
-
-    
 
         #region Additional
         

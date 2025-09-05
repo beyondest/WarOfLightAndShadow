@@ -25,9 +25,9 @@ namespace SparFlame.UI.SubGameplay
         protected override void OnUpdate()
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            
          
             var generalResourceDatas = SystemAPI.GetSingletonBuffer<ResourceData>();
+            var populationResourceData = SystemAPI.GetSingleton<PopulationResourceData>();
             var datas = new List<ResourceData>();
             if (gameStatusData.Value == GameStatus.Init)
             {
@@ -50,13 +50,16 @@ namespace SparFlame.UI.SubGameplay
             {
                 var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
                 var cityEntries = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
-                foreach (var cityEntry in cityEntries)
+                for (var i = 0; i < cityEntries.Length; i++)
                 {
-                    datas.Add(cityEntry.resourceData);
+                    var cityEntry = cityEntries[i];
+                    datas.Add(cityEntry.resourceData.resourceType is ResourceType.Mana or ResourceType.Crystal
+                        ? cityEntry.resourceData
+                        : generalResourceDatas[i]);
                 }
             }
 
-            ResourceInfoWindow.Instance.UpdateDynamicData(datas);
+            ResourceInfoWindow.Instance.UpdateDynamicData(datas, populationResourceData);
         }
     }
 }

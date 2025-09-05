@@ -97,40 +97,41 @@ namespace SparFlame.UI.MainGameplay
 
         public void OnClickCloseArmyGroupManageWindow()
         {
-            var hasEmptyArmyGroup = false;
-            OnEcsUpdateStaticData?.Invoke();
-            foreach (var info in _infos)
-            {
-                if (info.TotalUnitCount == 0)
-                {
-                    hasEmptyArmyGroup = true;
-                    break;
-                }
-            }
-            if (hasEmptyArmyGroup)
-            {
-                ConfirmWindow.Instance.Show("You have army group with no units. Close the window will delete the army group.",
-                    () =>
-                    {
-                        var deleteInfos = new List<ArmyGroupManageInfo>();
-                        foreach (var info in _infos)
-                        {
-                            if (info.TotalUnitCount == 0)
-                                deleteInfos.Add(info);
-                        }
+            // var hasEmptyArmyGroup = false;
+            // OnEcsUpdateStaticData?.Invoke();
+            // foreach (var info in _infos)
+            // {
+            //     if (info.TotalUnitCount == 0)
+            //     {
+            //         hasEmptyArmyGroup = true;
+            //         break;
+            //     }
+            // }
+            // if (hasEmptyArmyGroup)
+            // {
+            //     ConfirmWindow.Instance.Show("You have army group with no units. Close the window will delete the army group.",
+            //         () =>
+            //         {
+            //             var deleteInfos = new List<ArmyGroupManageInfo>();
+            //             foreach (var info in _infos)
+            //             {
+            //                 if (info.TotalUnitCount == 0)
+            //                     deleteInfos.Add(info);
+            //             }
+            //
+            //             foreach (var info in deleteInfos)
+            //             {
+            //                 OnEcsDeleteArmyGroup?.Invoke(info.ArmyGroupEntity);
+            //             }
+            //             Hide();
+            //         });
+            // }
+            // else
+            // {
+            //
+            // }
+            Hide();
 
-                        foreach (var info in deleteInfos)
-                        {
-                            OnEcsDeleteArmyGroup?.Invoke(info.ArmyGroupEntity);
-                        }
-                        Hide();
-                    });
-            }
-            else
-            {
-                Hide();
-
-            }
         }
  
         public void OnClickNewArmyGroup()

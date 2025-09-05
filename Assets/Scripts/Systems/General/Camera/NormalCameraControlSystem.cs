@@ -44,6 +44,7 @@ namespace SparFlame.Systems.General.Camera
             RequireForUpdate<InputMouseData>();
             RequireForUpdate<InputCameraNormalData>();
             RequireForUpdate<PlayerFactionData>();
+            RequireForUpdate<WaitInfo>();
         }
 
 
@@ -69,6 +70,9 @@ namespace SparFlame.Systems.General.Camera
 
             if (gameStatus != GameStatus.SubGaming && gameStatus != GameStatus.MainGaming)
                 return;
+          
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
             GetSetCamera();
             
             if (_preGameStatus != gameStatus)

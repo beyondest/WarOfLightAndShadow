@@ -117,7 +117,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
             // Light faction can only build buildings in light ness, including beacon
             var worldTimeData = SystemAPI.GetSingleton<WorldTimeData>();
             var cityResourceEntries = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
-
             switch (data.CommandType)
             {
                 case ConstructCommandType.Drag:
@@ -249,10 +248,17 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         // Reduce resources
                         foreach (var cost in _costLookup[data.TargetBuilding])
                         {
-                            var r = cityResourceEntries[(int)cost.Type];
-                            r.resourceData.availableAmount -= cost.Amount;
-                            cityResourceEntries[(int)cost.Type] = r;
+                            var costRequest = ecb.CreateEntity();
+                            ecb.AddComponent(costRequest, new ResourceChangeRequest
+                            {
+                                AbsAmount = cost.Amount,
+                                City = subGameStatusData.City ,
+                                ResourceType = cost.Type,
+                                RequestType = ResourceRequestType.Consume
+                            });
+                            ecb.AddComponent<SubGameplayEntityTag>(costRequest);
                         }
+                      
 
                         // Create building
                         var targetBuilding = state.EntityManager.Instantiate(data.TargetBuilding);
@@ -260,9 +266,9 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
                         
                         // Add city task for storage add
-                        if (buildingAttr.Type == BuildingType.Dwellings)
+                        if (buildingAttr.Type == BuildingType.CapacityBuildings)
                         {
-                            var dwellingAttr = SystemAPI.GetComponent<DwellingAttr>(targetBuilding);
+                            var capacityBuildingAttr = SystemAPI.GetComponent<CapacityBuildingAttr>(targetBuilding);
                             state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
                             var uniqueId =
                                 UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
@@ -278,8 +284,8 @@ namespace SparFlame.Systems.SubGameplay.Construct
                                 City = subGameStatusData.City,
                                 FinishTotalHours = worldTimeData.totalHours + buildingAttr.ConstructTimeHours,
                                 FromBuildingUniqueId = uniqueId,
-                                ResourceType = dwellingAttr.ResourceType,
-                                AbsAmount = dwellingAttr.Amount,
+                                ResourceType = capacityBuildingAttr.ResourceType,
+                                AbsAmount = capacityBuildingAttr.StorageAmount,
                                 RequestType = ResourceRequestType.StorageAddByTask,
                             });
                             
@@ -288,7 +294,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         // Add city task for generate speed add
                         if (buildingAttr is { Type: BuildingType.Generators, SubTypeIndex: (int)GeneratorType.PlantGenerator })
                         {
-                            var generatorAttr = SystemAPI.GetComponent<PlantGenerateAttr>(targetBuilding);
+                            var generatorAttr = SystemAPI.GetComponent<GenerateAttr>(targetBuilding);
                             state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
                             var uniqueId =
                                 UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
@@ -389,7 +395,8 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     // Do nothing when not enter ghost show mode
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(data.CommandType);
+                    break;
             }
         }
 

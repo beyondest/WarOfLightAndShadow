@@ -1,12 +1,12 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 
 namespace SparFlame.Systems.General.BasicControl.Battle
 {
-    public partial class BattleControlSystem : SystemBase
+    public partial class InSubGameTagManageSystem : SystemBase
     {
         private bool _initialized;
         protected override void OnCreate()
@@ -114,7 +114,8 @@ namespace SparFlame.Systems.General.BasicControl.Battle
                     }
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(targetSubGameStatusData.SubGameStatus);
+                    break;
             }
             
             ecb.Playback(EntityManager);

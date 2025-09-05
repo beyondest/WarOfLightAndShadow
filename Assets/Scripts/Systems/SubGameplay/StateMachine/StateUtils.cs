@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.Movement;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -50,7 +51,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(stateData.TargetState);
+                    break;
             }
 
             switch (stateData.CurState)
@@ -86,7 +88,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    BurstSafe.UnexpectedEnum(stateData.CurState);
+                    break;
             }
 
             stateData.CurState = stateData.TargetState;

@@ -19,7 +19,11 @@ namespace SparFlame.Components.Input
         None
     }
 
-    
+
+    public struct IsOverInputText : IComponentData
+    {
+        public bool IsOver;
+    }
 
     /// <summary>
     /// The Only Reason to use the mouse system is to reduce the times of using raycast

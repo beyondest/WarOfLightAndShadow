@@ -1,4 +1,5 @@
 ﻿using System;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.StateMachine;
 using Unity.Burst;
 using Unity.Entities;
@@ -56,7 +57,8 @@ namespace DefaultNamespace
                             // Debug.Log($"Exit : Entity A : {entity}, Entity B : {e.GetOtherEntity(entity)}");
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            BurstSafe.UnexpectedEnum(e.State);
+                            break;
                     }
 
                 }

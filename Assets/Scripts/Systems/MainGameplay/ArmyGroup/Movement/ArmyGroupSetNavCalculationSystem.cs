@@ -19,7 +19,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             state.RequireForUpdate<ArmyGroupMovingSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<MainGamingTag>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ArmyGroupSelected>();
             _armyGroupCalculateEnableLookup = state.GetComponentLookup<ArmyGroupCalculateEnable>(
                 );

@@ -39,6 +39,7 @@ namespace SparFlame.Systems.General.VFX
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WaitInfo>();
             state.RequireForUpdate<ParabolaProjectileConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameTimeData>();
@@ -52,6 +53,9 @@ namespace SparFlame.Systems.General.VFX
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if(gameStatus != GameStatus.MainGaming && gameStatus!= GameStatus.SubGaming)return;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
+            
             _transformLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();

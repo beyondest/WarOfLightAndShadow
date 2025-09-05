@@ -17,7 +17,7 @@ namespace SparFlame.Systems.General.Input
         public void OnUpdate(ref SystemState state)
         {
             var customInputActions = InputListener.Instance.GetCustomInputActions();
-            if (!customInputActions.Conjure.enabled)
+            if (!customInputActions.Conjure.enabled||SystemAPI.GetSingleton<IsOverInputText>().IsOver)
             {
                 SystemAPI.SetSingleton(new InputConjureData());
                 return;

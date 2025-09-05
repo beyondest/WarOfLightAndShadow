@@ -13,7 +13,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
     
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
     [UpdateAfter(typeof(StatefulTriggerEventBufferSystem))]
-    public partial struct ArmyGroupSightUpdateSystem : ISystem
+    public partial struct ArmyGroupSightTriggerSystem : ISystem
     {
         private BufferLookup<ArmyGroupSightTarget> _targetLookup;
         
@@ -21,14 +21,18 @@ namespace SparFlame.Systems.SubGameplay.Interact
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<SimulationSingleton>();
-            state.RequireForUpdate<MainGamingTag>();
             state.RequireForUpdate<ArmyGroupSightData>();
+            state.RequireForUpdate<GameStatusData>();
             _targetLookup = state.GetBufferLookup<ArmyGroupSightTarget>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
+            
+            
             _targetLookup.Update(ref state);
             new AoeTriggerJob
             {

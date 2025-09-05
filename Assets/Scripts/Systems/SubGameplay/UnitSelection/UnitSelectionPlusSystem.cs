@@ -4,6 +4,7 @@ using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
+using SparFlame.Core.Utils;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
@@ -112,7 +113,8 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                             }
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            BurstSafe.UnexpectedEnum(unitAttr.Type);
+                            break;
                     }
                 }
             }

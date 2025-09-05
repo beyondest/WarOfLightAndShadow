@@ -1,10 +1,12 @@
 ﻿using System;
 using SparFlame.Components.General;
 using SparFlame.Components.VFX;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Entities.UniversalDelegates;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -19,6 +21,7 @@ namespace SparFlame.Systems.General.VFX
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WaitInfo>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameTimeData>();
@@ -29,6 +32,9 @@ namespace SparFlame.Systems.General.VFX
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming)return;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
+            
             _vfxLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             PlayVFX(ref state, ecb);
@@ -128,7 +134,8 @@ namespace SparFlame.Systems.General.VFX
                         // This should never happen
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(data.VFXType);
+                        break;
                 }
             }
         }

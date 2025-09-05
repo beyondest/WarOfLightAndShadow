@@ -12,6 +12,9 @@ namespace SparFlame.Systems.General.Input
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent<InputGeneralShortcutData>(entity);
+
+                var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
+                AddComponent<IsOverInputText>(entity2);
             }
         }
     }

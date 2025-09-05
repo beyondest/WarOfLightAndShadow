@@ -14,6 +14,7 @@ namespace SparFlame.Systems.General.Camera
         {
             RequireForUpdate<GameStatusData>();
             RequireForUpdate<CameraData>();
+            RequireForUpdate<WaitInfo>();
         }
 
      
@@ -21,6 +22,9 @@ namespace SparFlame.Systems.General.Camera
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
             if(gameStatus != GameStatus.MainGaming && gameStatus!= GameStatus.SubGaming)return;
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(waitInfo.WaitType != WaitType.None)return;
+            
             // _mainCamera = gameStatus == GameStatus.MainGaming ? CameraController.Instance.mainGameCamera : CameraController.Instance.subGameCamera;
             _mainCamera = UnityEngine.Camera.main;
             var cameraData = SystemAPI.GetSingletonRW<CameraData>();

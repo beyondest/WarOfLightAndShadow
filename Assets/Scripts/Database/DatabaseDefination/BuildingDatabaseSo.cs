@@ -6,6 +6,7 @@ using GamePlaySystem.Database;
 using Sirenix.OdinInspector;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -231,8 +232,8 @@ namespace SparFlame.Database
                                                (FortificationType)GetSubtypeIndex() == FortificationType.BigTower,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
-                BuildingType.ConjuringShrines or BuildingType.Dwellings or BuildingType.Ornaments => false,
-                _ => throw new ArgumentOutOfRangeException()
+                BuildingType.ConjuringShrines or BuildingType.CapacityBuildings or BuildingType.Ornaments => false,
+                _ => BurstSafe.UnexpectedEnum(type,false)
             };
         }
 
@@ -338,24 +339,24 @@ namespace SparFlame.Database
     }
 
     [Serializable]
-    public class DwellingData : BuildingDataItem
+    public class CapacityBuildingsData : BuildingDataItem
     {
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("Dwelling type")]
-        public DwellingType dwellingType;
+        public CapacityBuildingType capacityBuildingType;
 
         [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/1"), HideLabel]
-        public ResourceType dwellingResourceType = ResourceType.SoulPact;
+        public ResourceType storageResourceType = ResourceType.SoulPact;
 
         [FoldoutGroup("Gameplay/Dwelling"), HorizontalGroup("Gameplay/Dwelling/2")]
-        public int dwellingAmount;
+        public int amount = 2;
 
-        public override int GetSubtypeIndex() => (int)dwellingType;
+        public override int GetSubtypeIndex() => (int)capacityBuildingType;
 
         protected override void InitDefaults()
         {
             base.InitDefaults();
             if (type == default)
-                type = BuildingType.Dwellings;
+                type = BuildingType.CapacityBuildings;
         }
     }
 

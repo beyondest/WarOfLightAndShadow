@@ -14,19 +14,26 @@ namespace SparFlame.Systems.General.VFX
     {
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WaitInfo>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<CameraData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<PopNumberConfig>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)   return;
+            if(waitInfo.WaitType!= WaitType.None) return;
+            
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var config = SystemAPI.GetSingleton<PopNumberConfig>();
             var cameraData = SystemAPI.GetSingleton<CameraData>();
+            
             new MoveJob
             {
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,

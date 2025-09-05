@@ -170,7 +170,8 @@ namespace SparFlame.Systems.General.BasicControl
                         sceneGroup.AddSceneGroup(_currentLoadingSubGameplaySceneGroup);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(sceneGroupType);
+                        break;
                 }
             }
 

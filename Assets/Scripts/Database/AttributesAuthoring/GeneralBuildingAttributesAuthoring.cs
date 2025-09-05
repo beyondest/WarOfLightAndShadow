@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Entities;
 
 namespace SparFlame.Database
@@ -8,7 +9,6 @@ namespace SparFlame.Database
     public class GeneralBuildingAttributesAuthoring : GeneralDataItemAuthoring
     {
         public bool ifInBuildingPack;
-
         protected class Baker : GeneralDataItemBaker<GeneralBuildingAttributesAuthoring>
         {
             public override void Bake(GeneralBuildingAttributesAuthoring authoring)
@@ -83,18 +83,18 @@ namespace SparFlame.Database
             private void BakeGenerateAttr(BuildingDataItem item, Entity entity)
             {
                 if (item is not GeneratorData generatorData) return;
-                AddComponent<GenerateData>(entity);
                 switch (generatorData.generatorType)
                 {
                     case GeneratorType.PlantGenerator:
-                        AddComponent(entity, new PlantGenerateAttr
+                        AddComponent(entity, new GenerateAttr
                         {
                             GenerateResourceType = generatorData.generateResourceType,
-                            GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit
+                            GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit,
+                            MinCultivatorsRequireToGenerate = 0
                         });
                         break;
                     case GeneratorType.ResourceMine:
-                        AddComponent(entity, new ResourceMineGenerateAttr
+                        AddComponent(entity, new GenerateAttr
                         {
                             GenerateResourceType = generatorData.generateResourceType,
                             GenerateSpeedHoursPerUnit = generatorData.generateSpeedHoursPerUnit,
@@ -102,7 +102,8 @@ namespace SparFlame.Database
                         });
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        BurstSafe.UnexpectedEnum(generatorData.generatorType);
+                        break;
                 }
             }
 
@@ -119,11 +120,11 @@ namespace SparFlame.Database
 
             private void BakeDwellingAttr(BuildingDataItem item, Entity entity)
             {
-                if (item is not DwellingData data) return;
-                AddComponent(entity, new DwellingAttr
+                if (item is not CapacityBuildingsData data) return;
+                AddComponent(entity, new CapacityBuildingAttr
                 {
-                    ResourceType = data.dwellingResourceType,
-                    Amount = data.dwellingAmount
+                    ResourceType = data.storageResourceType,
+                    StorageAmount = data.amount
                 });
             }
 
