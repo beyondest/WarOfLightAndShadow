@@ -61,6 +61,7 @@ namespace SparFlame.Systems.General.BasicControl
             in DynamicBuffer<ArmyGroupUnitTypeData> unitTypeDatas,
             in ArmyGroupStateData stateData,
             in LastPassingByPlayerCity lastPassingByPlayerCity,
+            in ArmyGroupStatData armyGroupStatData,
             Entity selfEntity)
         {
             var saveEntity = ECB.CreateEntity(index);
@@ -73,7 +74,7 @@ namespace SparFlame.Systems.General.BasicControl
             // Save army group general data
             ECB.AddComponent(index, saveEntity, generalAttr);
             ECB.AddComponent(index, saveEntity, armyGroupAttr);
-
+            ECB.AddComponent(index, saveEntity, armyGroupStatData);
             // Save army group movable data
             ECB.AddComponent(index, saveEntity, armyGroupMovableData);
             ECB.AddComponent(index, saveEntity, new SeIsMoving
@@ -208,7 +209,7 @@ namespace SparFlame.Systems.General.BasicControl
     public partial struct LoadArmyGroupMainDataJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public ArmyGroupManageConfig ArmyGroupManageConfig;
+        [ReadOnly] public ArmyGroupConfig ArmyGroupConfig;
         [ReadOnly] public ComponentLookup<SeArmyGroupInGarrison> InGarrisonLookup;
 
         private void Execute([ChunkIndexInQuery] int index,
@@ -221,12 +222,13 @@ namespace SparFlame.Systems.General.BasicControl
             in DynamicBuffer<WaypointBuffer> waypointBuffer, in DynamicBuffer<ArmyGroupFinalWayPoint> finalWayPoints,
             in ArmyGroupStateData armyGroupStateData, in LastPassingByPlayerCity lastPassingByPlayerCity,
             in DynamicBuffer<SeArmyGroupUnit> armyGroupUnits, in DynamicBuffer<ArmyGroupUnitTypeData> unitTypeDatas,
+            in ArmyGroupStatData armyGroupStatData,
             Entity selfEntity)
         {
             ECB.DestroyEntity(index, selfEntity);
             var prefab = generalAttr.faction == FactionTag.Light
-                ? ArmyGroupManageConfig.LightArmyGroupPrefab
-                : ArmyGroupManageConfig.DarkArmyGroupPrefab;
+                ? ArmyGroupConfig.LightArmyGroupPrefab
+                : ArmyGroupConfig.DarkArmyGroupPrefab;
             var armyGroup = ECB.Instantiate(index, prefab);
             ECB.AddComponent<MainGameplayEntityTag>(index, armyGroup);
             ECB.SetComponent(index, armyGroup, generalAttr);
@@ -238,6 +240,7 @@ namespace SparFlame.Systems.General.BasicControl
             });
             ECB.SetComponent(index, armyGroup, armyGroupAttr);
             ECB.SetComponent(index, armyGroup, armyGroupMovableData);
+            ECB.SetComponent(index, armyGroup, armyGroupStatData);
             ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, armyGroup, seIsMoving.value);
             foreach (var armyGroupMovingTarget in movingTargets)
             {

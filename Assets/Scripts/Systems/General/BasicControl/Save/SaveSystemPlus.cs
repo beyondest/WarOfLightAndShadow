@@ -1,10 +1,12 @@
-﻿using SparFlame.Components.General;
+﻿using System.IO;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Entities.Serialization;
+using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 
@@ -12,6 +14,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.General.BasicControl
 {
+    [UpdateInGroup(typeof(InitializationSystemGroup)),UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class SaveSystemPlus : SystemBase
     {
         private EntityQuery _saveArmyGroupQuery;
@@ -24,7 +27,7 @@ namespace SparFlame.Systems.General.BasicControl
         private BufferLookup<GarrisonEntity> _garrisonEntitiesLookup;
         private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
         private BufferLookup<ConjuringData> _conjuringDataLookup;
-        
+
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<PhysicsMass> _physicsMassLookup;
         private ComponentLookup<ArmyGroupMovingTag> _movingTagLookup;
@@ -44,7 +47,7 @@ namespace SparFlame.Systems.General.BasicControl
             _garrisonEntitiesLookup = GetBufferLookup<GarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
             _conjuringDataLookup = GetBufferLookup<ConjuringData>(true);
-            
+
             _inGarrisonLookup = GetComponentLookup<InGarrison>(true);
             _physicsMassLookup = GetComponentLookup<PhysicsMass>(true);
             _movingTagLookup = GetComponentLookup<ArmyGroupMovingTag>(true);
@@ -53,7 +56,7 @@ namespace SparFlame.Systems.General.BasicControl
             _armyGroupAttrLookup = GetComponentLookup<ArmyGroupAttr>(true);
             _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
             _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
-            
+
             _saveArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>().Build();
         }
 
@@ -66,6 +69,7 @@ namespace SparFlame.Systems.General.BasicControl
                 SaveLoadController.Instance.OnEcsSaveCityMainData += SaveCityMainData;
                 SaveLoadController.Instance.OnEcsSaveArmyGroupMainData += SaveArmyGroupMainData;
                 SaveLoadController.Instance.OnEcsSaveGameMainData += SaveGameMainData;
+                SaveLoadController.Instance.OnEcsCopyAndDeleteTmpSubData += CopyAndDeleteTmpSubData;
                 _initialized = true;
             }
         }
@@ -73,18 +77,34 @@ namespace SparFlame.Systems.General.BasicControl
         protected override void OnUpdate()
         {
         }
+        
+        
 
 
-        private void SaveArmyGroupSubData()
+        private void SaveArmyGroupSubData(bool shouldSaveToTmp)
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
             var armyGroups = _saveArmyGroupQuery.ToEntityArray(Allocator.Temp);
             var armyGroupAttrs = _saveArmyGroupQuery.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
+
+
             for (var i = 0; i < armyGroups.Length; i++)
             {
                 var armyGroup = armyGroups[i];
                 var armyGroupAttr = armyGroupAttrs[i];
                 var armyGroupUnits = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup);
+
+                // Calculate center position of all units in this army group
+                var sum = float3.zero;
+                for (var j = 0; j < armyGroupUnits.Length; j++)
+                {
+                    var transform = SystemAPI.GetComponent<LocalTransform>(armyGroupUnits[j].Unit);
+                    sum += transform.Position;
+                }
+
+                var center = sum / armyGroupUnits.Length;
+                float3 boundingMin = float3.zero, boundingMax = float3.zero;
+
                 var ecb = new EntityCommandBuffer(Allocator.Temp);
                 for (var index = 0; index < armyGroupUnits.Length; index++)
                 {
@@ -93,20 +113,24 @@ namespace SparFlame.Systems.General.BasicControl
                     var unitTmpId = SaveUtilities.GetTmpIdForSaving(unit);
                     armyGroupUnit.SaveTmpId = unitTmpId;
                     armyGroupUnits[index] = armyGroupUnit;
-                    
+
                     var transform = SystemAPI.GetComponent<LocalTransform>(unit);
                     var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(unit);
                     var statData = SystemAPI.GetComponent<StatData>(unit);
                     var expData = SystemAPI.GetComponent<ExpData>(unit);
-                    
+
                     var saveEntity = ecb.CreateEntity();
+                    var relative = transform.Position - center;
+                    boundingMin = math.min(boundingMin, relative);
+                    boundingMax = math.max(boundingMax, relative);
+                    
                     ecb.AddComponent(saveEntity, new SeTransform
                     {
-                        position = transform.Position,
+                        position = relative, // Save relative position
                         rotation = transform.Rotation,
                         scale = transform.Scale,
                     });
-                    
+
                     ecb.AddComponent(saveEntity, new SeGlobalId { value = generalAttr.PrefabID });
                     ecb.AddComponent(saveEntity, new SeTmpId { value = unitTmpId });
                     ecb.AddComponent(saveEntity, statData);
@@ -116,6 +140,12 @@ namespace SparFlame.Systems.General.BasicControl
                         armyGroupSaveId = armyGroupAttr.saveId
                     });
                 }
+                // Record the bounding box
+                armyGroupAttr.boundingBoxMax = boundingMax;
+                armyGroupAttr.boundingBoxMin = boundingMin;
+                armyGroupAttr.loadingCenter = center;
+                armyGroupAttr.loadingScale = 1f;
+                SystemAPI.SetComponent(armyGroup, armyGroupAttr);
 
                 using (var serializeWorld = new World("Serialization World"))
                 {
@@ -125,7 +155,7 @@ namespace SparFlame.Systems.General.BasicControl
                     seEm.CreateSingleton(new SaveTmpTag());
                     seEm.RemoveComponent<SceneTag>(seEm.UniversalQuery);
                     seEm.RemoveComponent<SceneSection>(seEm.UniversalQuery);
-                    var armyGroupSavePath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot);
+                    var armyGroupSavePath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot,shouldSaveToTmp);
                     using (var writer = new StreamBinaryWriter(armyGroupSavePath))
                     {
                         SerializeUtility.SerializeWorld(seEm, writer);
@@ -137,12 +167,12 @@ namespace SparFlame.Systems.General.BasicControl
             armyGroupAttrs.Dispose();
         }
 
-        private void SaveCitySubData()
+        private void SaveCitySubData(bool shouldSaveToTmp)
         {
             var city = SystemAPI.GetSingleton<SubGameStatusData>().City;
             var cityId = SystemAPI.GetComponent<CityAttr>(city).globalId;
             var citySavePath = SaveUtilities.GetCitySubDataPath(cityId,
-                SystemAPI.GetSingleton<PlayerSaveSlot>().Value);
+                SystemAPI.GetSingleton<PlayerSaveSlot>().Value, shouldSaveToTmp);
             _garrisonEntitiesLookup.Update(this);
             _garrisonTypeDataLookup.Update(this);
             _inGarrisonLookup.Update(this);
@@ -157,7 +187,7 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB = ecbP,
                 GarrisonEntitiesLookup = _garrisonEntitiesLookup,
                 GarrisonTypeDataLookup = _garrisonTypeDataLookup,
-                ConjuringDataLookup =   _conjuringDataLookup,
+                ConjuringDataLookup = _conjuringDataLookup,
                 InGarrisonLookup = _inGarrisonLookup,
                 PhysicsMassLookup = _physicsMassLookup,
                 ConstructingTimerLookup = _constructingTimerLookup,
@@ -192,7 +222,7 @@ namespace SparFlame.Systems.General.BasicControl
                 ArmyGroupAttrLookup = _armyGroupAttrLookup,
             }.ScheduleParallel(Dependency);
             job.Complete();
-            
+
             using (var serializeWorld = new World("Serialization World"))
             {
                 EntityManager seEm = serializeWorld.EntityManager;
@@ -247,7 +277,7 @@ namespace SparFlame.Systems.General.BasicControl
             var path = SaveUtilities.GetGameMainDataPath(SystemAPI.GetSingleton<PlayerSaveSlot>().Value);
 
             var entities = new NativeList<Entity>(Allocator.Temp);
-            entities.Add( SystemAPI.GetSingletonEntity<PlayerFactionData>());
+            entities.Add(SystemAPI.GetSingletonEntity<PlayerFactionData>());
             entities.Add(SystemAPI.GetSingletonEntity<WorldTimeData>());
             entities.Add(SystemAPI.GetSingletonEntity<LastUniqueId>());
             entities.Add(SystemAPI.GetSingletonEntity<ResourceData>());
@@ -268,9 +298,10 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 SystemAPI.SetSingleton(new SaveCityId());
             }
+
             entities.Add(SystemAPI.GetSingletonEntity<SaveCityId>());
-            
-            
+
+
             using (var serializeWorld = new World("Serialization World"))
             {
                 EntityManager seEm = serializeWorld.EntityManager;
@@ -278,12 +309,45 @@ namespace SparFlame.Systems.General.BasicControl
                 seEm.CreateSingleton(new SaveTmpTag());
                 seEm.RemoveComponent<SceneTag>(seEm.UniversalQuery);
                 seEm.RemoveComponent<SceneSection>(seEm.UniversalQuery);
-                
+
                 // Save
                 using (var writer =
                        new StreamBinaryWriter(path))
                 {
                     SerializeUtility.SerializeWorld(seEm, writer);
+                }
+            }
+        }
+
+        private void CopyAndDeleteTmpSubData()
+        {
+            var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>();
+            
+            // Copy city sub data from tmp to true save path
+            foreach (var cityAttr in SystemAPI.Query<RefRO<CityAttr>>())
+            {
+                var tmpPath = SaveUtilities.GetCitySubDataPath(cityAttr.ValueRO.globalId,
+                    playerSaveSlot.Value, true);
+                if (File.Exists(tmpPath))
+                {
+                    var truePath =  SaveUtilities.GetCitySubDataPath(cityAttr.ValueRO.globalId,
+                        playerSaveSlot.Value, false);
+                    File.Copy(tmpPath, truePath,overwrite: true);
+                    File.Delete(tmpPath);
+                }
+            }
+            // Copy army group sub data from tmp to true save path
+
+            foreach (var armyGroupAttr in SystemAPI.Query<RefRO<ArmyGroupAttr>>())
+            {
+                var tmpPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.ValueRO.saveId, playerSaveSlot.Value,
+                    true);
+                if (File.Exists(tmpPath))
+                {
+                    var truePath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.ValueRO.saveId,
+                        playerSaveSlot.Value, false);
+                    File.Copy(tmpPath, truePath,overwrite:true);
+                    File.Delete(tmpPath);
                 }
             }
         }

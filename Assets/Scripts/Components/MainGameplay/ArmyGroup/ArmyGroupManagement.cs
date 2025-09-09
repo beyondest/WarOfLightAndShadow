@@ -16,14 +16,21 @@ namespace SparFlame.Components.MainGameplay
     {
         AllSelectedExceptAlreadyIn = 0,
         AllSelectedOverrideAlreadyIn = 1,
+        OnlySpecifiedUnit = 2
     }
 
+    public struct AddToArmyGroupRequest : IComponentData
+    {
+        public Entity Unit;
+        public AddToArmyGroupType Type;
+        public Entity ArmyGroup;
+    }
 
  
 
     public enum RemoveFromArmyGroupType
     {
-        RemoveSpecifiedUnitWithoutRemovingInArmyGroup,
+        RemoveSpecifiedUnitWithoutRemovingInArmyGroup, // The InArmyGroup component does not need to be removed in 2 cases: 1. When a unit died 2. When player override the army group of a unit 
         MoveOutAllSameId,
         MoveOutAll,
         RandomRemoveSingleSameId,
@@ -62,7 +69,7 @@ namespace SparFlame.Components.MainGameplay
 
     
     // Config data
-    public struct ArmyGroupManageConfig : IComponentData
+    public struct ArmyGroupConfig : IComponentData
     {
         public float3 HidePosition;
         public Entity LightArmyGroupPrefab;

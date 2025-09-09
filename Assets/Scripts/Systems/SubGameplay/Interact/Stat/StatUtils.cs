@@ -174,5 +174,20 @@ namespace SparFlame.Systems.SubGameplay.Interact
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, request);
         }
+
+        public static void GenerateRemoveFromArmyGroupRequest(Entity requestInteractee,
+            int unitId,
+            int index, InArmyGroup inArmyGroup, EntityCommandBuffer.ParallelWriter ecb)
+        {
+            var request = ecb.CreateEntity(index);
+            ecb.AddComponent<SubGameplayEntityTag>(index, request);
+            ecb.AddComponent(index, request, new RemoveFromArmyGroupRequest
+            {
+                ArmyGroup = inArmyGroup.BelongsTo,
+                Unit = requestInteractee,
+                RemoveType = RemoveFromArmyGroupType.RemoveSpecifiedUnitWithoutRemovingInArmyGroup,
+                MoveOutId = unitId
+            });
+        }
     }
 }

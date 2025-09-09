@@ -80,14 +80,26 @@ namespace SparFlame.Components.SubGameplay
     {
     }
     public struct BuildingGarrisonBuff : IComponentData, IEnableableComponent
-    {
+    { 
     }
 
     public struct UnitGarrisonBuff : IComponentData, IEnableableComponent
     {
         
     }
+
+    public struct SprintBuff : IComponentData,IEnableableComponent
+    {
+        public float LastTime;
+    }
     
+    [Serializable]
+    public struct SprintBuffConfig : IComponentData
+    {
+        public float sprintCoolDown;
+        public float sprintDuration;
+        public float sprintSpeedBonusAmount;
+    }
     
     public struct AoeTriggerRequest : IComponentData
     {

@@ -10,7 +10,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 {
     // This job cannot parallel because bonus has to be applied in order
     [BurstCompile]
-    public partial struct BuffApplyJob : IJobEntity
+    public partial struct BuffApplyToInteractAmountJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
 

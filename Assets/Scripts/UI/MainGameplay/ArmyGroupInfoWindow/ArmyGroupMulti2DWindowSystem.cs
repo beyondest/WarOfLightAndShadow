@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System.Collections.Generic;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.VFX;
 using Unity.Collections;
@@ -10,16 +11,19 @@ namespace SparFlame.UI.MainGameplay
     {
         public ArmyGroupIconType IconType;
         public Entity Entity;
+        public int UnitCounts;
+        public int AvgLevel;
+        public float TotalHpRatio;
+        public List<int> UnitCountPerTier;
     }
     public partial class ArmyGroupMulti2DWindowSystem : SystemBase
     {
-         private NativeList<ArmyGroupMulti2DRealTimeInfo> _infos;
+         private readonly List<ArmyGroupMulti2DRealTimeInfo> _infos = new();
         private bool _initEvents;
 
         protected override void OnCreate()
         {
             RequireForUpdate<MainGamingTag>();
-            _infos = new NativeList<ArmyGroupMulti2DRealTimeInfo>(Allocator.Persistent);
         }
 
         protected override void OnStartRunning()
@@ -27,14 +31,14 @@ namespace SparFlame.UI.MainGameplay
             if (!_initEvents)
             {
                 _initEvents = true;
-                ArmyGroupMulti2DWindow.Instance.GetTargetEntityByIndex += index =>
+                ArmyGroupMulti2DWindow.Instance.OnGetTargetEntityByIndex += index =>
                 {
                     var data = SystemAPI.GetSingleton<ArmyGroupSelectionData>();
                     UpdateSelectedInfos(data);
-                    var targetEntity = index < _infos.Length ? _infos[index].Entity : Entity.Null;
-                    ArmyGroupMulti2DWindow.Instance.GetSelectionData(_infos.Length, targetEntity
+                    var targetEntity = index < _infos.Count ? _infos[index].Entity : Entity.Null;
+                    ArmyGroupMulti2DWindow.Instance.GetSelectionData(_infos.Count, targetEntity
                     );
-                    ArmyGroupMulti2DWindow.Instance.DeselectAllExceptOne += DeselectAllExceptOne;
+                    ArmyGroupMulti2DWindow.Instance.OnDeselectAllExceptOne += DeselectAllExceptOne;
                 };
             }
         }
@@ -50,14 +54,23 @@ namespace SparFlame.UI.MainGameplay
         private void UpdateSelectedInfos(ArmyGroupSelectionData selectionData)
         {
             _infos.Clear();
-            foreach (var (armyGroupAttr, entity) in SystemAPI
-                         .Query<RefRO<ArmyGroupAttr>>()
+            foreach (var (armyGroupAttr,statData, entity) in SystemAPI
+                         .Query<RefRO<ArmyGroupAttr>, RefRO<ArmyGroupStatData>>()
                          .WithEntityAccess().WithAll<ArmyGroupSelected>())
             {
                 _infos.Add(new ArmyGroupMulti2DRealTimeInfo
                 {
                     Entity = entity,
-                    IconType = armyGroupAttr.ValueRO.iconType
+                    IconType = armyGroupAttr.ValueRO.iconType,
+                    AvgLevel = armyGroupAttr.ValueRO.avgLevel,
+                    UnitCounts = SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length,
+                    TotalHpRatio = statData.ValueRO.totalMaxHp == 0 ? 0 : statData.ValueRO.totalCurrentHp / statData.ValueRO.totalMaxHp,
+                    UnitCountPerTier = new List<int>
+                    {
+                        armyGroupAttr.ValueRO.tier1UnitCount,
+                        armyGroupAttr.ValueRO.tier2UnitCount,
+                        armyGroupAttr.ValueRO.tier3UnitCount,
+                    },
                 });
             }
             ArmyGroupMulti2DWindow.Instance.UpdateSelectedView(_infos, selectionData.CurrentSelectFaction);
@@ -83,10 +96,6 @@ namespace SparFlame.UI.MainGameplay
         }
 
 
-        protected override void OnDestroy()
-        {
-            if (_infos.IsCreated)
-                _infos.Dispose();
-        }
+     
     }
 }

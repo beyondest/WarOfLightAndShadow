@@ -168,7 +168,7 @@ namespace SparFlame.UI.General
             GameController.Instance.OnWinnerWin += WinnerWin;
             GameController.Instance.OnSubGameStartForPlayer += SubGameStartForPlayer;
             GameController.Instance.OnMainGameStartForPlayer += MainGameStartForPlayer;
-            GameController.Instance.OnPlayerChooseFaction += PlayerChooseFaction;
+            GameController.Instance.OnPlayerChooseFactionAndStartGame += PlayerChooseFactionAndStartGame;
             // Init loading screen
             GeneralResourceManager.Instance.OnLoadAllResources += () =>
                 ShowLoadingScreen(GeneralResourceManager.Instance.LoadingProgress);
@@ -268,7 +268,7 @@ namespace SparFlame.UI.General
             loadingDark.SetActive(false);
             _progress.ProgressChanged -= UpdateLoadingScreen;
         }
-        private void PlayerChooseFaction(FactionTag faction)
+        private void PlayerChooseFactionAndStartGame(FactionTag faction)
         {
             _playerFaction = faction;
             selectMenu.SetActive(false);

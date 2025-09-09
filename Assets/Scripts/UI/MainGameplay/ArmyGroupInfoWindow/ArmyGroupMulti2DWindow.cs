@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.UI.General;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -20,8 +20,8 @@ namespace SparFlame.UI.MainGameplay
 
         // Interface
         public static ArmyGroupMulti2DWindow Instance;
-        public Action<int> GetTargetEntityByIndex;
-        public Action<Entity> DeselectAllExceptOne;
+        public event Action<int> OnGetTargetEntityByIndex;
+        public event Action<Entity> OnDeselectAllExceptOne;
 
         public void DisableClickRoutine()
         {
@@ -42,7 +42,7 @@ namespace SparFlame.UI.MainGameplay
             var trueIndex = _currentPage * _slotsMaxCountPerPage + slotIndex;
             if (_currentSelectIndex == trueIndex) return;
             // Set close up target 
-            GetTargetEntityByIndex?.Invoke(trueIndex);
+            OnGetTargetEntityByIndex?.Invoke(trueIndex);
             if (_currentSelectCounts <= trueIndex) return;
             MainGameplayInfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
             ArmyGroupDetailWindow.Instance.TrySwitchTarget(_targetEntity);
@@ -75,11 +75,11 @@ namespace SparFlame.UI.MainGameplay
             _currentSelectIndex = -1;
         }
         
-        public void UpdateSelectedView(NativeList<ArmyGroupMulti2DRealTimeInfo> infos, FactionTag faction)
+        public void UpdateSelectedView(List<ArmyGroupMulti2DRealTimeInfo> infos, FactionTag faction)
         {
             _currentSelectFaction = faction;
             var startIdx = _currentPage * _slotsMaxCountPerPage;
-            var count = Mathf.Min(_slotsMaxCountPerPage, infos.Length - startIdx);
+            var count = Mathf.Min(_slotsMaxCountPerPage, infos.Count - startIdx);
             // Update corresponding images and hp sliders
             for (var i = 0; i < _slotsMaxCountPerPage; i++)
             {
@@ -103,9 +103,9 @@ namespace SparFlame.UI.MainGameplay
             }
 
             // Update right and left button
-            pageDownButton.SetActive((_currentPage + 1) * _slotsMaxCountPerPage < infos.Length);
+            pageDownButton.SetActive((_currentPage + 1) * _slotsMaxCountPerPage < infos.Count);
             pageUpButton.SetActive(_currentPage != 0);
-            _currentSelectCounts = infos.Length;
+            _currentSelectCounts = infos.Count;
         }
 
 
@@ -158,12 +158,13 @@ namespace SparFlame.UI.MainGameplay
             if (_clickCount == 1)
             {
                 ArmyGroupDetailWindow.Instance.Show();
+                ArmyGroupDetailWindow.Instance.ShowReturnButton();
             }
             else if (_clickCount >= 2)
             {
                 ArmyGroupDetailWindow.Instance.Show();
                 Hide();
-                DeselectAllExceptOne?.Invoke(_targetEntity);
+                OnDeselectAllExceptOne?.Invoke(_targetEntity);
             }
             _ifClickRoutineRunning = false;
             _clickCount = 0;

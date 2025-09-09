@@ -57,13 +57,14 @@ namespace SparFlame.UI.SubGameplay
                          .Query<RefRO<UnitAttr>, RefRO<StatData>, RefRO<ExpData>>()
                          .WithEntityAccess().WithAll<Selected>())
             {
+                var countLevel = expData.ValueRO.curLevel + ((int)expData.ValueRO.curTier - 3) * 10;
                 _unitInfos.Add(new UnitRealTimeInfo
                 {
                     Entity = entity,
                     HpRatio = statData.ValueRO.curValue / (statData.ValueRO.maxValue + statData.ValueRO.bonus),
                     UnitType = unitAttr.ValueRO.Type,
                     Tier = expData.ValueRO.curTier,
-                    Level = expData.ValueRO.curLevel
+                    Level = countLevel
                 });
             }
             UnitMulti2DWindow.Instance.UpdateSelectedUnitView(_unitInfos, unitSelectionData.CurrentSelectFaction);

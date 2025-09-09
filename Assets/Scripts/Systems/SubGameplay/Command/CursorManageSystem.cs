@@ -5,6 +5,7 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using Unity.Burst;
+using Unity.Collections;
 
 namespace SparFlame.Systems.SubGameplay.Command
 {
@@ -85,6 +86,8 @@ namespace SparFlame.Systems.SubGameplay.Command
                 isResourceValid);
         }
 
+   
+        
 
         #region CursorSwitchLogic
 

@@ -18,12 +18,15 @@ namespace SparFlame.Systems.General.BasicControl
         public event Action OnEcsLoadMainGameplayData;
         
         // Save actions
-        public event Action OnEcsSaveCitySubData;
-        public event Action OnEcsSaveArmyGroupSubData;
+        public event Action<bool> OnEcsSaveCitySubData;
+        public event Action<bool> OnEcsSaveArmyGroupSubData;
         public event Action OnEcsSaveArmyGroupMainData;
         public event Action OnEcsSaveCityMainData;
         public event Action OnEcsSaveGameMainData;
-        public void SyncSaveGame()
+
+        public event Action OnEcsCopyAndDeleteTmpSubData;
+        
+        public void SyncSaveGame(bool backToMainWorldAutoSave = false)
         {
             var subGameStatusData = _currentSubGameStatusQuery.GetSingleton<SubGameStatusData>();
             if(GameStatusUtils.IsInBattle(subGameStatusData))return; // When in battle, saving is not allowed
@@ -34,19 +37,31 @@ namespace SparFlame.Systems.General.BasicControl
             
             switch (subGameStatusData.SubGameStatus)
             {
-                // This happens when player save in his city or after win the battle
-                case SubGameStatus.PlayerCity:
-                    OnEcsSaveCityMainData?.Invoke();
-                    OnEcsSaveCitySubData?.Invoke();
-                    OnEcsSaveArmyGroupSubData?.Invoke();
-                    OnEcsSaveArmyGroupMainData?.Invoke();
-                    OnEcsSaveGameMainData?.Invoke();
+                // This happens when player manually save in the city
+                case SubGameStatus.PlayerCity :
+                    if (!backToMainWorldAutoSave)
+                    {
+                        OnEcsSaveCityMainData?.Invoke();
+                        OnEcsSaveCitySubData?.Invoke(false); // Should save to tmp = false
+                        OnEcsSaveArmyGroupSubData?.Invoke(false);
+                        OnEcsSaveArmyGroupMainData?.Invoke();
+                        OnEcsSaveGameMainData?.Invoke();
+                    }
+                    else
+                    {
+                        // This happens when player back to main world auto save
+                        OnEcsSaveCitySubData?.Invoke(true);
+                        OnEcsSaveArmyGroupSubData?.Invoke(true);
+                    }
+                
                     break;
                 // This happens when player save in the main world
                 case SubGameStatus.None:
                     OnEcsSaveArmyGroupMainData?.Invoke();
                     OnEcsSaveCityMainData?.Invoke();
                     OnEcsSaveGameMainData?.Invoke();
+                    OnEcsCopyAndDeleteTmpSubData?.Invoke();
+                    
                     break;
                 // These will never happen because player cannot save in battle
                 case SubGameStatus.PlayerSiege:
@@ -114,27 +129,6 @@ namespace SparFlame.Systems.General.BasicControl
         
         #endregion
 
-        // private void LoadCityGarrisonArmyGroups(Entity city)
-        // {
-        //     var garrisonEntities = _em.GetBuffer<CityGarrisonEntity>(city);
-        //     foreach (var garrisonEntity in garrisonEntities)
-        //     {
-        //         OnEcsLoadArmyGroupData?.Invoke(garrisonEntity.ArmyGroup);
-        //     }
-        // }
-        //
-        // private void LoadInsightArmyGroups(Entity armyGroup)
-        // {
-        //     var sightTarget = _em.GetBuffer<ArmyGroupSightTarget>(armyGroup);
-        //     var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(armyGroup);
-        //     foreach (var armyGroupSightTarget in sightTarget)
-        //     {
-        //         var insightArmyGroup = armyGroupSightTarget.Entity;
-        //         if (generalAttr.Faction == _em.GetComponentData<MainGameplayGeneralAttr>(insightArmyGroup).Faction)
-        //         {
-        //             OnEcsLoadArmyGroupData?.Invoke(insightArmyGroup);
-        //         }
-        //     }
-        // }
+
     }
 }

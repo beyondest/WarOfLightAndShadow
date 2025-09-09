@@ -38,12 +38,9 @@ namespace SparFlame.Components.General
 
     public enum HintType
     {
-        EnemyInfo = 0,
-        EnemyWarning = 1,
-        EnemyCritical = 2,
-        PlayerInfo = 3,
-        PlayerWarning = 4,
-        PlayerCritical = 5,
+        Info = 0,
+        Warning = 1,
+        Critical = 2,
     }
 
     public struct HintRequest : IComponentData

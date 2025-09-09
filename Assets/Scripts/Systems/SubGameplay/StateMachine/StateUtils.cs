@@ -14,7 +14,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         public static void SwitchState(ref BasicStateData stateData, EntityCommandBuffer.ParallelWriter ecb,
             Entity entity, int index)
         {
-            
             if (stateData.TargetState == stateData.CurState) return;
             switch (stateData.TargetState)
             {
@@ -109,14 +108,14 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         }
 
 
-        public static void GarrisonMoveBack(in InGarrison garrison, 
+        public static void GarrisonMoveBack(in InGarrison garrison,
             ref BasicStateData stateData,
-            ref MovableData movableData, 
+            ref MovableData movableData,
             in float3 buildingPos,
             in float3 buildingColliderSize,
             float garrisonRadiusSq,
             bool focus,
-            Entity entity,int index,
+            Entity entity, int index,
             EntityCommandBuffer.ParallelWriter ecb)
         {
             MovementUtils.SetMoveTarget(ref movableData, buildingPos, buildingColliderSize,
@@ -125,6 +124,20 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             SwitchState(ref stateData, ecb, entity, index);
             stateData.TargetEntity = garrison.BuildingEntity;
             stateData.TargetState = InteractState.Garrison;
+            stateData.Focus = focus;
+        }
+
+        public static void MarchToPosition(ref BasicStateData stateData, ref MovableData movableData,
+            float3 targetPos,
+            EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity,
+            bool focus)
+        {
+            MovementUtils.SetMoveTarget(ref movableData, targetPos, float3.zero,
+                MovementCommandType.March, 0);
+            stateData.TargetState = InteractState.Moving;
+            SwitchState(ref stateData, ecb, selfEntity, index);
+            stateData.TargetEntity = Entity.Null;
+            stateData.TargetState = InteractState.Idle;
             stateData.Focus = focus;
         }
     }

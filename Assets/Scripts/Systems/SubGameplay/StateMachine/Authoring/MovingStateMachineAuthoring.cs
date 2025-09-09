@@ -10,8 +10,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
         [Tooltip("This dis must be bigger than sight")]
         public float maxDistanceFollowForAITag = 20;
-        public float maxDistanceUnitToBuildingForGarrison = 20;
         
+        
+        public float maxDistanceUnitToBuildingForGarrison = 20;
+        public float maxDistanceUnitToHoldOnPosition = 10;
         
         private class MovingStateMachineAuthoringBaker : Baker<MovingStateMachineAuthoring>
         {
@@ -23,6 +25,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     MaxAllowedCompromiseTimesForStuck = authoring.maxAllowedCompromiseTimesForStuck,
                     MaxDistanceSqFollowForAITag = authoring.maxDistanceFollowForAITag * authoring.maxDistanceFollowForAITag,
                     MaxDisSqUnitToBuildingForGarrison =  authoring.maxDistanceUnitToBuildingForGarrison * authoring.maxDistanceUnitToBuildingForGarrison,
+                    MaxDisSqUnitToHoldOnPosition = authoring.maxDistanceUnitToHoldOnPosition * authoring.maxDistanceUnitToHoldOnPosition
                 });
             }
         }
@@ -33,6 +36,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         public int MaxAllowedCompromiseTimesForStuck;
         public float MaxDistanceSqFollowForAITag;
         public float MaxDisSqUnitToBuildingForGarrison;
+        public float MaxDisSqUnitToHoldOnPosition;
     }
     
 }

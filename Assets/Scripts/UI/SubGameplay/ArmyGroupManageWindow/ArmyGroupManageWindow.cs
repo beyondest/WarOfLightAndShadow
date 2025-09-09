@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using SparFlame.Components.MainGameplay;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
+using SparFlame.UI.SubGameplay.StaticWindows;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SparFlame.UI.MainGameplay
 {
@@ -15,16 +19,15 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private GameObject totalPanel;
 
         [SerializeField] private TMP_Text armyGroupAllowedCountText;
+        
+        [SerializeField] private Image tierFilterButtonImage;
+        [SerializeField] private List<Image> unitTypeFilterSelectedImages;
         // Interface
         public static ArmyGroupManageWindow Instance;
         public event Action OnEcsUpdateStaticData;
         public event Action<Entity> OnEcsDeleteArmyGroup;
-        public Action<Entity, AddToArmyGroupType> OnEcsAddToArmyGroup;
-        public event Action OnEcsCheckSelected;
         public event Action<int, int> OnEcsTryNewArmyGroup;
-        public event Action OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned;
-        public bool HasSelectedUnitAlreadyInArmyGroup { get; set; }
-
+        
         public void UpdateStaticData(List<ArmyGroupManageInfo> infos,  int maxGarrisonCount)
         {
             _maxGarrisonCount = maxGarrisonCount;
@@ -37,6 +40,7 @@ namespace SparFlame.UI.MainGameplay
                 if (i < infos.Count)
                 {
                     slotComponent.SetTarget(infos[i]);
+                    slotComponent.UpdateComposition(_tierFilterEnabled, _currentFilterTier,_currentFilterUnitTypes);
                     slot.SetActive(true);
                 }
                 else
@@ -54,21 +58,7 @@ namespace SparFlame.UI.MainGameplay
             UpdateStaticData(_infos,_maxGarrisonCount);
         }
 
-        public void AddToArmyGroup(int index)
-        {
-            OnEcsCheckSelected?.Invoke();
-
-            if (HasSelectedUnitAlreadyInArmyGroup)
-            {
-                ArmyGroupAddTypeSelectWindow.Instance.Show();
-                ArmyGroupAddTypeSelectWindow.Instance.SetTarget(_infos[index].ArmyGroupEntity);
-            }
-            else
-            {
-                OnEcsAddToArmyGroup?.Invoke(_infos[index].ArmyGroupEntity,
-                    AddToArmyGroupType.AllSelectedExceptAlreadyIn);
-            }
-        }
+      
 
         public override void Show(Vector2? pos = null)
         {
@@ -97,57 +87,100 @@ namespace SparFlame.UI.MainGameplay
 
         public void OnClickCloseArmyGroupManageWindow()
         {
-            // var hasEmptyArmyGroup = false;
-            // OnEcsUpdateStaticData?.Invoke();
-            // foreach (var info in _infos)
-            // {
-            //     if (info.TotalUnitCount == 0)
-            //     {
-            //         hasEmptyArmyGroup = true;
-            //         break;
-            //     }
-            // }
-            // if (hasEmptyArmyGroup)
-            // {
-            //     ConfirmWindow.Instance.Show("You have army group with no units. Close the window will delete the army group.",
-            //         () =>
-            //         {
-            //             var deleteInfos = new List<ArmyGroupManageInfo>();
-            //             foreach (var info in _infos)
-            //             {
-            //                 if (info.TotalUnitCount == 0)
-            //                     deleteInfos.Add(info);
-            //             }
-            //
-            //             foreach (var info in deleteInfos)
-            //             {
-            //                 OnEcsDeleteArmyGroup?.Invoke(info.ArmyGroupEntity);
-            //             }
-            //             Hide();
-            //         });
-            // }
-            // else
-            // {
-            //
-            // }
             Hide();
-
         }
- 
+
+
+        public void OnClickEnterSelectionMode()
+        {
+            Hide();
+            ArmyGroupSlotWindow.Instance.SwitchSelectionMode(true);
+        }
+
         public void OnClickNewArmyGroup()
         {
             OnEcsTryNewArmyGroup?.Invoke(_infos.Count, config.rows * config.cols);
         }
 
-        public void OnClickSelectAllUnitsWithoutArmyGroupAndGarrisoned()
+  
+        public void OnClickTierFilter()
         {
-            OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned?.Invoke();
+            foreach (var slot in SlotComponents)
+            {
+                slot.ClearSelected();
+            }
+            if (!_tierFilterEnabled)
+            {
+                _tierFilterEnabled = true;
+                _currentFilterTier = Tier.Tier1;
+                tierFilterButtonImage.color = Color.white;
+                tierFilterButtonImage.sprite = BasicUIResourceManager.Instance.TierSprites[_currentFilterTier];
+                for (int i = 0; i < _infos.Count; i++)
+                {
+                    var slotComponent = SlotComponents[i];
+                    slotComponent.UpdateComposition(_tierFilterEnabled, _currentFilterTier, _currentFilterUnitTypes);
+                }
+                return;
+            }
+
+            if (_currentFilterTier == MaxTier)
+            {
+                _tierFilterEnabled = false;
+                tierFilterButtonImage.color = Color.gray;
+                for (int i = 0; i < _infos.Count; i++)
+                {
+                    var slotComponent = SlotComponents[i];
+                    slotComponent.UpdateComposition(_tierFilterEnabled, _currentFilterTier, _currentFilterUnitTypes);
+                }
+                return;
+            }
+            _currentFilterTier = (Tier)((int)_currentFilterTier + 1);
+            tierFilterButtonImage.sprite = BasicUIResourceManager.Instance.TierSprites[_currentFilterTier];
+
+            for (var i = 0; i < _infos.Count; i++)
+            {
+                var slotComponent = SlotComponents[i];
+                slotComponent.UpdateComposition(_tierFilterEnabled, _currentFilterTier, _currentFilterUnitTypes);
+            }
         }
+
+        public void OnClickUnitTypeFilter(int typeIndex)
+        {
+            foreach (var slot in SlotComponents)
+            {
+                slot.ClearSelected();
+            }
+            var unitType = (UnitType)typeIndex;
+            if (_currentFilterUnitTypes.Contains(unitType))
+            {
+                _currentFilterUnitTypes.Remove(unitType);
+                unitTypeFilterSelectedImages[typeIndex].enabled = false;
+            }
+            else
+            {
+                _currentFilterUnitTypes.Add(unitType);
+                unitTypeFilterSelectedImages[typeIndex].enabled = true;
+            }
+            for (int i = 0; i < _infos.Count; i++)
+            {
+                var slotComponent = SlotComponents[i];
+                slotComponent.UpdateComposition(_tierFilterEnabled, _currentFilterTier, _currentFilterUnitTypes);
+            }
+        }
+        
+        
         #endregion
 
         private readonly List<ArmyGroupManageInfo> _infos = new();
         private EntityManager _em;
         private int _maxGarrisonCount;
+        private const Tier MaxTier = Tier.Tier3;
+        private bool _tierFilterEnabled ;
+
+        private Tier _currentFilterTier = MaxTier;
+
+        private readonly List<UnitType> _currentFilterUnitTypes = new();
+
         
         private void Awake()
         {
@@ -161,22 +194,22 @@ namespace SparFlame.UI.MainGameplay
         {
             base.Start();
             Hide();
+            foreach (var image in unitTypeFilterSelectedImages)
+            {
+                image.enabled = true;
+            }
+            tierFilterButtonImage.color = Color.gray;
+            _currentFilterUnitTypes.Add(UnitType.Cavalry);
+            _currentFilterUnitTypes.Add(UnitType.Ranged);
+            _currentFilterUnitTypes.Add(UnitType.Shield);
+            _currentFilterUnitTypes.Add(UnitType.Magic);
+            _currentFilterUnitTypes.Add(UnitType.Worker);
         }
     }
 
     public struct ArmyGroupManageInfo
     {
         public Entity ArmyGroupEntity;
-        public int TotalUnitCount;
-        // 
-        // public ArmyGroupIconType IconType;
-        // public string GameplayName;
-        // // Info
-        // public float Speed;
-        // public float Morale;
-        //     
-        // // Composition
-        // public int TotalUnitCount;
-        // public DynamicBuffer<ArmyGroupUnitTypeData> TypeDatas;
+       
     }
 }

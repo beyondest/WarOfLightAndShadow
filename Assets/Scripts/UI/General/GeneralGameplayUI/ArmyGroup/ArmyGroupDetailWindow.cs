@@ -13,24 +13,29 @@ namespace SparFlame.UI.MainGameplay
         MultiSlotWindowUtils.ISingleTargetWindow
     {
         
-        // Config
-        [Header("General")] 
-        [SerializeField] private Image generalFactionIcon;
-        [SerializeField] private Image subFactionIcon;
-        [SerializeField] private GameObject formationButton;
+     
         [Header("Config")]
         [SerializeField] private bool isSingleton;
         [SerializeField] private GameObject totalPanel;
+        [SerializeField] private GameObject compositionPanel;
+        [SerializeField] private GameObject formationButton;
+        [SerializeField] private GameObject returnToMulti2DWindowButton;
         
         [Header("ArmyGroupAttr")]
+        [SerializeField] private Image generalFactionIcon;
+        [SerializeField] private Image subFactionIcon;
         [SerializeField] private Image armyGroupIcon;
+        [SerializeField] private Image armyGroupHpIcon;
+        
         [SerializeField] private TMP_Text armyGroupNameText;
-        [Header("Attr")] [SerializeField] private TMP_Text speedText;
+        [SerializeField] private TMP_Text speedText;
+        [SerializeField] private TMP_Text totalUnitCountText;
+        [SerializeField] private TMP_Text hpRatioText;
+        [SerializeField] private TMP_Text avgLevelText;
+        
+        
         // [SerializeField] private TMP_Text moraleText;
         
-        [Header("Composition")]
-        [SerializeField] private TMP_Text totalUnitCountText;
-        [SerializeField] private GameObject compositionPanel;
         
         // Interface
         public static ArmyGroupDetailWindow Instance;
@@ -51,6 +56,7 @@ namespace SparFlame.UI.MainGameplay
             {
                 slot.SetActive(false);
             }
+            returnToMulti2DWindowButton.SetActive(false);
         }
 
         public override bool IsOpened()
@@ -82,6 +88,23 @@ namespace SparFlame.UI.MainGameplay
         {
             _targetEntity = Entity.Null;
         }
+        
+        public void ShowReturnButton()
+        {
+            returnToMulti2DWindowButton.SetActive(true);
+        }
+
+        #region ButtonMethods
+
+        public void OnClickReturnToMulti2DWindow()
+        {
+            Hide();
+            returnToMulti2DWindowButton.SetActive(false);
+        }
+        
+
+        #endregion
+        
 
         private Entity _targetEntity;
         protected EntityManager Em;
@@ -129,7 +152,8 @@ namespace SparFlame.UI.MainGameplay
             armyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
             armyGroupIcon.color = generalAttr.faction == FactionTag.Light ? Color.white : Color.black;
             armyGroupNameText.text = armyGroupAttr.gameplayName.ToString();
-      
+            armyGroupHpIcon.sprite = BasicUIResourceManager.Instance.FactionHpSprites[generalAttr.faction];
+            
             var relationship =
                 FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
             
@@ -142,7 +166,14 @@ namespace SparFlame.UI.MainGameplay
             var units = Em.GetBuffer<ArmyGroupUnit>(_targetEntity);
             totalUnitCountText.text = units.Length.ToString();
             var movableData = Em.GetComponentData<ArmyGroupMovableData>(_targetEntity);
-            speedText.text = movableData.speedPerDay.ToString("F1");
+            speedText.text = movableData.minUnitMoveSpeed.ToString("F1");
+            var armyGroupAttr = Em.GetComponentData<ArmyGroupAttr>(_targetEntity);
+            var statData = Em.GetComponentData<ArmyGroupStatData>(_targetEntity);
+
+            var percent = statData.totalMaxHp == 0 ? 0 : 100 * statData.totalCurrentHp / statData.totalMaxHp;
+            hpRatioText.text = $"{(int)percent}%";
+            avgLevelText.text = $"Lv. {armyGroupAttr.avgLevel}";
+            
         }
 
         public void ShowComposition()

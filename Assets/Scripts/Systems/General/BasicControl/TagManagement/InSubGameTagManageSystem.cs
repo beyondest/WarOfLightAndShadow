@@ -71,7 +71,7 @@ namespace SparFlame.Systems.General.BasicControl.Battle
                     {
                         var armyGroup = cityGarrisonEntity.ArmyGroup;
                         ecb.AddComponent<InSubGameTag>(armyGroup);
-                    }
+                    } 
                     // Add all combined enemy army groups
                     var enemyAttackers = new NativeHashSet<Entity>(5, Allocator.Temp);
                     enemyAttackers.Add(targetSubGameStatusData.BattleTriggerRequest.Attacker);

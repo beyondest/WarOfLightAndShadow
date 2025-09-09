@@ -157,7 +157,9 @@ namespace SparFlame.UI.SubGameplay
             if (_clickCount == 1)
             {
                 UnitDetailWindow.Instance.Show();
+                UnitDetailWindow.Instance.ShowReturnButton();
                 InteractAbilityWindow.Instance.Show();
+                
             }
             else if (_clickCount >= 2)
             {

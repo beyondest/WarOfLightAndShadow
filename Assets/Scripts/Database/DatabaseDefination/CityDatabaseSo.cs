@@ -62,8 +62,11 @@ namespace SparFlame.Database
 
         [VerticalGroup("Gameplay"), HideLabel] public SubFactionTag subFactionTag;
 
-        [VerticalGroup("Gameplay"), HideLabel, FoldoutGroup("Gameplay/Max Garrison Army Count", expanded: true)]
+        [VerticalGroup("Gameplay"), HideLabel, HorizontalGroup("Gameplay/MaxGarrisonArmyGroupCount")]
         public int maxGarrisonArmyCount;
+
+        [VerticalGroup("Gameplay"), HideLabel, HorizontalGroup("Gameplay/GridSize")]
+        public int gridSize;
 
         [VerticalGroup("Gameplay"), HideLabel] public List<ResourceData> initResources; 
 

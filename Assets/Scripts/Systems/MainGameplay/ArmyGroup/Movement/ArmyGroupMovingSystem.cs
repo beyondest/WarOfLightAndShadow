@@ -107,7 +107,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         : Debug.nonPlayerArmyGroupMovementScale;
                 }
 
-                var moveLength = DeltaHour * movableData.speedPerDay/24 * scale;
+                var moveLength = DeltaHour * movableData.minUnitMoveSpeed * scale;
                 moveLength = math.min(moveLength, maxDisToNextPoint);
                 var targetRotation = quaternion.LookRotationSafe(-direction, math.up());
                 transform.Rotation = math.slerp(transform.Rotation.value, targetRotation,

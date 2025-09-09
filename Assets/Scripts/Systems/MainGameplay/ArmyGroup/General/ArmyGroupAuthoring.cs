@@ -1,5 +1,4 @@
-﻿using System;
-using Sirenix.OdinInspector;
+﻿using Sirenix.OdinInspector;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -43,12 +42,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     saveId = 0,
                     gameplayName = "New Army Group",
                 });
+                AddComponent(entity, new ArmyGroupStatData());
+                AddComponent(entity, new ArmyGroupSkillTimer());
                 
                 // Moving 
                 AddBuffer<ArmyGroupMovingTarget>(entity);
                 AddComponent(entity, new ArmyGroupMovableData
                 {
-                    speedPerDay = authoring.movementInitialSpeed,
+                    minUnitMoveSpeed = authoring.movementInitialSpeed,
                     curWaypoint = 0,
                     isTargetReachable = true
                 });

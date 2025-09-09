@@ -9,6 +9,7 @@ namespace SparFlame.Components.MainGameplay
     {
         public int globalId;
         public int maxGarrisonCount;
+        public int gridSize;
     }
 
     public struct CityData : IComponentData
@@ -16,6 +17,8 @@ namespace SparFlame.Components.MainGameplay
         
     }
 
+    
+    //-----------------Army Group--------------------------//
     public struct CityGarrisonEntity : IBufferElementData
     {
         public Entity ArmyGroup;
@@ -34,14 +37,14 @@ namespace SparFlame.Components.MainGameplay
         public int GlobalIdx;
     }
 
+    //----------------------- Resource -------------------------//
+    
     public enum CityTaskType
     {
         StorageAdd = 0,
         PlantGenerator = 1,
     }
 
-
-    
     [Serializable]
     public struct CityTask : IBufferElementData
     {
@@ -61,7 +64,24 @@ namespace SparFlame.Components.MainGameplay
         public ResourceData resourceData;
         public float accumulatedHours;
     }
+
     
+    //------------------ Env ----------------------//
+    
+    [Serializable]
+    public struct CityAvailableGridNumber : IBufferElementData
+    {
+        public int value;
+    }
+    
+    
+    //------------------ Battle -------------------//
+
+    
+    public struct CityFutureAttackers : IBufferElementData
+    {
+        public Entity ArmyGroup;
+    }
     
 
 }

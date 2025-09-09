@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Systems.General.Battle;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -75,7 +76,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         case ArmyGroupState.Idle:
                             break;
                         case ArmyGroupState.Moving:
-                            // This should never happen
+                            // This should never happen, because moving complete
                             break;
                         case ArmyGroupState.Invade:
                             var relationship = FactionUtils.GetRelationship(PlayerFactionData, generalAttr.faction,
@@ -130,11 +131,15 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         {
                             // Record the last passing by city
                             if (targetGeneralAttr.baseTag == MainGameBaseTag.City
-                                && relationship is Relationship.Ally or Relationship.Player)
+                                && relationship is Relationship.Player)
                                 lastCity.City = target;
                             // Exclude same faction army group
                             continue;
                         }
+                        
+                        // If it should trigger invade battle, only triggers when army group moving complete
+                        // If army group happens to nearby the city, the battle should be triggered by city state machine
+                        if(targetGeneralAttr.baseTag == MainGameBaseTag.City)continue;
 
                         var dis = math.distancesq(TransformLookup[target].Position,
                             TransformLookup[selfEntity].Position);
@@ -148,6 +153,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                 if (finalTarget != Entity.Null)
                 {
+                    // Army group only triggers army group
                     BattleUtils.BeginBattle(SubGameStatus.Encounter, selfEntity, finalTarget, index, ECB);
                 }
             }

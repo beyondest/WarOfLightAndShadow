@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.MainGameplay;
 using SparFlame.UI.General;
+using SparFlame.UI.SubGameplay.StaticWindows;
 using Unity.Entities;
 using UnityEngine;
 
@@ -12,8 +13,8 @@ namespace SparFlame.UI.MainGameplay
 
         public static ArmyGroupAddTypeSelectWindow Instance;
         
-        public Action OnEcsGiveUpAndOnlySelectNoArmyGroupUnits;
-        public Action OnEcsGiveUpAndOnlySelectExistArmyGroupUnits;
+        public event Action OnEcsGiveUpAndOnlySelectNoArmyGroupUnits;
+        public event Action OnEcsGiveUpAndOnlySelectExistArmyGroupUnits;
         private Entity _target;
         public void Show(Vector2? pos = null)
         {
@@ -37,30 +38,26 @@ namespace SparFlame.UI.MainGameplay
 
         public void OnClickBeginAddAndOverrideExistArmyGroup()
         {
-            ArmyGroupManageWindow.Instance.OnEcsAddToArmyGroup?.Invoke(_target, AddToArmyGroupType.AllSelectedOverrideAlreadyIn);
+            ArmyGroupSlotWindow.Instance.OnEcsAddToArmyGroup?.Invoke(_target, AddToArmyGroupType.AllSelectedOverrideAlreadyIn);
             Hide();
-            ArmyGroupManageWindow.Instance.Hide();
         }
 
         public void OnClickBeginAddAndExceptExistArmyGroup()
         {
-            ArmyGroupManageWindow.Instance.OnEcsAddToArmyGroup?.Invoke(_target, AddToArmyGroupType.AllSelectedExceptAlreadyIn);
+            ArmyGroupSlotWindow.Instance.OnEcsAddToArmyGroup?.Invoke(_target, AddToArmyGroupType.AllSelectedExceptAlreadyIn);
             Hide();
-            ArmyGroupManageWindow.Instance.Hide();
         }
 
         public void OnClickGiveUpAndOnlySelectNoArmyGroupUnits()
         {
             OnEcsGiveUpAndOnlySelectNoArmyGroupUnits?.Invoke();
             Hide();
-            ArmyGroupManageWindow.Instance.Hide();
         }
 
         public void OnClickGiveUpAndOnlySelectExistArmyGroupUnits()
         {
             OnEcsGiveUpAndOnlySelectExistArmyGroupUnits?.Invoke();
             Hide();
-            ArmyGroupManageWindow.Instance.Hide();
         }
 
         public void Return()

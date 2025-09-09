@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEditor;
 using Unity.Physics.Authoring;
 
@@ -14,6 +15,21 @@ public class PhysicsShapeConverterWindow : EditorWindow
     private bool showBelongsTo = true;
     private bool showCollidesWith = true;
 
+    private bool removeRenderers;
+    private int maskInitialized;
+    private readonly HashSet<string> initBelongsTo = new()
+    {
+        "Terrain"
+    };
+    private readonly HashSet<string> initCollidesWith = new()
+    {
+        "AllyUnit",
+        "EnemyUnit",
+        "AllyBuilding",
+        "EnemyBuilding",
+        "Resource"
+    };
+    
     [MenuItem("Tools/TerrainTools/Convert MeshCollider to PhysicsShape (With Category)")]
     public static void ShowWindow()
     {
@@ -42,7 +58,7 @@ public class PhysicsShapeConverterWindow : EditorWindow
         showBelongsTo = EditorGUILayout.Foldout(showBelongsTo, "Belongs To", true);
         if (showBelongsTo)
         {
-            DrawToggleGroup(belongsToMask, "BelongsTo");
+            DrawToggleGroup(belongsToMask,true);
             DrawSelectButtons(belongsToMask);
         }
 
@@ -52,9 +68,13 @@ public class PhysicsShapeConverterWindow : EditorWindow
         showCollidesWith = EditorGUILayout.Foldout(showCollidesWith, "Collides With", true);
         if (showCollidesWith)
         {
-            DrawToggleGroup(collidesWithMask, "CollidesWith");
+            DrawToggleGroup(collidesWithMask,false);
             DrawSelectButtons(collidesWithMask);
         }
+
+        GUILayout.Space(10);
+        // 🔹 UI toggle
+        removeRenderers = EditorGUILayout.Toggle("Remove MeshRenderers", removeRenderers);
 
         GUILayout.Space(20);
         if (GUILayout.Button("Convert Selected Objects", EditorStyles.miniButton))
@@ -65,10 +85,36 @@ public class PhysicsShapeConverterWindow : EditorWindow
         EditorGUILayout.EndScrollView();
     }
 
-    private void DrawToggleGroup(bool[] mask, string label)
+    private void DrawToggleGroup(bool[] mask,bool isBelongsTo)
     {
         const int columns = 2;
         int rows = Mathf.CeilToInt(32f / columns);
+
+        // 只在第一次绘制时做一次初始化
+        if (maskInitialized < 2)
+        {
+            if (isBelongsTo)
+            {
+                for (int i = 0; i < 32; i++)
+                {
+                    if (initBelongsTo.Contains(categoryNames[i]))
+                    {
+                        mask[i] = true;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 32; i++)
+                {
+                    if (initCollidesWith.Contains(categoryNames[i]))
+                    {
+                        mask[i] = true;
+                    }
+                }
+            }
+            maskInitialized ++;
+        }
 
         for (int row = 0; row < rows; row++)
         {
@@ -126,6 +172,7 @@ public class PhysicsShapeConverterWindow : EditorWindow
         }
 
         int convertedCount = 0;
+        var removedRendererCount = 0;
         foreach (var root in selectedObjects)
         {
             foreach (var meshCollider in root.GetComponentsInChildren<MeshCollider>(true))
@@ -147,9 +194,19 @@ public class PhysicsShapeConverterWindow : EditorWindow
                 Undo.DestroyObjectImmediate(meshCollider);
                 convertedCount++;
             }
+            // 🔹 如果勾选了 removeRenderers
+            if (removeRenderers)
+            {
+                foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    Undo.DestroyObjectImmediate(renderer);
+                    removedRendererCount++;
+                }
+            }
         }
 
-        Debug.Log($"Conversion complete. Converted {convertedCount} MeshColliders.");
+        Debug.Log($"Conversion complete. Converted {convertedCount} MeshColliders. " +
+                  $"{(removeRenderers ? $"Removed {removedRendererCount} MeshRenderers." : "")}");
     }
 
     private void LoadCategoryNamesAsset()

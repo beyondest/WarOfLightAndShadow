@@ -29,7 +29,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public event Action<FactionTag> OnWinnerWin;  
 
-        public event Action<FactionTag> OnPlayerChooseFaction;
+        public event Action<FactionTag> OnPlayerChooseFactionAndStartGame;
 
         public event Action OnSubGameStartForPlayer;
         public event Action OnMainGameStartForPlayer;
@@ -81,13 +81,12 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void ExitGame()
         {
-            SaveLoadController.Instance.SyncSaveGame();
             Application.Quit();
         }
 
         public void PlayerChooseFactionAndStartGame(FactionTag playerFaction)
         {
-            OnPlayerChooseFaction?.Invoke(playerFaction);
+            OnPlayerChooseFactionAndStartGame?.Invoke(playerFaction);
         }
 
         public void PlayerChooseSavingSlot(int slot, bool ifNew)
@@ -176,8 +175,8 @@ namespace SparFlame.Systems.General.BasicControl
             // Resume game
             PauseGame(true);
             
-            // Save needed saved data
-            SaveLoadController.Instance.SyncSaveGame();
+            // Save needed saved data. This is auto save, so should save to tmp only
+            SaveLoadController.Instance.SyncSaveGame(true);
             OnEcsDealInSubGameTag?.Invoke(_targetSubGameStatusData);
             DestroyGameplayEntities(ClearGameplayEntitiesType.SubGameplay);
 

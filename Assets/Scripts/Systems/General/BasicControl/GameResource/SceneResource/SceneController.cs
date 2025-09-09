@@ -126,7 +126,7 @@ namespace SparFlame.Systems.General.BasicControl
         {
             GeneralResourceManager.Instance.Register(this);
             GameController.Instance.OnPlayerChooseSavingSlot += (_, b) => _ifNewSaving = b;
-            GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
+            GameController.Instance.OnPlayerChooseFactionAndStartGame += factionTag => _playerFaction = factionTag;
         }
 
 

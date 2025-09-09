@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.Garrison;
@@ -49,6 +50,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<ConjuringTag> _conjuringTagLookup;
         private ComponentLookup<GeneratingTag> _generatingTagLookup;
         private ComponentLookup<GenerateAttr> _generateAttrLookup;
+        private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -96,6 +98,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _constructingTimerLookup = state.GetComponentLookup<ConstructingTimer>(true);
             _cityTaskUniqueIdLookup = state.GetComponentLookup<CityTaskUniqueId>(true);
             _conjuringTagLookup = state.GetComponentLookup<ConjuringTag>(true);
+            _inArmyGroupLookup = state.GetComponentLookup<InArmyGroup>(true);
         }
 
         [BurstCompile]
@@ -135,6 +138,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _unitGarrisonBuffLookup.Update(ref state);
             _constructingTimerLookup.Update(ref state);
             _cityTaskUniqueIdLookup.Update(ref state);
+            _inArmyGroupLookup.Update(ref state);
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             var oocSystemConfig = SystemAPI.GetSingleton<OocSystemConfig>();
             // var config = SystemAPI.GetSingleton<StatSystemConfig>();
@@ -154,7 +158,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
-            var job = new BuffApplyJob
+            var job = new BuffApplyToInteractAmountJob
             {
                 ECB = ecbP,
                 GeneralAttrLookup = _generalAttrLookup,
@@ -184,6 +188,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 DarkMagicDamageBuffConfigs = SystemAPI.GetSingletonBuffer<DarkMagicDamageBuffConfig>(),
                 CavalryMoveBuffConfig = SystemAPI.GetSingleton<CavalryMoveBuffConfig>(),
                 GarrisonBuffConfig = SystemAPI.GetSingleton<GarrisonBuffConfig>(),
+                
                 
             }.Schedule(state.Dependency);
             job.Complete();
@@ -221,6 +226,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ConjuringTagLookup = _conjuringTagLookup,
                 GeneratingTagLookup = _generatingTagLookup,
                 GenerateAttrLookup = _generateAttrLookup,
+                InArmyGroupLookup = _inArmyGroupLookup
             }.Schedule();
         }
     }

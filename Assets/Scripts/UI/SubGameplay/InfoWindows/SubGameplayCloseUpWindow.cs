@@ -195,7 +195,8 @@ namespace SparFlame.UI.SubGameplay
                 var expData = _em.GetComponentData<ExpData>(_targetEntity);
                 _expFilled.fillAmount = expData.curValue / expData.maxValue;
                 expValueText.text = (int)expData.curValue + "/" + expData.maxValue;
-                levelText.text = $"Lv. {expData.curLevel}";
+                var countLevel = expData.curLevel + ((int)expData.curTier - 3) * 10;
+                levelText.text = $"Lv. {countLevel}";
             }
 
             // Update camera close up show

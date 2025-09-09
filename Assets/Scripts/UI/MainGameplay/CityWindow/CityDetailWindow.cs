@@ -105,7 +105,7 @@ namespace SparFlame.UI.MainGameplay
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            GameController.Instance.OnPlayerChooseFaction += factionTag => _playerFaction = factionTag;
+            GameController.Instance.OnPlayerChooseFactionAndStartGame += factionTag => _playerFaction = factionTag;
             Hide();
         }
 

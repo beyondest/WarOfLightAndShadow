@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
 {
-    [UpdateInGroup(typeof(InitializationSystemGroup))]
+    [UpdateInGroup(typeof(InitializationSystemGroup)),UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class LoadSystemPlus : SystemBase
     {
         private EntityQuery _loadArmyGroupQuery;
@@ -35,8 +35,9 @@ namespace SparFlame.Systems.General.BasicControl
         private ComponentLookup<HealAbility> _healAbilityLookup;
         private ComponentLookup<HarvestAbility> _harvestAbilityLookup;
         private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
-        
+
         private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
+        private ComponentLookup<ArmyGroupAttr> _armyGroupAttrLookup;
 
         private BufferLookup<SeGarrisonEntity> _garrisonEntitiesLookup;
         private BufferLookup<GarrisonTypeData> _garrisonTypeDataLookup;
@@ -57,6 +58,7 @@ namespace SparFlame.Systems.General.BasicControl
             RequireForUpdate<BuildingEntityPrefabData>();
             RequireForUpdate<UnitEntityPrefabData>();
             RequireForUpdate<PlayerSaveSlot>();
+            RequireForUpdate<GameStatusData>();
             _inGarrisonLookup = GetComponentLookup<SeInGarrison>(true);
             _inverseMassLookup = GetComponentLookup<SeInverseMass>(true);
             _tmpIdLookup = GetComponentLookup<SeTmpId>(true);
@@ -68,7 +70,8 @@ namespace SparFlame.Systems.General.BasicControl
             _harvestAbilityLookup = GetComponentLookup<HarvestAbility>(true);
             _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
             _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
-            
+            _armyGroupAttrLookup = GetComponentLookup<ArmyGroupAttr>(true);
+
             _garrisonEntitiesLookup = GetBufferLookup<SeGarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
             _seConjuringDataLookup = GetBufferLookup<SeConjuringData>(true);
@@ -104,6 +107,21 @@ namespace SparFlame.Systems.General.BasicControl
 
         protected override void OnUpdate()
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if (gameStatusData.Value == GameStatus.Init)
+            {
+                var slot= SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
+                var path = FolderPathUtils.GetPlayerSaveSlotFolder(slot);
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                else
+                {
+                    // When first time load game data, last tmp data should be deleted
+                    DeleteTmpSubData();
+                }
+            }
         }
 
         private void LoadArmyGroupSubData()
@@ -112,8 +130,13 @@ namespace SparFlame.Systems.General.BasicControl
             var armyGroupAttrs = _loadArmyGroupQuery.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
             foreach (var armyGroupAttr in armyGroupAttrs)
             {
-                var armyGroupPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot);
+                // Get tmp file first, if not exist, try prior saving
+                var armyGroupPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot, true);
+                if (!File.Exists(armyGroupPath))
+                    armyGroupPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot, false);
+                // If still not exist, this should never happen
                 if (!File.Exists(armyGroupPath)) continue;
+                
                 using (var deserializeWorld = new World("Deserialization World"))
                 {
                     var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
@@ -180,6 +203,13 @@ namespace SparFlame.Systems.General.BasicControl
             ecb2.Playback(EntityManager);
             ecb2.Dispose();
             _tmpIdxToInstances.Clear();
+
+            _armyGroupAttrLookup.Update(this);
+            var armyGroupSetPositionJob = new ArmyGroupSetUnitsRelativePositionJob
+            {
+                ArmyGroupAttrLookup = _armyGroupAttrLookup,
+            }.ScheduleParallel(Dependency);
+            armyGroupSetPositionJob.Complete();
         }
 
         private void LoadCitySubData(SubGameStatusData targetSubGameStatusData)
@@ -187,11 +217,12 @@ namespace SparFlame.Systems.General.BasicControl
             var city = targetSubGameStatusData.City;
             var cityAttr = SystemAPI.GetComponent<CityAttr>(city);
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
-            var citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot);
-
+            
+            // Try tmp save data first
+            var citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot,true);
+            if(!File.Exists(citySavePath))citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot, false);
             // Load city data
-            var fileExist = File.Exists(citySavePath);
-            if (fileExist)
+            if (File.Exists(citySavePath))
             {
                 using (var deserializeWorld = new World("Deserialization World"))
                 {
@@ -352,7 +383,7 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 ECB = ecb.AsParallelWriter(),
                 InGarrisonLookup = _armyGroupInGarrisonLookup,
-                ArmyGroupManageConfig = SystemAPI.GetSingleton<ArmyGroupManageConfig>()
+                ArmyGroupConfig = SystemAPI.GetSingleton<ArmyGroupConfig>()
             }.ScheduleParallel(Dependency);
             loadArmyGroupJob.Complete();
             ecb.Playback(EntityManager);
@@ -423,6 +454,7 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         curPopulationStorageAddTasks.Add(task);
                     }
+
                     var populationConjureTasks = dem.CreateEntityQuery(typeof(PopulationConjureTask))
                         .GetSingletonBuffer<PopulationConjureTask>();
                     var curPopulationConjureTasks = SystemAPI.GetSingletonBuffer<PopulationConjureTask>();
@@ -436,26 +468,26 @@ namespace SparFlame.Systems.General.BasicControl
                     var worldTimeData = dem.CreateEntityQuery(typeof(WorldTimeData))
                         .GetSingleton<WorldTimeData>();
                     SystemAPI.SetSingleton(worldTimeData);
-                    
+
                     // Set Unique Id
                     var uniqueIdData = dem.CreateEntityQuery(typeof(LastUniqueId))
                         .GetSingleton<LastUniqueId>();
                     SystemAPI.SetSingleton(uniqueIdData);
-                    
+
                     // Set sub game status data
                     var saveCityId = dem.CreateEntityQuery(typeof(SaveCityId))
                         .GetSingleton<SaveCityId>();
                     if (saveCityId.value != 0) // Player save in city sub gameplay
                     {
                         FrameDelayInvoker.Instance.InvokeAfterFrames(1,
-                            () =>
-                            {
-                                GameController.Instance.EnterPlayerCity(Entity.Null, true);
-                            });
+                            () => { GameController.Instance.EnterPlayerCity(Entity.Null, true); });
                     }
+
                     SystemAPI.SetSingleton(new SaveCityId
                     {
-                        mainGameplayTransition = saveCityId.value != 0, // If player save exist in city last time, menu out controller should not hide loading screen
+                        mainGameplayTransition =
+                            saveCityId.value !=
+                            0, // If player save exist in city last time, menu out controller should not hide loading screen
                         value = saveCityId.value
                     });
                 }
@@ -498,25 +530,20 @@ namespace SparFlame.Systems.General.BasicControl
             _tmpIdxToInstances = new NativeHashMap<long, Entity>(100, allocator: Allocator.Persistent);
         }
 
-
-        /*[BurstCompile]
-        [WithNone(typeof(VolumeObstacleSpawnRequest))]
-        [WithAll(typeof(BuildingAttr))]
-        [WithNone(typeof(ConstructingData))]
-        public partial struct BuildingSpawnObstacleJob : IJobEntity
+        private void DeleteTmpSubData()
         {
-            public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public NativeHashMap<int, Entity> Prefabs;
-            [ReadOnly] public ComponentLookup<VolumeObstacleSpawnRequest> RequestLookup;
+            var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>();
 
-            private void Execute([ChunkIndexInQuery] int index, in SubGameplayGeneralAttr generalAttr,
-                Entity selfEntity)
-            {
-                var prefab = Prefabs[generalAttr.ID];
-                var request = RequestLookup[prefab];
-                ECB.AddComponent(index, selfEntity, request);
-                ECB.SetComponentEnabled<VolumeObstacleSpawnRequest>(index, selfEntity, true);
-            }
-        }*/
+            var armyGroupSubDataFolder = SaveUtilities.GetArmyGroupSubDataFolder(playerSaveSlot.Value);
+            var citySubDataFolder = SaveUtilities.GetCitySubDataFolder(playerSaveSlot.Value);
+            var at = Directory.GetFiles(armyGroupSubDataFolder, "*.tmp.sav", SearchOption.AllDirectories);
+            var ct = Directory.GetFiles(citySubDataFolder, "*.tmp.sav", SearchOption.AllDirectories);
+            foreach (var file in at)
+                File.Delete(file);
+            foreach(var file in ct)
+                File.Delete(file);
+        }
+        
+  
     }
 }

@@ -8,7 +8,7 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct ArmyGroupMovableData : IComponentData
     {
-        public float speedPerDay;
+        public float minUnitMoveSpeed;
         public int curWaypoint;
         public bool isTargetReachable;
         public ArmyGroupMovementInfo movementInfo;

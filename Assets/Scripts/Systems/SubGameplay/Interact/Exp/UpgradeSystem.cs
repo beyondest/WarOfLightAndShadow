@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
@@ -156,6 +157,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<CapacityBuildingAttr> DwellingAttrLookup;
             [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
+            [ReadOnly] public ComponentLookup<InArmyGroup> InArmyGroupLookup;
 
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatDataLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableDataLookup;
@@ -177,7 +179,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 var trans = LocalTransformLookup[request.FromEntity];
                 var expData = ExpDataLookup[request.FromEntity];
                 var expStaticConfig = ExpDatabase[fromEntityGeneralAttr.PrefabID];
-                if (fromEntityGeneralAttr.BaseTag == BaseTag.Units && expData.curLevel < expStaticConfig.MaxLevel)
+                if (fromEntityGeneralAttr.BaseTag == BaseTag.Units && expData.curLevel <= expStaticConfig.MaxLevel)
                 {
                     // Next level upgrade
                     // We do not set curValue here because sometimes exp gain may exceed max value, should pass to next level exp
@@ -289,6 +291,19 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             UnitEntity = nextTierEntity,
                             UnitType = UnitAttrLookup[expStaticConfig.NextTierPrefab].Type,
                         });
+                    }
+
+                    if (InArmyGroupLookup.TryGetComponent(request.FromEntity, out var inArmyGroup))
+                    {
+                        var addToArmyGroupRequest = ECB.CreateEntity(index);
+                        ECB.AddComponent<SubGameplayEntityTag>(index, addToArmyGroupRequest);
+                        ECB.AddComponent(index, addToArmyGroupRequest, new AddToArmyGroupRequest
+                        {
+                            ArmyGroup = inArmyGroup.BelongsTo,
+                            Unit = nextTierEntity,
+                            Type = AddToArmyGroupType.OnlySpecifiedUnit
+                        });
+                        
                     }
 
                     if (fromEntityGeneralAttr.BaseTag == BaseTag.Buildings)

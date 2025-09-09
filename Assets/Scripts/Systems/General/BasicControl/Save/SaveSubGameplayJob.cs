@@ -195,34 +195,34 @@ namespace SparFlame.Systems.General.BasicControl
 
             // Modify move speed based on exp level
             var movableData = MovableDataLookup[GlobalIdxToPrefabs[seGlobalId.value]];
-            movableData.MoveSpeed += expData.curLevel * expStaticConfig.MoveSpeedPerLevel;
+            movableData.MoveSpeed += (expData.curLevel - 1) * expStaticConfig.MoveSpeedPerLevel;
             ECB.SetComponent(index, instance, movableData);
 
             // Modify abilities based on exp level
             if (AttackAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[seGlobalId.value], out var attackAbility))
             {
-                attackAbility.Amount += expData.curLevel * expStaticConfig.AttackAmountPerLevel;
-                attackAbility.Speed += expData.curLevel * expStaticConfig.AttackSpeedPerLevel;
-                attackAbility.Targets += expData.curLevel * expStaticConfig.AttackTargetsPerLevel;
-                attackAbility.Range += expData.curLevel * expStaticConfig.AttackRangePerLevel;
+                attackAbility.Amount += (expData.curLevel - 1) * expStaticConfig.AttackAmountPerLevel;
+                attackAbility.Speed += (expData.curLevel - 1) * expStaticConfig.AttackSpeedPerLevel;
+                attackAbility.Targets += (expData.curLevel - 1) * expStaticConfig.AttackTargetsPerLevel;
+                attackAbility.Range += (expData.curLevel - 1) * expStaticConfig.AttackRangePerLevel;
                 ECB.SetComponent(index, instance, attackAbility);
             }
 
             if (HealAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[seGlobalId.value], out var healAbility))
             {
-                healAbility.Amount += expData.curLevel * expStaticConfig.HealAmountPerLevel;
-                healAbility.Speed += expData.curLevel * expStaticConfig.HealSpeedPerLevel;
-                healAbility.Targets += expData.curLevel * expStaticConfig.HealTargetsPerLevel;
-                healAbility.Range += expData.curLevel * expStaticConfig.HealRangePerLevel;
+                healAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HealAmountPerLevel;
+                healAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HealSpeedPerLevel;
+                healAbility.Targets += (expData.curLevel - 1) * expStaticConfig.HealTargetsPerLevel;
+                healAbility.Range += (expData.curLevel - 1) * expStaticConfig.HealRangePerLevel;
                 ECB.SetComponent(index, instance, healAbility);
             }
 
             if (HarvestAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[seGlobalId.value], out var harvestAbility))
             {
-                harvestAbility.Amount += expData.curLevel * expStaticConfig.HarvestAmountPerLevel;
-                harvestAbility.Speed += expData.curLevel * expStaticConfig.HarvestSpeedPerLevel;
-                harvestAbility.Targets += expData.curLevel * expStaticConfig.HarvestTargetsPerLevel;
-                harvestAbility.Range += expData.curLevel * expStaticConfig.HarvestRangePerLevel;
+                harvestAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HarvestAmountPerLevel;
+                harvestAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HarvestSpeedPerLevel;
+                harvestAbility.Targets += (expData.curLevel - 1) * expStaticConfig.HarvestTargetsPerLevel;
+                harvestAbility.Range += (expData.curLevel - 1) * expStaticConfig.HarvestRangePerLevel;
                 ECB.SetComponent(index, instance, harvestAbility);
             }
         }
@@ -273,41 +273,41 @@ namespace SparFlame.Systems.General.BasicControl
             ECB.SetComponent(index, instance, statData);
 
             // Set exp data for unit. Building don't need to, because it doesn't gain exp 
-            if (ExpLookup.TryGetComponent(selfEntity, out var exp))
+            if (ExpLookup.TryGetComponent(selfEntity, out var expData))
             {
-                ECB.SetComponent(index, instance, exp);
+                ECB.SetComponent(index, instance, expData);
                 var expStaticConfig = ExpDatabase[globalId.value];
 
                 // Modify move speed based on exp level
                 var movableData = MovableDataLookup[GlobalIdxToPrefabs[globalId.value]];
-                movableData.MoveSpeed += exp.curLevel * expStaticConfig.MoveSpeedPerLevel;
+                movableData.MoveSpeed += (expData.curLevel - 1) * expStaticConfig.MoveSpeedPerLevel;
                 ECB.SetComponent(index, instance, movableData);
 
                 // Modify abilities based on exp level
                 if (AttackAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[globalId.value], out var attackAbility))
                 {
-                    attackAbility.Amount += exp.curLevel * expStaticConfig.AttackAmountPerLevel;
-                    attackAbility.Speed += exp.curLevel * expStaticConfig.AttackSpeedPerLevel;
-                    attackAbility.Targets += exp.curLevel * expStaticConfig.AttackTargetsPerLevel;
-                    attackAbility.Range += exp.curLevel * expStaticConfig.AttackRangePerLevel;
+                    attackAbility.Amount += (expData.curLevel - 1) * expStaticConfig.AttackAmountPerLevel;
+                    attackAbility.Speed += (expData.curLevel - 1) * expStaticConfig.AttackSpeedPerLevel;
+                    attackAbility.Targets += (expData.curLevel - 1) * expStaticConfig.AttackTargetsPerLevel;
+                    attackAbility.Range += (expData.curLevel - 1) * expStaticConfig.AttackRangePerLevel;
                     ECB.SetComponent(index, instance, attackAbility);
                 }
 
                 if (HealAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[globalId.value], out var healAbility))
                 {
-                    healAbility.Amount += exp.curLevel * expStaticConfig.HealAmountPerLevel;
-                    healAbility.Speed += exp.curLevel * expStaticConfig.HealSpeedPerLevel;
-                    healAbility.Targets += exp.curLevel * expStaticConfig.HealTargetsPerLevel;
-                    healAbility.Range += exp.curLevel * expStaticConfig.HealRangePerLevel;
+                    healAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HealAmountPerLevel;
+                    healAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HealSpeedPerLevel;
+                    healAbility.Targets += (expData.curLevel - 1) * expStaticConfig.HealTargetsPerLevel;
+                    healAbility.Range += (expData.curLevel - 1) * expStaticConfig.HealRangePerLevel;
                     ECB.SetComponent(index, instance, healAbility);
                 }
 
                 if (HarvestAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[globalId.value], out var harvestAbility))
                 {
-                    harvestAbility.Amount += exp.curLevel * expStaticConfig.HarvestAmountPerLevel;
-                    harvestAbility.Speed += exp.curLevel * expStaticConfig.HarvestSpeedPerLevel;
-                    harvestAbility.Targets += exp.curLevel * expStaticConfig.HarvestTargetsPerLevel;
-                    harvestAbility.Range += exp.curLevel * expStaticConfig.HarvestRangePerLevel;
+                    harvestAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HarvestAmountPerLevel;
+                    harvestAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HarvestSpeedPerLevel;
+                    harvestAbility.Targets += (expData.curLevel - 1) * expStaticConfig.HarvestTargetsPerLevel;
+                    harvestAbility.Range += (expData.curLevel - 1) * expStaticConfig.HarvestRangePerLevel;
                     ECB.SetComponent(index, instance, harvestAbility);
                 }
             }
@@ -454,6 +454,19 @@ namespace SparFlame.Systems.General.BasicControl
                 unit.Unit = TmpIdxToInstances[unit.SaveTmpId];
                 units[i] = unit;
             }
+        }
+    }
+    
+    [BurstCompile]
+    public partial struct ArmyGroupSetUnitsRelativePositionJob : IJobEntity
+    {
+        [ReadOnly] public ComponentLookup<ArmyGroupAttr> ArmyGroupAttrLookup;
+        private void Execute(ref LocalTransform transform, in InArmyGroup inArmyGroup)
+        {
+            var position = transform.Position;
+            var armyGroupAttr = ArmyGroupAttrLookup[inArmyGroup.BelongsTo];
+            position = armyGroupAttr.loadingCenter + armyGroupAttr.loadingScale * position;
+            transform.Position = position;
         }
     }
     

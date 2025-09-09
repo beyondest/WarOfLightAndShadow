@@ -77,9 +77,8 @@ namespace SparFlame.Database
                         curTier = item.curTier,
                         curValue = 0,
                         maxValue = item.expMaxValue,
-                        curLevel = 0
+                        curLevel = 1
                     });
-                    
                 }
 
                 // Sight
@@ -154,14 +153,10 @@ namespace SparFlame.Database
                         InteractType = InteractType.Harvest
                     });
                 }
-
-
-          
             }
 
             protected void BakeVolumeObstacleAttr(GeneralDataItem item, Entity entity)
             {
-              
                 const float volumeRadius = 0f;
                 var areaType = (AreaType)item.curTier;
                 var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();

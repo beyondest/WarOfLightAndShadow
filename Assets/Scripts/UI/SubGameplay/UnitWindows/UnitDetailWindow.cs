@@ -21,7 +21,8 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private Image interactAbilityTriangle;
         [SerializeField] private Image generalFactionImage;
         [SerializeField] private Image subFactionImage;
-    
+        [SerializeField] private GameObject returnToMulti2DWindowButton;
+        
         [Header("Unit Detail")]
         [SerializeField] private TMP_Text unitMoveSpeed;
 
@@ -41,6 +42,7 @@ namespace SparFlame.UI.SubGameplay
             base.Hide();
             TargetEntity = Entity.Null;
             _panelRectTransform.anchoredPosition = _originalPanelPos;
+            returnToMulti2DWindowButton.SetActive(false);
         }
         public void ClearCloseUpTarget()
         {
@@ -61,10 +63,26 @@ namespace SparFlame.UI.SubGameplay
             return true;
         }
 
+        public void ShowReturnButton()
+        {
+            returnToMulti2DWindowButton.SetActive(true);
+        }
+
         public bool HasTarget()
         {
             return TargetEntity != Entity.Null;
         }
+
+        #region ButtonMethods
+
+        public void OnClickReturnToMulti2DWindow()
+        {
+            Hide();
+            InteractAbilityWindow.Instance.Hide();
+            returnToMulti2DWindowButton.SetActive(false);
+        }
+
+        #endregion
        
         // Internal Data
         protected Entity TargetEntity = Entity.Null;
@@ -94,6 +112,7 @@ namespace SparFlame.UI.SubGameplay
             panel.SetActive(false);
             _originalPanelPos = panel.GetComponent<RectTransform>().anchoredPosition;
             _panelRectTransform = panel.GetComponent<RectTransform>();
+            returnToMulti2DWindowButton.SetActive(false);
         }
 
 
@@ -139,6 +158,7 @@ namespace SparFlame.UI.SubGameplay
             idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, generalAttr.PrefabID).Sprite;
             UpdateCostSlots();
         }
+        
         public virtual void UpdateCostSlots()
         {
             var costList = Em.GetBuffer<CostList>(TargetEntity);

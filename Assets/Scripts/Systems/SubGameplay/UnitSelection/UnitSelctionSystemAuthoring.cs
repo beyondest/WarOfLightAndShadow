@@ -1,5 +1,7 @@
+using System;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using Unity.Collections;
 using UnityEngine;
 using Unity.Entities;
 using UnityEngine.Serialization;
@@ -30,6 +32,21 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                 AddComponent(entity, new UnitSelectionConfig
                 {
                     DragMinDistanceSq = authoring.dragMinDistance * authoring.dragMinDistance,
+                });
+                var unitTypes = new FixedList128Bytes<int>();
+                foreach (UnitType type in Enum.GetValues(typeof(UnitType)))
+                {
+                    unitTypes.Add((int)type);
+                }
+                AddComponent(entity, new UnitSelectionFilter
+                {
+                    FilteredUnitTypes =  unitTypes,
+                    UnitTypeFilterEnabled = false,
+                    MinLevel = 0,
+                    MaxLevel = int.MaxValue,
+                    LevelFilterEnabled = false,
+                    FilteredUnitTier = Tier.Tier1,
+                    TierFilterEnabled = false
                 });
             }
         }

@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.SubGameplay.Interact;
 using SparFlame.Systems.SubGameplay.Movement;
@@ -32,6 +33,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<AITag> _aiTagLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
+        private ComponentLookup<HoldOnPosition> _holdOnPositionLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -52,6 +54,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _regeneratingTag = state.GetComponentLookup<RegeneratingTag>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
             _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
+            _holdOnPositionLookup = state.GetComponentLookup<HoldOnPosition>(true);
+
             
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
             _movableLookup = state.GetComponentLookup<MovableData>();
@@ -82,6 +86,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _aiTagLookup.Update(ref state);
             _inGarrisonLookup.Update(ref state);
             _darkShieldTauntedBuffLookup.Update(ref state);
+            _holdOnPositionLookup.Update(ref state);
             // _squeezeLookup.Update(ref state);
             // _autoGiveWayLookup.Update(ref state);
             new CheckMovingState
@@ -104,6 +109,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 SightSystemConfig = sightConfig,
                 GarrisonSystemConfig = garrisonSystemConfig,
                 DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
+                HoldOnPositionLookUp = _holdOnPositionLookup,
             }.ScheduleParallel();
         }
 
@@ -125,6 +131,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<AITag> AITagLookup;
             [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
+            [ReadOnly] public ComponentLookup<HoldOnPosition> HoldOnPositionLookUp;
 
 
             // Resolve self stuck will modify transform and lookup random transform for squeeze direction
@@ -168,7 +175,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if (ifResolveStuckByChangeState) return;
 
                 // Not complete the moving. May change target if some other things happen
-                if (CheckShouldChangeTarget(ref stateData, ref movableData,
+                if (CheckShouldChangeAndIfChangeTarget(ref stateData, ref movableData,
                         ref targets, in selfFaction, transform,
                         selfEntity, index)) return;
 
@@ -184,7 +191,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             }
 
 
-            private bool CheckShouldChangeTarget(ref BasicStateData stateData,
+            private bool CheckShouldChangeAndIfChangeTarget(ref BasicStateData stateData,
                 ref MovableData movableData,
                 ref DynamicBuffer<InsightTarget> targets,
                 in FactionTag selfFactionTag,
@@ -238,6 +245,12 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 out var buildingTrans)
                             && Config.MaxDisSqUnitToBuildingForGarrison <
                             math.distancesq(selfTransform.Position, buildingTrans.Position);
+                        var holdOnUnitOutOfDefendRange = false;
+                        if (HoldOnPositionLookUp.TryGetComponent(selfEntity, out var holdOnPosition))
+                        {
+                            holdOnUnitOutOfDefendRange = Config.MaxDisSqUnitToHoldOnPosition < math.distancesq(selfTransform.Position,
+                                holdOnPosition.Position);
+                        }
                         var canHeal = HealLookup.HasComponent(selfEntity);
                         var canHarvest = HarvestLookup.HasComponent(selfEntity);
                         var canAttack = AttackLookup.HasComponent(selfEntity);
@@ -254,8 +267,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                                        && !stateData
                                                            .Focus // This is for the time enemy need to attack very far away building and debugging need
                                                        && Config.MaxDistanceSqFollowForAITag < targetFromSelfDisSq;
-                            // AI should not follow so remove target 
-                            if (aiTagShouldNotFollow)
+                            // AI should not follow so far target or hold on unit should not follow so far target
+                            if (aiTagShouldNotFollow || holdOnUnitOutOfDefendRange)
                             {
                                 int i;
                                 for (i = 0; i < targets.Length; i++)
@@ -270,10 +283,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 }
                             }
 
-                            if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange)
+                            if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange && !holdOnUnitOutOfDefendRange)
                                 return false;
                         }
-
                   
                         // Garrison unit Drop aggro， if Ai, should focus go back and regenerating hp
                         if (garrisonUnitOutOfDefendRange)
@@ -287,6 +299,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             // if(isAi)
                             //     ECB.AddComponent<GarrisonAiHpRegeneratingTag>(index, selfEntity);
                         }
+
+                        // Hold on unit out of defend range and no target in sight, march back to hold on position
+                        if (holdOnUnitOutOfDefendRange && targets.IsEmpty)
+                        {
+                           StateUtils.MarchToPosition(ref stateData, ref movableData, holdOnPosition.Position,
+                               ECB, index, selfEntity, false);
+                           return true;
+                        }
+                     
                     }
 
                     // Current target invalid, check if turn to idle

@@ -11,15 +11,14 @@ using UnityEngine;
 
 namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
 {
-    public class ButtonBackToMainWorld : ButtonUtils.SelfButton
+    public class ButtonBackToMainWorld : MonoBehaviour
     {
         [SerializeField] private GameObject backToMainWorldPanel;
         public static ButtonBackToMainWorld Instance;
         public event Action<Entity> OnEcsDeleteArmyGroup;
 
-        protected override void Awake()
+        private void Awake()
         {
-            base.Awake();
             if (!Instance)
             {
                 Instance = this;
@@ -27,8 +26,12 @@ namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
             else
             {
                 Destroy(gameObject);
-                return;
             }
+          
+        }
+
+        private void Start()
+        {
             GameController.Instance.OnSwitchGameStatusForSystems += status =>
             {
                 backToMainWorldPanel.SetActive(status.SubGameStatus == SubGameStatus.PlayerCity);
@@ -36,7 +39,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
         }
 
 
-        public override void OnClick()
+        public void OnClick()
         {
             var emptyArmyGroups = new List<Entity>();
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;

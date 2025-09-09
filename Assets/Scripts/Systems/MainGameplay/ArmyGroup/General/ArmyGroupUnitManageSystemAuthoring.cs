@@ -7,17 +7,17 @@ using UnityEngine;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
-    public class ArmyGroupManageSystemAuthoring : MonoBehaviour
+    public class ArmyGroupUnitManageSystemAuthoring : MonoBehaviour
     {
         [AssetsOnly] public GameObject lightArmyGroupPrefab;
         [AssetsOnly] public GameObject darkArmyGroupPrefab;
         public float3 hidePosition;
-        private class ArmyGroupManageSystemAuthoringBaker : Baker<ArmyGroupManageSystemAuthoring>
+        private class ArmyGroupManageSystemAuthoringBaker : Baker<ArmyGroupUnitManageSystemAuthoring>
         {
-            public override void Bake(ArmyGroupManageSystemAuthoring authoring)
+            public override void Bake(ArmyGroupUnitManageSystemAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                AddComponent(entity, new ArmyGroupManageConfig
+                AddComponent(entity, new ArmyGroupConfig
                 {
                     DarkArmyGroupPrefab = GetEntity(authoring.darkArmyGroupPrefab, TransformUsageFlags.Dynamic),
                     LightArmyGroupPrefab = GetEntity(authoring.lightArmyGroupPrefab, TransformUsageFlags.Dynamic),

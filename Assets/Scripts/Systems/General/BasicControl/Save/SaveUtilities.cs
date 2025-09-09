@@ -31,10 +31,7 @@ namespace SparFlame.Systems.General.BasicControl
         public int value;
         public bool mainGameplayTransition;
     }
-    
-    
-    
-  
+
 
     [GenerateTestsForBurstCompatibility]
     public unsafe struct BurstableMemoryBinaryWriter : BinaryWriter
@@ -87,7 +84,7 @@ namespace SparFlame.Systems.General.BasicControl
         }
     }
 
-    
+
     public unsafe class StreamBinaryWriter : BinaryWriter
     {
         private readonly Stream stream;
@@ -206,7 +203,7 @@ namespace SparFlame.Systems.General.BasicControl
 #endif
         }
     }
-    
+
     public struct SaveUtilities
     {
         private const string CitySubDataFolder = "CitySubData";
@@ -215,29 +212,47 @@ namespace SparFlame.Systems.General.BasicControl
         private const string CityMainDataName = "CityMainData";
         private const string ArmyGroupMainDataName = "ArmyMainData";
         private const string GameMainDataName = "GameMainData";
+
         public static long GetTmpIdForSaving(Entity entity)
         {
             // Index 占低位（0~31），Version 占高位（32~63）
             return ((long)entity.Version << 32) | (uint)entity.Index;
         }
 
-        public static string GetCitySubDataPath(int cityId, int playerSaveSlot)
+        public static string GetCitySubDataFolder(int playerSaveSlot)
+        {
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
+            return cityRootFolder;
+        }
+        public static string GetCitySubDataPath(int cityId, int playerSaveSlot, bool isTmp)
         {
             var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
             var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
             if (!Directory.Exists(cityRootFolder))
                 Directory.CreateDirectory(cityRootFolder);
-            var finalPath = Path.Combine(cityRootFolder, $"{cityId}.sav"); 
+            var finalPath = isTmp
+                ? Path.Combine(cityRootFolder, $"{cityId}.tmp.sav")
+                : Path.Combine(cityRootFolder, $"{cityId}.sav");
             return finalPath;
         }
 
-        public static string GetArmyGroupSubDataPath(long saveId, int playerSaveSlot)
+        public static string GetArmyGroupSubDataFolder(int playerSaveSlot)
+        {
+            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var armyGroupRootFolder = Path.Combine(saveRootFolder, ArmyGroupSubDataFolder);
+            return armyGroupRootFolder;
+        }
+
+        public static string GetArmyGroupSubDataPath(long saveId, int playerSaveSlot, bool isTmp)
         {
             var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
             var armyGroupRootFolder = Path.Combine(saveRootFolder, ArmyGroupSubDataFolder);
             if (!Directory.Exists(armyGroupRootFolder))
                 Directory.CreateDirectory(armyGroupRootFolder);
-            var finalPath = Path.Combine(armyGroupRootFolder, $"{saveId}.sav");
+            var finalPath = isTmp
+                ? Path.Combine(armyGroupRootFolder, $"{saveId}.tmp.sav")
+                : Path.Combine(armyGroupRootFolder, $"{saveId}.sav");
             return finalPath;
         }
 
@@ -270,10 +285,5 @@ namespace SparFlame.Systems.General.BasicControl
             var gameMainDataPath = Path.Combine(generalDataFolder, $"{GameMainDataName}.sav");
             return gameMainDataPath;
         }
-        
     }
-    
-    
-
-
 }

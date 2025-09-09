@@ -189,6 +189,8 @@ namespace SparFlame.Database
                         AddComponent<UnitGarrisonBuff>(entity);
                         SetComponentEnabled<UnitGarrisonBuff>(entity, false);
                     }
+                    AddComponent<SprintBuff>(entity);
+                    SetComponentEnabled<SprintBuff>(entity, false);
                 }
                 
                 else if (item.factionTag == FactionTag.Dark)

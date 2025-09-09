@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Audio;
@@ -42,6 +43,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public ComponentLookup<ConjuringTag> ConjuringTagLookup;
         [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
         [ReadOnly] public ComponentLookup<GenerateAttr> GenerateAttrLookup;
+        [ReadOnly] public ComponentLookup<InArmyGroup> InArmyGroupLookup;
 
 
         [ReadOnly] public BufferLookup<CostList> CostListLookup; // For population release
@@ -120,7 +122,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         {
                             Type = ExpGainType.AttackerGainByAttack,
                             GainEntity = request.Interactor,
-                            Multiplier = expData.curLevel + ((int)expData.curTier - 3) * 10 + 1f
+                            Multiplier = expData.curLevel + ((int)expData.curTier - 3) * 10
                         });
                     }
 
@@ -260,6 +262,13 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             UnitAttrLookup[request.Interactee]);
                     }
 
+                    if (InArmyGroupLookup.TryGetComponent(request.Interactee, out var inArmyGroup))
+                    {
+                        StatUtils.GenerateRemoveFromArmyGroupRequest(request.Interactee, 
+                            interacteeAttr.PrefabID,
+                            index,
+                            inArmyGroup, ECB);
+                    }
                     KillUnit(request, index, interacteeAttr);
                     break;
                 case BaseTag.Buildings:

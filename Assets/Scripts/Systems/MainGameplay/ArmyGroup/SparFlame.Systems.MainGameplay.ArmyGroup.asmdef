@@ -14,7 +14,8 @@
     "Unity.AI.Navigation",
     "SparFlame.Core",
     "SparFlame.Components",
-    "SparFlame.Systems.General.Audio"
+    "SparFlame.Systems.General.Audio",
+    "SparFlame.Systems.General.Battle"
   
   ],
   "includePlatforms": [],

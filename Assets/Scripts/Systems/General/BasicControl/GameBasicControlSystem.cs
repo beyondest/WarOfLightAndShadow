@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Core.Utils;
@@ -39,9 +38,7 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 Value = GameStatus.NotStarted
             });
-            EntityManager.CreateSingleton(new GameTimeData
-            {
-            });
+            EntityManager.CreateSingleton(new GameTimeData());
             EntityManager.CreateSingleton(new GameTimeScale
             {
                 Value = 1f
@@ -70,10 +67,10 @@ namespace SparFlame.Systems.General.BasicControl
                 GameController.Instance.OnPause += isSwitching => { PauseOrResumeGame(true, isSwitching); };
                 GameController.Instance.OnResume += isSwitching => { PauseOrResumeGame(false, isSwitching); };
                 GameController.Instance.OnBackToMainMenu += DestroyInitialization;
-                GameController.Instance.OnPlayerChooseFaction += SetPlayerFaction;
+                GameController.Instance.OnPlayerChooseFactionAndStartGame += SetPlayerFactionAndStartGame;
                 GeneralResourceManager.Instance.OnAllResourceLoaded += BeginSystemInit;
                 GameController.Instance.OnSwitchGameStatusForSystems += SwitchGameStatusForSystems;
-                GameController.Instance.OnPlayerChooseSavingSlot += ChooseSavingSlot;
+                GameController.Instance.OnPlayerChooseSavingSlot += SetPlayerSavingSlot;
             }
         }
 
@@ -142,7 +139,7 @@ namespace SparFlame.Systems.General.BasicControl
             _enterSystemInitState = true;
         }
 
-        private void SetPlayerFaction(FactionTag factionTag)
+        private void SetPlayerFactionAndStartGame(FactionTag factionTag)
         {
             EntityManager.CreateSingleton(new PlayerFactionData
             {
@@ -254,14 +251,9 @@ namespace SparFlame.Systems.General.BasicControl
             SystemAPI.SetSingleton(targetSubGameStatusData);
         }
 
-        private void ChooseSavingSlot(int slot, bool ifNew)
+        private void SetPlayerSavingSlot(int slot, bool ifNew)
         {
             SystemAPI.SetSingleton(new PlayerSaveSlot { Value = slot });
-            var path = FolderPathUtils.GetPlayerSaveSlotFolder(slot);
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
         }
 
    

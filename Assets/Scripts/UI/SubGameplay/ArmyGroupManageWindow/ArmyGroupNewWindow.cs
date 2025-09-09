@@ -16,7 +16,7 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private GameObject selectIconPanel;
         // Interface
         public static ArmyGroupNewWindow Instance;
-        public Action<string, ArmyGroupIconType> OnEcsNewArmyGroup;
+        public event Action<string, ArmyGroupIconType> OnEcsNewArmyGroup;
         
         
         public override void Show(Vector2? pos = null)

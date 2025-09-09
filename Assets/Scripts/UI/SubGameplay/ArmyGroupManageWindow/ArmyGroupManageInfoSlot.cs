@@ -1,20 +1,31 @@
-﻿using SparFlame.UI.General;
+﻿using System.Collections.Generic;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Interfaces;
+using SparFlame.UI.General;
 using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.UI.MainGameplay
 {
-    public class ArmyGroupManageInfoSlot : MultiShowSlot
+    public class ArmyGroupManageInfoSlot : MultiShowSlot,IResourceManager
     {
         // Config
-        [SerializeField] private GameObject controlPanel; // Delete, add function
         [SerializeField] private ArmyGroupManageDetailInfoSlot armyGroupDetailInfoSlot;
-   
+        [SerializeField] private ArmyGroupManageCompositionWindow compoPanel;
+        
 
         public void SetTarget(in ArmyGroupManageInfo manageInfo)
         {
             armyGroupDetailInfoSlot.TrySwitchTarget(manageInfo.ArmyGroupEntity);
             _targetEntity = manageInfo.ArmyGroupEntity;
+            compoPanel.TrySwitchTarget(_targetEntity);
+        }
+        
+        public void UpdateComposition(bool tierFilterEnabled, Tier currentFilterTier,
+        List<UnitType> filterUnitTypes)
+        {
+            compoPanel.UpDateComposition(tierFilterEnabled, currentFilterTier, filterUnitTypes);
         }
 
         public void OnClickDelete()
@@ -22,25 +33,25 @@ namespace SparFlame.UI.MainGameplay
             ArmyGroupManageWindow.Instance.DeleteArmyGroup(Index);
         }
 
-        public void OnClickAdd()
-        {
-            ArmyGroupManageWindow.Instance.AddToArmyGroup(Index);
-        }
-        public void OnClickShowComposition()
-        {
-            if (ArmyGroupManageCompositionWindow.Instance.TrySwitchTarget(_targetEntity))
-            {
-                ArmyGroupManageCompositionWindow.Instance.Show();
-            }
-            
-        }
+  
 
-        public void OnClickCloseComposition()
+        public void ClearSelected()
         {
-            ArmyGroupManageCompositionWindow.Instance.Hide();
+            compoPanel.ClearSelected();
         }
 
         private Entity _targetEntity;
 
+        public bool IsInitialized => compoPanel.IsInitialized;
+        public float InitProgress => compoPanel.InitProgress;
+        public void LoadResources()
+        {
+            compoPanel.LoadResources();
+        }
+
+        public void UnloadResources()
+        {
+            compoPanel.UnloadResources();
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -12,6 +13,18 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
     public class CityAuthoring : MonoBehaviour
     {
         public int globalIdx;
+        public List<int> availableGridNums = new()
+        {
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+        };
+        
         private class CityAuthoringBaker : Baker<CityAuthoring>
         {
             public override void Bake(CityAuthoring authoring)
@@ -31,7 +44,15 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 {
                     globalId = authoring.globalIdx,
                     maxGarrisonCount = item.maxGarrisonArmyCount,
+                    gridSize = item.gridSize,
                 });
+                
+                // City available grid numbers for army group to march in
+                var numBuffer = AddBuffer<CityAvailableGridNumber>(entity);
+                foreach (var num in authoring.availableGridNums)
+                {
+                    numBuffer.Add(new CityAvailableGridNumber { value = num });
+                }
                 
                 // City Tasks and Resources
                 AddBuffer<CityTask>(entity);

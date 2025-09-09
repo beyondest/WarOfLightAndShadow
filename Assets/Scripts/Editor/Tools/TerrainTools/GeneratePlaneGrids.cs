@@ -19,7 +19,7 @@ namespace Editor
         private float _slopeTileSize = 30;
         private int _edgeCount = 1;
 
-        [MenuItem("Tools/TerrainTools/Generate Plane Grid")]
+        [MenuItem("Tools/TerrainTools/Generate Edge And Corners")]
         public static void ShowWindow()
         {
             GetWindow<PlaneGridGenerator>("Plane Grid Generator");
