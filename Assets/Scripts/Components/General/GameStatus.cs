@@ -30,7 +30,6 @@ namespace SparFlame.Components.General
     {
         public SubGameStatus SubGameStatus;
         public Entity City;
-        public BattleTriggerRequest BattleTriggerRequest;
     }
     
     public struct InSubGameTag : IComponentData{}

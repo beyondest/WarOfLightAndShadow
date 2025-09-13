@@ -253,8 +253,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // Pre Check 
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (selfStateData.CurState != InteractState.Attacking
-                    && selfStateData.TargetState != InteractState.Healing
-                    && selfStateData.TargetState != InteractState.Harvesting) return;
+                    && selfStateData.CurState != InteractState.Healing
+                    && selfStateData.CurState != InteractState.Harvesting) return;
 
                 if (!InsightTarget.TryGetBuffer(selfEntity, out var targetList)) return; // This should never return
 

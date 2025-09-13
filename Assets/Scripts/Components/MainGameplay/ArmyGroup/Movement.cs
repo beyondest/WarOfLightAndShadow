@@ -18,6 +18,7 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupMovingTarget : IBufferElementData
     {
         public float3 position;
+        public float2 boxColliderSizeXz;
     }
 
 
@@ -27,6 +28,17 @@ namespace SparFlame.Components.MainGameplay
         Complete,
         NotComplete
     }
+
+    public enum ArmyGroupPathCalculationInfo
+    {
+        None = 0,
+        FailedAtQuery = 1,
+        FailedAtStartingCalculation = 2,
+        FailedAfterCalculation = 3,
+        FailedAfterFindingStraightPath  = 4,
+        Success = 5
+    }
+    
     public struct ArmyGroupMovingTag : IComponentData, IEnableableComponent{}
 
     
@@ -36,6 +48,8 @@ namespace SparFlame.Components.MainGameplay
     {
         public int curTargetIndex;
         public float3 startPosition;
+        public ArmyGroupPathCalculationInfo calculationInfo;
+        public float2 boxColliderSizeXz;
     }
     public struct ArmyGroupCalculateEnable : IComponentData, IEnableableComponent{}
 
@@ -52,4 +66,8 @@ namespace SparFlame.Components.MainGameplay
     }
    
     public struct ArmyGroupWalkableTag : IComponentData{}
+
+
+
+    
 }

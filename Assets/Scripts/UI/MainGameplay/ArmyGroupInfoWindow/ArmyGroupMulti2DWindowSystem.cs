@@ -14,7 +14,6 @@ namespace SparFlame.UI.MainGameplay
         public int UnitCounts;
         public int AvgLevel;
         public float TotalHpRatio;
-        public List<int> UnitCountPerTier;
     }
     public partial class ArmyGroupMulti2DWindowSystem : SystemBase
     {
@@ -65,12 +64,12 @@ namespace SparFlame.UI.MainGameplay
                     AvgLevel = armyGroupAttr.ValueRO.avgLevel,
                     UnitCounts = SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length,
                     TotalHpRatio = statData.ValueRO.totalMaxHp == 0 ? 0 : statData.ValueRO.totalCurrentHp / statData.ValueRO.totalMaxHp,
-                    UnitCountPerTier = new List<int>
-                    {
-                        armyGroupAttr.ValueRO.tier1UnitCount,
-                        armyGroupAttr.ValueRO.tier2UnitCount,
-                        armyGroupAttr.ValueRO.tier3UnitCount,
-                    },
+                    // UnitCountPerTier = new List<int>
+                    // {
+                    //     armyGroupAttr.ValueRO.tier1UnitCount,
+                    //     armyGroupAttr.ValueRO.tier2UnitCount,
+                    //     armyGroupAttr.ValueRO.tier3UnitCount,
+                    // },
                 });
             }
             ArmyGroupMulti2DWindow.Instance.UpdateSelectedView(_infos, selectionData.CurrentSelectFaction);

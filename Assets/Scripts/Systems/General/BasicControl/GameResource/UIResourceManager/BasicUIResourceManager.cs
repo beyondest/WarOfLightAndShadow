@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using UnityEngine;
@@ -27,7 +28,8 @@ namespace SparFlame.Systems.General.BasicControl
         [SerializeField] private string factionCrystalHpBlankSpriteSuffix;
         [SerializeField] private string generalFactionCitySpriteSuffix;
         [SerializeField] private string subFactionCitySpriteSuffix;
-
+        [SerializeField] private string ecoBuffSpriteSuffix;
+        
         
         // Interfaces
         public static BasicUIResourceManager Instance;
@@ -50,6 +52,8 @@ namespace SparFlame.Systems.General.BasicControl
         
         public readonly Dictionary<FactionTag, Sprite> GeneralFactionIconSprites = new();
         public readonly Dictionary<SubFactionTag, Sprite> SubFactionIconSprites = new();
+        
+        public readonly Dictionary<EcoType, Sprite> EcoBuffSprites = new();
         
         // Internal Data
         private readonly ResourceLoadingUtils.AddressableResourceGroup _group = new();
@@ -115,6 +119,9 @@ namespace SparFlame.Systems.General.BasicControl
             
             _group.Add(ResourceLoadingUtils.LoadTypeSuffix<MainGameplayCursorType, Sprite>(mainGameplayCursorTypeSuffix,
                 result => {ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, MainGameplayCursorSprites); }));
+            
+            _group.Add(ResourceLoadingUtils.LoadTypeSuffix<EcoType, Sprite>(ecoBuffSpriteSuffix,
+                result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, EcoBuffSprites)));
         }
 
         public void UnloadResources()
@@ -137,6 +144,8 @@ namespace SparFlame.Systems.General.BasicControl
         
             GeneralFactionIconSprites.Clear();
             SubFactionIconSprites.Clear();
+            
+            EcoBuffSprites.Clear();
             
         }
     }

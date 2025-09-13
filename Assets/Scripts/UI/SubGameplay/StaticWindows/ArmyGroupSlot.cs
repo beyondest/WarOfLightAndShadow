@@ -49,11 +49,19 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         public void SlotMoveRight()
         {
-            if(!_isLeft)return;
+            if(_isRight)return;
             var pos = slotTrans.anchoredPosition;
             pos.x += leftDeltaAmount;
             slotTrans.anchoredPosition = pos;
-            _isLeft = false;
+            _isRight = true;
+        }
+        public void SlotMoveLeft()
+        {
+            if(!_isRight)return;
+            var pos = slotTrans.anchoredPosition;
+            pos.x -= leftDeltaAmount;
+            slotTrans.anchoredPosition = pos;
+            _isRight = false;
         }
 
 
@@ -86,8 +94,8 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 var inputData = _inputQuery.GetSingleton<InputUnitControlData>();
                 ArmyGroupSlotWindow.Instance.SelectArmyGroupUnits(_armyGroup,inputData.AddUnit,
                     Index);
-                if(!_isLeft)
-                    SlotMoveLeft();
+                if(!_isRight)
+                    SlotMoveRight();
             });
         }
 
@@ -97,24 +105,17 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             var inputData = _inputQuery.GetSingleton<InputUnitControlData>();
             if (inputData.SingleSelect || inputData.DragSelectStart )
             {
-                if(_isLeft)SlotMoveRight();
+                if(_isRight)SlotMoveLeft();
             }
         }
 
         #endregion
         private Entity _armyGroup;
         private EntityQuery _inputQuery;
-        private bool _isLeft;
+        private bool _isRight;
 
         
-        private void SlotMoveLeft()
-        {
-            if(_isLeft)return;
-            var pos = slotTrans.anchoredPosition;
-            pos.x -= leftDeltaAmount;
-            slotTrans.anchoredPosition = pos;
-            _isLeft = true;
-        }
+       
 
   
         

@@ -18,7 +18,6 @@ namespace SparFlame.Components.SubGameplay
     {
         None = 0,
         MagicSwordSplash = 1,
-        ClericHealCircle = 2,
         MagicTowerProjectile = 3,
         MagicTowerCircle = 4,
         LightShield = 5,

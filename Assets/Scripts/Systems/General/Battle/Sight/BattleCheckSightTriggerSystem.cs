@@ -19,7 +19,7 @@ namespace SparFlame.Systems.General.Battle
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<SimulationSingleton>();
-            state.RequireForUpdate<BattleCheckSightData>();
+            state.RequireForUpdate<BattleCheckSightDataBelongsTo>();
             state.RequireForUpdate<GameStatusData>();
             _targetLookup = state.GetBufferLookup<BattleCheckSightTarget>();
         }
@@ -42,11 +42,11 @@ namespace SparFlame.Systems.General.Battle
         public partial struct BattleCheckSightTriggerJob : IJobEntity
         {
             [NativeDisableParallelForRestriction] public BufferLookup<BattleCheckSightTarget> TargetLookup;
-            private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in BattleCheckSightData triggerData,
+            private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in BattleCheckSightDataBelongsTo triggerDataBelongsTo,
                 Entity entity)
             {
                 // This may happen when belongs to entity is dead but the sight not been removed by sight system yet
-                if (!TargetLookup.TryGetBuffer(triggerData.BelongsTo, out var targets)) return;
+                if (!TargetLookup.TryGetBuffer(triggerDataBelongsTo.Value, out var targets)) return;
                 foreach (var triggerEvent in events)
                 {
                     var target = triggerEvent.GetOtherEntity(entity);

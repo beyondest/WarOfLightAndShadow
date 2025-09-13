@@ -49,12 +49,11 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
-                BattleTriggerRequest = default
             });
             EntityManager.CreateSingleton(new PlayerSaveSlot());
 
             EntityManager.CreateSingleton(new LastUniqueId());
-            EntityManager.CreateSingleton(new SaveCityId());
+            EntityManager.CreateSingleton(new LastTimeSaveCityId());
         }
 
         protected override void OnStartRunning()
@@ -67,10 +66,9 @@ namespace SparFlame.Systems.General.BasicControl
                 GameController.Instance.OnPause += isSwitching => { PauseOrResumeGame(true, isSwitching); };
                 GameController.Instance.OnResume += isSwitching => { PauseOrResumeGame(false, isSwitching); };
                 GameController.Instance.OnBackToMainMenu += DestroyInitialization;
-                GameController.Instance.OnPlayerChooseFactionAndStartGame += SetPlayerFactionAndStartGame;
+                GameController.Instance.OnClickSlotAndStartGame += SetSavingSlotAndPlayerFactionData;
                 GeneralResourceManager.Instance.OnAllResourceLoaded += BeginSystemInit;
                 GameController.Instance.OnSwitchGameStatusForSystems += SwitchGameStatusForSystems;
-                GameController.Instance.OnPlayerChooseSavingSlot += SetPlayerSavingSlot;
             }
         }
 
@@ -94,7 +92,7 @@ namespace SparFlame.Systems.General.BasicControl
                 var gaming = EntityManager.CreateEntity();
                 EntityManager.AddComponent<MainGamingTag>(gaming);
               
-                GameController.Instance.MainGameStartForPlayer();
+                GameController.Instance.MainGameStartForPlayer(false);
             }
 
             _gameBasicConfig = SystemAPI.GetSingleton<GameBasicConfig>();
@@ -139,13 +137,15 @@ namespace SparFlame.Systems.General.BasicControl
             _enterSystemInitState = true;
         }
 
-        private void SetPlayerFactionAndStartGame(FactionTag factionTag)
+        private void SetSavingSlotAndPlayerFactionData(FactionTag factionTag,bool ifNewSlot,int slotIndex)
         {
             EntityManager.CreateSingleton(new PlayerFactionData
             {
                 faction = factionTag,
                 subFaction = SubFactionTag.None
             });
+            SystemAPI.SetSingleton(new PlayerSaveSlot { Value = slotIndex });
+
         }
 
         private void DestroyInitialization()
@@ -159,7 +159,6 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
-                BattleTriggerRequest = default
             });
            
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerFactionData>());
@@ -251,10 +250,7 @@ namespace SparFlame.Systems.General.BasicControl
             SystemAPI.SetSingleton(targetSubGameStatusData);
         }
 
-        private void SetPlayerSavingSlot(int slot, bool ifNew)
-        {
-            SystemAPI.SetSingleton(new PlayerSaveSlot { Value = slot });
-        }
+    
 
    
         

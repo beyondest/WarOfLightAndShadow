@@ -9,6 +9,7 @@ namespace SparFlame.Components.MainGameplay
         Invade,
         Support,
         Garrison,
+        Station, 
     }
 
     public struct ArmyGroupStateData : IComponentData

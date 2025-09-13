@@ -1,17 +1,13 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace SparFlame.Components.MainGameplay
 {
-    
-
-
     // Army Group Attr
 
     public enum ArmyGroupIconType
@@ -27,28 +23,29 @@ namespace SparFlame.Components.MainGameplay
         Snake,
         Wolf
     }
-    
+
     [Serializable]
     public struct ArmyGroupAttr : IComponentData
     {
         // Static data
         public ArmyGroupIconType iconType;
         public FixedString32Bytes gameplayName;
-        public long saveId;        // This id is generated when new an army group, and will never duplicate nor change.
+        public long saveId; // This id is generated when new an army group, and will never duplicate nor change.
         public float createTimeInTotalHours;
-        
+
         // Unit data
         public int avgLevel;
-        public int tier1UnitCount;
-        public int tier2UnitCount;
-        public int tier3UnitCount;
-        
-        // This is used to record units formation info
-        public float3 boundingBoxMin;
-        public float3 boundingBoxMax;
-        public float3 loadingCenter;
-        public float3 loadingScale;
+        // public int tier1UnitCount;
+        // public int tier2UnitCount;
+        // public int tier3UnitCount;
 
+        // This is used to record units formation info
+        public float2 boundingBoxDelta;
+
+        public float3
+            loadingCenter; // This value should be set when an army group garrisons a city or leaves a garrisoned city
+
+        public float loadingScale;
     }
 
     [Serializable]
@@ -57,17 +54,16 @@ namespace SparFlame.Components.MainGameplay
         public float totalMaxHp;
         public float totalCurrentHp;
         public float recoveredHpRatio;
-        public int lastCheckTotalHours; // Used for hp auto recovery, reset to current total hours immediately when army group is in garrison state
-    }
 
+        public int
+            lastCheckTotalHours; // Used for hp auto recovery, reset to current total hours immediately when army group is in garrison state
+    }
 
 
     public struct LastPassingByPlayerCity : IComponentData
     {
         public Entity City;
     }
-
-
 
 
     public struct ArmyGroupUtils
@@ -82,72 +78,136 @@ namespace SparFlame.Components.MainGameplay
             var armyGroupAttr = em.GetComponentData<ArmyGroupAttr>(armyGroup);
             var armyGroupMovableData = em.GetComponentData<ArmyGroupMovableData>(armyGroup);
             var armyGroupUnits = em.GetBuffer<ArmyGroupUnit>(armyGroup);
-            var armyGroupStatData= em.GetComponentData<ArmyGroupStatData>(armyGroup);
-            
-            
+            var armyGroupStatData = em.GetComponentData<ArmyGroupStatData>(armyGroup);
+
+
             var unitCount = armyGroupUnits.Length;
             var totalLevel = 0;
-            var totalTier1Count = 0;
-            var totalTier2Count = 0;
-            var totalTier3Count = 0;
+            // var totalTier1Count = 0;
+            // var totalTier2Count = 0;
+            // var totalTier3Count = 0;
             var minSpeed = float.MaxValue;
             var currentHp = 0f;
             var maxHp = 0f;
 
-          
 
-            
             for (var i = 0; i < unitCount; i++)
             {
                 var unit = armyGroupUnits[i].Unit;
                 var expData = em.GetComponentData<ExpData>(unit);
                 var movableData = em.GetComponentData<MovableData>(unit);
                 var statData = em.GetComponentData<StatData>(unit);
-                if(movableData.MoveSpeed < minSpeed) minSpeed = movableData.MoveSpeed;
+                if (movableData.MoveSpeed < minSpeed) minSpeed = movableData.MoveSpeed;
                 totalLevel += expData.curLevel;
                 currentHp += statData.curValue;
                 maxHp += statData.maxValue;
-                
-                
-                switch (expData.curTier)
-                {
-                    case Tier.Tier1:
-                        totalTier1Count++;
-                        break;
-                    case Tier.Tier2:
-                        totalTier2Count++;
-                        break;
-                    case Tier.Tier3:
-                        totalTier3Count++;
-                        break;
-                    default:
-                        BurstSafe.UnexpectedEnum(expData.curTier);
-                        break;
-                }
+
+
+                // switch (expData.curTier)
+                // {
+                //     case Tier.Tier1:
+                //         totalTier1Count++;
+                //         break;
+                //     case Tier.Tier2:
+                //         totalTier2Count++;
+                //         break;
+                //     case Tier.Tier3:
+                //         totalTier3Count++;
+                //         break;
+                //     default:
+                //         BurstSafe.UnexpectedEnum(expData.curTier);
+                //         break;
+                // }
             }
-            
-            armyGroupAttr.avgLevel = unitCount == 0? 0 : totalLevel / unitCount;
-            armyGroupMovableData.minUnitMoveSpeed = unitCount == 0? 0 : minSpeed;
-            
-            
-            armyGroupAttr.tier1UnitCount = totalTier1Count;
-            armyGroupAttr.tier2UnitCount = totalTier2Count;
-            armyGroupAttr.tier3UnitCount = totalTier3Count;
-            
-            
+
+            armyGroupAttr.avgLevel = unitCount == 0 ? 0 : totalLevel / unitCount;
+            armyGroupMovableData.minUnitMoveSpeed = unitCount == 0 ? 0 : minSpeed;
+
+            //
+            // armyGroupAttr.tier1UnitCount = totalTier1Count;
+            // armyGroupAttr.tier2UnitCount = totalTier2Count;
+            // armyGroupAttr.tier3UnitCount = totalTier3Count;
+            //
+            //
             armyGroupStatData.totalCurrentHp = currentHp;
             armyGroupStatData.totalMaxHp = maxHp;
-            
+
             em.SetComponentData(armyGroup, armyGroupAttr);
             em.SetComponentData(armyGroup, armyGroupMovableData);
             em.SetComponentData(armyGroup, armyGroupStatData);
-            
+        }
+
+
+        public static void ResetArmyGroupMovableData(ref ArmyGroupMovableData movableData,
+            ref ArmyGroupCalculatePathData pathData,
+            ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWaypoints,
+            ref PathVisualizeData visualizeData,
+            ref NavAgentComponent navAgent,
+            EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity)
+        {
+            movableData.curWaypoint = 0;
+            pathData.curTargetIndex = -1;
+            pathData.calculationInfo = ArmyGroupPathCalculationInfo.None;
+            pathData.boxColliderSizeXz = float2.zero;
+            visualizeData.preWaypoint = 0;
+            finalWaypoints.Clear();
+            movableData.isTargetReachable = true;
+            navAgent.calculationComplete = true;
+            ecb.SetComponentEnabled<ArmyGroupCalculateEnable>(index, selfEntity, false);
+            ecb.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, false);
+        }
+
+        public static void ResetArmyGroupMovableData(ref ArmyGroupMovableData movableData,
+            ref ArmyGroupCalculatePathData pathData,
+            ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWaypoints,
+            ref PathVisualizeData visualizeData,
+            ref NavAgentComponent navAgent,
+            EntityCommandBuffer ecb, Entity selfEntity)
+        {
+            movableData.curWaypoint = 0;
+            pathData.curTargetIndex = -1;
+            pathData.calculationInfo = ArmyGroupPathCalculationInfo.None;
+            pathData.boxColliderSizeXz = float2.zero;
+            visualizeData.preWaypoint = 0;
+            movableData.isTargetReachable = true;
+            navAgent.calculationComplete = true;
+            ecb.SetComponentEnabled<ArmyGroupCalculateEnable>(selfEntity, false);
+            finalWaypoints.Clear();
+        }
+
+        public static bool IsSelectable(EntityManager entityManager, Entity entity,
+            in PlayerFactionData playerFactionData)
+        {
+            if (!entityManager.HasComponent<ArmyGroupSelected>(entity)) return false;
+            if (entityManager.HasComponent<ArmyGroupInGarrison>(entity)) return false;
+            var generalAttr = entityManager.GetComponentData<MainGameplayGeneralAttr>(entity);
+            var relationship =
+                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+            return relationship == Relationship.Player;
+        }
+
+        /// <summary>
+        /// 计算 pos 到以 centerPos 为中心，rect 为长宽的矩形的最近点（2D XZ 平面）。
+        /// </summary>
+        /// <param name="centerPos">矩形中心 (x,z)</param>
+        /// <param name="rect">矩形尺寸 (width, height)</param>
+        /// <param name="pos">待投影点 (x,z)</param>
+        /// <returns>矩形上的最近点 (x,z)</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 GetNearestPointOnRect(float3 centerPos, float2 rect, float3 pos)
+        {
+            var halfX = rect.x * 0.5f;
+            var halfZ = rect.y * 0.5f;
+
+            var left = centerPos.x - halfX;
+            var right = centerPos.x + halfX;
+            var bottom = centerPos.z - halfZ;
+            var top = centerPos.z + halfZ;
+
+            var clampedX = math.clamp(pos.x, left, right);
+            var clampedZ = math.clamp(pos.z, bottom, top);
+
+            return new float3(clampedX,centerPos.y, clampedZ);
         }
     }
-
-    
-
-    
-  
-    
 }

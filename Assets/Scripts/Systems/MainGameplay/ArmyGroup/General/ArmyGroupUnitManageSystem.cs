@@ -125,7 +125,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                 break;
                             }
                         }
-                        else
+                        else // Remove single specified unit
                         {
                             data2.Count--;
                             if (data2.Count == 0)
@@ -137,9 +137,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                 var armyGroupUnit = entityBuffer[j];
                                 if (armyGroupUnit.Unit == request.Unit)
                                 {
-                                    var statData = SystemAPI.GetComponent<StatData>(armyGroupUnit.Unit);
-                                    armyGroupStatData.totalCurrentHp -= statData.curValue;
-                                    armyGroupStatData.totalMaxHp -= statData.maxValue;
+                                    // Safety check, avoid unit dead remove 
+                                    if (SystemAPI.HasComponent<StatData>(armyGroupUnit.Unit))
+                                    {
+                                        var statData = SystemAPI.GetComponent<StatData>(armyGroupUnit.Unit);
+                                        armyGroupStatData.totalCurrentHp -= statData.curValue;
+                                        armyGroupStatData.totalMaxHp -= statData.maxValue;
+                                    }
                                     entityBuffer.RemoveAt(j);
                                     break;
                                 }

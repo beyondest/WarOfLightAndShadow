@@ -49,7 +49,6 @@ namespace SparFlame.Systems.General.Input
                 EndMovingAndClearAllTargets = _customInputActions.ArmyGroupControl.EndMoving.WasPerformedThisFrame() ,
                 ClearAllTargets = _customInputActions.ArmyGroupControl.ResetAllTargets.WasPerformedThisFrame() ,
                 DeleteLastTarget = _customInputActions.ArmyGroupControl.ResetOnlyTheLastTarget.WasPerformedThisFrame() ,
-                MoveOutAllSameIconArmyGroups = _customInputActions.ArmyGroupControl.MoveOutAllSameIcon.WasPerformedThisFrame() ,
             });
             var deltaTime = SystemAPI.Time.DeltaTime;
             if (_customInputActions.ArmyGroupControl.ResetAllTargets.ReadValue<float>() > 0)

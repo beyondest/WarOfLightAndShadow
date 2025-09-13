@@ -18,7 +18,8 @@
     "SparFlame.Core",
     "SparFlame.Components",
     "SparFlame.Systems.General.BasicControl",
-    "SparFlame.Database"
+    "SparFlame.Database",
+    "SparFlame.Systems.General.Battle"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

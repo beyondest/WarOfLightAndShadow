@@ -85,7 +85,6 @@ namespace SparFlame.UI.MainGameplay
         // Internal Data
         private Entity _targetEntity;
         private EntityManager _em;
-        private FactionTag _playerFaction;
         
         #region EventFunctions
 
@@ -105,7 +104,6 @@ namespace SparFlame.UI.MainGameplay
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            GameController.Instance.OnPlayerChooseFactionAndStartGame += factionTag => _playerFaction = factionTag;
             Hide();
         }
 
@@ -118,13 +116,12 @@ namespace SparFlame.UI.MainGameplay
         {
             var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(_targetEntity);
             var cityAttr = _em.GetComponentData<CityAttr>(_targetEntity);
-            if (generalAttr.faction == _playerFaction)
-            {
-                controlPanel.SetActive(true);
-            }
+            var playerFactionData = _em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
+            var relationShip =
+                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+            controlPanel.SetActive(relationShip == Relationship.Player);
 
-            var idStart = DatabaseManager.CityDatabaseSo.idStart;
-            var item = DatabaseManager.CityDatabaseSo.items[cityAttr.globalId - idStart];
+            var item = DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.globalId);
             cityNameText.text = item.gameplayName;
             cityDescriptionText.text = item.description;
             generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];

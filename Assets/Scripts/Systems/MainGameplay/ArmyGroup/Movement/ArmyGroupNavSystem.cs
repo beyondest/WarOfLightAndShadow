@@ -10,6 +10,7 @@ using Unity.Burst;
 using Unity.Jobs;
 using Unity.Collections;
 using UnityEngine.Experimental.AI;
+
 // ReSharper disable UseIndexFromEndExpression
 
 
@@ -22,7 +23,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         private NavMeshWorld _navMeshWorld;
         private NativeList<NavMeshQuery> _navMeshQueries;
         private EntityQuery _validArmyGroupQuery;
-        
+
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -34,7 +35,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 .WithAll<ArmyGroupCalculatePathData>()
                 .WithAll<ArmyGroupCalculateEnable>()
                 .Build();
-            
         }
 
 
@@ -44,33 +44,35 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             var config = SystemAPI.GetSingleton<ArmyGroupNavConfig>();
             if (!_navMeshQueries.IsCreated)
             {
-                InitNavMeshQueries( config);
+                InitNavMeshQueries(config);
             }
-            
+
             if (_validArmyGroupQuery.IsEmpty) return;
             var entities = _validArmyGroupQuery.ToEntityArray(Allocator.TempJob);
             if (entities.Length > _navMeshQueries.Length)
             {
                 ExtendNavMeshQueries(entities.Length - _navMeshQueries.Length, in config);
             }
+
             var ecbs = new NativeArray<EntityCommandBuffer>(entities.Length, Allocator.TempJob);
             for (var i = 0; i < entities.Length; i++)
             {
                 ecbs[i] = new EntityCommandBuffer(Allocator.TempJob);
             }
+
             var jobHandles = new NativeArray<JobHandle>(entities.Length, Allocator.TempJob);
             var calculationPathDatas =
                 _validArmyGroupQuery.ToComponentDataArray<ArmyGroupCalculatePathData>(Allocator.TempJob);
             var navAgents =
-            _validArmyGroupQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
-            
+                _validArmyGroupQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
+
             for (var i = 0; i < entities.Length; i++)
             {
-                var calculatePathJob = new CalculatePathJob
+                var calculatePathJob = new ArmyGroupCalculatePathJob
                 {
                     Entity = entities[i],
                     NavAgent = navAgents[i],
-                    FromPosition = calculationPathDatas[i].startPosition,
+                    CalculationPathData = calculationPathDatas[i],
                     ECB = ecbs[i],
                     Query = _navMeshQueries[i],
                     Iterations = config.maxIterations,
@@ -79,13 +81,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 };
                 jobHandles[i] = calculatePathJob.Schedule();
             }
-            
+
             JobHandle.CompleteAll(jobHandles);
             for (var i = 0; i < entities.Length; i++)
             {
                 ecbs[i].Playback(state.EntityManager);
                 ecbs[i].Dispose();
             }
+
             entities.Dispose();
             navAgents.Dispose();
             calculationPathDatas.Dispose();
@@ -96,45 +99,71 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            if(_navMeshQueries.IsCreated)
+            if (_navMeshQueries.IsCreated)
                 DisposeNavMeshQueries();
         }
 
 
         [BurstCompile]
-        private struct CalculatePathJob : IJob
+        private struct ArmyGroupCalculatePathJob : IJob
         {
             public Entity Entity;
             public EntityCommandBuffer ECB;
             public NavMeshQuery Query;
             public NavAgentComponent NavAgent;
-            [ReadOnly] public float3 FromPosition;
+            public ArmyGroupCalculatePathData CalculationPathData;
             [ReadOnly] public int MaxPathSize;
             [ReadOnly] public int Iterations;
             [ReadOnly] public float3 ExtentsOffset;
 
             public void Execute()
             {
-
                 NavAgent.calculationComplete = false;
                 ECB.SetComponent(Entity, NavAgent);
-                
-                var toPosition = NavAgent.targetPosition;
-                var extents = NavAgent.extents;
+
+                var ifTargetHasNoCollider = math.lengthsq(CalculationPathData.boxColliderSizeXz) < 0.001f;
+                var toPosition = ifTargetHasNoCollider
+                    ? NavAgent.targetPosition
+                    : ArmyGroupUtils.GetNearestPointOnRect(NavAgent.targetPosition,
+                        CalculationPathData.boxColliderSizeXz,
+                        CalculationPathData.startPosition);
+
+                var extents = ifTargetHasNoCollider
+                    ? NavAgent.extents
+                    : new float3(CalculationPathData.boxColliderSizeXz.x, NavAgent.extents.y, CalculationPathData.boxColliderSizeXz.y);
                 extents += ExtentsOffset;
-                var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.agentId);
+                var fromLocation = Query.MapLocation(CalculationPathData.startPosition, extents, NavAgent.agentId);
                 var toLocation = Query.MapLocation(toPosition, extents, NavAgent.agentId);
-                if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
+
+
+                if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation))
+                {
+                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAtQuery;
+                    ECB.SetComponent(Entity, CalculationPathData);
+                    return;
+                }
+
 
                 var status = Query.BeginFindPath(fromLocation, toLocation);
 
                 // Notice : If target is not reachable, and extents is also not reachable, it will return Failure this step
                 // The status only return one main status binding with a detailed status
                 // Main Status : InProgress, Success, Failure
-                if (status is not (PathQueryStatus.InProgress or PathQueryStatus.Success)) return;
+                if (status is not (PathQueryStatus.InProgress or PathQueryStatus.Success))
+                {
+                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAtStartingCalculation;
+                    ECB.SetComponent(Entity, CalculationPathData);
+                    return;
+                }
+
                 status = Query.UpdateFindPath(Iterations, out _);
 
-                if ((status & PathQueryStatus.Success) == 0) return;
+                if ((status & PathQueryStatus.Success) == 0)
+                {
+                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAfterCalculation;
+                    ECB.SetComponent(Entity, CalculationPathData);
+                    return;
+                }
 
                 Query.EndFindPath(out var pathSize);
 
@@ -152,7 +181,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var returningStatus = PathUtils.FindStraightPath
                 (
                     Query,
-                    FromPosition,
+                    CalculationPathData.startPosition,
                     toPosition,
                     polygonIds,
                     pathSize,
@@ -175,16 +204,23 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             {
                                 position = location.position
                             };
-                            ECB.AppendToBuffer(Entity,newWayPoint);
+                            ECB.AppendToBuffer(Entity, newWayPoint);
                         }
                     }
 
                     NavAgent.currentWaypoint = 0;
                     NavAgent.calculationComplete = true;
+                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.Success;
 
-                    ECB.SetComponentEnabled<ArmyGroupCalculateEnable>(Entity,false);
+                    ECB.SetComponentEnabled<ArmyGroupCalculateEnable>(Entity, false);
                     ECB.SetComponent(Entity, NavAgent);
                 }
+                else
+                {
+                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAfterFindingStraightPath;
+                }
+
+                ECB.SetComponent(Entity, CalculationPathData);
 
                 result.Dispose();
                 straightPathFlag.Dispose();
@@ -215,11 +251,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
 
         private void DisposeNavMeshQueries()
-        { 
+        {
             foreach (var query in _navMeshQueries)
             {
                 query.Dispose();
             }
+
             _navMeshQueries.Dispose();
         }
 

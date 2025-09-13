@@ -13,7 +13,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
         [Header("Visualize config")] 
 
-        public float armyGroupPathVisualizeInterval;
         [AssetsOnly]
         public GameObject reachableRef;
         [AssetsOnly]
@@ -31,7 +30,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 {
                     ReachableRef = GetEntity(authoring.reachableRef,TransformUsageFlags.Dynamic),
                     UnreachableRef = GetEntity(authoring.unreachableRef,TransformUsageFlags.Dynamic),
-                    Interval = authoring.armyGroupPathVisualizeInterval
                 });
                 var entity2 = CreateAdditionalEntity(TransformUsageFlags.None);
                 AddComponentObject(entity2, authoring.volumeObstacleConfig);
@@ -42,19 +40,18 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     [Serializable]
     public struct ArmyGroupMovingSystemConfig : IComponentData
     {
-        public float finalReachRange;
+        public float finalReachRangeNormal;
+        public float finalReachRangeForCity;
         public float3 extents;
         public float waypointReachRange;
         public float rotationSpeed;
         public float moveSpeedScale;
-        public int pathRecordingCountInterval;
     }
 
     public struct ArmyGroupPathVisualizeConfig : IComponentData
     {
         public Entity ReachableRef;
         public Entity UnreachableRef;
-        public float Interval;
     }
 
     [Serializable]

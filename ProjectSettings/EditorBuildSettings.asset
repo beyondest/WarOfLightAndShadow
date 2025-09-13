@@ -18,8 +18,17 @@ EditorBuildSettings:
     path: Assets/Resources/Scenes/NormalScenes/SubWorld.unity
     guid: e7f8348869f1de14b90c24b16d8c8156
   - enabled: 1
-    path: Assets/Resources/Scenes/Cities/LightCity/SubFaction1/Level1/LightCity1_1_2.unity
+    path: Assets/Resources/Scenes/Cities/DarkCity/SubFaction1/DarkCity1_1_1.unity
     guid: 8757051c4f5082c498e3973791936b8b
+  - enabled: 1
+    path: Assets/Resources/Scenes/Cities/LightCity/SubFaction1/Level1/LightCity1_1_1.unity
+    guid: e961a32ae85bae346b5717b0d35b7d73
+  - enabled: 1
+    path: Assets/Resources/Scenes/Env/EnvType1.unity
+    guid: 6a05fa0484f602b4aad42404916c9168
+  - enabled: 1
+    path: Assets/Resources/Scenes/Cities/LightCity/SubFaction1/Level1/LightCity1_1_2.unity
+    guid: c6c605cefc7db49459dfbd85c9771618
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 874e5dc9588b4e745b50f53b6b4cedd1, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 1fb6ec391cb5e7943b6cfbaf6c3bb49c, type: 2}

@@ -20,6 +20,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [ReadOnly] public ComponentLookup<ArmyGroupMovingTag> ArmyGroupMovingTagLookup;
         [ReadOnly] public ArmyGroupState TargetState;
         [ReadOnly] public Entity TargetEntity;
+        [ReadOnly] public float2 TargetBoxColliderSizeXz;
 
         private void Execute([ChunkIndexInQuery] int index, ref ArmyGroupMovableData movableData,
             ref DynamicBuffer<ArmyGroupMovingTarget> targets,
@@ -59,7 +60,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
             targets.Add(new ArmyGroupMovingTarget
             {
-                position = TargetPosition
+                position = TargetPosition,
+                boxColliderSizeXz = TargetBoxColliderSizeXz
             });
         }
     }
@@ -71,7 +73,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public EntityCommandBuffer.ParallelWriter ECB;
 
         private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,
-            ref ArmyGroupMovableData movableData)
+            ref ArmyGroupMovableData movableData, in ArmyGroupStateData stateData)
         {
             if (!movableData.isTargetReachable)
             {
@@ -82,6 +84,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     Name = HintName.ArmyGroupNotReachable
                 });
                 return;
+            }
+
+            if (stateData.TargetState == ArmyGroupState.Invade)
+            {
+                ECB.AppendToBuffer(index, stateData.Target, new CityFutureInvaders
+                {
+                    ArmyGroup = selfEntity
+                });
             }
 
             movableData.movementInfo = ArmyGroupMovementInfo.NotComplete;
@@ -128,11 +138,22 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             ArmyGroupUtils.ResetArmyGroupMovableData(ref movableData, ref pathData, ref finalWayPoints,
                 ref visualizeData, ref navAgent, ECB, index, selfEntity);
+            if (stateData.TargetState == ArmyGroupState.Invade)
+            {
+                var request = ECB.CreateEntity(index);
+                ECB.AddComponent<MainGameplayEntityTag>(index, request);
+                ECB.AddComponent(index, request, new RemoveCityFutureInvaderRequest
+                {
+                    ArmyGroup = selfEntity,
+                    City = stateData.Target
+                });
+            }
             movableData.movementInfo = ArmyGroupMovementInfo.None;
             stateData.CurState = ArmyGroupState.Idle;
             stateData.TargetState = ArmyGroupState.Idle;
             targets.Clear();
             ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, false);
+            
         }
     }
 

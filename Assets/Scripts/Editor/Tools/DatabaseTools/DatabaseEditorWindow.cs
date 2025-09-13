@@ -41,6 +41,10 @@ namespace Editor
         
         [Unity.Collections.ReadOnly, LabelText("City Databases"), ShowInInspector]
         public List<CityDatabaseSo> cityDatabases = new();
+
+        [Unity.Collections.ReadOnly, LabelText("Eco Databases"), ShowInInspector]
+        public List<EcoDatabaseSo> ecoDatabaseSos = new();
+        
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -55,6 +59,7 @@ namespace Editor
             buffDatabases = FindAllAssets<BuffDatabaseSo>("Buff Database");
             hintDatabases = FindAllAssets<HintDatabaseSo>("Hint Database");
             cityDatabases = FindAllAssets<CityDatabaseSo>("City Database");
+            ecoDatabaseSos = FindAllAssets<EcoDatabaseSo>("Eco Database");
         }
 
         private List<T> FindAllAssets<T>(string label) where T : ScriptableObject

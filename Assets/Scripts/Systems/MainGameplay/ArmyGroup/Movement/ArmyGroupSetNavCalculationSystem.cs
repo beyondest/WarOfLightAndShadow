@@ -54,6 +54,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 Entity selfEntity)
             {
                 if (!navAgent.calculationComplete) return;
+                // Try add this section way points to final way points first, even target is not reachable
                 if (wayPoints.Length != 0)
                 {
                     ECB.SetComponentEnabled<PathVisualizeEnabled>(index, selfEntity, true);
@@ -63,12 +64,19 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     }
                     var lastPosition = wayPoints[wayPoints.Length - 1].position;
                     var targetPosition = targets[data.curTargetIndex].position;
-                    if (math.distance(lastPosition, targetPosition) > Config.finalReachRange)
+                    var finalReachRange = Config.finalReachRangeNormal;
+                    if (math.lengthsq(data.boxColliderSizeXz) > 0.001f)
+                    {
+                        targetPosition = ArmyGroupUtils.GetNearestPointOnRect(targetPosition, data.boxColliderSizeXz, data.startPosition);
+                        finalReachRange = Config.finalReachRangeForCity;
+                    }
+                    if (math.distance(lastPosition, targetPosition) > finalReachRange)
                     {
                         movableData.isTargetReachable = false;
                     }
                     wayPoints.Clear();
                 }
+                
               
                 // Already finish all targets calculation
                 if (data.curTargetIndex >= targets.Length - 1)
@@ -86,6 +94,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 data.startPosition = data.curTargetIndex - 1 < 0
                     ? transform.Position
                     : targets[data.curTargetIndex - 1].position;
+                data.boxColliderSizeXz = targets[data.curTargetIndex].boxColliderSizeXz;
                 navAgent.extents = Config.extents;
                 navAgent.targetPosition = targets[data.curTargetIndex].position;
             }

@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
@@ -24,6 +25,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<AnimationStateData> _animationStateLookup;
         private ComponentLookup<DarkArcherBuff> _darkArcherBuffLookup;
+        private ComponentLookup<StatData> _statLookup;
+        private ComponentLookup<SubGameplayGeneralAttr> _subGameplayGeneralAttrLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -40,6 +43,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _animationStateLookup = state.GetComponentLookup<AnimationStateData>();
             _darkArcherBuffLookup = state.GetComponentLookup<DarkArcherBuff>(true);
+            _statLookup = state.GetComponentLookup<StatData>(true);
+            _subGameplayGeneralAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
         }
 
         [BurstCompile]
@@ -56,6 +61,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _transformLookup.Update(ref state);
             _animationStateLookup.Update(ref state);
             _darkArcherBuffLookup.Update(ref state);
+            _statLookup.Update(ref state);
+            _subGameplayGeneralAttrLookup.Update(ref state);
             var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             new CheckAnimationEventJob
             {
@@ -68,7 +75,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 HashStringToEventInfos = _hashStringToEventInfos,
                 LocalTransformLookup = _transformLookup,
                 DarkArcherBuffConfigs = SystemAPI.GetSingletonBuffer<DarkArcherBuffConfig>(),
-                DarkArcherBuffLookup = _darkArcherBuffLookup
+                DarkArcherBuffLookup = _darkArcherBuffLookup,
+                StatLookup = _statLookup,
+                SubGameplayGeneralAttrLookup = _subGameplayGeneralAttrLookup
             }.ScheduleParallel();
             new UnitDeadJob
             {
@@ -157,12 +166,14 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public DynamicBuffer<DarkArcherBuffConfig> DarkArcherBuffConfigs;
             [ReadOnly] public ComponentLookup<DarkArcherBuff> DarkArcherBuffLookup;
+            [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> SubGameplayGeneralAttrLookup;
+            [ReadOnly] public ComponentLookup<StatData> StatLookup;
 
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<LinkedEntityGroup> children,
-                in BasicStateData stateData, in LocalTransform transform,
-                in SubGameplayGeneralAttr subGameplayGeneralAttr, ref UnitAttr unitAttr, in ExpData expData, Entity selfEntity,
+                in BasicStateData stateData, in LocalTransform transform, ref UnitAttr unitAttr, in ExpData expData,
+                Entity selfEntity,
                 in InteractAbilityBonus bonus, in DynamicBuffer<InsightTarget> targets
             )
             {
@@ -170,6 +181,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     && stateData.CurState != InteractState.Healing
                     && stateData.CurState != InteractState.Harvesting) return;
 
+                var subGameplayGeneralAttr = SubGameplayGeneralAttrLookup[selfEntity];
                 if (!LocalTransformLookup.TryGetComponent(stateData.TargetEntity, out var targetTransform)) return;
                 var selfTransform = LocalTransformLookup[selfEntity];
                 // Check model animation events buffer to raise interact stat change 
@@ -214,7 +226,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 UnitType.Magic when stateData.CurState == InteractState.Attacking => DamageType.Magic,
                                 UnitType.Worker when stateData.CurState == InteractState.Attacking => DamageType
                                     .Physical,
-                                _ => DamageType.None
+                                UnitType.Magic when stateData.CurState == InteractState.Healing => DamageType.None,
+                                _ => BurstSafe.UnexpectedEnum(unitAttr.Type, DamageType.None)
                             }
                         };
 
@@ -228,10 +241,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 statChangeRequest.Interactee = Entity.Null;
                             var vfx = new VFXRequest
                             {
-                                // If attacking, then vfx starts from attacker, otherwise starts from target position
-                                SpawnPosition = stateData.CurState == InteractState.Healing
-                                    ? targetTransform.Position
-                                    : selfTransform.Position,
+                                // Vfx will start from attacker position, and reach target position by parabola system
+                                SpawnPosition = selfTransform.Position,
                                 Filter = new VFXSubFilter
                                 {
                                     FactionFilterEnable = true,
@@ -288,6 +299,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                         };
                                         ECB.AddComponent(index, extraArrowVfxRequest, extraArrowVfx);
                                     }
+
                                     for (int j = 0; j < config.extraArrowCount - count; j++)
                                     {
                                         var extraArrowVfxRequest = ECB.CreateEntity(index);
@@ -316,7 +328,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 InteractState.Attacking => ~subGameplayGeneralAttr.Faction,
                                 InteractState.Healing => subGameplayGeneralAttr.Faction,
                                 InteractState.Harvesting => FactionTag.Neutral,
-                                _ => FactionTag.Neutral // This should never happen
+                                _ => BurstSafe.UnexpectedEnum(stateData.CurState, FactionTag.Neutral)
                             };
                             statChangeRequest.Interactee = stateData.TargetEntity;
                             var aoeBuffRequest = ECB.CreateEntity(index);
@@ -334,9 +346,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 SpawnRotation = selfTransform.Rotation,
                                 TrackTarget = Entity.Null,
                                 // Only magic unit has aoe attack, others only has vfx
-                                Name = stateData.CurState == InteractState.Healing
-                                    ? BuffName.ClericHealCircle
-                                    : BuffName.MagicSwordSplash,
+                                Name = BuffName.MagicSwordSplash,
                                 Filter = new BuffFilter
                                 {
                                     factionFilterEnabled = true,
@@ -349,10 +359,68 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                         if (eventInfo.animationInteractType == AnimationInteractType.DirectlyChangeStat)
                         {
+                            var targetCount = 1;
+                            var range = 0f;
+                            switch (stateData.CurState)
+                            {
+                                case InteractState.Attacking:
+                                    targetCount = AttackLookup[selfEntity].Targets;
+                                    range = AttackLookup[selfEntity].Range;
+                                    break;
+                                case InteractState.Harvesting:
+                                    targetCount = HarvestLookup[selfEntity].Targets;
+                                    range = HarvestLookup[selfEntity].Range;
+                                    break;
+                                case InteractState.Healing:
+                                    targetCount = HealLookup[selfEntity].Targets;
+                                    range = HealLookup[selfEntity].Range;
+                                    break;
+                                case InteractState.Garrison:
+                                case InteractState.Moving:
+                                case InteractState.Idle:
+                                default:
+                                    BurstSafe.UnexpectedEnum(stateData.CurState);
+                                    break;
+                            }
+
                             var statChangeRequestEntity = ECB.CreateEntity(index);
                             statChangeRequest.Interactee = stateData.TargetEntity;
                             ECB.AddComponent<SubGameplayEntityTag>(index, statChangeRequestEntity);
                             ECB.AddComponent(index, statChangeRequestEntity, statChangeRequest);
+                            if (targetCount > 1)
+                            {
+                                var count = 0;
+                                foreach (var target in targets)
+                                {
+                                    if (count >= targetCount - 1) break; // Only check targetCount - 1 targets, because main target is already checked
+                                    // Target is main target, skip
+                                    if (target.Entity == stateData.TargetEntity) continue;
+                                    // Target is invalid, skip
+                                    if (!SubGameplayGeneralAttrLookup.TryGetComponent(target.Entity,
+                                            out var targetSubGameplayGeneralAttr)
+                                        || !StatLookup.TryGetComponent(target.Entity, out var targetStatData)
+                                        || !LocalTransformLookup.TryGetComponent(target.Entity,
+                                            out var newTargetTransform)) continue;
+
+                                    if (!InteractUtils.IsTargetValid(targetSubGameplayGeneralAttr,
+                                            subGameplayGeneralAttr.Faction,
+                                            targetStatData, HealLookup.HasComponent(selfEntity),
+                                            HarvestLookup.HasComponent(selfEntity),
+                                            AttackLookup.HasComponent(selfEntity), false
+                                        )) continue;
+                                    // Target not in range, skip
+                                    if (math.distance(newTargetTransform.Position, selfTransform.Position) >
+                                        bonus.RangeBonus + range)
+                                        continue;
+                                    count++;
+                                    var newStatChangeRequest = statChangeRequest;
+                                    newStatChangeRequest.Interactee = target.Entity;
+                                    var newStatChangeRequestEntity = ECB.CreateEntity(index);
+                                    statChangeRequest.Interactee = stateData.TargetEntity;
+                                    ECB.AddComponent<SubGameplayEntityTag>(index, newStatChangeRequestEntity);
+                                    ECB.AddComponent(index, newStatChangeRequestEntity, newStatChangeRequest);
+                                }
+                            }
                         }
 
                         // Generate audio request

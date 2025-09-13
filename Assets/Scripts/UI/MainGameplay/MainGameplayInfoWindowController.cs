@@ -1,7 +1,7 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
-using SparFlame.Systems.General.Input;
+using SparFlame.UI.General;
 using Unity.Entities;
 using UnityEngine;
 

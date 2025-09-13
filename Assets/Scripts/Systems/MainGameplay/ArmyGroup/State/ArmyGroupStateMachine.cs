@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Battle;
 using Unity.Burst;
 using Unity.Collections;
@@ -66,6 +67,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             {
                 var generalAttr = GeneralAttrLookup[selfEntity];
 
+                // Check if movement complete
                 if (movableData.movementInfo == ArmyGroupMovementInfo.Complete)
                 {
                     movableData.movementInfo = ArmyGroupMovementInfo.None;
@@ -81,7 +83,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         case ArmyGroupState.Invade:
                             var relationship = FactionUtils.GetRelationship(PlayerFactionData, generalAttr.faction,
                                 generalAttr.subFaction);
-                            BattleUtils.BeginBattle(
+                            BattleUtils.TriggerBattle(
                                 relationship == Relationship.Player
                                     ? SubGameStatus.PlayerSiege
                                     : SubGameStatus.PlayerDefend,
@@ -93,7 +95,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                 ? SubGameStatus.Support
                                 : SubGameStatus.PlayerSiege;
 
-                            BattleUtils.BeginBattle(targetStatus, selfEntity, stateData.Target, index, ECB);
+                            BattleUtils.TriggerBattle(targetStatus, selfEntity, stateData.Target, index, ECB);
                             break;
                         case ArmyGroupState.Garrison:
                             var garrisonRequest = ECB.CreateEntity(index);
@@ -102,14 +104,18 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             {
                                 City = stateData.Target,
                                 ArmyGroup = selfEntity,
-                                IconType = armyGroupAttr.iconType,
                                 IfGarrisonIn = true
                             });
+                            break;
+                        case ArmyGroupState.Station:
+                        default:
+                            BurstSafe.UnexpectedEnum(stateData.CurState);
                             break;
                     }
 
                     stateData.CurState = ArmyGroupState.Idle;
                     stateData.Target = Entity.Null;
+                    return;
                 }
 
                 // Only check sight target when army group is idle or moving
@@ -154,7 +160,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 if (finalTarget != Entity.Null)
                 {
                     // Army group only triggers army group
-                    BattleUtils.BeginBattle(SubGameStatus.Encounter, selfEntity, finalTarget, index, ECB);
+                    BattleUtils.TriggerBattle(SubGameStatus.Encounter, selfEntity, finalTarget, index, ECB);
                 }
             }
         }

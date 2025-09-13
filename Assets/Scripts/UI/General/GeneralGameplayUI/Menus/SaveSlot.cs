@@ -36,10 +36,10 @@ namespace SparFlame.UI.General
             saveButton.onClick.AddListener(() =>
             {
                 var path = FolderPathUtils.GetPlayerSaveSlotFolder(slotValue);
-                GameController.Instance.PlayerChooseSavingSlot(slotValue, !Directory.Exists(path));
-                GameController.Instance.PlayerChooseFactionAndStartGame(isLightFaction
+
+                GameController.Instance.ClickSlotAndStartGame(isLightFaction
                     ? FactionTag.Light
-                    : FactionTag.Dark);
+                    : FactionTag.Dark, !Directory.Exists(path), slotValue);
             });
         }
     }

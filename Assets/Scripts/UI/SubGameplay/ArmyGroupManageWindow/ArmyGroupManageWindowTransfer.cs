@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
-using SparFlame.Components.SubGameplay;
-using SparFlame.Components.VFX;
 using SparFlame.Core.GlobalMono;
 using SparFlame.Core.Utils;
 using SparFlame.UI.SubGameplay.StaticWindows.Buttons;
@@ -34,7 +32,6 @@ namespace SparFlame.UI.MainGameplay
                 ArmyGroupManageWindow.Instance.OnEcsTryNewArmyGroup += TryNewArmyGroup;
    
                 
-                ButtonBackToMainWorld.Instance.OnEcsDeleteArmyGroup += DeleteArmyGroup;
                 
 
                 
@@ -92,7 +89,6 @@ namespace SparFlame.UI.MainGameplay
             EntityManager.SetComponentData(garrisonRequest, new ArmyGroupGarrisonRequest
             {
                 ArmyGroup = armyGroup,
-                IconType = iconType,
                 City = SystemAPI.GetSingleton<SubGameStatusData>().City,
                 IfGarrisonIn = true
             });
@@ -144,7 +140,6 @@ namespace SparFlame.UI.MainGameplay
                 ecb.AddComponent(garrisonRequest, new ArmyGroupGarrisonRequest
                 {
                     ArmyGroup = armyGroup,
-                    IconType = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup).iconType,
                     City = SystemAPI.GetComponent<ArmyGroupInGarrison>(armyGroup).City,
                     IfGarrisonIn = false
                 });

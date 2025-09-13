@@ -5,6 +5,7 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics.Authoring;
 using UnityEngine;
 
@@ -13,16 +14,16 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
     public class CityAuthoring : MonoBehaviour
     {
         public int globalIdx;
-        public List<int> availableGridNums = new()
+        public List<LoadingGridInfo> nineGridInfos = new()
         {
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
+           new LoadingGridInfo(),//0
+           new LoadingGridInfo(),
+           new LoadingGridInfo(),
+           new LoadingGridInfo(),
+           new LoadingGridInfo(),
+           new LoadingGridInfo(),
+           new LoadingGridInfo(),
+           new LoadingGridInfo(),//7
         };
         
         private class CityAuthoringBaker : Baker<CityAuthoring>
@@ -44,15 +45,21 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 {
                     globalId = authoring.globalIdx,
                     maxGarrisonCount = item.maxGarrisonArmyCount,
-                    gridSize = item.gridSize,
+                });
+                AddComponent(entity, new BoxColliderSize
+                {
+                    Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
                 });
                 
                 // City available grid numbers for army group to march in
-                var numBuffer = AddBuffer<CityAvailableGridNumber>(entity);
-                foreach (var num in authoring.availableGridNums)
+                var loadingGridInfos = AddBuffer<LoadingGridInfo>(entity);
+                foreach (var info in authoring.nineGridInfos)
                 {
-                    numBuffer.Add(new CityAvailableGridNumber { value = num });
+                    loadingGridInfos.Add(info);
                 }
+                
+                // City future attackers
+                AddBuffer<CityFutureInvaders>(entity);
                 
                 // City Tasks and Resources
                 AddBuffer<CityTask>(entity);
@@ -73,7 +80,6 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                             break;
                         }
                     }
-
                     if (!init)
                     {
                         resourceDatas.Add(new CityResourceEntry
@@ -88,12 +94,10 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                             }
                         });
                     }
-                   
                 }                
                 
                 // Garrison 
                 AddBuffer<CityGarrisonEntity>(entity);
-                AddBuffer<CityGarrisonTypeData>(entity);
 
                 // Volume obstacle 
                 const float volumeRadius = 0f;

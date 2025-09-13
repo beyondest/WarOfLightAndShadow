@@ -55,7 +55,6 @@ namespace SparFlame.UI.MainGameplay
         {
             var armyGroup = _infos[index].ArmyGroupEntity;
             OnEcsDeleteArmyGroup?.Invoke(armyGroup);
-            UpdateStaticData(_infos,_maxGarrisonCount);
         }
 
       
@@ -91,11 +90,7 @@ namespace SparFlame.UI.MainGameplay
         }
 
 
-        public void OnClickEnterSelectionMode()
-        {
-            Hide();
-            ArmyGroupSlotWindow.Instance.SwitchSelectionMode(true);
-        }
+       
 
         public void OnClickNewArmyGroup()
         {

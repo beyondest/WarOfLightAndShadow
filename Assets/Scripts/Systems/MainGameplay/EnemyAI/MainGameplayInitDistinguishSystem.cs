@@ -15,12 +15,14 @@ namespace GamePlaySystem.Functionality.MainGameplay.General
         {
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<MainGamingTag>();
+            state.RequireForUpdate<GameStatusData>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
             var ecbP = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             new InitDistinguishJob

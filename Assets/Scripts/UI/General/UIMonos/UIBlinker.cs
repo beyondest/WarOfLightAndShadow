@@ -8,7 +8,7 @@ namespace SparFlame.UI.General
     
     public class UIBlinker : MonoBehaviour
     {
-        [SerializeField] private Color blinkColor = Color.red;
+        public Color blinkColor = Color.red;
         [SerializeField] private float duration = 0.5f;
 
         private Image _image;
@@ -38,7 +38,8 @@ namespace SparFlame.UI.General
         public void StopBlink()
         {
             _cts?.Cancel();
-            _image.color = _originalColor;
+            if(_image)
+                _image.color = _originalColor;
         }
 
         private async Task BlinkLoopAsync(CancellationToken token)

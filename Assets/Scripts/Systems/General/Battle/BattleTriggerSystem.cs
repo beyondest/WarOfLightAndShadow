@@ -3,6 +3,8 @@ using SparFlame.Components.MainGameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace SparFlame.Systems.General.Battle
 {
@@ -29,8 +31,8 @@ namespace SparFlame.Systems.General.Battle
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             for (var i = 0; i < requests.Length; i++)
             {
-                var request = requests[i];
-                var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(request.Attacker);
+                var req = requests[i];
+                var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(req.Attacker);
                 var relationShip =
                     FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
                 if (relationShip == Relationship.Player)
@@ -46,10 +48,44 @@ namespace SparFlame.Systems.General.Battle
                 state.EntityManager.DestroyEntity(entities[0]);
             }
 
-            // Create battle check sight
-            state.EntityManager.Instantiate(SystemAPI.GetSingleton<BattleTriggerConfig>().BattleCheckSightPrefab);
-            
+            // Calculate battle center position
+            var request = requests[0];
+            var attackerPos = SystemAPI.GetComponent<LocalTransform>(request.Attacker).Position;
+            var defenderPos = SystemAPI.GetComponent<LocalTransform>(request.Defender).Position;  
+            var targetPosition = (attackerPos + defenderPos) / 2;
 
+            // Create battle check sight
+            var realSight = state.EntityManager.Instantiate(SystemAPI.GetSingleton<BattleTriggerConfig>().BattleCheckSightPrefab);
+            state.EntityManager.SetComponentData(realSight, new LocalTransform
+            {
+                Position = targetPosition,
+                Rotation = quaternion.identity,
+                Scale = 1f
+            });
+            
+            // Create battle check sight data entity
+            var sightDataEntity = state.EntityManager.CreateEntity();
+            state.EntityManager.AddComponent<LocalTransform>(sightDataEntity);
+            state.EntityManager.SetComponentData(sightDataEntity, new LocalTransform
+            {
+                Position = targetPosition,
+                Rotation = quaternion.identity,
+                Scale = 1f
+            });
+            state.EntityManager.AddBuffer<BattleCheckSightTarget>(sightDataEntity);
+            
+            // Create connections
+            state.EntityManager.AddComponent<BattleCheckSightDataBelongsTo>(realSight);
+            state.EntityManager.SetComponentData(realSight, new BattleCheckSightDataBelongsTo
+            {
+                Value = sightDataEntity
+            });
+            
+            state.EntityManager.AddComponent<BattleCheckSightConnectTo>(sightDataEntity);
+            state.EntityManager.SetComponentData(sightDataEntity, new BattleCheckSightConnectTo
+            {
+                Value = realSight
+            });
         }
 
         [BurstCompile]

@@ -70,6 +70,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 in MainGameplayGeneralAttr generalData, ref DynamicBuffer<ArmyGroupMovingTarget> targets,
                 ref ArmyGroupCalculatePathData pathData, ref NavAgentComponent navAgentComponent,
                 ref PathVisualizeData visualizeData,
+                in ArmyGroupStateData stateData,
                 Entity selfEntity)
             {
                 if (!navAgentComponent.calculationComplete || finalWaypoints.Length == 0)
@@ -77,7 +78,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     return;
                 }
 
-                if (math.distance(transform.Position, targets[0].position) < Config.finalReachRange)
+                var range = stateData.TargetState == ArmyGroupState.Idle ?   Config.finalReachRangeNormal : Config.finalReachRangeForCity;
+                if (math.distance(transform.Position, targets[0].position) < range)
                 {
                     targets.RemoveAt(0);
                     if (targets.Length == 0)

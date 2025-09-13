@@ -28,6 +28,8 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         [SerializeField] private GameObject accurateSelectionPanel;
 
+        [SerializeField] private GameObject enterAccurateSelectionButton;
+        
         public static ArmyGroupSlotWindow Instance;
         
         public event Action OnEcsRemoveSelectedUnitsFromTheirArmyGroup;
@@ -39,12 +41,16 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         public Action<Entity, AddToArmyGroupType> OnEcsAddToArmyGroup;
 
         public event Action OnEcsCheckSelected;
+
+        public event Action OnEcsUpdateArmyGroupAvgData;
         public bool HasSelectedUnitAlreadyInArmyGroup { get; set; }
 
 
 
         public void SwitchSelectionMode(bool enter)
         {
+            _isInSelectionMode = enter;
+            enterAccurateSelectionButton.SetActive(!enter);
             var query =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(UnitSelectionFilter));
             var data = query.GetSingletonRW<UnitSelectionFilter>();
@@ -63,8 +69,9 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         }
 
 
-        public void UpDateCandidates(List<ArmyGroupSlotInfo> armyGroupSlotInfos)
+        public void UpDateCandidates(List<ArmyGroupSlotInfo> armyGroupSlotInfos, bool isInPlayerCity)
         {
+            enterAccurateSelectionButton.SetActive(!_isInSelectionMode && isInPlayerCity);
             switch (_currentArmyGroupSortType)
             {
                 case ArmyGroupSortType.ByCreateTimeAscending:
@@ -107,7 +114,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 {
                     var slotComponent = SlotComponents[i];
                     if(i == slotIndex)continue;
-                    slotComponent.SlotMoveRight();
+                    slotComponent.SlotMoveLeft();
                 }
             }
         }
@@ -142,6 +149,10 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         #region ButtonMethods
 
+        public void OnClickEnterSelectionMode()
+        {
+            SwitchSelectionMode(true);
+        }
         public void OnClickChangeSortTypeButton()
         {
             if (_currentArmyGroupSortType == ArmyGroupSortType.ByCurrentUnitCountDescending)
@@ -170,7 +181,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         public void OnClickExitSelectionMode()
         {
             SwitchSelectionMode(false);
-           
+           OnEcsUpdateArmyGroupAvgData?.Invoke();
         }
 
         public void OnClickTierFilterButton()
@@ -268,7 +279,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         private const Tier MaxTier = Tier.Tier3;
         private Tier _currentFilterTier;
         private readonly List<UnitType> _currentFilterUnitTypes = new();
-
+        private bool _isInSelectionMode;
 
         private void UpdateSortButtonIcon()
         {

@@ -9,9 +9,9 @@ namespace SparFlame.UI.MainGameplay
 {
     public class ArmyGroupMulti2DSlot : MultiShowSlot
     {
-        public Image filledHp;
-        public TMP_Text levelAndCount;
-        
+        [SerializeField] private Image filledHp;
+        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private TMP_Text countText;
         // public GameObject nonZeroPanel;  
         // public GameObject nonZero1Panel;
         // public GameObject nonZero2Panel;
@@ -35,8 +35,9 @@ namespace SparFlame.UI.MainGameplay
             button!.image.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[info.IconType];
             button.image.color = currentSelectFaction == FactionTag.Light ? Color.white : Color.black;
             filledHp.fillAmount = info.TotalHpRatio;
-            levelAndCount.text = $"Lv.{info.AvgLevel} / {info.UnitCounts}";
-         
+            levelText.text = $"Lv.{info.AvgLevel}" ;
+            countText.text = info.UnitCounts.ToString();
+
 
             // var nonZeroCount = info.UnitCountPerTier.Count(count => count != 0);
             // switch (nonZeroCount)

@@ -12,9 +12,7 @@ namespace SparFlame.Components.MainGameplay
     {
         public Entity ArmyGroup;
         public Entity City;
-        public ArmyGroupIconType IconType;
         public bool IfGarrisonIn;
-        public bool IfGarrisonOutAllSameIcon;
     }
     [Serializable]
     public struct ArmyGroupGarrisonSystemConfig : IComponentData

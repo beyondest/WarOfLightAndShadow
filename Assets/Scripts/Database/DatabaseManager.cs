@@ -23,6 +23,7 @@ namespace SparFlame.Database
         private static BuffDatabaseSo _buffDatabaseSo;
         private static HintDatabaseSo _hintDatabaseSo;
         private static CityDatabaseSo _cityDatabaseSo;
+        private static EcoDatabaseSo _ecoDatabaseSo;
         
         public static BuildingDatabaseSo BuildingDatabaseSo =>
             _buildingDatabaseSo ??= LoadAndMergeDatabase<BuildingDatabaseSo, BuildingDataItem>("items");
@@ -56,6 +57,9 @@ namespace SparFlame.Database
         public static CityDatabaseSo CityDatabaseSo =>
         _cityDatabaseSo ??= LoadAndMergeDatabase<CityDatabaseSo, CityDataItem>("items");
         
+        public static EcoDatabaseSo EcoDatabaseSo =>
+        _ecoDatabaseSo ??= LoadAndMergeDatabase<EcoDatabaseSo, EcoDataItem>("items");
+        
         // This method only works for general databases
         public static GeneralDatabase<TData> GetDatabaseSo<TData>() where TData : GeneralDataItem
         {
@@ -63,9 +67,10 @@ namespace SparFlame.Database
             {
                 return BuildingDatabaseSo as GeneralDatabase<TData>;
             }
-            else if (typeof(TData) == typeof(UnitDataItem))
+
+            if (typeof(TData) == typeof(UnitDataItem))
                 return UnitDatabaseSo as GeneralDatabase<TData>;
-            else if (typeof(TData) == typeof(ResourceDataItem))
+            if (typeof(TData) == typeof(ResourceDataItem))
                 return ResourceDatabaseSo as GeneralDatabase<TData>;
 
             throw new ArgumentException("This method only works for BuildingDataItem, UnitDataItem, and ResourceDataItem.");
@@ -87,7 +92,7 @@ namespace SparFlame.Database
             where TDatabase : ScriptableObject, new()
         {
             // 从 Resources/Database 加载所有数据库资源
-            TDatabase[] databases = UnityEngine.Resources.LoadAll<TDatabase>("Database");
+            TDatabase[] databases = Resources.LoadAll<TDatabase>("Database");
 
             if (databases == null || databases.Length == 0)
             {
@@ -180,6 +185,7 @@ namespace SparFlame.Database
             _buffDatabaseSo = null;
             _hintDatabaseSo = null;
             _cityDatabaseSo = null;
+            _ecoDatabaseSo = null;
             _ = BuildingDatabaseSo;
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
@@ -190,6 +196,7 @@ namespace SparFlame.Database
             _ = BuffDatabaseSo;
             _ = HintDatabaseSo;
             _ = CityDatabaseSo;
+            _ = EcoDatabaseSo;
             Debug.Log(" All Databases reloaded successfully!");
         }
 #endif

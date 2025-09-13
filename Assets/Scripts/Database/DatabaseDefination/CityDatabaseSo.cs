@@ -16,6 +16,11 @@ namespace SparFlame.Database
         [ReadOnly] public int idEnd;
         [TableList] public List<CityDataItem> items;
 
+
+        public CityDataItem GetItemById(int id)
+        {
+            return items[id - idStart];
+        }
         [Button("Reassign all id and ReBake")]
         private void ReassignAllIDs()
         {
@@ -62,11 +67,9 @@ namespace SparFlame.Database
 
         [VerticalGroup("Gameplay"), HideLabel] public SubFactionTag subFactionTag;
 
-        [VerticalGroup("Gameplay"), HideLabel, HorizontalGroup("Gameplay/MaxGarrisonArmyGroupCount")]
+        [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/MaxGarrisonArmyGroupCount")]
         public int maxGarrisonArmyCount;
 
-        [VerticalGroup("Gameplay"), HideLabel, HorizontalGroup("Gameplay/GridSize")]
-        public int gridSize;
 
         [VerticalGroup("Gameplay"), HideLabel] public List<ResourceData> initResources; 
 

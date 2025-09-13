@@ -57,7 +57,6 @@ namespace SparFlame.Components.Input
         public bool EndMovingAndClearAllTargets;
         public bool ClearAllTargets;
         public bool DeleteLastTarget;
-        public bool MoveOutAllSameIconArmyGroups;
 
 
     }

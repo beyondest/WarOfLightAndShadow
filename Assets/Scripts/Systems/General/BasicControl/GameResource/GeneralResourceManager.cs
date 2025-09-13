@@ -62,7 +62,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Start()
         {
-            GameController.Instance.OnPlayerChooseFactionAndStartGame += _ =>
+            GameController.Instance.OnClickSlotAndStartGame += (_,_,_) =>
             {
                 StartLoadResources();
             };

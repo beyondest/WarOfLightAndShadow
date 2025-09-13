@@ -1,8 +1,11 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.VFX;
+using SparFlame.Systems.General.Battle;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 // ReSharper disable Unity.Entities.SingletonMustBeRequested
@@ -24,7 +27,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             DealGarrisonRequest(ref state, ecb);
 
@@ -46,38 +48,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 ecb.DestroyEntity(entity);
 
                 var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(request.City);
-                var garrisonDatas = SystemAPI.GetBuffer<CityGarrisonTypeData>(request.City);
-                
-                int i;
-                // Add unit type count if this unit type already exists
-                for (i = 0; i < garrisonDatas.Length; i++)
-                {
-                    var data = garrisonDatas[i];
-                    if (data.iconType == request.IconType)
-                    {
-                        break;
-                    }
-                }
+
 
                 // ArmyGroup garrison in 
                 if (request.IfGarrisonIn)
                 {
-                    // If not exists, add this unit type
-                    if (i == garrisonDatas.Length)
-                    {
-                        garrisonDatas.Add(new CityGarrisonTypeData
-                        {
-                            count = 1,
-                            iconType = request.IconType
-                        });
-                    }
-                    else
-                    {
-                        var data = garrisonDatas[i];
-                        data.count++;
-                        garrisonDatas[i] = data;
-                    }
-
                     // Add to buffer
                     garrisonEntities.Add(new CityGarrisonEntity
                     {
@@ -88,41 +63,46 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     {
                         City = request.City,
                     });
-                    // Hide the garrison army group entity
                     var transform = SystemAPI.GetComponent<LocalTransform>(request.ArmyGroup);
+
+                    // Reassign loading center and loading scale
+                    var pos = transform.Position;
+                    var gridIndex =
+                        BattleUtils.GetClosestGrids(pos, SystemAPI.GetComponent<LocalTransform>(request.City));
+                    var loadingInfos = SystemAPI.GetBuffer<LoadingGridInfo>(request.City);
+                    var loadingInfo = loadingInfos[gridIndex];
+                    var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(request.ArmyGroup);
+                    armyGroupAttr.loadingCenter = loadingInfo.innerCenter;
+                    var maxDelta = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
+                    armyGroupAttr.loadingScale = loadingInfo.innerSize == 0 ? 1 : loadingInfo.innerSize / maxDelta;
+                    armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
+                    ecb.SetComponent(request.ArmyGroup, armyGroupAttr);
+
+                    // Hide the garrison army group entity
                     transform.Position += config.hidePositionBias;
                     ecb.SetComponent(request.ArmyGroup, transform);
+                    
+                    // Remove the selected state
+                    ecb.SetComponentEnabled<ArmyGroupSelected>(request.ArmyGroup, false);
+                    var vfxRequest = ecb.CreateEntity();
+                    ecb.AddComponent<MainGameplayEntityTag>(vfxRequest);
+                    ecb.AddComponent(vfxRequest,  new VFXRequest
+                    {
+                        RequestType = VFXRequestType.Kill,
+                        VFXTrackTarget = request.ArmyGroup,
+                        VFXName = VFXName.ArmyGroupSelectionIndicator,
+
+                    });
                 }
                 // ArmyGroup garrison out
                 else
                 {
-                    if (i == garrisonDatas.Length)
-                        continue;
-                    var data = garrisonDatas[i];
-                    if (request.IfGarrisonOutAllSameIcon)
-                        data.count = 0;
-                    else
-                        data.count--;
-                    if (data.count == 0)
-                        garrisonDatas.RemoveAt(i);
-                    else
-                    {
-                        garrisonDatas[i] = data;
-                    }
-
-                    var removeSpecifiedEntity = request.ArmyGroup != Entity.Null;
-
                     for (var j = garrisonEntities.Length - 1; j >= 0; j--)
                     {
                         var garrisonEntity = garrisonEntities[j];
-                        if (removeSpecifiedEntity)
-                        {
-                            if ( garrisonEntity.ArmyGroup != request.ArmyGroup) continue;
-                        }
-                        else
-                        {
-                            if(SystemAPI.GetComponent<ArmyGroupAttr>(garrisonEntity.ArmyGroup).iconType != request.IconType) continue;
-                        }
+
+                        if (garrisonEntity.ArmyGroup != request.ArmyGroup) continue;
+
                         garrisonEntities.RemoveAt(j);
                         if (SystemAPI.HasComponent<ArmyGroupInGarrison>(garrisonEntity.ArmyGroup))
                         {
@@ -132,7 +112,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             transform.Position -= config.hidePositionBias;
                             ecb.SetComponent(garrisonEntity.ArmyGroup, transform);
                         }
-                        if (!request.IfGarrisonOutAllSameIcon) break;
+                        break;
                     }
                 }
             }

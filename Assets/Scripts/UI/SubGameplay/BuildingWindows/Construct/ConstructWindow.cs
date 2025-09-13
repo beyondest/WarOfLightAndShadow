@@ -161,7 +161,7 @@ namespace SparFlame.UI.SubGameplay
             tierFilterIcon.color = Color.gray;
             panel.SetActive(false);
             constructWindowPanel.SetActive(false);
-            GameController.Instance.OnPlayerChooseFactionAndStartGame += factionTag => _currentFaction = factionTag;
+            GameController.Instance.OnClickSlotAndStartGame += (factionTag,_,_) => _currentFaction = factionTag;
         }
 
         private void UpdateCandidates()

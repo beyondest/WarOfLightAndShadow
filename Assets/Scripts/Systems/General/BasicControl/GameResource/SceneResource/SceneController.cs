@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using SparFlame.Database;
@@ -16,8 +17,9 @@ namespace SparFlame.Systems.General.BasicControl
         [SerializeField] private SceneGroup darkInitSceneGroup;
         [SerializeField] private SceneGroup mainWorldSceneGroup;
         [SerializeField] private SceneGroup subWorldSceneGroup;
-        [SerializeField] private SceneGroup battleFieldSceneGroup;
 
+        
+       
 
         // Interface
         public static SceneController Instance;
@@ -57,7 +59,7 @@ namespace SparFlame.Systems.General.BasicControl
         }
         
         public void LoadSceneGroup(List<SceneGroupType> sceneGroupTypes, int cityId = -1,
-            bool ifEnterSubGameplay = false)
+            bool ifEnterSubGameplay = false, EcoType ecoType = EcoType.Unknown)
         {
             // Reset Loading Progress
             _subsceneLoaded = false;
@@ -65,7 +67,7 @@ namespace SparFlame.Systems.General.BasicControl
             _normalSceneLoadProgress = 0f;
             _subsceneLoadProgress = 0f;
 
-            var sceneGroup = GetSceneGroup(sceneGroupTypes, cityId);
+            var sceneGroup = GetSceneGroup(sceneGroupTypes, ecoType,cityId);
             // Only record subGameplay scene group
             if(ifEnterSubGameplay)
                 _currentLoadingSubGameplaySceneGroup = sceneGroup;
@@ -83,7 +85,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void UnloadSceneGroup(List<SceneGroupType> sceneGroupTypes)
         {
-            var sceneGroup = GetSceneGroup(sceneGroupTypes, -1);
+            var sceneGroup = GetSceneGroup(sceneGroupTypes,EcoType.Unknown);
             StartCoroutine(_normalSceneLoader.UnloadSceneGroupAsync(sceneGroup));
             foreach (var subsceneData in sceneGroup.subscenes)
             {
@@ -125,15 +127,18 @@ namespace SparFlame.Systems.General.BasicControl
         private void Start()
         {
             GeneralResourceManager.Instance.Register(this);
-            GameController.Instance.OnPlayerChooseSavingSlot += (_, b) => _ifNewSaving = b;
-            GameController.Instance.OnPlayerChooseFactionAndStartGame += factionTag => _playerFaction = factionTag;
+            GameController.Instance.OnClickSlotAndStartGame += (factionTag, ifNewSaving, _) =>
+            {
+                _playerFaction = factionTag;
+                _ifNewSaving = ifNewSaving;
+            };
         }
 
 
       
 
 
-        private SceneGroup GetSceneGroup(List<SceneGroupType> sceneGroupTypes, int cityId)
+        private SceneGroup GetSceneGroup(List<SceneGroupType> sceneGroupTypes, EcoType ecoType,int cityId = -1)
         {
             var sceneGroup = new SceneGroup();
             var cityItem = cityId < 0 ? new CityDataItem() : DatabaseUtils.GetCityDataItemById(cityId);
@@ -154,7 +159,8 @@ namespace SparFlame.Systems.General.BasicControl
                         sceneGroup.AddSceneGroup(cityItem.envSceneGroup);
                         break;
                     case SceneGroupType.BattleField:
-                        sceneGroup.AddSceneGroup(battleFieldSceneGroup);
+                        var item = DatabaseManager.EcoDatabaseSo.GetEcoDataItemByEcoType(ecoType);
+                        sceneGroup.AddSceneGroup(item.ecoEnvSceneGroup);
                         break;
                     case SceneGroupType.CityInvadeFight:
                         sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Light

@@ -6,7 +6,6 @@ using SparFlame.Components.VFX;
 using SparFlame.UI.MainGameplay;
 using Unity.Collections;
 using Unity.Entities;
-using UnityEngine;
 
 
 namespace SparFlame.UI.SubGameplay.StaticWindows
@@ -39,6 +38,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 ArmyGroupSlotWindow.Instance.OnEcsSelectArmyGroupUnits += SelectArmyGroupUnits;
                 ArmyGroupSlotWindow.Instance.OnEcsSprintArmyGroupUnits += SprintArmyGroupUnits;
                 ArmyGroupSlotWindow.Instance.OnEcsHoldSwitchArmyGroup += HoldSwitchArmyGroup;
+                ArmyGroupSlotWindow.Instance.OnEcsUpdateArmyGroupAvgData += UpdateArmyGroupAvgData;
                 _initialized = true;
             }
         }
@@ -48,42 +48,52 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             var infos = new List<ArmyGroupSlotInfo>();
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             var inBattle = GameStatusUtils.IsInBattle(subGameStatusData);
-            
-            foreach (var (attr, inGarrison,skillTimer,
-                         statData,armyGroup) in SystemAPI.Query<RefRO<ArmyGroupAttr>,
-                         RefRO<ArmyGroupInGarrison>, RefRO<ArmyGroupSkillTimer>,
-                     RefRO<ArmyGroupStatData>>().WithEntityAccess())
+
+            foreach (var (attr, skillTimer,
+                         statData, armyGroup) in SystemAPI.Query<RefRO<ArmyGroupAttr>
+                         , RefRO<ArmyGroupSkillTimer>,
+                         RefRO<ArmyGroupStatData>>().WithAll<InSubGameTag>()
+                         .WithAll<PlayerTag>().WithEntityAccess())
             {
-                var chargeRatio = skillTimer.ValueRO.MaxChargeCoolDown == 0 ? 1 : 1 - skillTimer.ValueRO.ChargeCoolDown / skillTimer.ValueRO.MaxChargeCoolDown;
-                var sprintCoolDownRatio = skillTimer.ValueRO.MaxSprintCoolDown == 0 ? 0 : skillTimer.ValueRO.SprintCoolDown / skillTimer.ValueRO.MaxSprintCoolDown;
+                var chargeRatio = skillTimer.ValueRO.MaxChargeCoolDown == 0
+                    ? 1
+                    : 1 - skillTimer.ValueRO.ChargeCoolDown / skillTimer.ValueRO.MaxChargeCoolDown;
+                var sprintCoolDownRatio = skillTimer.ValueRO.MaxSprintCoolDown == 0
+                    ? 0
+                    : skillTimer.ValueRO.SprintCoolDown / skillTimer.ValueRO.MaxSprintCoolDown;
 
                 float hpRatio;
                 int startUnitCount;
                 if (inBattle)
                 {
-                     var snapShot = SystemAPI.GetComponent<BeforeBattleSnapShot>(armyGroup);
-                     hpRatio = snapShot.MaxHp == 0 ? 0 : statData.ValueRO.totalCurrentHp /snapShot.MaxHp;
-                     startUnitCount = snapShot.UnitCount;
+                    var snapShot = SystemAPI.GetComponent<BeforeBattleArmyGroupSnapShot>(armyGroup);
+                    hpRatio = snapShot.MaxHp == 0 ? 0 : statData.ValueRO.totalCurrentHp / snapShot.MaxHp;
+                    startUnitCount = snapShot.UnitCount;
                 }
                 else
                 {
-                    hpRatio = statData.ValueRO.totalMaxHp == 0 ? 0 : statData.ValueRO.totalCurrentHp / statData.ValueRO.totalMaxHp;
+                    hpRatio = statData.ValueRO.totalMaxHp == 0
+                        ? 0
+                        : statData.ValueRO.totalCurrentHp / statData.ValueRO.totalMaxHp;
                     startUnitCount = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup).Length;
                 }
+
                 infos.Add(new ArmyGroupSlotInfo
                 {
                     ArmyGroup = armyGroup,
                     IconType = attr.ValueRO.iconType,
-                    ChargeRatio =chargeRatio,
+                    ChargeRatio = chargeRatio,
                     HpRatio = hpRatio,
                     CurrentUnitCount = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup).Length,
                     IsHolding = SystemAPI.HasComponent<ArmyGroupHoldOnTag>(armyGroup),
-                    SprintCooldownRatio =sprintCoolDownRatio,
+                    SprintCooldownRatio = sprintCoolDownRatio,
                     StartingUnitCount = startUnitCount,
                     CreateTimeTotalHours = attr.ValueRO.createTimeInTotalHours,
                 });
             }
-            ArmyGroupSlotWindow.Instance.UpDateCandidates(infos);
+
+            ArmyGroupSlotWindow.Instance.UpDateCandidates(infos,
+                subGameStatusData.SubGameStatus == SubGameStatus.PlayerCity);
         }
 
         private void SprintArmyGroupUnits(Entity armyGroup)
@@ -108,9 +118,9 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             });
         }
 
-        private void SelectArmyGroupUnits(Entity armyGroup,bool ifAdd)
+        private void SelectArmyGroupUnits(Entity armyGroup, bool ifAdd)
         {
-            if(!ifAdd)
+            if (!ifAdd)
                 EntityManager.CreateSingleton<DeselectAllRequest>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (inArmyGroup, unit
@@ -153,7 +163,8 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         private void RemoveSelectedUnitsFromTheirArmyGroup()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var (inArmyGroup,generalAttr, unit) in SystemAPI.Query<RefRO<InArmyGroup>,RefRO<SubGameplayGeneralAttr>>().WithAll<Selected>()
+            foreach (var (inArmyGroup, generalAttr, unit) in SystemAPI
+                         .Query<RefRO<InArmyGroup>, RefRO<SubGameplayGeneralAttr>>().WithAll<Selected>()
                          .WithEntityAccess())
             {
                 var request = ecb.CreateEntity();
@@ -179,12 +190,13 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             EntityManager.CreateSingleton<DeselectAllRequest>();
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var (unitAttr,expData, entity) in SystemAPI.Query<RefRO<UnitAttr>,RefRO<ExpData>>().WithDisabled<Selected>()
+            foreach (var (unitAttr, expData, entity) in SystemAPI.Query<RefRO<UnitAttr>, RefRO<ExpData>>()
+                         .WithDisabled<Selected>()
                          .WithNone<InGarrison>()
                          .WithNone<InArmyGroup>().WithEntityAccess())
             {
-                if(tierFilterEnabled && expData.ValueRO.curTier != filterTier)continue;
-                if(!unitTypeFilter.Contains(unitAttr.ValueRO.Type))continue;
+                if (tierFilterEnabled && expData.ValueRO.curTier != filterTier) continue;
+                if (!unitTypeFilter.Contains(unitAttr.ValueRO.Type)) continue;
                 var request = ecb.CreateEntity();
                 ecb.AddComponent<SubGameplayEntityTag>(request);
                 ecb.AddComponent(request, new UnitSelectRequest
@@ -237,6 +249,17 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
             ecb.Playback(EntityManager);
             ecb.Dispose();
+        }
+
+        private void UpdateArmyGroupAvgData()
+        {
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(subGameStatusData.City);
+            foreach (var armyGroup in garrisonEntities)
+            {
+                if (!SystemAPI.HasBuffer<ArmyGroupUnit>(armyGroup.ArmyGroup)) continue;
+                ArmyGroupUtils.UpdateArmyGroupInfoForCompoChanged(EntityManager, armyGroup.ArmyGroup);
+            }
         }
     }
 }

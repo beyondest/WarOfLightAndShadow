@@ -14,7 +14,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.General.BasicControl
 {
-    [UpdateInGroup(typeof(InitializationSystemGroup)),UpdateAfter(typeof(GameBasicControlSystem))]
+    [UpdateInGroup(typeof(InitializationSystemGroup)), UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class SaveSystemPlus : SystemBase
     {
         private EntityQuery _saveArmyGroupQuery;
@@ -77,8 +77,6 @@ namespace SparFlame.Systems.General.BasicControl
         protected override void OnUpdate()
         {
         }
-        
-        
 
 
         private void SaveArmyGroupSubData(bool shouldSaveToTmp)
@@ -103,7 +101,7 @@ namespace SparFlame.Systems.General.BasicControl
                 }
 
                 var center = sum / armyGroupUnits.Length;
-                float3 boundingMin = float3.zero, boundingMax = float3.zero;
+                float2 boundingMin = float2.zero, boundingMax = float2.zero;
 
                 var ecb = new EntityCommandBuffer(Allocator.Temp);
                 for (var index = 0; index < armyGroupUnits.Length; index++)
@@ -121,9 +119,9 @@ namespace SparFlame.Systems.General.BasicControl
 
                     var saveEntity = ecb.CreateEntity();
                     var relative = transform.Position - center;
-                    boundingMin = math.min(boundingMin, relative);
-                    boundingMax = math.max(boundingMax, relative);
-                    
+                    boundingMin = math.min(boundingMin, relative.xz);
+                    boundingMax = math.max(boundingMax, relative.xz);
+
                     ecb.AddComponent(saveEntity, new SeTransform
                     {
                         position = relative, // Save relative position
@@ -140,9 +138,9 @@ namespace SparFlame.Systems.General.BasicControl
                         armyGroupSaveId = armyGroupAttr.saveId
                     });
                 }
+
                 // Record the bounding box
-                armyGroupAttr.boundingBoxMax = boundingMax;
-                armyGroupAttr.boundingBoxMin = boundingMin;
+                armyGroupAttr.boundingBoxDelta = boundingMax - boundingMin;
                 armyGroupAttr.loadingCenter = center;
                 armyGroupAttr.loadingScale = 1f;
                 SystemAPI.SetComponent(armyGroup, armyGroupAttr);
@@ -155,7 +153,8 @@ namespace SparFlame.Systems.General.BasicControl
                     seEm.CreateSingleton(new SaveTmpTag());
                     seEm.RemoveComponent<SceneTag>(seEm.UniversalQuery);
                     seEm.RemoveComponent<SceneSection>(seEm.UniversalQuery);
-                    var armyGroupSavePath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot,shouldSaveToTmp);
+                    var armyGroupSavePath =
+                        SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot, shouldSaveToTmp);
                     using (var writer = new StreamBinaryWriter(armyGroupSavePath))
                     {
                         SerializeUtility.SerializeWorld(seEm, writer);
@@ -288,18 +287,17 @@ namespace SparFlame.Systems.General.BasicControl
             if (subGameStatusData.SubGameStatus != SubGameStatus.None)
             {
                 var cityAttr = SystemAPI.GetComponent<CityAttr>(subGameStatusData.City);
-                SystemAPI.SetSingleton(new SaveCityId
+                SystemAPI.SetSingleton(new LastTimeSaveCityId
                 {
                     value = cityAttr.globalId,
-                    mainGameplayTransition = false
                 });
             }
             else
             {
-                SystemAPI.SetSingleton(new SaveCityId());
+                SystemAPI.SetSingleton(new LastTimeSaveCityId());
             }
 
-            entities.Add(SystemAPI.GetSingletonEntity<SaveCityId>());
+            entities.Add(SystemAPI.GetSingletonEntity<LastTimeSaveCityId>());
 
 
             using (var serializeWorld = new World("Serialization World"))
@@ -322,7 +320,7 @@ namespace SparFlame.Systems.General.BasicControl
         private void CopyAndDeleteTmpSubData()
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>();
-            
+
             // Copy city sub data from tmp to true save path
             foreach (var cityAttr in SystemAPI.Query<RefRO<CityAttr>>())
             {
@@ -330,9 +328,9 @@ namespace SparFlame.Systems.General.BasicControl
                     playerSaveSlot.Value, true);
                 if (File.Exists(tmpPath))
                 {
-                    var truePath =  SaveUtilities.GetCitySubDataPath(cityAttr.ValueRO.globalId,
+                    var truePath = SaveUtilities.GetCitySubDataPath(cityAttr.ValueRO.globalId,
                         playerSaveSlot.Value, false);
-                    File.Copy(tmpPath, truePath,overwrite: true);
+                    File.Copy(tmpPath, truePath, overwrite: true);
                     File.Delete(tmpPath);
                 }
             }
@@ -346,7 +344,7 @@ namespace SparFlame.Systems.General.BasicControl
                 {
                     var truePath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.ValueRO.saveId,
                         playerSaveSlot.Value, false);
-                    File.Copy(tmpPath, truePath,overwrite:true);
+                    File.Copy(tmpPath, truePath, overwrite: true);
                     File.Delete(tmpPath);
                 }
             }

@@ -26,10 +26,10 @@ namespace SparFlame.Systems.General.BasicControl
 
 
     [Serializable]
-    public struct SaveCityId : IComponentData
+    public struct LastTimeSaveCityId : IComponentData
     {
         public int value;
-        public bool mainGameplayTransition;
+        // public bool mainGameplayTransition;
     }
 
 

@@ -1,10 +1,10 @@
-﻿using SparFlame.Components.General;
-using SparFlame.Components.Input;
+﻿using System.Collections.Generic;
+using NUnit.Framework;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SparFlame.UI.MainGameplay
 {
@@ -16,8 +16,7 @@ namespace SparFlame.UI.MainGameplay
         public bool TrySwitchTarget(Entity target)
         {
             if (!_em.HasBuffer<CityGarrisonEntity>(target)) return false;
-
-            var buffer = _em.GetBuffer<CityGarrisonTypeData>(target);
+            var buffer = _em.GetBuffer<CityGarrisonEntity>(target);
             if (buffer.Length == 0) return false;
             _target = target;
             UpdateSlots();
@@ -36,26 +35,35 @@ namespace SparFlame.UI.MainGameplay
 
         public override void OnClickSlot(int slotIndex)
         {
-            var buffer = _em.GetBuffer<CityGarrisonTypeData>(_target);
+            var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(_target);
+            var playerFactionData = _em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
+            var relationship = FactionUtils.GetRelationship(playerFactionData,generalAttr.faction,generalAttr.subFaction);
+            if(relationship != Relationship.Player)return;
+            
+            var buffer = _em.GetBuffer<CityGarrisonEntity>(_target);
             if (buffer.Length == 0 || slotIndex >= buffer.Length) return;
-            var ifGarrisonOutAllSameIcon =
-                _inputQuery.GetSingleton<InputArmyGroupControlData>().MoveOutAllSameIconArmyGroups;
-            var iconType = buffer[slotIndex].iconType;
+
+            var nonZeroList = new List<CityGarrisonEntity>();
+            foreach (var cityGarrisonEntity in buffer)
+            {
+                var units = _em.GetBuffer<ArmyGroupUnit>(cityGarrisonEntity.ArmyGroup);
+                if(units.Length == 0)continue;
+                nonZeroList.Add(cityGarrisonEntity);
+            }
+            if(slotIndex >= nonZeroList.Count) return;
+            
             var request = _em.CreateEntity();
             _em.AddComponent<ArmyGroupGarrisonRequest>(request);
             _em.SetComponentData(request, new ArmyGroupGarrisonRequest
             {
                 City = _target,
-                ArmyGroup = Entity.Null,
-                IfGarrisonOutAllSameIcon = ifGarrisonOutAllSameIcon,
-                IconType = iconType,
+                ArmyGroup = nonZeroList[slotIndex].ArmyGroup,
                 IfGarrisonIn = false
             });
         }
 
         private EntityManager _em;
         private Entity _target;
-        private EntityQuery _inputQuery;
         private EntityQuery _mainGamingTag;
 
         #region EventFunctions
@@ -72,7 +80,6 @@ namespace SparFlame.UI.MainGameplay
         {
             base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _inputQuery = _em.CreateEntityQuery(typeof(InputArmyGroupControlData));
             _mainGamingTag = _em.CreateEntityQuery(typeof(MainGamingTag));
             Hide();
         }
@@ -94,16 +101,28 @@ namespace SparFlame.UI.MainGameplay
 
         private void UpdateSlots()
         {
-            var buffer = _em.GetBuffer<CityGarrisonTypeData>(_target);
+            var oriBuffer = _em.GetBuffer<CityGarrisonEntity>(_target);
+            var noZeroBuffer = new List<CityGarrisonEntity>();
+            foreach (var cityGarrisonEntity in oriBuffer)
+            {
+                var units = _em.GetBuffer<ArmyGroupUnit>(cityGarrisonEntity.ArmyGroup);
+                if(units.Length == 0)continue;
+                noZeroBuffer.Add(cityGarrisonEntity);
+            }
+       
+
             for (var i = 0; i < Slots.Count; i++)
             {
-                if (i < buffer.Length)
+                if (i < noZeroBuffer.Count)
                 {
-                    var typeData = buffer[i];
+                    var armyGroup = noZeroBuffer[i].ArmyGroup;
+                    var armyGroupAttr = _em.GetComponentData<ArmyGroupAttr>(armyGroup);
+                    
                     Slots[i].SetActive(true);
+                    
                     SlotComponents[i].button!.image.sprite =
-                        ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[typeData.iconType];
-                    SlotComponents[i].armyGroupCount.text = typeData.count.ToString();
+                        ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
+                    SlotComponents[i].armyGroupName.text = armyGroupAttr.gameplayName.ToString();
                 }
                 else
                 {

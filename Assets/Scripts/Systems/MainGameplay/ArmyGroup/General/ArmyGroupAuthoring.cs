@@ -75,7 +75,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 AddComponent(entity, new ArmyGroupCalculatePathData
                 {
                     curTargetIndex = -1,
-                    startPosition = float3.zero
+                    startPosition = float3.zero,
+                    calculationInfo = ArmyGroupPathCalculationInfo.None,
+                    boxColliderSizeXz = float2.zero,
                 });
                 AddComponent<ArmyGroupCalculateEnable>(entity);
                 SetComponentEnabled<ArmyGroupCalculateEnable>(entity, false);

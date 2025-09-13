@@ -7,7 +7,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SparFlame.UI.MainGameplay
+namespace SparFlame.UI.General
 {
     public class ArmyGroupDetailWindow : MultiSlotWindowUtils.MultiSlotsWindow<ArmyGroupUnitCompositionSlot>,
         MultiSlotWindowUtils.ISingleTargetWindow

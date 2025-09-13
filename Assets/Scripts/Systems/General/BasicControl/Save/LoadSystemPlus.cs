@@ -475,21 +475,15 @@ namespace SparFlame.Systems.General.BasicControl
                     SystemAPI.SetSingleton(uniqueIdData);
 
                     // Set sub game status data
-                    var saveCityId = dem.CreateEntityQuery(typeof(SaveCityId))
-                        .GetSingleton<SaveCityId>();
+                    var saveCityId = dem.CreateEntityQuery(typeof(LastTimeSaveCityId))
+                        .GetSingleton<LastTimeSaveCityId>();
                     if (saveCityId.value != 0) // Player save in city sub gameplay
                     {
                         FrameDelayInvoker.Instance.InvokeAfterFrames(1,
                             () => { GameController.Instance.EnterPlayerCity(Entity.Null, true); });
                     }
 
-                    SystemAPI.SetSingleton(new SaveCityId
-                    {
-                        mainGameplayTransition =
-                            saveCityId.value !=
-                            0, // If player save exist in city last time, menu out controller should not hide loading screen
-                        value = saveCityId.value
-                    });
+                    SystemAPI.SetSingleton(saveCityId);
                 }
             }
             else

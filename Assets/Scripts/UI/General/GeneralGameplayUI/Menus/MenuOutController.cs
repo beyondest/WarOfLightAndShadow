@@ -168,7 +168,7 @@ namespace SparFlame.UI.General
             GameController.Instance.OnWinnerWin += WinnerWin;
             GameController.Instance.OnSubGameStartForPlayer += SubGameStartForPlayer;
             GameController.Instance.OnMainGameStartForPlayer += MainGameStartForPlayer;
-            GameController.Instance.OnPlayerChooseFactionAndStartGame += PlayerChooseFactionAndStartGame;
+            GameController.Instance.OnClickSlotAndStartGame += ClickSlotAndStartGame;
             // Init loading screen
             GeneralResourceManager.Instance.OnLoadAllResources += () =>
                 ShowLoadingScreen(GeneralResourceManager.Instance.LoadingProgress);
@@ -214,11 +214,10 @@ namespace SparFlame.UI.General
             mainGameplayUI.SetActive(false);
         }
 
-        private void MainGameStartForPlayer()
+        private void MainGameStartForPlayer(bool isTransitionProgress)
         {
-            var saveCityId = _em.CreateEntityQuery(typeof(SaveCityId)).GetSingletonRW<SaveCityId>();
             staticWindowPanel.SetActive(true);
-            if (!saveCityId.ValueRO.mainGameplayTransition)
+            if (!isTransitionProgress)
             {
                 HideLoadingScreen();
                 selectMenu.SetActive(false);
@@ -227,8 +226,9 @@ namespace SparFlame.UI.General
                 subGameplayUI.SetActive(false);
             }
             else
-                saveCityId.ValueRW.mainGameplayTransition = false;
-            
+            {
+                _progress.ProgressChanged -= UpdateLoadingScreen;
+            }
         }
 
         private void WinnerWin(FactionTag winner)
@@ -268,7 +268,7 @@ namespace SparFlame.UI.General
             loadingDark.SetActive(false);
             _progress.ProgressChanged -= UpdateLoadingScreen;
         }
-        private void PlayerChooseFactionAndStartGame(FactionTag faction)
+        private void ClickSlotAndStartGame(FactionTag faction,bool ifNewSlot,int slotIndex)
         {
             _playerFaction = faction;
             selectMenu.SetActive(false);

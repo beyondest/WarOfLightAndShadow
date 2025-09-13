@@ -155,7 +155,6 @@ namespace SparFlame.Systems.General.BasicControl
         private void Execute([ChunkIndexInQuery] int index, in MainGameplayGeneralAttr generalAttr,
             in LocalTransform transform, in CityAttr cityAttr,
             in DynamicBuffer<CityGarrisonEntity> cityGarrisonEntities,
-            in DynamicBuffer<CityGarrisonTypeData> cityGarrisonTypeDatas,
             in DynamicBuffer<CityResourceEntry> cityResourceEntries,
             in DynamicBuffer<CityTask> cityTasks,
             Entity selfEntity)
@@ -168,11 +167,7 @@ namespace SparFlame.Systems.General.BasicControl
                 scale = transform.Scale
             });
             ECB.AddComponent(index, saveEntity, cityAttr);
-            ECB.AddBuffer<CityGarrisonTypeData>(index, saveEntity);
-            foreach (var typeData in cityGarrisonTypeDatas)
-            {
-                ECB.AppendToBuffer(index, saveEntity, typeData);
-            }
+          
 
             ECB.AddBuffer<CityResourceEntry>(index, saveEntity);
             foreach (var cityResourceEntry in cityResourceEntries)
@@ -297,7 +292,6 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Execute([ChunkIndexInQuery] int index,
             in SeTransform transform, in CityAttr cityAttr,
-            in DynamicBuffer<CityGarrisonTypeData> cityGarrisonTypeDatas,
             in DynamicBuffer<CityResourceEntry> cityResourceEntries,
             in DynamicBuffer<CityTask> cityTasks,
             Entity selfEntity)
@@ -315,11 +309,7 @@ namespace SparFlame.Systems.General.BasicControl
                 Scale = transform.scale
             });
 
-            ECB.SetBuffer<CityGarrisonTypeData>(index, city);
-            foreach (var cityGarrisonTypeData in cityGarrisonTypeDatas)
-            {
-                ECB.AppendToBuffer(index, city, cityGarrisonTypeData);
-            }
+        
 
             ECB.SetBuffer<CityResourceEntry>(index,city);
             foreach (var cityResourceEntry in cityResourceEntries)

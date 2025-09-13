@@ -164,6 +164,8 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var clampedPos = math.clamp(pos, min, max);
             return math.distancesq(pos, clampedPos);
         }
+
+ 
         
         #endregion
 

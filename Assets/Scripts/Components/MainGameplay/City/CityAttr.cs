@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.General;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.Components.MainGameplay
 {
@@ -9,7 +10,6 @@ namespace SparFlame.Components.MainGameplay
     {
         public int globalId;
         public int maxGarrisonCount;
-        public int gridSize;
     }
 
     public struct CityData : IComponentData
@@ -24,12 +24,12 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
     }
 
-    [Serializable]
-    public struct CityGarrisonTypeData : IBufferElementData
-    {
-        public ArmyGroupIconType iconType;
-        public int count;
-    }
+    // [Serializable]
+    // public struct CityGarrisonTypeData : IBufferElementData
+    // {
+    //     public ArmyGroupIconType iconType;
+    //     public int count;
+    // }
 
     public struct CityEntityPrefabData : IBufferElementData
     {
@@ -65,23 +65,13 @@ namespace SparFlame.Components.MainGameplay
         public float accumulatedHours;
     }
 
-    
-    //------------------ Env ----------------------//
-    
-    [Serializable]
-    public struct CityAvailableGridNumber : IBufferElementData
-    {
-        public int value;
-    }
+
     
     
     //------------------ Battle -------------------//
 
     
-    public struct CityFutureAttackers : IBufferElementData
-    {
-        public Entity ArmyGroup;
-    }
+
     
 
 }
