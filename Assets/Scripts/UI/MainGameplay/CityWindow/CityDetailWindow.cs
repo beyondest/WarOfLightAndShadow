@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace SparFlame.UI.MainGameplay
 {
-    public class CityDetailWindow :MonoBehaviour, MultiSlotWindowUtils.ISingleTargetWindow
+    public class CityDetailWindow : MonoBehaviour, MultiSlotWindowUtils.ISingleTargetWindow
     {
         #region Config
 
@@ -19,9 +19,8 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private TMP_Text cityDescriptionText;
         [SerializeField] private Image generalFactionImage;
         [SerializeField] private Image subFactionImage;
-        
-        [Header("Panels")]
-        [SerializeField] private GameObject panel;
+
+        [Header("Panels")] [SerializeField] private GameObject panel;
         [SerializeField] private GameObject controlPanel;
 
         #endregion
@@ -29,10 +28,8 @@ namespace SparFlame.UI.MainGameplay
 
         #region Interface
 
-        
-
         public static CityDetailWindow Instance;
-       
+
 
         public void Show(Vector2? pos = null)
         {
@@ -47,12 +44,12 @@ namespace SparFlame.UI.MainGameplay
 
         public bool IsOpened()
         {
-           return panel.activeSelf;
+            return panel.activeSelf;
         }
 
         public bool TrySwitchTarget(Entity target)
         {
-            if(!_em.HasComponent<CityAttr>(target))return false;
+            if (!_em.HasComponent<CityAttr>(target)) return false;
             _targetEntity = target;
             UpdateStaticData();
             return true;
@@ -60,7 +57,7 @@ namespace SparFlame.UI.MainGameplay
 
         public bool HasTarget()
         {
-            return _targetEntity!= Entity.Null;
+            return _targetEntity != Entity.Null;
         }
 
         public void ClearCloseUpTarget()
@@ -76,24 +73,19 @@ namespace SparFlame.UI.MainGameplay
         {
             GameController.Instance.EnterPlayerCity(_targetEntity);
         }
-        
 
         #endregion
 
 
-       
         // Internal Data
         private Entity _targetEntity;
         private EntityManager _em;
-        
+
         #region EventFunctions
 
-        
-
-        
         private void Awake()
         {
-            if(!Instance)
+            if (!Instance)
                 Instance = this;
             else
             {
@@ -107,8 +99,6 @@ namespace SparFlame.UI.MainGameplay
             Hide();
         }
 
-   
-
         #endregion
 
 
@@ -118,23 +108,21 @@ namespace SparFlame.UI.MainGameplay
             var cityAttr = _em.GetComponentData<CityAttr>(_targetEntity);
             var playerFactionData = _em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
             var relationShip =
-                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
-            controlPanel.SetActive(relationShip == Relationship.Player);
+                FactionUtils.GetRelationship(playerFactionData.faction,
+                    playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
+            controlPanel.SetActive(relationShip == Relationship.Self
+                                   || (relationShip == Relationship.Ally &&
+                                       !_em.HasComponent<SupportFightTag>(_targetEntity)));
 
             var item = DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.globalId);
             cityNameText.text = item.gameplayName;
             cityDescriptionText.text = item.description;
             generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];
             subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.subFaction];
-            if(CityGarrisonWindow.Instance.TrySwitchTarget(_targetEntity))
+            if (CityGarrisonWindow.Instance.TrySwitchTarget(_targetEntity))
                 CityGarrisonWindow.Instance.Show();
             else
                 CityGarrisonWindow.Instance.Hide();
         }
-
-        
-        
     }
-    
-    
 }

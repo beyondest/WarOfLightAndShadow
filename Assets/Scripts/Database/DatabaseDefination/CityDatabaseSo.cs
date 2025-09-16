@@ -60,6 +60,10 @@ namespace SparFlame.Database
         [VerticalGroup("General"), AssetsOnly, PreviewField]
         public GameObject prefab;
 
+        [VerticalGroup("General")] public int lightModelIndex;
+        [VerticalGroup("General")] public int darkModelIndex;
+        
+        
         [TextArea(3, 10), VerticalGroup("Description"), HideLabel]
         public string description;
 

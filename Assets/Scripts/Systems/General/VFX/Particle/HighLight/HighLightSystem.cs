@@ -69,13 +69,14 @@ namespace SparFlame.Systems.General.VFX
                         {
                             Value = scale
                         });
-                        var relationship = FactionUtils.GetRelationship(playerFactionData, generalAttr.Faction,
+                        var relationship = FactionUtils.GetRelationship(playerFactionData.faction,
+                            playerFactionData.subFaction, generalAttr.Faction,
                             generalAttr.SubFaction);
                         var color = relationship switch
                         {
                             Relationship.Ally => config.AllyHighLightColor,
                             Relationship.Hostile => config.HostileHighLightColor,
-                            Relationship.Player => config.AllyHighLightColor,
+                            Relationship.Self => config.AllyHighLightColor,
                             Relationship.Neutral => config.NeutralHighLightColor,
                             _ => config.NeutralHighLightColor // this should never happen
                         };

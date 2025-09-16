@@ -238,6 +238,11 @@ namespace SparFlame.Systems.General.VFX
                         for (var j = vfxBuffer.Length - 1; j >= 0; j--)
                         {
                             var vfx = vfxBuffer[j];
+                            if (!SystemAPI.HasComponent<VFXData>(vfx.VFX))
+                            {
+                                vfxBuffer.RemoveAt(j);
+                                continue;
+                            }
                             // This should always happen
                             if (vfx.Name == request.VFXName)
                             {

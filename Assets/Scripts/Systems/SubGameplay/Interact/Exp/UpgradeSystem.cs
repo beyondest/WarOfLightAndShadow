@@ -35,6 +35,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
         private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
+        private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
+        private ComponentLookup<PlayerTag> _playerTagLookup;
+
 
         private ComponentLookup<StatData> _statDataLookup;
         private ComponentLookup<MovableData> _movableDataLookup;
@@ -63,6 +66,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
             _cityTaskUniqueIdLookup = state.GetComponentLookup<CityTaskUniqueId>(true);
+            _inArmyGroupLookup = state.GetComponentLookup<InArmyGroup>(true);
+            _playerTagLookup = state.GetComponentLookup<PlayerTag>(true);
 
             _statDataLookup = state.GetComponentLookup<StatData>();
             _movableDataLookup = state.GetComponentLookup<MovableData>();
@@ -100,6 +105,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _generalAttrLookup.Update(ref state);
             _dwellingAttrLookup.Update(ref state);
             _cityTaskUniqueIdLookup.Update(ref state);
+            _inArmyGroupLookup.Update(ref state);
+            _playerTagLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
             var job =new UpgradeJob
@@ -122,7 +129,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 CurrentTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours,
                 DwellingAttrLookup = _dwellingAttrLookup,
                 CityTaskUniqueIdLookup = _cityTaskUniqueIdLookup,
-                City = SystemAPI.GetSingleton<SubGameStatusData>().City
+                City = SystemAPI.GetSingleton<SubGameStatusData>().City,
+                InArmyGroupLookup = _inArmyGroupLookup,
+                PlayerTagLookup = _playerTagLookup,
             }.ScheduleParallel(state.Dependency);
             job.Complete();
             ecb.Playback(state.EntityManager);
@@ -158,6 +167,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<CapacityBuildingAttr> DwellingAttrLookup;
             [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
             [ReadOnly] public ComponentLookup<InArmyGroup> InArmyGroupLookup;
+            [ReadOnly] public ComponentLookup<PlayerTag> PlayerTagLookup;
 
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatDataLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableDataLookup;
@@ -174,7 +184,14 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 if (!GeneralAttrLookup.TryGetComponent(request.FromEntity, out var fromEntityGeneralAttr)) return;
                 if(!StatDataLookup.TryGetComponent(request.FromEntity, out var stat))return;
                 if(stat.curValue <= 0)return;
-                
+
+                if (InArmyGroupLookup.HasComponent(request.FromEntity)
+                    && PlayerTagLookup.HasComponent(request.FromEntity))
+                {
+                    var upGradeRecorderRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<SubGameplayEntityTag>(index, upGradeRecorderRequest);
+                    ECB.AddComponent<BattleRecorderPlayerUnitsUpgrade>(index, upGradeRecorderRequest);
+                }
                 
                 var trans = LocalTransformLookup[request.FromEntity];
                 var expData = ExpDataLookup[request.FromEntity];
@@ -370,6 +387,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         InteractorSubGameplayGeneralAttr = default
                     });
                 }
+                
             }
         }
     }

@@ -151,6 +151,38 @@ namespace SparFlame.Systems.SubGameplay.Command
                     }.ScheduleParallel();
                     break;
                 }
+                case SubGameplayCursorType.Retreat:
+                   
+                    targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
+                    name = VFXName.ControlToRetreat;
+                    new MovementRetreatJob
+                    {
+                        ECB = ecbP,
+                        TargetPos = targetPos,
+                        TargetColliderShape =
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
+                        TargetEntity = inputMouseData.HitEntity,
+                        Focus = true,
+                        InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,
+                    }.ScheduleParallel();
+                    break;
+
+                case SubGameplayCursorType.ArrowUp:
+                case SubGameplayCursorType.ArrowDown:
+                case SubGameplayCursorType.ArrowLeft:
+                case SubGameplayCursorType.ArrowRight:
+                case SubGameplayCursorType.ArrowLeftUp:
+                case SubGameplayCursorType.ArrowRightUp:
+                case SubGameplayCursorType.ArrowLeftDown:
+                case SubGameplayCursorType.ArrowRightDown:
+                case SubGameplayCursorType.ControlSelect:
+                case SubGameplayCursorType.CheckInfo:
+                case SubGameplayCursorType.Gather:
+                case SubGameplayCursorType.None:
+                case SubGameplayCursorType.ZoomIn:
+                case SubGameplayCursorType.ZoomOut:
+                case SubGameplayCursorType.Drag:
+                case SubGameplayCursorType.UI:
                 default:
                     return;
             }
@@ -373,6 +405,33 @@ namespace SparFlame.Systems.SubGameplay.Command
             basicStateData.TargetEntity = Entity.Null;
             basicStateData.TargetState = InteractState.Idle;
             basicStateData.Focus = Focus;
+        }
+    }
+    
+    [BurstCompile]
+    [WithAll(typeof(Selected))]
+    [WithNone(typeof(UnitDeadTag))]
+
+    public partial struct MovementRetreatJob : IJobEntity
+    {
+        public EntityCommandBuffer.ParallelWriter ECB;
+        [ReadOnly] public float3 TargetColliderShape;
+        [ReadOnly] public float3 TargetPos;
+        [ReadOnly] public float InteractiveRangeSq;
+        [ReadOnly] public Entity TargetEntity;
+        [ReadOnly] public bool Focus;
+        private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
+            ref BasicStateData basicStateData,
+            Entity selfEntity) 
+        {
+            
+            MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
+                MovementCommandType.Interactive, InteractiveRangeSq);
+            basicStateData.TargetState = InteractState.Moving;
+            StateUtils.SwitchState(ref basicStateData, ECB, selfEntity, index);
+            basicStateData.TargetEntity = TargetEntity;
+            basicStateData.Focus = Focus;
+            basicStateData.TargetState = InteractState.Garrison;
         }
     }
 

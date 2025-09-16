@@ -44,6 +44,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 });
                 AddComponent(entity, new ArmyGroupStatData());
                 AddComponent(entity, new ArmyGroupSkillTimer());
+                AddComponent(entity, new HpRegenerateTimer());
                 
                 // Moving 
                 AddBuffer<ArmyGroupMovingTarget>(entity);
@@ -123,7 +124,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 AddBuffer<ArmyGroupUnitTypeData>(entity);
                 
                 // Passing Data
-                AddComponent<LastPassingByPlayerCity>(entity);
+                AddComponent<LastPassingByCity>(entity);
                 
                 // State data
                 AddComponent(entity, new ArmyGroupStateData

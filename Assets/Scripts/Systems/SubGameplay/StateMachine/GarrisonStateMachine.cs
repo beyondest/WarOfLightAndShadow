@@ -30,6 +30,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<GarrisonStateTag> _garrisonStateTagLookup;
         private ComponentLookup<OocTag> _oocTagLookup;
         private ComponentLookup<ConstructingTimer> _constructingTagLookup;
+        private ComponentLookup<UnitRetreatTag> _unitRetreatTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -49,6 +50,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _constructingTagLookup = state.GetComponentLookup<ConstructingTimer>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
             _selectedAttrLookup = state.GetComponentLookup<Selected>();
+            _unitRetreatTagLookup = state.GetComponentLookup<UnitRetreatTag>(true);
         }
 
         [BurstCompile]
@@ -65,6 +67,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _constructingTagLookup.Update(ref state);
             _garrisonEntityLookup.Update(ref state);
             _selectedAttrLookup.Update(ref state);
+            _unitRetreatTagLookup.Update(ref state);
             var config = SystemAPI.GetSingleton<GarrisonSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -78,7 +81,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 OocTagLookup = _oocTagLookup,
                 ConstructingTagLookup = _constructingTagLookup,
                 SelectedLookup = _selectedAttrLookup,
-                Config = config
+                Config = config,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = job;
             new InGarrisonStateJob
@@ -91,6 +94,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 InsightTargetLookup = _insightTargetLookup,
                 TransformLookup = _localTransformLookup,
                 OocTagLookup = _oocTagLookup,
+                UnitRetreatTagLookup = _unitRetreatTagLookup,
                 Config = config
             }.ScheduleParallel();
         }
@@ -108,6 +112,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
             [ReadOnly] public ComponentLookup<GarrisonStateTag> GarrisonStateTagLookup;
             [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
+            [ReadOnly] public ComponentLookup<UnitRetreatTag> UnitRetreatTagLookup;
 
             private void Execute([ChunkIndexInQuery] int index, ref InGarrison inGarrison, ref BasicStateData stateData,
                 ref MovableData movableData, ref PhysicsMass physicsMass,
@@ -145,8 +150,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     return;
                 }
 
-                //   Generator
-                if (buildingAttr.Type == BuildingType.Generators)
+                //   Generator 
+                if (buildingAttr.Type == BuildingType.Generators )
                 {
                     if (!OocTagLookup.IsComponentEnabled(inGarrison.BuildingEntity)) return;
                     // Under attack
@@ -156,6 +161,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         Config, false);
                     stateData.TargetState = InteractState.Idle;
                     StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                    return;
+                }
+                // Retreat portal
+                if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.RetreatPortal })
+                {
+                    if (!UnitRetreatTagLookup.HasComponent(selfEntity))
+                    {
+                        ECB.AddComponent<UnitRetreatTag>(index,selfEntity);
+                    }
                     return;
                 }
 
@@ -336,7 +350,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     UnitEntity = selfEntity
                 });
                 ECB.AddComponent<SubGameplayEntityTag>(index,request);
-
+                
+              
                 stateData.TargetEntity = Entity.Null;
             }
         }

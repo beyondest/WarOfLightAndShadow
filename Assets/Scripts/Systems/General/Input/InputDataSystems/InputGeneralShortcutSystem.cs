@@ -19,6 +19,7 @@ namespace SparFlame.Systems.General.Input
 
         protected override void OnUpdate()
         {
+            var isOverInput = SystemAPI.GetSingleton<IsOverInputText>().IsOver;
             if (!_customInputActions.GeneralShortcut.enabled)
             {
                 SystemAPI.SetSingleton(new InputGeneralShortcutData());
@@ -26,7 +27,7 @@ namespace SparFlame.Systems.General.Input
             }
             SystemAPI.SetSingleton(new InputGeneralShortcutData
             {
-                Wait = _customInputActions.GeneralShortcut.Wait.WasPerformedThisFrame(),
+                Wait = _customInputActions.GeneralShortcut.Wait.WasPerformedThisFrame() && !isOverInput,
                 CheckInfo = _customInputActions.GeneralShortcut.CheckInfo.WasPerformedThisFrame(),
                 CloseWindow = _customInputActions.GeneralShortcut.CloseWindow.WasPerformedThisFrame(),
             });

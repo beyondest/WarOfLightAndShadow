@@ -102,9 +102,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var scale = Config.moveSpeedScale;
                 if (Debug.enabled)
                 {
-                    var relation = FactionUtils.GetRelationship(PlayerFactionData, generalData.faction,
+                    var relation = FactionUtils.GetRelationship(PlayerFactionData.faction,
+                        PlayerFactionData.subFaction, generalData.faction,
                         generalData.subFaction);
-                    scale *= relation == Relationship.Player
+                    scale *= relation == Relationship.Self
                         ? Debug.playerArmyGroupMovementScale
                         : Debug.nonPlayerArmyGroupMovementScale;
                 }

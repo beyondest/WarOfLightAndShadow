@@ -24,6 +24,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
         protected override void OnStartRunning()
         {
+            // Init prefab dictionary
             if (_obstacleTypePrefabMap.Count == 0)
             {
                 var config = SystemAPI.ManagedAPI.GetSingleton<ArmyGroupVolumeObstacleConfig>();

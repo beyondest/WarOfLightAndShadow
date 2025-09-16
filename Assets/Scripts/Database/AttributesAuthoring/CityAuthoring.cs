@@ -14,17 +14,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
     public class CityAuthoring : MonoBehaviour
     {
         public int globalIdx;
-        public List<LoadingGridInfo> nineGridInfos = new()
-        {
-           new LoadingGridInfo(),//0
-           new LoadingGridInfo(),
-           new LoadingGridInfo(),
-           new LoadingGridInfo(),
-           new LoadingGridInfo(),
-           new LoadingGridInfo(),
-           new LoadingGridInfo(),
-           new LoadingGridInfo(),//7
-        };
+        public List<LoadingGridInfo> nineGridInfos = new();
         
         private class CityAuthoringBaker : Baker<CityAuthoring>
         {
@@ -45,12 +35,17 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 {
                     globalId = authoring.globalIdx,
                     maxGarrisonCount = item.maxGarrisonArmyCount,
+                    lightModelIndex = item.lightModelIndex,
+                    darkModelIndex = item.darkModelIndex,
                 });
+                AddComponent<CityNeedInitModelTag>(entity);
+                
+           
                 AddComponent(entity, new BoxColliderSize
                 {
                     Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
                 });
-                
+                AddComponent(entity, new HpRegenerateTimer());
                 // City available grid numbers for army group to march in
                 var loadingGridInfos = AddBuffer<LoadingGridInfo>(entity);
                 foreach (var info in authoring.nineGridInfos)

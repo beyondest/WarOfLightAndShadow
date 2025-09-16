@@ -1,6 +1,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Systems.General.BasicControl;
 using Unity.Entities;
 using UnityEngine;
 
@@ -101,6 +102,10 @@ namespace SparFlame.UI.SubGameplay
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
             _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
+            GameController.Instance.OnSwitchGameStatusForSystems += _ =>
+            {
+                Hide();
+            };
         }
 
         private void Update()
@@ -250,6 +255,7 @@ namespace SparFlame.UI.SubGameplay
 
         public void Hide()
         {
+            ClearCloseUpTarget();
             infoPanel.SetActive(false);
             SubGameplayCloseUpWindow.Instance.Hide();
         }

@@ -144,6 +144,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                         armyGroupStatData.totalCurrentHp -= statData.curValue;
                                         armyGroupStatData.totalMaxHp -= statData.maxValue;
                                     }
+                                    else
+                                    {
+                                        armyGroupStatData.totalMaxHp -= request.StatMaxValue;
+                                    }
                                     entityBuffer.RemoveAt(j);
                                     break;
                                 }

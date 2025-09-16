@@ -29,7 +29,6 @@ namespace SparFlame.Systems.General.BasicControl
         public void SyncSaveGame(bool backToMainWorldAutoSave = false)
         {
             var subGameStatusData = _currentSubGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if(GameStatusUtils.IsInBattle(subGameStatusData))return; // When in battle, saving is not allowed
             
             // If battle not complete, save game is not allowed, player only has the pre-battle saving;
             // If battle complete but player failed, city sub game data still not save, because now city does not belong to player;
@@ -46,6 +45,7 @@ namespace SparFlame.Systems.General.BasicControl
                         OnEcsSaveArmyGroupSubData?.Invoke(false);
                         OnEcsSaveArmyGroupMainData?.Invoke();
                         OnEcsSaveGameMainData?.Invoke();
+                        OnEcsCopyAndDeleteTmpSubData?.Invoke();
                     }
                     else
                     {
@@ -63,10 +63,17 @@ namespace SparFlame.Systems.General.BasicControl
                     OnEcsCopyAndDeleteTmpSubData?.Invoke();
                     
                     break;
-                // These will never happen because player cannot save in battle
-                case SubGameStatus.PlayerSiege:
                 case SubGameStatus.PlayerDefend:
+                    // Player defend save sub data to tmp file
+                    OnEcsSaveCitySubData?.Invoke(true);
+                    OnEcsSaveArmyGroupSubData?.Invoke(true);
+                    break;
+
+                // These will happen when a battle ends, but saving job is handled by after battle transfer system
+                case SubGameStatus.PlayerSiege:
                 case SubGameStatus.Encounter:
+                    OnEcsSaveArmyGroupSubData?.Invoke(true);
+                    break;
                 case SubGameStatus.Support:
                 default:
                     break;

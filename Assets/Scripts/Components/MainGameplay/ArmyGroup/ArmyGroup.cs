@@ -60,7 +60,7 @@ namespace SparFlame.Components.MainGameplay
     }
 
 
-    public struct LastPassingByPlayerCity : IComponentData
+    public struct LastPassingByCity : IComponentData
     {
         public Entity City;
     }
@@ -182,8 +182,9 @@ namespace SparFlame.Components.MainGameplay
             if (entityManager.HasComponent<ArmyGroupInGarrison>(entity)) return false;
             var generalAttr = entityManager.GetComponentData<MainGameplayGeneralAttr>(entity);
             var relationship =
-                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
-            return relationship == Relationship.Player;
+                FactionUtils.GetRelationship(playerFactionData.faction, playerFactionData.subFaction,
+                    generalAttr.faction, generalAttr.subFaction);
+            return relationship == Relationship.Self;
         }
 
         /// <summary>
@@ -207,7 +208,42 @@ namespace SparFlame.Components.MainGameplay
             var clampedX = math.clamp(pos.x, left, right);
             var clampedZ = math.clamp(pos.z, bottom, top);
 
-            return new float3(clampedX,centerPos.y, clampedZ);
+            return new float3(clampedX, centerPos.y, clampedZ);
+        }
+
+        public static NativeHashMap<Entity, NativeList<float3>> GenerateArmyGroupSquareFormations(
+            NativeHashMap<Entity, int> armyGroupToUnitCount, float intervalLength, float3 firstBias
+        )
+        {
+            var armyGroupToSquarePositions =
+                new NativeHashMap<Entity, NativeList<float3>>(armyGroupToUnitCount.Capacity, Allocator.Temp);
+
+            var keys = armyGroupToUnitCount.GetKeyArray(Allocator.Temp);
+            foreach (var army in keys)
+            {
+                var unitCount = armyGroupToUnitCount[army];
+
+                // 决定方阵边长
+                var side = (int)math.ceil(math.sqrt(unitCount));
+
+                // 创建 NativeList
+                var positions = new NativeList<float3>(unitCount, Allocator.Temp);
+
+                var added = 0;
+                for (var z = 0; z < side && added < unitCount; z++)
+                {
+                    for (var x = 0; x < side && added < unitCount; x++)
+                    {
+                        positions.Add(new float3(x * intervalLength, 0, z * intervalLength) + firstBias);
+                        added++;
+                    }
+                }
+
+                armyGroupToSquarePositions.TryAdd(army, positions);
+            }
+
+            keys.Dispose();
+            return armyGroupToSquarePositions;
         }
     }
 }

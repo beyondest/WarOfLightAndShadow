@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
+using UnityEngine;
 
 namespace SparFlame.Components.SubGameplay
 {
@@ -47,5 +48,12 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct UnitDeadTag : IComponentData
     {
+    }
+    
+    // Every armyGroup and city has one
+    [Serializable]
+    public struct HpRegenerateTimer : IComponentData
+    {
+        public float lastCheckTotalHours;
     }
 }

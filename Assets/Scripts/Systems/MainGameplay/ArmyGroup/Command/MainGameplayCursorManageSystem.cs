@@ -37,17 +37,16 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(inputMouseData.HitEntity);
                 var hasSupportTag = SystemAPI.HasComponent<SupportFightTag>(inputMouseData.HitEntity);
                 var relationShip =
-                    FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+                    FactionUtils.GetRelationship(playerFactionData.faction,
+                        playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
                 switch (generalAttr.baseTag)
                 {
                     case MainGameBaseTag.City:
                         cursorData.CursorType = relationShip switch
                         {
-                            Relationship.Ally => hasSupportTag
-                                ? MainGameplayCursorType.Support
-                                : MainGameplayCursorType.Garrison,
-                            Relationship.Player => MainGameplayCursorType.Garrison,
-                            _ => MainGameplayCursorType.Invade
+                            Relationship.Hostile => MainGameplayCursorType.Invade,
+                            Relationship.Neutral => MainGameplayCursorType.Invade,
+                            _ => hasSupportTag ? MainGameplayCursorType.Support : MainGameplayCursorType.Garrison
                         };
 
                         break;

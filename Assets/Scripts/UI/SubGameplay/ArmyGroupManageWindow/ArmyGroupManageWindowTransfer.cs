@@ -3,7 +3,6 @@ using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Core.GlobalMono;
 using SparFlame.Core.Utils;
-using SparFlame.UI.SubGameplay.StaticWindows.Buttons;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -54,9 +53,7 @@ namespace SparFlame.UI.MainGameplay
             var prefab = playerFactionData.faction == FactionTag.Light
                 ? config.LightArmyGroupPrefab
                 : config.DarkArmyGroupPrefab;
-            var relationship =
-                FactionUtils.GetRelationship(playerFactionData, cityGeneralAttr.faction, cityGeneralAttr.subFaction);
-
+       
             // Instantiate army group
             var armyGroup = EntityManager.Instantiate(prefab);
             var armyGroupTransform = SystemAPI.GetComponent<LocalTransform>(armyGroup);
@@ -79,7 +76,7 @@ namespace SparFlame.UI.MainGameplay
             {
                 faction = playerFactionData.faction,
                 baseTag = MainGameBaseTag.ArmyGroup,
-                subFaction = relationship is Relationship.Player ? cityGeneralAttr.subFaction : SubFactionTag.None,
+                subFaction = playerFactionData.subFaction,
             });
 
             // Create garrison request

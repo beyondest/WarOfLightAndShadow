@@ -34,14 +34,14 @@ namespace SparFlame.Systems.SubGameplay.Interact
             
             
             _targetLookup.Update(ref state);
-            new AoeTriggerJob
+            new ArmyGroupSightTriggerJob
             {
                 TargetLookup = _targetLookup
             }.ScheduleParallel();
         }
 
         [BurstCompile]
-        public partial struct AoeTriggerJob : IJobEntity
+        public partial struct ArmyGroupSightTriggerJob : IJobEntity
         {
             [NativeDisableParallelForRestriction] public BufferLookup<ArmyGroupSightTarget> TargetLookup;
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in ArmyGroupSightData triggerData,

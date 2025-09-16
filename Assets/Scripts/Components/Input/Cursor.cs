@@ -50,12 +50,13 @@ namespace SparFlame.Components.Input
         Gather,
         None,
         
-        // Ally units control
+        // Player units control
         Attack,
         Heal,
         March,
         Garrison,
         Harvest,
+        Retreat,
 
         
         // Zoom Cursors

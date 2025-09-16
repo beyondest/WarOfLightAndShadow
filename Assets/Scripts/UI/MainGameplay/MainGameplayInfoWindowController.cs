@@ -1,6 +1,7 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
 using Unity.Entities;
 using UnityEngine;
@@ -82,6 +83,10 @@ namespace SparFlame.UI.MainGameplay
             _selectedData = _em.CreateEntityQuery(typeof(ArmyGroupSelectionData));
             _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
+            GameController.Instance.OnSwitchGameStatusForSystems += _ =>
+            {
+                Hide();
+            };
         }
 
         private void Update()
@@ -214,6 +219,7 @@ namespace SparFlame.UI.MainGameplay
 
         public void Hide()
         {
+            ClearCloseUpTarget();
             infoPanel.SetActive(false);
             _closeUpTarget = Entity.Null;
             // MainGameplayCloseUpWindow.Instance.Hide();

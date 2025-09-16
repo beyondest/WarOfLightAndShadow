@@ -35,6 +35,7 @@ namespace SparFlame.Systems.General.BasicControl
         private ComponentLookup<HealAbility> _healAbilityLookup;
         private ComponentLookup<HarvestAbility> _harvestAbilityLookup;
         private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
+        private ComponentLookup<SeLastPassingByCity> _seLastPassingByCityLookup;
 
         private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
         private ComponentLookup<ArmyGroupAttr> _armyGroupAttrLookup;
@@ -71,6 +72,8 @@ namespace SparFlame.Systems.General.BasicControl
             _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
             _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
             _armyGroupAttrLookup = GetComponentLookup<ArmyGroupAttr>(true);
+            _seLastPassingByCityLookup = GetComponentLookup<SeLastPassingByCity>(true);
+
 
             _garrisonEntitiesLookup = GetBufferLookup<SeGarrisonEntity>(true);
             _garrisonTypeDataLookup = GetBufferLookup<GarrisonTypeData>(true);
@@ -371,6 +374,7 @@ namespace SparFlame.Systems.General.BasicControl
             _armyGroupInGarrisonLookup.Update(this);
             _cityGarrisonEntitiesLookup.Update(this);
             _tmpIdLookup.Update(this);
+            _seLastPassingByCityLookup.Update(this);
             var loadCityJob = new LoadCityMainDataJob
             {
                 ECB = ecb.AsParallelWriter(),
@@ -382,8 +386,9 @@ namespace SparFlame.Systems.General.BasicControl
             var loadArmyGroupJob = new LoadArmyGroupMainDataJob
             {
                 ECB = ecb.AsParallelWriter(),
-                InGarrisonLookup = _armyGroupInGarrisonLookup,
-                ArmyGroupConfig = SystemAPI.GetSingleton<ArmyGroupConfig>()
+                SeInGarrisonLookup = _armyGroupInGarrisonLookup,
+                ArmyGroupConfig = SystemAPI.GetSingleton<ArmyGroupConfig>(),
+                SeLastPassingByCityLookup = _seLastPassingByCityLookup
             }.ScheduleParallel(Dependency);
             loadArmyGroupJob.Complete();
             ecb.Playback(EntityManager);
@@ -394,8 +399,15 @@ namespace SparFlame.Systems.General.BasicControl
                 _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
             }
 
+            var cityIdToCityEntity = new NativeHashMap<int, Entity>(3, Allocator.TempJob);
+            foreach (var (cityAttr, entity) in SystemAPI.Query<RefRO<CityAttr>>().WithEntityAccess())
+            {
+                cityIdToCityEntity.Add(cityAttr.ValueRO.globalId, entity);
+            }
+            
             _armyGroupInGarrisonLookup.Update(this);
             _cityGarrisonEntitiesLookup.Update(this);
+            _seLastPassingByCityLookup.Update(this);
             var ecb2 = new EntityCommandBuffer(Allocator.TempJob);
             var job2 = new MainGameplayReplaceTmpIdJob
             {
@@ -403,11 +415,14 @@ namespace SparFlame.Systems.General.BasicControl
                 SeGarrisonEntitiesLookup = _cityGarrisonEntitiesLookup,
                 SeInGarrisonLookup = _armyGroupInGarrisonLookup,
                 TmpIdxToInstances = _tmpIdxToInstances,
+                CityIdToEntities = cityIdToCityEntity,
+                SeLastPassingByCityLookup = _seLastPassingByCityLookup
             }.ScheduleParallel(Dependency);
             job2.Complete();
             ecb2.Playback(EntityManager);
             ecb2.Dispose();
             _tmpIdxToInstances.Clear();
+            cityIdToCityEntity.Dispose();
         }
 
         private void LoadGameMainData()

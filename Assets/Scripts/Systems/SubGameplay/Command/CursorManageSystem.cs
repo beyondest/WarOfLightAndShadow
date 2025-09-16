@@ -42,7 +42,7 @@ namespace SparFlame.Systems.SubGameplay.Command
 
             // Check is zooming
             if (IsZoomingCamera(ref cursorManageData, in cameraControlData)) return;
-            
+
             // Not Clickable. Like Nav layer object; default layer objects; or over UI
             if (customMouseData.HitEntity == Entity.Null || customMouseData.IsOverUI)
                 return;
@@ -62,9 +62,10 @@ namespace SparFlame.Systems.SubGameplay.Command
                     cursorManageData.ValueRW.LeftCursorType = SubGameplayCursorType.None;
                     cursorManageData.ValueRW.RightCursorType = SubGameplayCursorType.March;
                 }
+
                 return;
             }
-            
+
             // Hover on interactable
             var basicAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(customMouseData.HitEntity);
             var buildingAttr = new BuildingAttr();
@@ -79,6 +80,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                     {
                         isResourceValid = false;
                     }
+
                     break;
             }
 
@@ -86,37 +88,37 @@ namespace SparFlame.Systems.SubGameplay.Command
                 isResourceValid);
         }
 
-   
-        
 
         #region CursorSwitchLogic
 
-        
         private static void CheckMouseHovering(ref RefRW<SubGameplayCursorData> cursorManageData,
             in UnitSelectionData unitSelectionData,
             in SubGameplayGeneralAttr subGameplayGeneralAttr, in BuildingAttr buildingAttr, bool isResourceValid)
         {
             var attr = subGameplayGeneralAttr;
-            if(unitSelectionData.CurrentSelectFaction != FactionTag.Light)
+            if (unitSelectionData.CurrentSelectFaction != FactionTag.Light)
                 attr.Faction = ~attr.Faction;
-            
+
             // None unit selected
             if (unitSelectionData.CurrentSelectCount == 0)
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
                     (TeamTag: attr.Faction, attr.BaseTag) switch
                     {
-                        (FactionTag.Neutral, BaseTag.Resources) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.None),
-                        (FactionTag.Light, BaseTag.Units) => (SubGameplayCursorType.ControlSelect, SubGameplayCursorType.None),
+                        (FactionTag.Neutral, BaseTag.Resources) => (SubGameplayCursorType.CheckInfo,
+                            SubGameplayCursorType.None),
+                        (FactionTag.Light, BaseTag.Units) => (SubGameplayCursorType.ControlSelect,
+                            SubGameplayCursorType.None),
                         // (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.CurBuildingState == BuildingState.Worked => (
                         //     CursorType.Gather, CursorType.None),
-                        (FactionTag.Light, BaseTag.Buildings)/* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
+                        (FactionTag.Light, BaseTag
+                            .Buildings) /* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
                             SubGameplayCursorType.ControlSelect, SubGameplayCursorType.None),
                         (FactionTag.Dark, _) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.None),
                         (_, _) => (SubGameplayCursorType.UI, SubGameplayCursorType.None),
                     };
             }
-            // Ally unit selected
+            // Player unit selected
             else
             {
                 (cursorManageData.ValueRW.LeftCursorType, cursorManageData.ValueRW.RightCursorType) =
@@ -124,11 +126,13 @@ namespace SparFlame.Systems.SubGameplay.Command
                     {
                         (FactionTag.Neutral, BaseTag.Resources) when isResourceValid => (
                             SubGameplayCursorType.CheckInfo, SubGameplayCursorType.Harvest),
-                        (FactionTag.Light, BaseTag.Units) => (SubGameplayCursorType.ControlSelect, SubGameplayCursorType.Heal),
-                        // (FactionTag.Ally, BaseTag.Buildings) when buildingAttr.CurBuildingState == BuildingState.Worked => (
-                        //     CursorType.Gather, CursorType.Garrison),
-                        (FactionTag.Light, BaseTag.Buildings)/* when buildingAttr.CurBuildingState != BuildingState.Worked*/ => (
+                        (FactionTag.Light, BaseTag.Units) => (SubGameplayCursorType.ControlSelect,
+                            SubGameplayCursorType.Heal),
+                        (FactionTag.Light, BaseTag.Buildings) => (
                             SubGameplayCursorType.ControlSelect, SubGameplayCursorType.Garrison),
+                        (FactionTag.Neutral, BaseTag.Buildings) when buildingAttr.SubTypeIndex ==
+                                                                     (int)OrnamentType.RetreatPortal => (
+                            SubGameplayCursorType.CheckInfo, SubGameplayCursorType.Retreat),
                         (FactionTag.Dark, _) => (SubGameplayCursorType.CheckInfo, SubGameplayCursorType.Attack),
                         (_, _) => (SubGameplayCursorType.UI, SubGameplayCursorType.None),
                     };

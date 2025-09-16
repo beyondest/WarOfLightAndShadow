@@ -1,6 +1,4 @@
 ﻿using SparFlame.Components.General;
-using SparFlame.Components.MainGameplay;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -9,6 +7,13 @@ namespace SparFlame.Systems.General.Battle
 {
     public static class BattleUtils
     {
+     
+        
+        public static void StartRetreat(EntityManager em, bool isPlayerRetreat)
+        {
+            em.CreateSingleton<PlayerRetreatRequest>();
+        }
+        
         public static void TriggerBattle(SubGameStatus targetSubGameStatus, 
             Entity attacker,
             Entity defender,

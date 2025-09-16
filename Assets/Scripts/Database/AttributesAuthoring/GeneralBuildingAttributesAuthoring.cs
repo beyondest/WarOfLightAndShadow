@@ -139,7 +139,11 @@ namespace SparFlame.Database
                 {
                     AddComponent(entity, new CrystalDef());
                 }
-            
+
+                if (ornamentData.ornamentType == OrnamentType.RetreatPortal)
+                {
+                    AddComponent<RetreatPortalTag>(entity);
+                }
             }
         }
     }

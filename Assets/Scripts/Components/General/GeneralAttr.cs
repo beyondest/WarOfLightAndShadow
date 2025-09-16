@@ -36,7 +36,7 @@ namespace SparFlame.Components.General
         Neutral = 0,
         Ally = 1,
         Hostile = ~1,
-        Player = 2
+        Self = 2
     }
    
 }

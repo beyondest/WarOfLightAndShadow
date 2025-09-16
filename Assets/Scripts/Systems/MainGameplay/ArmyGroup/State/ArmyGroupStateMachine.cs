@@ -33,7 +33,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public void OnUpdate(ref SystemState state)
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
+            if (gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming) return;
             _localTransformLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             _supportFightTagLookup.Update(ref state);
@@ -61,11 +61,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             private void Execute([ChunkIndexInQuery] int index,
                 in ArmyGroupAttr armyGroupAttr,
                 ref DynamicBuffer<ArmyGroupSightTarget> targets,
-                ref LastPassingByPlayerCity lastCity, ref ArmyGroupMovableData movableData,
+                ref LastPassingByCity lastCity, ref ArmyGroupMovableData movableData,
                 ref ArmyGroupStateData stateData,
                 Entity selfEntity)
             {
-                var generalAttr = GeneralAttrLookup[selfEntity];
+                var selfGeneralAttr = GeneralAttrLookup[selfEntity];
 
                 // Check if movement complete
                 if (movableData.movementInfo == ArmyGroupMovementInfo.Complete)
@@ -81,10 +81,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             // This should never happen, because moving complete
                             break;
                         case ArmyGroupState.Invade:
-                            var relationship = FactionUtils.GetRelationship(PlayerFactionData, generalAttr.faction,
-                                generalAttr.subFaction);
+                            var relationship = FactionUtils.GetRelationship(PlayerFactionData.faction,
+                                PlayerFactionData.subFaction, selfGeneralAttr.faction,
+                                selfGeneralAttr.subFaction);
                             BattleUtils.TriggerBattle(
-                                relationship == Relationship.Player
+                                relationship == Relationship.Self
                                     ? SubGameStatus.PlayerSiege
                                     : SubGameStatus.PlayerDefend,
                                 selfEntity, stateData.Target, index, ECB
@@ -119,33 +120,34 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 }
 
                 // Only check sight target when army group is idle or moving
-                if (stateData.CurState != ArmyGroupState.Idle || stateData.CurState != ArmyGroupState.Moving) return;
+                if (stateData.CurState != ArmyGroupState.Idle && stateData.CurState != ArmyGroupState.Moving) return;
 
                 // Check should trigger encounter battle
                 var finalTarget = Entity.Null;
-                if (targets.Length > 1)
+                if (targets.Length > 0)
                 {
                     var minDisSq = float.MaxValue;
                     for (var i = 0; i < targets.Length; i++)
                     {
                         var target = targets[i].Entity;
                         var targetGeneralAttr = GeneralAttrLookup[target];
-                        var relationship = FactionUtils.GetRelationship(PlayerFactionData, targetGeneralAttr.faction,
+                        var relationship = FactionUtils.GetRelationship(selfGeneralAttr.faction,
+                            selfGeneralAttr.subFaction, targetGeneralAttr.faction,
                             targetGeneralAttr.subFaction);
                         // This cases should not trigger encounter battle
-                        if (relationship is Relationship.Ally or Relationship.Player or Relationship.Neutral)
+                        if (relationship is Relationship.Self or Relationship.Ally or Relationship.Neutral)
                         {
                             // Record the last passing by city
                             if (targetGeneralAttr.baseTag == MainGameBaseTag.City
-                                && relationship is Relationship.Player)
+                                && relationship == Relationship.Self)
                                 lastCity.City = target;
                             // Exclude same faction army group
                             continue;
                         }
-                        
+
                         // If it should trigger invade battle, only triggers when army group moving complete
                         // If army group happens to nearby the city, the battle should be triggered by city state machine
-                        if(targetGeneralAttr.baseTag == MainGameBaseTag.City)continue;
+                        if (targetGeneralAttr.baseTag == MainGameBaseTag.City) continue;
 
                         var dis = math.distancesq(TransformLookup[target].Position,
                             TransformLookup[selfEntity].Position);

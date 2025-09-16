@@ -42,6 +42,7 @@ namespace SparFlame.Components.VFX
         UnitUpgrade = 32,
         UnitGarrisonBuff = 33,
         ArmyGroupSelectionIndicator = 34,
+        ControlToRetreat = 35,
     }
 
     public enum VFXType

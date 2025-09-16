@@ -243,10 +243,13 @@ namespace SparFlame.Systems.General.BasicControl
                 {
                     Value = GameStatus.SubGaming
                 });
-                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<MainGamingTag>());
-                EntityManager.CreateSingleton<SubGamingTag>();
+                if (SystemAPI.HasSingleton<MainGamingTag>())
+                {
+                    EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<MainGamingTag>());
+                    EntityManager.CreateSingleton<SubGamingTag>();
+                }
             }
-
+            
             SystemAPI.SetSingleton(targetSubGameStatusData);
         }
 

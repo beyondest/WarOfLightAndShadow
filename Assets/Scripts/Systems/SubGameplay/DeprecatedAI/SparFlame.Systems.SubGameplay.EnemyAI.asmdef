@@ -1,0 +1,31 @@
+﻿{
+  "name": "SparFlame.Systems.SubGameplay.EnemyAI",
+  "rootNamespace": "SparFlame",
+  "references": [
+    "Unity.Burst",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.Entities.Hybrid",
+    "Unity.Collections",
+    "Unity.Transforms",
+    "Unity.Physics",
+    "Unity.Physics.Custom",
+    "Unity.Physics.Stateful",
+    "SparFlame.Core",
+    "SparFlame.Components",
+    "SparFlame.Systems.SubGameplay.StateMachine",
+    "SparFlame.Systems.SubGameplay.Movement",
+    "SparFlame.Systems.SubGameplay.Interact",
+    "SparFlame.Systems.General.BasicControl"
+    
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

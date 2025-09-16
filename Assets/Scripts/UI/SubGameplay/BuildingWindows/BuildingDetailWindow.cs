@@ -351,8 +351,16 @@ namespace SparFlame.UI.SubGameplay
 
         private void ActiveNecessaryPanels(SubGameplayGeneralAttr generalAttr)
         {
-            var relationship = FactionUtils.GetRelationship(_playerFactionData, generalAttr.Faction,
+            var relationship = FactionUtils.GetRelationship(_playerFactionData.faction,
+                _playerFactionData.subFaction, generalAttr.Faction,
                 generalAttr.SubFaction);
+            
+            // Retreat portal should not show any panels
+            if (_buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.RetreatPortal })
+            {
+                constructPanel.SetActive(false);
+                return;
+            }
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
             {
                 var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
@@ -399,7 +407,7 @@ namespace SparFlame.UI.SubGameplay
                 case BuildingType.ConjuringShrines:
 
                     // Player can only control player self buildings
-                    if (relationship != Relationship.Player) break;
+                    if (relationship != Relationship.Self) break;
                     conjurePanel.SetActive(true);
                     var conjureAttribute = Em.GetComponentData<ConjureAttr>(_targetEntity);
                     var currentTier = Em.GetComponentData<ExpData>(_targetEntity).curTier;
@@ -436,7 +444,7 @@ namespace SparFlame.UI.SubGameplay
             }
 
             // Check should open these control windows for player
-            if (relationship == Relationship.Player)
+            if (relationship == Relationship.Self)
             {
                 constructPanel.SetActive(true);
                 if (isMainInfoSingleton)
@@ -606,14 +614,14 @@ namespace SparFlame.UI.SubGameplay
         private List<CostList> CalculateUpgradeCostList()
         {
             var list = new List<CostList>();
-            if (Em.HasComponent<ExpData>(_targetEntity))
+            if (Em.HasComponent<ExpData>(_targetEntity) && Em.HasComponent<ExpData>(ExpStaticConfig.NextTierPrefab))
             {
                 EcsGetExpStaticConfig?.Invoke(_targetEntity);
                 var expDynamicData = Em.GetComponentData<ExpData>(_targetEntity);
                 if (expDynamicData.curTier != ExpStaticConfig.MaxTier)
                 {
                     var curCost = Em.GetBuffer<CostList>(_targetEntity);
-                    var tarCost = Em.GetBuffer<CostList>(ExpStaticConfig.NextTierPrefab);
+                    var tarCost =Em.HasBuffer<CostList>(ExpStaticConfig.NextTierPrefab) ? Em.GetBuffer<CostList>(ExpStaticConfig.NextTierPrefab) : curCost;
                     foreach (var costList in tarCost)
                     {
                         var e = costList;

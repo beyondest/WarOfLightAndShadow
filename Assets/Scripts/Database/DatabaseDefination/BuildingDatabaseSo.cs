@@ -217,11 +217,6 @@ namespace SparFlame.Database
             {
                 baseTag = BaseTag.Buildings;
             }
-
-            if (factionTag == default)
-            {
-                factionTag = FactionTag.Light;
-            }
         }
 
         public bool IsGarrisonEnable()
@@ -232,8 +227,8 @@ namespace SparFlame.Database
                                                (FortificationType)GetSubtypeIndex() == FortificationType.BigTower,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
                 BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
-                BuildingType.ConjuringShrines or BuildingType.CapacityBuildings or BuildingType.Ornaments => false,
-                _ => BurstSafe.UnexpectedEnum(type,false)
+                BuildingType.Ornaments when GetSubtypeIndex() == (int) OrnamentType.RetreatPortal => true,
+                _ => false
             };
         }
 

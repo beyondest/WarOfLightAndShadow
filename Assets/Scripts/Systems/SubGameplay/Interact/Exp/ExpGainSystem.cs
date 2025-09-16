@@ -87,8 +87,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 if (!ExpLookup.HasComponent(request.GainEntity)) return;
                 var expData = ExpLookup.GetRefRW(request.GainEntity);
                 var relationship =
-                    FactionUtils.GetRelationship(PlayerFactionData, generalAttr.Faction, generalAttr.SubFaction);
-                var debugScale = relationship == Relationship.Player
+                    FactionUtils.GetRelationship(PlayerFactionData.faction,
+                        PlayerFactionData.subFaction, generalAttr.Faction, generalAttr.SubFaction);
+                var debugScale = relationship == Relationship.Self
                     ? ExpDebug.playerExpGainScale
                     : ExpDebug.aiExpGainScale;
                 if (request.Multiplier == 0) request.Multiplier = 1f;

@@ -52,6 +52,10 @@ namespace SparFlame.Systems.General.BasicControl
             PauseGame(false);
         }
 
+        /// <summary>
+        /// If true, pause menu will not show and unity time scale will not be set to 0.
+        /// </summary>
+        /// <param name="isSwitchingGameplay"></param>
         public void PauseGame(bool isSwitchingGameplay)
         {
             OnPause?.Invoke(isSwitchingGameplay);
@@ -250,6 +254,10 @@ namespace SparFlame.Systems.General.BasicControl
             StartCoroutine(CheckResourceLoading());
         }
 
+        public void SwitchSubGameStatus(in SubGameStatusData targetSubGameStatusData)
+        {
+            OnSwitchGameStatusForSystems?.Invoke(targetSubGameStatusData);
+        }
 
         public void DestroyGameplayEntities(ClearGameplayEntitiesType clearType)
         {

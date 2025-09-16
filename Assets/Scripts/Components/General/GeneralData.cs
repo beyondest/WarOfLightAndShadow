@@ -23,17 +23,15 @@ namespace SparFlame.Components.General
 
     public struct FactionUtils
     {
-        public static Relationship GetRelationship(in PlayerFactionData playerFactionData,
+        public static Relationship GetRelationship(FactionTag selfFaction, SubFactionTag selfSubFaction,
             FactionTag targetFaction, SubFactionTag targetSubFaction)
         {
             if(targetFaction == FactionTag.Neutral) // Neutral faction has no sub faction
                 return Relationship.Neutral;
-            if (playerFactionData.faction == ~targetFaction)
+            if (selfFaction == ~targetFaction)
                 return Relationship.Hostile;
             // Light faction is ally to same general faction, dark faction is ally only when sub faction is same too
-            if(playerFactionData.faction == FactionTag.Light)
-                return ContainsSubFaction(targetSubFaction, playerFactionData) ? Relationship.Player : Relationship.Ally;
-            return ContainsSubFaction(targetSubFaction, playerFactionData) ? Relationship.Player : Relationship.Neutral;
+            return ContainsSubFaction(targetSubFaction, selfSubFaction) ? Relationship.Self : Relationship.Ally;
         }
 
         public static void ExpandSubFaction(SubFactionTag targetSubFaction,ref PlayerFactionData playerFactionData)
@@ -43,9 +41,9 @@ namespace SparFlame.Components.General
             playerFactionData.subFaction = (SubFactionTag)intFaction;
         }
 
-        private static bool ContainsSubFaction(SubFactionTag checkFaction, in PlayerFactionData playerFactionData)
+        private static bool ContainsSubFaction(SubFactionTag checkFaction, SubFactionTag selfSubFaction)
         {
-            var intFaction = (int)playerFactionData.subFaction;
+            var intFaction = (int)selfSubFaction;
             return (intFaction & (int)checkFaction) != 0;
         }
     }

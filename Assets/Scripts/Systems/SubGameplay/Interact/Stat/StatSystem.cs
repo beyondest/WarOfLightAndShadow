@@ -61,7 +61,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
-            state.RequireForUpdate<StatSystemConfig>();
+            state.RequireForUpdate<HpRegenerationConfig>();
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<OocSystemConfig>();
 

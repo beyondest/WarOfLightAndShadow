@@ -1,16 +1,18 @@
 ﻿using System.Collections.Generic;
-using NUnit.Framework;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
+using TMPro;
 using Unity.Entities;
+using UnityEngine;
 
 namespace SparFlame.UI.MainGameplay
 {
     public class CityGarrisonWindow : MultiSlotWindowUtils.MultiSlotsWindow<CityGarrisonSlot>,
         MultiSlotWindowUtils.ISingleTargetWindow
     {
+        [SerializeField] private TMP_Text garrisonedCount;
         public static CityGarrisonWindow Instance;
 
         public bool TrySwitchTarget(Entity target)
@@ -19,7 +21,8 @@ namespace SparFlame.UI.MainGameplay
             var buffer = _em.GetBuffer<CityGarrisonEntity>(target);
             if (buffer.Length == 0) return false;
             _target = target;
-            UpdateSlots();
+
+            UpdateDynamicData();
             return true;
         }
 
@@ -37,9 +40,11 @@ namespace SparFlame.UI.MainGameplay
         {
             var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(_target);
             var playerFactionData = _em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
-            var relationship = FactionUtils.GetRelationship(playerFactionData,generalAttr.faction,generalAttr.subFaction);
-            if(relationship != Relationship.Player)return;
-            
+            var relationship =
+                FactionUtils.GetRelationship(playerFactionData.faction, playerFactionData.subFaction,
+                    generalAttr.faction, generalAttr.subFaction);
+            if (relationship != Relationship.Self) return;
+
             var buffer = _em.GetBuffer<CityGarrisonEntity>(_target);
             if (buffer.Length == 0 || slotIndex >= buffer.Length) return;
 
@@ -47,11 +52,12 @@ namespace SparFlame.UI.MainGameplay
             foreach (var cityGarrisonEntity in buffer)
             {
                 var units = _em.GetBuffer<ArmyGroupUnit>(cityGarrisonEntity.ArmyGroup);
-                if(units.Length == 0)continue;
+                if (units.Length == 0) continue;
                 nonZeroList.Add(cityGarrisonEntity);
             }
-            if(slotIndex >= nonZeroList.Count) return;
-            
+
+            if (slotIndex >= nonZeroList.Count) return;
+
             var request = _em.CreateEntity();
             _em.AddComponent<ArmyGroupGarrisonRequest>(request);
             _em.SetComponentData(request, new ArmyGroupGarrisonRequest
@@ -94,22 +100,26 @@ namespace SparFlame.UI.MainGameplay
                 Hide();
                 return;
             }
-            UpdateSlots();
+
+            UpdateDynamicData();
         }
 
         #endregion
 
-        private void UpdateSlots()
+        private void UpdateDynamicData()
         {
             var oriBuffer = _em.GetBuffer<CityGarrisonEntity>(_target);
             var noZeroBuffer = new List<CityGarrisonEntity>();
             foreach (var cityGarrisonEntity in oriBuffer)
             {
                 var units = _em.GetBuffer<ArmyGroupUnit>(cityGarrisonEntity.ArmyGroup);
-                if(units.Length == 0)continue;
+                if (units.Length == 0) continue;
                 noZeroBuffer.Add(cityGarrisonEntity);
             }
-       
+
+            var cityGarrisonCount = _em.GetComponentData<CityAttr>(_target).maxGarrisonCount;
+
+            garrisonedCount.text = $"{noZeroBuffer.Count}/{cityGarrisonCount}";
 
             for (var i = 0; i < Slots.Count; i++)
             {
@@ -117,9 +127,9 @@ namespace SparFlame.UI.MainGameplay
                 {
                     var armyGroup = noZeroBuffer[i].ArmyGroup;
                     var armyGroupAttr = _em.GetComponentData<ArmyGroupAttr>(armyGroup);
-                    
+
                     Slots[i].SetActive(true);
-                    
+
                     SlotComponents[i].button!.image.sprite =
                         ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
                     SlotComponents[i].armyGroupName.text = armyGroupAttr.gameplayName.ToString();

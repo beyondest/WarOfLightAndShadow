@@ -75,7 +75,7 @@ namespace SparFlame.Core.Utils
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ContainsEq<T>( NativeList<T> list, in T value)
-            where T : unmanaged, System.IEquatable<T>
+            where T : unmanaged, IEquatable<T>
         {
             var len = list.Length;
             for (var i = 0; i < len; i++)

@@ -42,6 +42,7 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
         public int MoveOutId;
         public RemoveFromArmyGroupType RemoveType;
+        public int StatMaxValue;
     }
 
     

@@ -71,7 +71,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         public void UpDateCandidates(List<ArmyGroupSlotInfo> armyGroupSlotInfos, bool isInPlayerCity)
         {
-            enterAccurateSelectionButton.SetActive(!_isInSelectionMode && isInPlayerCity);
+            // enterAccurateSelectionButton.SetActive(!_isInSelectionMode && isInPlayerCity);
             switch (_currentArmyGroupSortType)
             {
                 case ArmyGroupSortType.ByCreateTimeAscending:

@@ -1,16 +1,18 @@
 ﻿using System;
-using System.ComponentModel;
 using SparFlame.Components.MainGameplay;
 using Unity.Entities;
 using Unity.Mathematics;
 
 namespace SparFlame.Components.General
 {
-    public enum BattleFieldType
+
+
+    public enum BattleResult
     {
-        None = 0,
-        Prairie = 1,
-        Forest = 2,
+        PlayerWin,
+        PlayerLose,
+        PlayerRetreat,
+        EnemyRetreat
     }
     
     public struct BattleTriggerRequest : IComponentData
@@ -19,6 +21,18 @@ namespace SparFlame.Components.General
         public Entity Defender;
         public SubGameStatus TargetSubGameStatus;
     }
+
+    public struct PlayerRetreatRequest : IComponentData
+    {
+    }
+    
+    public struct UnitRetreatTag : IComponentData{}
+
+    public struct BattleEndRequest : IComponentData
+    {
+        public BattleResult Result;
+    }
+    
     public struct SupportFightTag : IComponentData{}
 
     public struct SupportFightInvader : IBufferElementData
@@ -58,4 +72,37 @@ namespace SparFlame.Components.General
         public EcoType EcoType;
         public Entity EcoEntity;
     }
+    
+    
+    //----------------- Battle info recorder----------------------//
+
+    public struct BattleRecorder : IComponentData
+    {
+        public float StartTime;
+        public int PlayerSideDiedCount;
+        public int EnemySideDiedCount;
+        public int PlayerSideDestroyedBuildingsCount;
+        public int EnemySideDestroyedBuildingsCount;
+        public int PlayerUnitsUpgradeCount;
+
+        public float KilledRewardValue;
+        public float DestroyedRewardValue;
+    }
+    
+    public struct BattleRecorderPlayerSideDied : IComponentData{}
+
+    public struct BattleRecorderEnemySideDied : IComponentData
+    {
+        public int DiedUnitLevel;
+    }
+    public struct BattleRecorderPlayerSideDestroyedBuilding : IComponentData{}
+
+    public struct BattleRecorderEnemySideDestroyedBuilding : IComponentData
+    {
+        public Tier DestroyedBuildingTier;
+    }
+    
+    public struct BattleRecorderPlayerUnitsUpgrade : IComponentData{}
+    
+    
 }

@@ -11,6 +11,7 @@ namespace SparFlame.Systems.Map
     public partial struct MiniMapSystem : ISystem
     {
         private ComponentLookup<MiniMapMaterialTag> _miniMapMaterialLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -27,75 +28,44 @@ namespace SparFlame.Systems.Map
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var colorConfig = SystemAPI.GetSingleton<MiniMapConfig>();
             _miniMapMaterialLookup.Update(ref state);
-    
+
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            
-            foreach (var (attr, entity) in SystemAPI.Query<RefRO<SubGameplayGeneralAttr>>().WithEntityAccess().WithNone<MiniMapInitCompleteTag>())
+
+            foreach (var (attr, entity) in SystemAPI.Query<RefRO<SubGameplayGeneralAttr>>().WithEntityAccess()
+                         .WithNone<MiniMapInitCompleteTag>())
             {
                 var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
-                ecb.AddComponent<MiniMapInitCompleteTag>( entity);
+                ecb.AddComponent<MiniMapInitCompleteTag>(entity);
                 var relationship =
-                    FactionUtils.GetRelationship(playerFactionData, attr.ValueRO.Faction, attr.ValueRO.SubFaction);
-                if(attr.ValueRO.Faction == FactionTag.Neutral)continue;
+                    FactionUtils.GetRelationship(playerFactionData.faction,
+                        playerFactionData.subFaction, attr.ValueRO.Faction, attr.ValueRO.SubFaction);
+                if (attr.ValueRO.Faction == FactionTag.Neutral) continue;
                 var color = relationship switch
                 {
                     Relationship.Ally => colorConfig.AllyColor,
                     Relationship.Hostile => colorConfig.HostileColor,
-                    Relationship.Player => colorConfig.PlayerColor,
+                    Relationship.Self => colorConfig.PlayerColor,
                     _ => colorConfig.NeutralColor
                 };
                 foreach (var group in buffer)
                 {
                     if (SystemAPI.HasComponent<MiniMapMaterialTag>(group.Value))
                     {
-                        ecb.SetComponent( group.Value, new MiniMapColorVector4Override
+                        ecb.SetComponent(group.Value, new MiniMapColorVector4Override
                         {
                             Value = color
                         });
                         var renderFilterSettings =
                             state.EntityManager.GetSharedComponent<RenderFilterSettings>(group.Value);
                         renderFilterSettings.Layer = colorConfig.Layer;
-                        ecb.SetSharedComponent( group.Value, renderFilterSettings );
+                        ecb.SetSharedComponent(group.Value, renderFilterSettings);
                     }
                 }
             }
+
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
-        
-        // [BurstCompile]
-        // [WithNone(typeof(MiniMapInitCompleteTag))]
-        // public partial struct MiniMapJob : IJobEntity
-        // {
-        //     public MiniMapConfig Config;
-        //     public FactionTag PlayerFaction;
-        //     public EntityCommandBuffer.ParallelWriter ECB;
-        //     [ReadOnly] public ComponentLookup<MiniMapMaterialTag> MiniMapTagLookup;
-        //     private void Execute([ChunkIndexInQuery]int in GeneralAttr generalAttr,in DynamicBuffer<LinkedEntityGroup> groups,
-        //         Entity selfEntity)
-        //     {
-        //         ECB.AddComponent<MiniMapInitCompleteTag>( selfEntity);
-        //         if(generalAttr.FactionTag == FactionTag.Neutral)return;
-        //         var color = generalAttr.FactionTag == PlayerFaction ? Config.PlayerColor :
-        //         Config.EnemyColor;
-        //         foreach (var group in groups)
-        //         {
-        //             if (MiniMapTagLookup.HasComponent(group.Value))
-        //             {
-        //                ECB.SetComponent( group.Value, new MiniMapColorVector4Override
-        //                {
-        //                    Value = color
-        //                });
-        //                ECB.SetSharedComponent( group.Value, new RenderFilterSettings
-        //                {
-        //                    Layer = Config.Layer
-        //                });
-        //             }
-        //         }
-        //     }
-        //     
-        //    
-        // }
 
     }
 }

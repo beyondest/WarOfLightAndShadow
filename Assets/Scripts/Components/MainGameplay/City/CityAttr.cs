@@ -10,9 +10,16 @@ namespace SparFlame.Components.MainGameplay
     {
         public int globalId;
         public int maxGarrisonCount;
+        public int lightModelIndex;
+        public int darkModelIndex;
     }
 
     public struct CityData : IComponentData
+    {
+        
+    }
+
+    public struct CityNeedInitModelTag : IComponentData
     {
         
     }
@@ -68,7 +75,7 @@ namespace SparFlame.Components.MainGameplay
 
     
     
-    //------------------ Battle -------------------//
+   
 
     
 

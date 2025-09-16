@@ -36,6 +36,7 @@ namespace SparFlame.Systems.General.BasicControl
         private ComponentLookup<ArmyGroupAttr> _armyGroupAttrLookup;
         private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
         private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
+        private ComponentLookup<CityAttr> _cityAttrLookup;
 
         private bool _initialized;
 
@@ -56,6 +57,7 @@ namespace SparFlame.Systems.General.BasicControl
             _armyGroupAttrLookup = GetComponentLookup<ArmyGroupAttr>(true);
             _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
             _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
+            _cityAttrLookup = GetComponentLookup<CityAttr>(true);
 
             _saveArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>().Build();
         }
@@ -69,7 +71,7 @@ namespace SparFlame.Systems.General.BasicControl
                 SaveLoadController.Instance.OnEcsSaveCityMainData += SaveCityMainData;
                 SaveLoadController.Instance.OnEcsSaveArmyGroupMainData += SaveArmyGroupMainData;
                 SaveLoadController.Instance.OnEcsSaveGameMainData += SaveGameMainData;
-                SaveLoadController.Instance.OnEcsCopyAndDeleteTmpSubData += CopyAndDeleteTmpSubData;
+                SaveLoadController.Instance.OnEcsCopyAndDeleteTmpSubData += CopyDeleteTmpOrInvalidSubData;
                 _initialized = true;
             }
         }
@@ -244,6 +246,7 @@ namespace SparFlame.Systems.General.BasicControl
             _movingTagLookup.Update(this);
             _calculateEnableLookup.Update(this);
             _armyGroupInGarrisonLookup.Update(this);
+            _cityAttrLookup.Update(this);
             var path = SaveUtilities.GetArmyGroupMainDataPath(SystemAPI.GetSingleton<PlayerSaveSlot>().Value);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var job = new SaveArmyGroupMainDataJob
@@ -251,7 +254,8 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB = ecb.AsParallelWriter(),
                 ArmyGroupCalculateEnableLookup = _calculateEnableLookup,
                 ArmyGroupMovingTagLookup = _movingTagLookup,
-                ArmyGroupInGarrisonLookup = _armyGroupInGarrisonLookup
+                ArmyGroupInGarrisonLookup = _armyGroupInGarrisonLookup,
+                CityAttrLookup = _cityAttrLookup
             }.ScheduleParallel(Dependency);
             job.Complete();
             using (var serializeWorld = new World("Serialization World"))
@@ -317,11 +321,11 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        private void CopyAndDeleteTmpSubData()
+        private void CopyDeleteTmpOrInvalidSubData()
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>();
 
-            // Copy city sub data from tmp to true save path
+            // Copy city sub data from tmp to true save path and delete tmp path
             foreach (var cityAttr in SystemAPI.Query<RefRO<CityAttr>>())
             {
                 var tmpPath = SaveUtilities.GetCitySubDataPath(cityAttr.ValueRO.globalId,
@@ -334,7 +338,7 @@ namespace SparFlame.Systems.General.BasicControl
                     File.Delete(tmpPath);
                 }
             }
-            // Copy army group sub data from tmp to true save path
+            // Copy army group sub data from tmp to true save path and delete tmp path
 
             foreach (var armyGroupAttr in SystemAPI.Query<RefRO<ArmyGroupAttr>>())
             {
@@ -348,6 +352,56 @@ namespace SparFlame.Systems.General.BasicControl
                     File.Delete(tmpPath);
                 }
             }
+            
+            // Delete non-player city sub data if it exists, delete dead army group sub data if it exists
+            
+            var playerCityQuery = SystemAPI.QueryBuilder().WithAll<CityAttr>().WithAll<PlayerTag>().Build();
+            var playerArmyGroups = SystemAPI.QueryBuilder().WithAll<ArmyGroupAttr>()
+                .WithAll<PlayerTag>().Build();
+            var cityAttrs = playerCityQuery.ToComponentDataArray<CityAttr>(Allocator.Temp);
+            var armyGroupAttrs = playerArmyGroups.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
+            var cityValidSaveIds = new NativeHashSet<int>(3, Allocator.Temp);
+            var armyGroupValidSaveIds = new NativeHashSet<long>(3, Allocator.Temp);
+
+            foreach (var cityAttr in cityAttrs)
+            {
+                cityValidSaveIds.Add(cityAttr.globalId);
+            }
+
+            foreach (var armyGroupAttr in armyGroupAttrs)
+            {
+                armyGroupValidSaveIds.Add(armyGroupAttr.saveId);
+            }
+
+            var citySubDataFolder = SaveUtilities.GetCitySubDataFolder(playerSaveSlot.Value);
+            var armyGroupSubDataFolder = SaveUtilities.GetArmyGroupSubDataFolder(playerSaveSlot.Value);
+            var citySubDataFiles = Directory.GetFiles(citySubDataFolder);
+            var armyGroupSubDataFiles = Directory.GetFiles(armyGroupSubDataFolder);
+            
+            foreach (var citySubDataFile in citySubDataFiles)
+            {
+                var fileName = citySubDataFile.Split(".")[0];
+                if (int.TryParse(fileName, out var cityGlobalId))
+                {
+                    if (!cityValidSaveIds.Contains(cityGlobalId))
+                    {
+                        File.Delete(citySubDataFile);
+                    }
+                }
+            }
+
+            foreach (var armyGroupSubDataFile in armyGroupSubDataFiles)
+            {
+                var fileName = armyGroupSubDataFile.Split(".")[0];
+                if (long.TryParse(fileName, out var armyGroupSaveId))
+                {
+                    if (!armyGroupValidSaveIds.Contains(armyGroupSaveId))
+                    {
+                        File.Delete(armyGroupSubDataFile);
+                    }
+                }
+            }
+
         }
     }
 }

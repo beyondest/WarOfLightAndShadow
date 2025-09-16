@@ -10,8 +10,8 @@ namespace SparFlame.Systems.General.Battle
 {
     public partial struct BattleTriggerSystem : ISystem
     {
-
         private EntityQuery _requestQuery;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -34,8 +34,9 @@ namespace SparFlame.Systems.General.Battle
                 var req = requests[i];
                 var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(req.Attacker);
                 var relationShip =
-                    FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
-                if (relationShip == Relationship.Player)
+                    FactionUtils.GetRelationship(playerFactionData.faction, playerFactionData.subFaction,
+                        generalAttr.faction, generalAttr.subFaction);
+                if (relationShip == Relationship.Self)
                 {
                     findPlayerRequest = true;
                     var entity = entities[i];
@@ -51,18 +52,19 @@ namespace SparFlame.Systems.General.Battle
             // Calculate battle center position
             var request = requests[0];
             var attackerPos = SystemAPI.GetComponent<LocalTransform>(request.Attacker).Position;
-            var defenderPos = SystemAPI.GetComponent<LocalTransform>(request.Defender).Position;  
+            var defenderPos = SystemAPI.GetComponent<LocalTransform>(request.Defender).Position;
             var targetPosition = (attackerPos + defenderPos) / 2;
 
             // Create battle check sight
-            var realSight = state.EntityManager.Instantiate(SystemAPI.GetSingleton<BattleTriggerConfig>().BattleCheckSightPrefab);
+            var realSight =
+                state.EntityManager.Instantiate(SystemAPI.GetSingleton<BattleTriggerConfig>().BattleCheckSightPrefab);
             state.EntityManager.SetComponentData(realSight, new LocalTransform
             {
                 Position = targetPosition,
                 Rotation = quaternion.identity,
                 Scale = 1f
             });
-            
+
             // Create battle check sight data entity
             var sightDataEntity = state.EntityManager.CreateEntity();
             state.EntityManager.AddComponent<LocalTransform>(sightDataEntity);
@@ -73,14 +75,14 @@ namespace SparFlame.Systems.General.Battle
                 Scale = 1f
             });
             state.EntityManager.AddBuffer<BattleCheckSightTarget>(sightDataEntity);
-            
+
             // Create connections
             state.EntityManager.AddComponent<BattleCheckSightDataBelongsTo>(realSight);
             state.EntityManager.SetComponentData(realSight, new BattleCheckSightDataBelongsTo
             {
                 Value = sightDataEntity
             });
-            
+
             state.EntityManager.AddComponent<BattleCheckSightConnectTo>(sightDataEntity);
             state.EntityManager.SetComponentData(sightDataEntity, new BattleCheckSightConnectTo
             {
@@ -91,7 +93,6 @@ namespace SparFlame.Systems.General.Battle
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            
         }
     }
 }

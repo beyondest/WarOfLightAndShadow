@@ -1,7 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
-using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
@@ -155,10 +154,11 @@ namespace SparFlame.UI.General
             armyGroupHpIcon.sprite = BasicUIResourceManager.Instance.FactionHpSprites[generalAttr.faction];
             
             var relationship =
-                FactionUtils.GetRelationship(playerFactionData, generalAttr.faction, generalAttr.subFaction);
+                FactionUtils.GetRelationship(playerFactionData.faction,
+                    playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
             
-            compositionPanel.SetActive(relationship is Relationship.Player or Relationship.Ally);
-            formationButton.SetActive(relationship == Relationship.Player && isSingleton);
+            compositionPanel.SetActive(relationship is Relationship.Self or Relationship.Ally);
+            formationButton.SetActive(relationship == Relationship.Self && isSingleton);
         }
 
         protected void UpdateDynamicData()

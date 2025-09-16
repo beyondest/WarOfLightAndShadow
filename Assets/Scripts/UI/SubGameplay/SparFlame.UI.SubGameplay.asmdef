@@ -22,7 +22,8 @@
     "SparFlame.Systems.SubGameplay.Construct",
     "SparFlame.Systems.General.Audio",
     "SparFlame.Systems.SubGameplay.Interact",
-    "SparFlame.Systems.SubGameplay.Conjure"
+    "SparFlame.Systems.SubGameplay.Conjure",
+    "SparFlame.Systems.General.Battle"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

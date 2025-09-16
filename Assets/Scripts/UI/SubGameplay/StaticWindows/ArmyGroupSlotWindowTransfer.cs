@@ -124,7 +124,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 EntityManager.CreateSingleton<DeselectAllRequest>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (inArmyGroup, unit
-                         ) in SystemAPI.Query<RefRO<InArmyGroup>>().WithEntityAccess())
+                         ) in SystemAPI.Query<RefRO<InArmyGroup>>().WithNone<InGarrison>().WithEntityAccess())
             {
                 if (inArmyGroup.ValueRO.BelongsTo == armyGroup)
                 {

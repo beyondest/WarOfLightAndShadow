@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Systems.General.Battle;
 using Unity.Burst;
@@ -21,6 +22,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             state.RequireForUpdate<ArmyGroupGarrisonRequest>();
             state.RequireForUpdate<ArmyGroupGarrisonSystemConfig>();
+            state.RequireForUpdate<WorldTimeData>();
             _requestQuery = SystemAPI.QueryBuilder().WithAll<ArmyGroupGarrisonRequest>().Build();
         }
 
@@ -40,7 +42,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             var entities = _requestQuery.ToEntityArray(Allocator.Temp);
             var requests = _requestQuery.ToComponentDataArray<ArmyGroupGarrisonRequest>(Allocator.Temp);
             var config = SystemAPI.GetSingleton<ArmyGroupGarrisonSystemConfig>();
-
+            var curTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours;
             for (var k = 0; k < entities.Length; k++)
             {
                 var entity = entities[k];
@@ -49,6 +51,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                 var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(request.City);
 
+                // Reset hp regeneration timer
+                SystemAPI.SetComponent(request.ArmyGroup, new HpRegenerateTimer
+                {
+                    lastCheckTotalHours = curTotalHours,
+                });
 
                 // ArmyGroup garrison in 
                 if (request.IfGarrisonIn)
@@ -63,10 +70,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     {
                         City = request.City,
                     });
-                    var transform = SystemAPI.GetComponent<LocalTransform>(request.ArmyGroup);
-
+                    var selfTransform = SystemAPI.GetComponent<LocalTransform>(request.ArmyGroup);
+                    var cityTransform = SystemAPI.GetComponent<LocalTransform>(request.City);
                     // Reassign loading center and loading scale
-                    var pos = transform.Position;
+                    var pos = selfTransform.Position;
                     var gridIndex =
                         BattleUtils.GetClosestGrids(pos, SystemAPI.GetComponent<LocalTransform>(request.City));
                     var loadingInfos = SystemAPI.GetBuffer<LoadingGridInfo>(request.City);
@@ -79,8 +86,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     ecb.SetComponent(request.ArmyGroup, armyGroupAttr);
 
                     // Hide the garrison army group entity
-                    transform.Position += config.hidePositionBias;
-                    ecb.SetComponent(request.ArmyGroup, transform);
+                    selfTransform.Position = config.hidePositionBias + cityTransform.Position;
+                    ecb.SetComponent(request.ArmyGroup, selfTransform);
                     
                     // Remove the selected state
                     ecb.SetComponentEnabled<ArmyGroupSelected>(request.ArmyGroup, false);
