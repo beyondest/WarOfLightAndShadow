@@ -297,11 +297,15 @@ namespace SparFlame.Systems.MainGameplay.City
                         break;
 
                     case ResourceRequestType.DecreaseGenerateSpeed:
+                        if(request.HoursPerUnit == 0)
+                            break;
                         cityResourceEntry.resourceData.amountPerHour -= 1 / request.HoursPerUnit;
                         cityResourceEntries[resourceKey] = cityResourceEntry;
                         break;
 
                     case ResourceRequestType.IncreaseGenerateSpeed:
+                        if (request.HoursPerUnit == 0)
+                            break;
                         cityResourceEntry.resourceData.amountPerHour += 1 / request.HoursPerUnit;
                         cityResourceEntries[resourceKey] = cityResourceEntry;
                         break;
@@ -379,7 +383,7 @@ namespace SparFlame.Systems.MainGameplay.City
                 var deltaHours = curTotalHours - task.accumulatedHours;
                 if (deltaHours >= task.hoursPerUnit)
                 {
-                    var validAmount = math.min(task.remainingConjuredUnitCount, (int)(deltaHours / task.hoursPerUnit));
+                    var validAmount = math.min(task.remainingConjuredUnitCount, task.hoursPerUnit == 0 ? 0 : (int)(deltaHours / task.hoursPerUnit));
                     populationResourceData.occupiedCount += validAmount;
                     populationResourceData.virtualOccupiedCount -= validAmount;
                     task.accumulatedHours += validAmount * task.hoursPerUnit;

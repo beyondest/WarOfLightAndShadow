@@ -1,4 +1,6 @@
 ﻿using System;
+using SparFlame.Components.General;
+using SparFlame.Systems.General.BasicControl;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -9,31 +11,35 @@ namespace SparFlame.UI.SubGameplay
     {
         public RectTransform miniMapRect;
         public RectTransform miniMapSquareRect;
-        public Camera miniMapCamera;
-     
-        public RawImage miniMapImage;
-        
+        public  Camera miniMapCamera;
+
+        [SerializeField] private RawImage miniMapImage;
+        [SerializeField] private GameObject miniMapPanel;
         public static MiniMapWindow Instance;
-        public event Action OnEcsOnSquareDrag ;
+        public event Action OnEcsOnSquareDrag;
+
         private void Awake()
         {
-            if(Instance == null)
+            if (!Instance)
                 Instance = this;
             else
             {
                 Destroy(gameObject);
             }
-            
-            
         }
 
         private void Start()
         {
+            miniMapPanel.SetActive(false);
             var rt = new RenderTexture((int)miniMapImage.rectTransform.rect.width,
                 (int)miniMapImage.rectTransform.rect.height, 16);
             miniMapCamera.targetTexture = rt;
             miniMapImage.texture = rt;
-            
+            GameController.Instance.OnEcsSwitchSubGameStatus += targetSubGameStatus =>
+            {
+                miniMapPanel.SetActive(targetSubGameStatus.SubGameStatus != SubGameStatus.None
+                && targetSubGameStatus.SubGameStatus != SubGameStatus.PlayerCity);
+            };
         }
 
         public void OnSquareDrag(BaseEventData data)
@@ -65,11 +71,7 @@ namespace SparFlame.UI.SubGameplay
             // Step 5: 设置 square 的 anchoredPosition
             miniMapSquareRect.anchoredPosition = anchoredPos;
 
-            // 通知 ECS 等其他系统
             OnEcsOnSquareDrag?.Invoke();
         }
-
-        
-
     }
 }

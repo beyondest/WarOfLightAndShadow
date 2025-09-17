@@ -1,6 +1,4 @@
-﻿using System;
-using Sirenix.OdinInspector;
-using Unity.Entities;
+﻿using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -13,8 +11,7 @@ namespace SparFlame.Systems.Map
         public Color hostileColor;
         public Color neutralColor;
         [SerializeField] private LayerMask miniMapLayerMask;
-        public MapInfo mapInfo;
-        
+        [SerializeField] private float miniMapCameraHeight;
         
         private class MiniMapSystemBaker : Baker<MiniMapSystemAuthoring>
         {
@@ -27,9 +24,9 @@ namespace SparFlame.Systems.Map
                     AllyColor = new float4(authoring.allyColor.r, authoring.allyColor.g, authoring.allyColor.b, authoring.allyColor.a),
                     NeutralColor = new float4(authoring.neutralColor.r, authoring.neutralColor.g, authoring.neutralColor.b, authoring.neutralColor.a),
                     HostileColor = new float4(authoring.hostileColor.r, authoring.hostileColor.g, authoring.hostileColor.b, authoring.hostileColor.a),
-                    Layer = (int)math.log2(authoring.miniMapLayerMask.value)
+                    Layer = (int)math.log2(authoring.miniMapLayerMask.value),
+                    MiniMapCameraHeight = authoring.miniMapCameraHeight
                 });
-                AddComponent(entity, authoring.mapInfo);
             }
         }
     }
@@ -41,6 +38,7 @@ namespace SparFlame.Systems.Map
         public float4 HostileColor;
         public float4 NeutralColor;
         public int Layer;
+        public float MiniMapCameraHeight;
     }
 
     public struct MiniMapInitCompleteTag : IComponentData
@@ -48,11 +46,6 @@ namespace SparFlame.Systems.Map
         
     }
 
-    [Serializable]
-    public struct MapInfo : IComponentData
-    {
-        public float outerSquareSize;
-        public float tileSize;
-    }
+
     
 }

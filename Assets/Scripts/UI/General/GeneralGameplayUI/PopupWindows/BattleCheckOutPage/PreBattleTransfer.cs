@@ -31,7 +31,7 @@ namespace SparFlame.Systems.General
         protected override void OnCreate()
         {
             RequireForUpdate<BattleTriggerConfig>();
-            RequireForUpdate<BattleCheckSightConnectTo>();
+            RequireForUpdate<BattleCheckSightData>();
             _battleCheckSightQuery = SystemAPI.QueryBuilder().WithAll<BattleCheckSightTarget>().Build();
             _playerSideArmyGroups = new NativeList<Entity>(Allocator.Persistent);
             _enemySideArmyGroups = new NativeList<Entity>(Allocator.Persistent);
@@ -71,6 +71,7 @@ namespace SparFlame.Systems.General
         {
             var entities = _battleCheckSightQuery.ToEntityArray(Allocator.Temp);
             var entity = entities[0];
+            var data = SystemAPI.GetComponent<BattleCheckSightData>(entity);
             var targets = SystemAPI.GetBuffer<BattleCheckSightTarget>(entity);
             if (targets.Length == 0 || _isInPreBattleStatus) return;
 
@@ -79,11 +80,10 @@ namespace SparFlame.Systems.General
             _enemySideArmyGroups.Clear();
             _notReachedPlayerSideArmyGroups.Clear();
             _isInPreBattleStatus = true;
-            _targetSubGameStatus = SubGameStatus.Encounter;
+            _targetSubGameStatus = data.TargetSubGameStatusData.SubGameStatus;
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
-            _city = Entity.Null;
+            _city = data.TargetSubGameStatusData.City;
             var battlePos = SystemAPI.GetComponent<LocalTransform>(entity).Position;
-
             targets = SystemAPI
                 .GetBuffer<BattleCheckSightTarget>(entity); // Reassign to avoid structural change invalidity
             foreach (var target in targets)
@@ -92,34 +92,8 @@ namespace SparFlame.Systems.General
                 var relationship =
                     FactionUtils.GetRelationship(playerFactionData.faction,
                         playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
-                // If battle includes a city
-                if (generalAttr.baseTag == MainGameBaseTag.City)
-                {
-                    switch (relationship)
-                    {
-                        case Relationship.Neutral:
-                            _targetSubGameStatus = SubGameStatus.Encounter;
-                            break;
-                        case Relationship.Ally:
-                            _city = target.Entity;
-                            _targetSubGameStatus = SubGameStatus.Support;
-                            break;
-                        case Relationship.Hostile:
-                            _city = target.Entity;
-                            _targetSubGameStatus = SubGameStatus.PlayerSiege;
-                            break;
-                        case Relationship.Self:
-                            _city = target.Entity;
-                            _targetSubGameStatus = SubGameStatus.PlayerDefend;
-                            break;
-                        default:
-                            BurstSafe.UnexpectedEnum(relationship);
-                            break;
-                    }
-
-                    continue;
-                }
-
+                // If battle includes a city, pass, because invade fight only happens when an army group switch status
+                if (generalAttr.baseTag == MainGameBaseTag.City) continue;
                 // Add Reached ArmyGroups
                 switch (relationship)
                 {
@@ -170,7 +144,7 @@ namespace SparFlame.Systems.General
                 EnemyAICheckShouldAssaultOrNot();
             }
 
-            var connectTo = SystemAPI.GetComponent<BattleCheckSightConnectTo>(entity);
+            var connectTo = SystemAPI.GetComponent<BattleCheckSightData>(entity);
             EntityManager.DestroyEntity(connectTo.Value);
             EntityManager.DestroyEntity(entity);
 
@@ -270,7 +244,9 @@ namespace SparFlame.Systems.General
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var ecoEntities = SystemAPI.GetSingletonBuffer<EcoEntityData>();
 
+            // Get map info 
             var buffer = SystemAPI.GetBuffer<LoadingGridInfo>(ecoEntities[0].EcoEntity);
+            var mapInfo = new MapInfo();
             if (_targetSubGameStatus is SubGameStatus.Encounter)
             {
                 foreach (var ecoEntity in ecoEntities)
@@ -278,6 +254,7 @@ namespace SparFlame.Systems.General
                     if (ecoEntity.EcoType == _ecoType)
                     {
                         buffer = SystemAPI.GetBuffer<LoadingGridInfo>(ecoEntity.EcoEntity);
+                        mapInfo = SystemAPI.GetComponent<MapInfo>(ecoEntity.EcoEntity);
                         break;
                     }
                 }
@@ -285,18 +262,24 @@ namespace SparFlame.Systems.General
             else
             {
                 buffer = SystemAPI.GetBuffer<LoadingGridInfo>(_city);
+                mapInfo = SystemAPI.GetComponent<MapInfo>(_city);
             }
 
-            // Player side
+            var playerSideLoadingPositions = new NativeList<float3>(Allocator.Temp);
+            var enemySideLoadingPositions = new NativeList<float3>(Allocator.Temp);
             var playerSideTotalUnitCount = 0;
             var enemySideTotalUnitCount = 0;
+
+            // Player side snapshot and loading positions
+
             for (var i = 0; i < _playerSideArmyGroups.Length; i++)
             {
                 var armyGroup = _playerSideArmyGroups[i];
-
                 // Save snapshot
                 var statData = SystemAPI.GetComponent<ArmyGroupStatData>(armyGroup);
                 var unitCount = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup).Length;
+                var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup);
+
                 playerSideTotalUnitCount += unitCount;
                 ecb.AddComponent(armyGroup, new BeforeBattleArmyGroupSnapShot
                 {
@@ -306,22 +289,40 @@ namespace SparFlame.Systems.General
 
                 // Assign loading positions
                 var gridIndex = _playerSideLoadingPositions[i];
-                if (gridIndex == -1) continue; // -1 means loading in the same position last time
-                var info = buffer[gridIndex];
-                var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup);
-                armyGroupAttr.loadingCenter = info.outerCenter;
-                var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
-                armyGroupAttr.loadingScale = maxSide == 0 ? 1 : info.outerSize / maxSide;
-                armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
-                SystemAPI.SetComponent(armyGroup, armyGroupAttr);
+                if (gridIndex != -1) // -1 means same as last time loading position
+                {
+                    var info = buffer[gridIndex];
+                    armyGroupAttr.loadingCenter = info.outerCenter;
+                    var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
+                    armyGroupAttr.loadingScale = maxSide == 0 ? 1 : info.outerSize / maxSide;
+                    armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
+                    SystemAPI.SetComponent(armyGroup, armyGroupAttr);
+                }
+
+                var loadingPosition = armyGroupAttr.loadingCenter;
+
+
+                var alreadyHasNear = false;
+                foreach (var pos in playerSideLoadingPositions)
+                {
+                    if (math.distancesq(loadingPosition, pos) < 10f)
+                    {
+                        alreadyHasNear = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyHasNear) playerSideLoadingPositions.Add(loadingPosition);
             }
 
-            // Set enemy side army groups
+            // Set enemy side snapshot and loading positions
             for (var i = 0; i < _enemySideArmyGroups.Length; i++)
             {
                 var armyGroup = _enemySideArmyGroups[i];
                 var statData = SystemAPI.GetComponent<ArmyGroupStatData>(armyGroup);
                 var unitCount = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup).Length;
+                var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup);
+
                 enemySideTotalUnitCount += unitCount;
                 ecb.AddComponent(armyGroup, new BeforeBattleArmyGroupSnapShot
                 {
@@ -330,36 +331,82 @@ namespace SparFlame.Systems.General
                 });
 
                 var gridIndex = _enemySideLoadingPositions[i];
-                if (gridIndex == -1) continue; // -1 means loading in the same position last time
-                var info = buffer[gridIndex];
-                var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup);
+                if (gridIndex != -1)
+                {
+                    var info = buffer[gridIndex];
+                    armyGroupAttr.loadingCenter =
+                        _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
+                            ? info.innerCenter
+                            : info.outerCenter;
+                    var loadingSize = _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
+                        ? info.innerSize
+                        : info.outerSize;
+                    var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
+                    armyGroupAttr.loadingScale = maxSide == 0 ? 1 : loadingSize / maxSide;
+                    armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
+                    SystemAPI.SetComponent(armyGroup, armyGroupAttr);
+                }
 
-                armyGroupAttr.loadingCenter = _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
-                    ? info.innerCenter
-                    : info.outerCenter;
+                var loadingPosition = armyGroupAttr.loadingCenter;
+                var alreadyHasNear = false;
+                foreach (var pos in enemySideLoadingPositions)
+                {
+                    if (math.distancesq(loadingPosition, pos) < 10f)
+                    {
+                        alreadyHasNear = true;
+                        break;
+                    }
+                }
 
-                var loadingSize = _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
-                    ? info.innerSize
-                    : info.outerSize;
-
-                var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
-
-                armyGroupAttr.loadingScale = maxSide == 0 ? 1 : loadingSize / maxSide;
-                armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
-                SystemAPI.SetComponent(armyGroup, armyGroupAttr);
+                if (!alreadyHasNear) enemySideLoadingPositions.Add(loadingPosition);
             }
 
 
             ecb.Playback(EntityManager);
             ecb.Dispose();
+
+            // Create battle specified singleton
+            CreateBattleSpecifiedSingletons(enemySideTotalUnitCount, playerSideTotalUnitCount, mapInfo,
+                playerSideLoadingPositions, enemySideLoadingPositions);
+
+
+            _isInPreBattleStatus = false;
+            GameController.Instance.ResumeGame(true);
+            GameController.Instance.EnterBattleScene(_city, _ecoType, _targetSubGameStatus);
+        }
+
+        private void CreateBattleSpecifiedSingletons(int enemySideTotalUnitCount, int playerSideTotalUnitCount,
+            MapInfo mapInfo,
+            NativeList<float3> playerSideLoadingPositions, NativeList<float3> enemySideLoadingPositions)
+        {
             EntityManager.CreateSingleton(new BeforeBattleTotalSnapShot
             {
                 EnemySideUnitCount = enemySideTotalUnitCount,
                 PlayerSideUnitCount = playerSideTotalUnitCount,
             });
-            _isInPreBattleStatus = false;
-            GameController.Instance.ResumeGame(true);
-            GameController.Instance.EnterBattleScene(_city, _ecoType, _targetSubGameStatus);
+
+            EntityManager.CreateSingleton(new CurrentSubMapInfo
+            {
+                MapInfo = mapInfo
+            });
+            var cameraRoamingPositions = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
+            foreach (var pos in playerSideLoadingPositions)
+            {
+                cameraRoamingPositions.Add(new CameraRoamingPosition
+                {
+                    Value = pos,
+                    IsEnemy = false
+                });
+            }
+
+            foreach (var pos in enemySideLoadingPositions)
+            {
+                cameraRoamingPositions.Add(new CameraRoamingPosition
+                {
+                    Value = pos,
+                    IsEnemy = true
+                });
+            }
         }
 
         private void StationCity()

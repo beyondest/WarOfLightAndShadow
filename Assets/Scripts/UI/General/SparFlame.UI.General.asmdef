@@ -19,7 +19,8 @@
     "SparFlame.Components",
     "SparFlame.Systems.General.BasicControl",
     "SparFlame.Database",
-    "SparFlame.Systems.General.Battle"
+    "SparFlame.Systems.General.Battle",
+    "SparFlame.Systems.General.Camera"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

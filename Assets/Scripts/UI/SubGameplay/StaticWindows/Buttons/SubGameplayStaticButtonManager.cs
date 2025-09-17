@@ -21,7 +21,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
             armyGroupManageButton.SetActive(false);
             enterAccurateSelectionButton.SetActive(false);
             backToMainWorldButton.SetActive(false);
-            GameController.Instance.OnSwitchGameStatusForSystems += targetSubgameStatus =>
+            GameController.Instance.OnEcsSwitchSubGameStatus += targetSubgameStatus =>
             {
                 backToMainWorldButton.SetActive(targetSubgameStatus.SubGameStatus == SubGameStatus.PlayerCity);
                 constructButton.SetActive(targetSubgameStatus.SubGameStatus == SubGameStatus.PlayerCity);

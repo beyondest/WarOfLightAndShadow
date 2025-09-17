@@ -29,6 +29,7 @@ namespace SparFlame.Systems.General.Camera
             _mainCamera = UnityEngine.Camera.main;
             var cameraData = SystemAPI.GetSingletonRW<CameraData>();
             UpdateCameraData(ref cameraData.ValueRW);
+      
         }
         private void UpdateCameraData(ref CameraData cameraData)
         {

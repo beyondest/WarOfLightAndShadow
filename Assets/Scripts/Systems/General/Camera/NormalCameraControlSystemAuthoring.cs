@@ -11,10 +11,9 @@ namespace SparFlame.Systems.General.Camera
         [Header("Main Game Camera")] public NormalCameraControlConfig config;
         [SerializeField] private float3 cameraStartPosLight;
         [SerializeField] private float3 cameraStartPosDark;
-        [Header("Sub Game Camera")] public NormalCameraControlConfig subConfig;
-        [SerializeField] private float3 subGameplayRigStartPos;
-        [SerializeField] private float3 subGameplayCameraStartLocalPos;
         
+        [Header("Sub Game Camera")] public NormalCameraControlConfig subConfig;
+        [SerializeField] public float3 subGameplayCameraLocalPos;
         
         private class CameraControlPlusSystemAuthoringBaker : Baker<NormalCameraControlSystemAuthoring>
         {
@@ -27,10 +26,10 @@ namespace SparFlame.Systems.General.Camera
                 {
                     LightInitStartPos = authoring.cameraStartPosLight,
                     DarkInitStartPos = authoring.cameraStartPosDark,
-                    InitSubGameplayRigPosition = authoring.subGameplayRigStartPos,
-                    InitSubGameplayCameraLocalPosition = authoring.subGameplayCameraStartLocalPos
+                    SubGameplayCameraLocalPos = authoring.subGameplayCameraLocalPos
                 });
-                
+                AddBuffer<CameraRoamingPosition>(entity);
+
                 
                 var subEntity = CreateAdditionalEntity(TransformUsageFlags.None);
                 AddComponent(subEntity, authoring.subConfig);

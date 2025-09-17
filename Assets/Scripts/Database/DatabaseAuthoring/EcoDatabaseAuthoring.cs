@@ -17,6 +17,11 @@ namespace SparFlame.Database
                 {
                     var ecoEntity = CreateAdditionalEntity(TransformUsageFlags.None);
                     var buffer = AddBuffer<LoadingGridInfo>(ecoEntity);
+                    AddComponent(ecoEntity, new MapInfo
+                    {
+                        CameraMaxCoordinate = item.camMaxCoordinate,
+                        CameraMinCoordinate = item.camMinCoordinate,
+                    });
                     foreach (var info in item.loadingGridInfos)
                     {
                         buffer.Add(info);

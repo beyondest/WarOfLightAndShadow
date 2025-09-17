@@ -20,11 +20,11 @@ namespace SparFlame.Systems.General.BasicControl
         private bool _initialized;
         private bool _isPaused;
         private bool _enterSystemInitState;
+        private bool _ifNewSlot;
         private GameBasicConfig _gameBasicConfig;
 
         private CustomInputActions _customInputActions;
 
-        // private bool _alreadyToWin;
         private GameStatus _previousGameStatus;
 
         protected override void OnCreate()
@@ -68,7 +68,7 @@ namespace SparFlame.Systems.General.BasicControl
                 GameController.Instance.OnBackToMainMenu += DestroyInitialization;
                 GameController.Instance.OnClickSlotAndStartGame += SetSavingSlotAndPlayerFactionData;
                 GeneralResourceManager.Instance.OnAllResourceLoaded += BeginSystemInit;
-                GameController.Instance.OnSwitchGameStatusForSystems += SwitchGameStatusForSystems;
+                GameController.Instance.OnEcsSwitchSubGameStatus += EcsSwitchSubGameStatus;
             }
         }
 
@@ -135,10 +135,17 @@ namespace SparFlame.Systems.General.BasicControl
         private void BeginSystemInit()
         {
             _enterSystemInitState = true;
+            if (!_ifNewSlot)
+            {
+                SaveLoadController.Instance.LoadGameMainData();
+                SaveLoadController.Instance.LoadMainGameplayData();
+            }
+         
         }
 
         private void SetSavingSlotAndPlayerFactionData(FactionTag factionTag,bool ifNewSlot,int slotIndex)
         {
+            _ifNewSlot = ifNewSlot;
             EntityManager.CreateSingleton(new PlayerFactionData
             {
                 faction = factionTag,
@@ -226,7 +233,7 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        private void SwitchGameStatusForSystems( SubGameStatusData targetSubGameStatusData)
+        private void EcsSwitchSubGameStatus( SubGameStatusData targetSubGameStatusData)
         {
             if (targetSubGameStatusData.SubGameStatus == SubGameStatus.None)
             {

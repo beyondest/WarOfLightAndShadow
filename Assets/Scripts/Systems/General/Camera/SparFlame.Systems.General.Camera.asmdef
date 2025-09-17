@@ -1,24 +1,26 @@
-﻿{
-  "name": "SparFlame.Systems.General.Camera",
-  "rootNamespace": "SparFlame",
-  "references": [
-    "Unity.Burst",
-    "Unity.Entities",
-    "Unity.Mathematics",
-    "Unity.Entities.Hybrid",
-    "Unity.Collections",
-    "Unity.Transforms",
-    "Unity.InputSystem",
-    "SparFlame.Core",
-    "SparFlame.Components"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+{
+    "name": "SparFlame.Systems.General.Camera",
+    "rootNamespace": "SparFlame",
+    "references": [
+        "Unity.Burst",
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.Entities.Hybrid",
+        "Unity.Collections",
+        "Unity.Transforms",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "SparFlame.Core",
+        "SparFlame.Components",
+        "SparFlame.Systems.General.BasicControl"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

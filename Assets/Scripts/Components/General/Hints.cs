@@ -34,6 +34,9 @@ namespace SparFlame.Components.General
         ArmyGroupCountExceededInCity = 20,
         PleaseDeleteArmyGroupLastTargetForNewTarget = 21,
         UnitInArmyGroupCannotGarrisonInBuilding = 22,
+        
+        PlayerRetreatedArmyGroupBackToLastPassingByCity = 23,
+        EnemyRetreatedArmyGroupBackToLastPassingByCity = 24,
     }
 
     public enum HintType

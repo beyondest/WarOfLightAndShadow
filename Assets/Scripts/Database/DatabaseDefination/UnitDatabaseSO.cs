@@ -185,7 +185,7 @@ namespace SparFlame.Database
         public List<CostResourceTypeAmountPair> costs;
 
         [VerticalGroup("Cost"), HorizontalGroup("Cost/2"),Tooltip("Conjure speed hours per unit")]
-        public float conjureSpeedHoursPerUnit;
+        public float conjureSpeedHoursPerUnit = 1.0f;
 
         [ShowIf(nameof(HasLightGroupBuff)), FoldoutGroup("Additional/Buff"),
          AssetsOnly, Tooltip("Light shield and light cavalry will raise buff by aoe trigger")]

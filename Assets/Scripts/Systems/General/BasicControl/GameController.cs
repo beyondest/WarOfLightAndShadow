@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -35,8 +36,7 @@ namespace SparFlame.Systems.General.BasicControl
         public event Action OnSubGameStartForPlayer;
         public event Action<bool> OnMainGameStartForPlayer;
 
-        public event Action<SubGameStatusData>
-            OnSwitchGameStatusForSystems; // All systems will start running AFTER this action is called.
+        public event Action<SubGameStatusData> OnEcsSwitchSubGameStatus; // All systems will start running AFTER this action is called.
 
         public event Action<SubGameStatusData> OnEcsDealInSubGameTag;
         public event Action<ClearGameplayEntitiesType> OnEcsClearGameplayEntities;
@@ -90,24 +90,23 @@ namespace SparFlame.Systems.General.BasicControl
         public void ClickSlotAndStartGame(FactionTag playerFaction,
             bool ifNewSlot, int slotIndex)
         {
-            _ifNewSlot = ifNewSlot;
             OnClickSlotAndStartGame?.Invoke(playerFaction, ifNewSlot, slotIndex);
         }
 
 
         public void SubGameStartForPlayer()
         {
-            InputListener.Instance.EnableSubGameMaps();
-            OnSubGameStartForPlayer?.Invoke();
+            StartCoroutine(CheckLoadSubGameplay());
+            
         }
 
         public void MainGameStartForPlayer(bool isTransitionProgress)
         {
-            if (!_ifNewSlot && _ifInMainMenu)
-            {
-                SaveLoadController.Instance.LoadGameMainData();
-                SaveLoadController.Instance.LoadMainGameplayData();
-            }
+            // if (!_ifNewSlot && _ifInMainMenu)
+            // {
+            //     SaveLoadController.Instance.LoadGameMainData();
+            //     SaveLoadController.Instance.LoadMainGameplayData();
+            // }
 
             var lastTimeSaveCitySlot = _em.CreateEntityQuery(typeof(LastTimeSaveCityId))
                 .GetSingleton<LastTimeSaveCityId>().value;
@@ -256,7 +255,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void SwitchSubGameStatus(in SubGameStatusData targetSubGameStatusData)
         {
-            OnSwitchGameStatusForSystems?.Invoke(targetSubGameStatusData);
+            OnEcsSwitchSubGameStatus?.Invoke(targetSubGameStatusData);
         }
 
         public void DestroyGameplayEntities(ClearGameplayEntitiesType clearType)
@@ -271,7 +270,6 @@ namespace SparFlame.Systems.General.BasicControl
         private SubGameStatusData _targetSubGameStatusData;
         private readonly ResourceLoadingUtils.LoadingProgress _loadingProgress = new();
         private EntityManager _em;
-        private bool _ifNewSlot;
         private bool _ifInMainMenu = true;
 
         private bool _isTransitionProgress; // Transition progress should not hide loading screen when first time loading complete
@@ -320,7 +318,7 @@ namespace SparFlame.Systems.General.BasicControl
             }
 
             ResumeGame(true);
-            OnSwitchGameStatusForSystems?.Invoke(_targetSubGameStatusData);
+            OnEcsSwitchSubGameStatus?.Invoke(_targetSubGameStatusData);
             _isTransitionProgress = false;
         }
 
@@ -337,6 +335,18 @@ namespace SparFlame.Systems.General.BasicControl
                 throw new InvalidOperationException("Game status should not be sub gaming here. Something wrong");
             }
             EnterBattleScene(city, ecoType, targetSubGameStatus);
+        }
+
+        private IEnumerator CheckLoadSubGameplay()
+        {
+            var crystalQuery = _em.CreateEntityQuery(typeof(CrystalDef));
+            var unitsQuery  = _em.CreateEntityQuery(typeof(UnitAttr));
+            while (crystalQuery.IsEmpty && unitsQuery.IsEmpty)
+            {
+                yield return null;
+            }
+            InputListener.Instance.EnableSubGameMaps();
+            OnSubGameStartForPlayer?.Invoke();
         }
     }
 }

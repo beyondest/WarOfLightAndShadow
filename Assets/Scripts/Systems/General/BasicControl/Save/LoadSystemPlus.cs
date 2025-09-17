@@ -118,6 +118,12 @@ namespace SparFlame.Systems.General.BasicControl
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
+                    var citySubDataFolder = SaveUtilities.GetCitySubDataFolder(slot);
+                    var armyGroupSubDataFolder = SaveUtilities.GetArmyGroupSubDataFolder(slot);
+                    if (!Directory.Exists(citySubDataFolder))
+                        Directory.CreateDirectory(citySubDataFolder);
+                    if(!Directory.Exists(armyGroupSubDataFolder))
+                        Directory.CreateDirectory(armyGroupSubDataFolder);
                 }
                 else
                 {
@@ -439,7 +445,7 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         SerializeUtility.DeserializeWorld(transaction, reader);
                     }
-
+                
                     deserializeWorld.EntityManager.EndExclusiveEntityTransaction();
                     var dem = deserializeWorld.EntityManager;
 
@@ -494,11 +500,16 @@ namespace SparFlame.Systems.General.BasicControl
                         .GetSingleton<LastTimeSaveCityId>();
                     if (saveCityId.value != 0) // Player save in city sub gameplay
                     {
-                        FrameDelayInvoker.Instance.InvokeAfterFrames(1,
+                        FrameDelayInvoker.Instance.InvokeAfterFrames(2,
                             () => { GameController.Instance.EnterPlayerCity(Entity.Null, true); });
                     }
 
                     SystemAPI.SetSingleton(saveCityId);
+                    
+                    // Set Camera main gameplay history
+                    var cameraMainGameplayHistory = dem.CreateEntityQuery(typeof(CameraMainGameplayHistory))
+                        .GetSingleton<CameraMainGameplayHistory>();
+                    SystemAPI.SetSingleton(cameraMainGameplayHistory);
                 }
             }
             else

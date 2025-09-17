@@ -1,5 +1,6 @@
 using UnityEngine;
 using SparFlame.Components.General;
+using SparFlame.Core.GlobalMono;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
 using TMPro;
@@ -66,12 +67,15 @@ namespace SparFlame.UI.General
             var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
             if (GameStatusUtils.IsInBattle(subGameStatusData))
             {
-                ConfirmWindow.Instance.Show("You cannot save game while in battle");
+                ConfirmWindow.Instance.Show("You cannot save game while in battle",
+                    OnClickResume);
             }
             else
             {
                 SaveLoadController.Instance.SyncSaveGame();
+                OnClickResume();
             }
+            
         }
 
         public void OnClickExit()
@@ -208,10 +212,12 @@ namespace SparFlame.UI.General
         }
         private void SubGameStartForPlayer()
         {
-            HideLoadingScreen();
-            
-            subGameplayUI.SetActive(true);
-            mainGameplayUI.SetActive(false);
+            FrameDelayInvoker.Instance.InvokeAfterFrames(1, () =>
+            {
+                HideLoadingScreen();
+                subGameplayUI.SetActive(true);
+                mainGameplayUI.SetActive(false);
+            });
         }
 
         private void MainGameStartForPlayer(bool isTransitionProgress)

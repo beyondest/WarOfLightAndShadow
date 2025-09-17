@@ -164,7 +164,18 @@ namespace SparFlame.UI.General
             RemoveOrTeleportDefeatArmyGroups(battleEndRequest.Result);
 
             AddRewards(battleRecorder);
+            
+            
+            DestroyBattleSpecifiedSingletons(ifStayToCity, subGameStatusData);
+
+            SaveLoadController.Instance.SyncSaveGame();
+        }
+
+        private void DestroyBattleSpecifiedSingletons(bool ifStayToCity, SubGameStatusData subGameStatusData)
+        {
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BeforeBattleTotalSnapShot>());
+            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<CurrentSubMapInfo>());
+            
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (_, entity) in SystemAPI.Query<RefRO<BeforeBattleArmyGroupSnapShot>>().WithEntityAccess())
             {
@@ -183,8 +194,6 @@ namespace SparFlame.UI.General
 
             ecb.Playback(EntityManager);
             ecb.Dispose();
-
-            SaveLoadController.Instance.SyncSaveGame();
         }
 
         private void AddRewards(in BattleRecorder battleRecorder)
@@ -219,6 +228,8 @@ namespace SparFlame.UI.General
 
             foreach (var entity in enemyArmyGroups)
             {
+                var hasEnemyRetreated = false;
+
                 if (SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length == 0)
                 {
                     ecb.DestroyEntity(entity);
@@ -227,6 +238,8 @@ namespace SparFlame.UI.General
                 {
                     if (result is BattleResult.PlayerWin or BattleResult.EnemyRetreat)
                     {
+                        hasEnemyRetreated = true;
+
                         var lastPassByCity = SystemAPI.GetComponent<LastPassingByCity>(entity);
                         var armyGroupGarrisonRequest = ecb.CreateEntity();
                         ecb.AddComponent(armyGroupGarrisonRequest, new ArmyGroupGarrisonRequest
@@ -237,10 +250,21 @@ namespace SparFlame.UI.General
                         });
                     }
                 }
+
+                if (hasEnemyRetreated)
+                {
+                    var hint = ecb.CreateEntity();
+                    ecb.AddComponent(hint, new HintRequest
+                    {
+                        Name = HintName.EnemyRetreatedArmyGroupBackToLastPassingByCity
+                    });
+                    ecb.AddComponent<MainGameplayEntityTag>(hint);
+                }
             }
 
             foreach (var entity in playerArmyGroups)
             {
+                var hasPlayerRetreated = false;
                 if (SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length == 0)
                 {
                     ecb.DestroyEntity(entity);
@@ -249,6 +273,7 @@ namespace SparFlame.UI.General
                 {
                     if (result is BattleResult.PlayerLose or BattleResult.PlayerRetreat)
                     {
+                        hasPlayerRetreated = true;
                         var lastPassByCity = SystemAPI.GetComponent<LastPassingByCity>(entity);
                         var armyGroupGarrisonRequest = ecb.CreateEntity();
                         ecb.AddComponent(armyGroupGarrisonRequest, new ArmyGroupGarrisonRequest
@@ -257,7 +282,18 @@ namespace SparFlame.UI.General
                             ArmyGroup = entity,
                             IfGarrisonIn = true
                         });
+                        
                     }
+                }
+
+                if (hasPlayerRetreated)
+                {
+                    var hint = ecb.CreateEntity();
+                    ecb.AddComponent(hint, new HintRequest
+                    {
+                        Name = HintName.PlayerRetreatedArmyGroupBackToLastPassingByCity
+                    });
+                    ecb.AddComponent<MainGameplayEntityTag>(hint);
                 }
             }
 

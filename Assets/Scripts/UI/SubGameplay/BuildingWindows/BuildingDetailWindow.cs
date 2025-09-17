@@ -327,6 +327,7 @@ namespace SparFlame.UI.SubGameplay
             ornamentPanel.SetActive(false);
             upgradePanel.SetActive(false);
             constructingPanel.SetActive(false);
+            garrisonInfoPanel.SetActive(false);
 
             if (Em.HasComponent<ConstructingTimer>(_targetEntity))
             {

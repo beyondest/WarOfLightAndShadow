@@ -22,7 +22,7 @@ namespace SparFlame.UI.General
         private readonly List<TextMeshProUGUI> _texts = new();
         private readonly List<float> _textStartAlpha = new();
 
-        void Awake()
+        private void Awake()
         {
             if (useCanvasGroup)
             {

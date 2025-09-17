@@ -46,14 +46,15 @@ namespace SparFlame.Components.General
         public Entity Entity;
     }
     
-    public struct BattleCheckSightDataBelongsTo : IComponentData
+    public struct BattleCheckSightTriggerBelongsTo : IComponentData
     {
         public Entity Value;
     }
 
-    public struct BattleCheckSightConnectTo : IComponentData
+    public struct BattleCheckSightData : IComponentData
     {
         public Entity Value;
+        public SubGameStatusData TargetSubGameStatusData;
     }
     
       

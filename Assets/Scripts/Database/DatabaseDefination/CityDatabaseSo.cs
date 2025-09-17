@@ -4,6 +4,7 @@ using GamePlaySystem.Functionality.MainGameplay.City;
 using Sirenix.OdinInspector;
 using SparFlame.Components.General;
 using SparFlame.Core.Utils;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
@@ -62,7 +63,9 @@ namespace SparFlame.Database
 
         [VerticalGroup("General")] public int lightModelIndex;
         [VerticalGroup("General")] public int darkModelIndex;
-        
+
+        [VerticalGroup("General")] public float camMaxCoordinate;
+        [VerticalGroup("General")] public float camMinCoordinate;
         
         [TextArea(3, 10), VerticalGroup("Description"), HideLabel]
         public string description;

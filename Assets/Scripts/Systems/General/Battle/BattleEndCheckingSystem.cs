@@ -68,11 +68,11 @@ namespace SparFlame.Systems.General.Battle
                 switch (subGameStatusData.SubGameStatus)
                 {
                     case SubGameStatus.PlayerSiege:
-                        if (_enemySideCrystalQuery.IsEmpty) return;
+                        if (_enemySideCrystalQuery.IsEmpty || _playerSideUnitQuery.IsEmpty) return;
                         data.IsAllResourceLoaded = true;
                         break;
                     case SubGameStatus.PlayerDefend:
-                        if (_playerSideCrystalQuery.IsEmpty) return;
+                        if (_playerSideCrystalQuery.IsEmpty || _enemySideUnitQuery.IsEmpty) return;
                         data.IsAllResourceLoaded = true;
                         break;
                     case SubGameStatus.Encounter:

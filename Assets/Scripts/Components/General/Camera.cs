@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 using Unity.Mathematics;
 
 namespace SparFlame.Components.MainGameplay
@@ -74,8 +75,7 @@ namespace SparFlame.Components.MainGameplay
     {
         public float3 LightInitStartPos;
         public float3 DarkInitStartPos;
-        public float3 InitSubGameplayCameraLocalPosition;
-        public float3 InitSubGameplayRigPosition;
+        public float3 SubGameplayCameraLocalPos;
     }
 
     public struct MiniMapControlData : IComponentData
@@ -93,6 +93,23 @@ namespace SparFlame.Components.MainGameplay
     public struct SubGameCameraTag : IComponentData {}
     public struct DraggingTag : IComponentData,IEnableableComponent
     {
+        
+    }
+
+    // For camera roaming at the beginning of the battle, or simply set position when player enter player city
+    public struct CameraRoamingPosition : IBufferElementData
+    {
+        public float3 Value;
+        public bool IsEnemy;
+    }
+
+    [Serializable]
+    public struct CameraMainGameplayHistory : IComponentData
+    {
+        public float3 localPosition;
+        public float3 rigPosition;
+        public quaternion localRotation;
+        public quaternion rigRotation;
         
     }
 }

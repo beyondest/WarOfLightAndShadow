@@ -102,7 +102,7 @@ namespace SparFlame.UI.SubGameplay
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
             _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
-            GameController.Instance.OnSwitchGameStatusForSystems += _ =>
+            GameController.Instance.OnEcsSwitchSubGameStatus += _ =>
             {
                 Hide();
             };

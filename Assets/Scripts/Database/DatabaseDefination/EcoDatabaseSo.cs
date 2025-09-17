@@ -144,6 +144,13 @@ namespace SparFlame.Database
 
         [TextArea(3, 10)] public string buffDescription;
 
+        
+        [VerticalGroup("Gameplay")] 
+        public float camMaxCoordinate;
+        
+        [VerticalGroup("Gameplay")]
+        public float camMinCoordinate;
+        
         [VerticalGroup("Loading Positions")] public List<LoadingGridInfo> loadingGridInfos
             = new()
             {

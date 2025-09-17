@@ -45,7 +45,17 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 {
                     Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
                 });
+                
+                // City hp regeneration timer
                 AddComponent(entity, new HpRegenerateTimer());
+                
+                // Map info
+                AddComponent(entity, new MapInfo
+                {
+                    CameraMaxCoordinate = item.camMaxCoordinate,
+                    CameraMinCoordinate = item.camMinCoordinate,
+                });
+                
                 // City available grid numbers for army group to march in
                 var loadingGridInfos = AddBuffer<LoadingGridInfo>(entity);
                 foreach (var info in authoring.nineGridInfos)

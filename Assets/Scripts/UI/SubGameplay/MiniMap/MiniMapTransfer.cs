@@ -9,17 +9,18 @@ namespace SparFlame.UI.SubGameplay
 {
     public partial class MiniMapTransfer : SystemBase
     {
-        private bool _initialized = false;
+        private bool _initialized;
         private RectTransform _miniMapTransform;
         private RectTransform _squareTransform;
+        private Camera _miniMapCam;
         private float _camMin;
         private float _camMax;
-        private bool _isDragging = false;
-        private MapInfo _mapInfo;
+        private bool _isDragging;
+        private float _length;
 
         protected override void OnCreate()
         {
-            RequireForUpdate<MapInfo>();
+            RequireForUpdate<CurrentSubMapInfo>();
             RequireForUpdate<SubGamingTag>();
             RequireForUpdate<MiniMapControlData>();
         }
@@ -32,31 +33,38 @@ namespace SparFlame.UI.SubGameplay
                 MiniMapWindow.Instance.OnEcsOnSquareDrag += MiniMapMoveCamera;
                 _miniMapTransform = MiniMapWindow.Instance.miniMapRect;
                 _squareTransform = MiniMapWindow.Instance.miniMapSquareRect;
-                _camMin = -SystemAPI.GetSingleton<MapInfo>().tileSize;
-                _camMax = _camMin + SystemAPI.GetSingleton<MapInfo>().outerSquareSize;
-                _mapInfo = SystemAPI.GetSingleton<MapInfo>();
+                _miniMapCam = MiniMapWindow.Instance.miniMapCamera;
             }
+
+
+            var config = SystemAPI.GetSingleton<MiniMapConfig>();
+            _camMin = SystemAPI.GetSingleton<CurrentSubMapInfo>().MapInfo.CameraMinCoordinate;
+            _camMax = SystemAPI.GetSingleton<CurrentSubMapInfo>().MapInfo.CameraMaxCoordinate;
+            _length = _camMax - _camMin;
+            var centerValue = (_camMax + _camMin) / 2;
+            var centerPos = new float3(centerValue, config.MiniMapCameraHeight, centerValue);
+            _miniMapCam.transform.position = centerPos;
+            _miniMapCam.orthographicSize = _length / 2;
         }
 
         protected override void OnUpdate()
         {
-
             if (_isDragging)
             {
                 _isDragging = false;
                 ClampSquarePos();
                 return;
             }
+
             var data = SystemAPI.GetSingleton<MiniMapControlData>();
             var local = data.CameraRigWorldPos - new float3(_camMin, 0f, _camMin);
-            local /= _mapInfo.outerSquareSize;
+            local /= _length;
             local = math.saturate(local);
             var squareTargetPos = new float2(local.x * _miniMapTransform.rect.width,
                 local.z * _miniMapTransform.rect.height);
             _squareTransform.anchoredPosition = squareTargetPos;
-            _squareTransform.rotation = Quaternion.Euler(0f,0f,-data.Angle);
+            _squareTransform.rotation = Quaternion.Euler(0f, 0f, -data.Angle);
             ClampSquarePos();
-            
         }
 
         private void MiniMapMoveCamera()
@@ -66,8 +74,8 @@ namespace SparFlame.UI.SubGameplay
             var local = new float2(_squareTransform.anchoredPosition.x / _miniMapTransform.rect.width,
                 _squareTransform.anchoredPosition.y / _miniMapTransform.rect.height);
             data.ValueRW.MiniMapRequestPos = new float3
-            (_camMin + local.x * _mapInfo.outerSquareSize,
-                0f, _camMin + local.y * _mapInfo.outerSquareSize);
+            (_camMin + local.x *_length,
+                0f, _camMin + local.y *_length);
             var dataEntity = SystemAPI.GetSingletonEntity<MiniMapControlData>();
             SystemAPI.SetComponentEnabled<DraggingTag>(dataEntity, true);
         }

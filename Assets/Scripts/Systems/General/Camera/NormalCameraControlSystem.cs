@@ -1,11 +1,19 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Systems.General.BasicControl;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
+// ReSharper disable AsyncVoidMethod
 
 // ReSharper disable Unity.Entities.MustBeSurroundedWithRefRwRo
 
@@ -17,11 +25,9 @@ namespace SparFlame.Systems.General.Camera
 
         private Transform _cameraTransform;
         private Transform _rigTransform;
-        private Vector3 _preMainGameplayCameraLocalPosition;
-        private Quaternion _preMainGameplayCameraLocalRotation;
-        private Vector3 _preMainGameplayRigPosition;
-        private Quaternion _preMainGameplayRigRotation;
+
         private float3 _targetRigPosDelta;
+        // Each time you set this value to _cameraTransform.localPosition.y, will force the camera look at the rig at this height, at this view point
         private float _zoomHeight;
         private float3 _horizontalVelocity;
         private float3 _lastPosition;
@@ -35,7 +41,10 @@ namespace SparFlame.Systems.General.Camera
         // Cache
         private NormalCameraControlConfig _config;
         private InputCameraNormalData _inputData;
-        private GameStatus _preGameStatus ;
+        private bool _initialized;
+        private bool _isRoaming;
+        private bool _ifNewSlot;
+        private FactionTag _playerFaction;
 
         protected override void OnCreate()
         {
@@ -43,10 +52,25 @@ namespace SparFlame.Systems.General.Camera
             RequireForUpdate<NormalCameraControlConfig>();
             RequireForUpdate<InputMouseData>();
             RequireForUpdate<InputCameraNormalData>();
-            RequireForUpdate<PlayerFactionData>();
             RequireForUpdate<WaitInfo>();
+            EntityManager.CreateSingleton(new CameraMainGameplayHistory());
         }
 
+
+        protected override void OnStartRunning()
+        {
+            if (!_initialized)
+            {
+                GameController.Instance.OnEcsSwitchSubGameStatus += SetCameraPositionWhenSwitchSubGameplay;
+                RoamingCameraController.Instance.OnStartRoamingCamera += () => _isRoaming = true;
+                RoamingCameraController.Instance.OnEndRoamingCamera += () => _isRoaming = false;
+                GameController.Instance.OnClickSlotAndStartGame += (playerFaction, ifNewSlot, _) =>
+                {
+                    _ifNewSlot = ifNewSlot;
+                    _playerFaction = playerFaction;
+                };
+            }
+        }
 
         protected override void OnUpdate()
         {
@@ -55,54 +79,66 @@ namespace SparFlame.Systems.General.Camera
             {
                 _config = SystemAPI.GetComponent<NormalCameraControlConfig>(
                     SystemAPI.GetSingletonEntity<MainGameCameraTag>());
-                _preGameStatus = GameStatus.MainGaming;
                 // _camera = CameraController.Instance.mainGameCamera;
-                _camera = UnityEngine.Camera.main;
-                _rigTransform = _camera!.transform.parent;
-                _cameraTransform = _camera.transform;
+                GetSetCamera();
                 _zoomHeight = _cameraTransform.localPosition.y;
-                var startPos = SystemAPI.GetSingleton<CameraStartPosData>();
-                _rigTransform.position = SystemAPI.GetSingleton<PlayerFactionData>().faction == FactionTag.Light
-                    ? startPos.LightInitStartPos
-                    : startPos.DarkInitStartPos;
+                if (_ifNewSlot)
+                {
+                    var startPos = SystemAPI.GetSingleton<CameraStartPosData>();
+                    _rigTransform.position =_playerFaction == FactionTag.Light
+                        ? startPos.LightInitStartPos
+                        : startPos.DarkInitStartPos;
+                    SystemAPI.SetSingleton(new CameraMainGameplayHistory
+                    {
+                        localPosition = _cameraTransform.localPosition,
+                        localRotation = _cameraTransform.localRotation,
+                        rigPosition = _rigTransform.position,
+                        rigRotation = _rigTransform.rotation,
+                    });
+                }
+                else
+                {
+                    var history = SystemAPI.GetSingleton<CameraMainGameplayHistory>();
+                    _cameraTransform.localPosition = history.localPosition;
+                    _cameraTransform.localRotation = history.localRotation;
+                    _rigTransform.position = history.rigPosition;
+                    _rigTransform.rotation = history.rigRotation;
+                    _zoomHeight = _cameraTransform.localPosition.y;
+                }
+
                 return;
             }
 
             if (gameStatus != GameStatus.SubGaming && gameStatus != GameStatus.MainGaming)
                 return;
-          
+
+            // If player is waiting, do not control camera
             var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
-            if(waitInfo.WaitType != WaitType.None)return;
+            if (waitInfo.WaitType != WaitType.None) return;
+
+
             GetSetCamera();
-            
-            if (_preGameStatus != gameStatus)
+            LookAt();
+
+            CameraData cameraData;
+            if (_isRoaming)
             {
-                InitCameraPosAfterGameplaySwitch(gameStatus);
-            }
-            else
-            {
-                if (gameStatus == GameStatus.MainGaming)
-                {
-                    _preMainGameplayCameraLocalPosition = _cameraTransform.localPosition;
-                    _preMainGameplayCameraLocalRotation = _cameraTransform.localRotation;
-                    _preMainGameplayRigPosition = _rigTransform.position;
-                    _preMainGameplayRigRotation = _rigTransform.rotation;
-                }
-            }
-            _preGameStatus = gameStatus;
-            if (gameStatus == GameStatus.MainGaming)
-            {
-                _config = SystemAPI.GetComponent<NormalCameraControlConfig>(
-                    SystemAPI.GetSingletonEntity<MainGameCameraTag>());
-                // _camera = CameraController.Instance.mainGameCamera;
-            }
-            else
-            {
-                _config = SystemAPI.GetComponent<NormalCameraControlConfig>(
-                    SystemAPI.GetSingletonEntity<SubGameCameraTag>());
-                // _camera = CameraController.Instance.subGameCamera;
+                // Update camera data
+                cameraData = SystemAPI.GetSingleton<CameraData>();
+                cameraData.CameraRigPosition = _rigTransform.position;
+                LookAt();
+                CheckAndAssignMiniMapCam();
+                SystemAPI.SetSingleton(cameraData);
+                return;
             }
 
+            _config = SystemAPI.GetComponent<NormalCameraControlConfig>(gameStatus == GameStatus.MainGaming
+                ? SystemAPI.GetSingletonEntity<MainGameCameraTag>()
+                :
+                // _camera = CameraController.Instance.mainGameCamera;
+                SystemAPI.GetSingletonEntity<SubGameCameraTag>());
+
+            // _camera = CameraController.Instance.subGameCamera;
             _inputData = SystemAPI.GetSingleton<InputCameraNormalData>();
             // var flyModeData = SystemAPI.GetSingleton<InputCameraFlyData>();
             // if (flyModeData.Enabled)
@@ -111,12 +147,11 @@ namespace SparFlame.Systems.General.Camera
             //     return;
             // }
 
-            LookAt();
             // _preFlyMode = false;
 
+            // Control camera
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             ref var cameraMovementState = ref SystemAPI.GetSingletonRW<CameraMovementState>().ValueRW;
-            // GetMiniMapSquarePos();
             GetKeyboardMovement();
             RotateCamera();
             ZoomCamera(ref cameraMovementState);
@@ -127,7 +162,25 @@ namespace SparFlame.Systems.General.Camera
             UpdateRigPosition();
             UpdateCameraZoomPosition();
             // LimitCamera();
-            var cameraData = SystemAPI.GetSingleton<CameraData>();
+
+
+            if (gameStatus == GameStatus.SubGaming)
+            {
+                CheckAndAssignMiniMapCam();
+            }
+            
+            if (gameStatus == GameStatus.MainGaming)
+            {
+                SystemAPI.SetSingleton(new CameraMainGameplayHistory
+                {
+                    localPosition = _cameraTransform.localPosition,
+                    localRotation = _cameraTransform.localRotation,
+                    rigPosition = _rigTransform.position,
+                    rigRotation = _rigTransform.rotation,
+                });
+            }
+            // Update camera data
+            cameraData = SystemAPI.GetSingleton<CameraData>();
             cameraData.CameraRigPosition = _rigTransform.position;
             SystemAPI.SetSingleton(cameraData);
         }
@@ -139,23 +192,7 @@ namespace SparFlame.Systems.General.Camera
             _cameraTransform = _camera.transform;
         }
 
-        private void InitCameraPosAfterGameplaySwitch(GameStatus switchTo)
-        {
-            var cameraStartPosData = SystemAPI.GetSingleton<CameraStartPosData>();
-            if (switchTo == GameStatus.MainGaming)
-            {
-                _rigTransform.position = _preMainGameplayRigPosition;
-                _rigTransform.rotation = _preMainGameplayRigRotation;
-                _cameraTransform.localPosition = _preMainGameplayCameraLocalPosition;
-                _cameraTransform.localRotation = _preMainGameplayCameraLocalRotation;
-            }
-            else if (switchTo == GameStatus.SubGaming)
-            {
-                _rigTransform.position = cameraStartPosData.InitSubGameplayRigPosition;
-                _cameraTransform.localPosition = cameraStartPosData.InitSubGameplayCameraLocalPosition;
-            }
-            _zoomHeight = _cameraTransform.localPosition.y;
-        }
+
         private void LookAt()
         {
             /*if (_preFlyMode)
@@ -179,14 +216,14 @@ namespace SparFlame.Systems.General.Camera
 
         #region CameraControl Methods
 
-        private void GetMiniMapSquarePos()
+        private void CheckAndAssignMiniMapCam()
         {
             var dataEntity = SystemAPI.GetSingletonEntity<MiniMapControlData>();
             var data = SystemAPI.GetSingletonRW<MiniMapControlData>();
             if (SystemAPI.IsComponentEnabled<DraggingTag>(dataEntity))
             {
-                _targetRigPosDelta = data.ValueRW.MiniMapRequestPos - (float3)_rigTransform.position;
-                // _rigTransform.position = data.ValueRW.MiniMapRequestPos;
+                // _targetRigPosDelta = data.ValueRW.MiniMapRequestPos - (float3)_rigTransform.position;
+                _rigTransform.position = data.ValueRW.MiniMapRequestPos;
                 SystemAPI.SetComponentEnabled<DraggingTag>(dataEntity, false);
             }
 
@@ -364,12 +401,11 @@ namespace SparFlame.Systems.General.Camera
                 new float3(_cameraTransform.localPosition.x, _zoomHeight, _cameraTransform.localPosition.z);
             //add float for forward/backward zoom
             zoomTarget -= _config.zoomSpeed * (_zoomHeight - _cameraTransform.localPosition.y) * math.forward();
-            
+
             _cameraTransform.localPosition =
                 math.lerp(_cameraTransform.localPosition, zoomTarget,
                     SystemAPI.Time.DeltaTime * _config.zoomDamping);
             _cameraTransform.LookAt(_rigTransform.transform);
-            
         }
 
         #endregion
@@ -389,6 +425,100 @@ namespace SparFlame.Systems.General.Camera
             float3 right = _cameraTransform.right;
             right.y = 0f;
             return right;
+        }
+
+        private async void SetCameraPositionWhenSwitchSubGameplay(SubGameStatusData targetSubGameStatusData)
+        {
+            var buffer = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
+            GetSetCamera();
+            if (targetSubGameStatusData.SubGameStatus == SubGameStatus.None)
+            {
+                buffer.Clear();
+                var history = SystemAPI.GetSingleton<CameraMainGameplayHistory>();
+                _cameraTransform.localPosition = history.localPosition;
+                _cameraTransform.localRotation = history.localRotation;
+                _rigTransform.position = history.rigPosition;
+                _rigTransform.rotation = history.rigRotation;
+                _zoomHeight = _cameraTransform.localPosition.y;
+                return;
+            }
+
+            await CheckCameraReference(targetSubGameStatusData);
+
+            RoamingCameraAmongPositions(SystemAPI.GetSingletonBuffer<CameraRoamingPosition>());
+        }
+
+        private async Task CheckCameraReference(SubGameStatusData targetSubGameStatusData)
+        {
+            if (targetSubGameStatusData.SubGameStatus == SubGameStatus.Encounter)
+            {
+                return;
+            }
+            EntityQuery query;
+
+            if (targetSubGameStatusData.SubGameStatus is SubGameStatus.PlayerDefend or SubGameStatus.PlayerCity)
+            {
+                query = SystemAPI.QueryBuilder().WithAll<PlayerTag>().WithAll<CrystalDef>().WithAll<LocalTransform>().Build();
+            }
+            else
+            {
+                query = SystemAPI.QueryBuilder().WithAll<AITag>().WithAll<CrystalDef>().WithAll<LocalTransform>()
+                    .Build();
+            }
+            while (query.IsEmpty)
+            {
+                await Task.Yield();
+            }
+
+            var pos = query.ToComponentDataArray<LocalTransform>(Allocator.Temp)[0].Position;
+            var buffer = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
+            buffer.Add(new CameraRoamingPosition
+            {
+                Value = pos,
+                IsEnemy = targetSubGameStatusData.SubGameStatus == SubGameStatus.PlayerSiege
+            });
+        }
+
+        private void RoamingCameraAmongPositions(DynamicBuffer<CameraRoamingPosition> positions)
+        {
+            _cameraTransform.localPosition = SystemAPI.GetSingleton<CameraStartPosData>().SubGameplayCameraLocalPos;
+            _zoomHeight = _cameraTransform.localPosition.y;
+            if (positions.Length == 1) // No roaming at all, because this is player city
+            {
+                _rigTransform.position = positions[0].Value;
+                return;
+            }
+
+            var enemyPositions = new List<float3>();
+            var playerPositions = new List<float3>();
+            foreach (var position in positions)
+            {
+                if (position.IsEnemy)
+                {
+                    enemyPositions.Add(position.Value);
+                }
+                else
+                {
+                    playerPositions.Add(position.Value);
+                }
+            }
+
+
+            var totalPositions =new List<float3>();
+            foreach (var position in enemyPositions)
+            {
+                totalPositions.Add(position);
+            }
+            foreach (var position in playerPositions)
+            {
+                totalPositions.Add(position);
+            }
+       
+
+            
+
+            RoamingCameraController.Instance.StartRoamingCamera(_rigTransform, totalPositions,
+                enemyPositions.Count);
         }
     }
 }

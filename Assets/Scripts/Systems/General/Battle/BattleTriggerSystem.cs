@@ -56,9 +56,9 @@ namespace SparFlame.Systems.General.Battle
             var targetPosition = (attackerPos + defenderPos) / 2;
 
             // Create battle check sight
-            var realSight =
+            var sightTriggerEntity =
                 state.EntityManager.Instantiate(SystemAPI.GetSingleton<BattleTriggerConfig>().BattleCheckSightPrefab);
-            state.EntityManager.SetComponentData(realSight, new LocalTransform
+            state.EntityManager.SetComponentData(sightTriggerEntity, new LocalTransform
             {
                 Position = targetPosition,
                 Rotation = quaternion.identity,
@@ -75,19 +75,29 @@ namespace SparFlame.Systems.General.Battle
                 Scale = 1f
             });
             state.EntityManager.AddBuffer<BattleCheckSightTarget>(sightDataEntity);
-
+            state.EntityManager.AddComponent<BattleCheckSightData>(sightDataEntity);
+            state.EntityManager.SetComponentData(sightDataEntity, new BattleCheckSightData
+            {
+                Value = sightTriggerEntity,
+                TargetSubGameStatusData = new SubGameStatusData
+                {
+                    SubGameStatus = request.TargetSubGameStatus,
+                    City = request.TargetSubGameStatus switch
+                    {
+                        SubGameStatus.Encounter => Entity.Null,
+                        _ => request.Defender
+                    }
+                }
+            });
+            
             // Create connections
-            state.EntityManager.AddComponent<BattleCheckSightDataBelongsTo>(realSight);
-            state.EntityManager.SetComponentData(realSight, new BattleCheckSightDataBelongsTo
+            state.EntityManager.AddComponent<BattleCheckSightTriggerBelongsTo>(sightTriggerEntity);
+            state.EntityManager.SetComponentData(sightTriggerEntity, new BattleCheckSightTriggerBelongsTo
             {
                 Value = sightDataEntity
             });
 
-            state.EntityManager.AddComponent<BattleCheckSightConnectTo>(sightDataEntity);
-            state.EntityManager.SetComponentData(sightDataEntity, new BattleCheckSightConnectTo
-            {
-                Value = realSight
-            });
+            
         }
 
         [BurstCompile]

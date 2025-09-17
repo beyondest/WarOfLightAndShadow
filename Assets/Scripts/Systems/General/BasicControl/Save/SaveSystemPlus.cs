@@ -287,6 +287,7 @@ namespace SparFlame.Systems.General.BasicControl
             entities.Add(SystemAPI.GetSingletonEntity<PopulationResourceData>());
             entities.Add(SystemAPI.GetSingletonEntity<PopulationStorageAddTask>());
             entities.Add(SystemAPI.GetSingletonEntity<PopulationConjureTask>());
+            entities.Add(SystemAPI.GetSingletonEntity<CameraMainGameplayHistory>());
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             if (subGameStatusData.SubGameStatus != SubGameStatus.None)
             {
