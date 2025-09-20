@@ -430,6 +430,8 @@ namespace SparFlame.Systems.General.Camera
         private async void SetCameraPositionWhenSwitchSubGameplay(SubGameStatusData targetSubGameStatusData)
         {
             var buffer = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
+            var cameraDebug = SystemAPI.GetSingleton<CameraDebug>();
+
             GetSetCamera();
             if (targetSubGameStatusData.SubGameStatus == SubGameStatus.None)
             {
@@ -443,19 +445,20 @@ namespace SparFlame.Systems.General.Camera
                 return;
             }
 
-            await CheckCameraReference(targetSubGameStatusData);
+            await CheckCameraReference(targetSubGameStatusData,
+                cameraDebug);
 
             RoamingCameraAmongPositions(SystemAPI.GetSingletonBuffer<CameraRoamingPosition>());
         }
 
-        private async Task CheckCameraReference(SubGameStatusData targetSubGameStatusData)
+        private async Task CheckCameraReference(SubGameStatusData targetSubGameStatusData,
+            CameraDebug debug)
         {
             if (targetSubGameStatusData.SubGameStatus == SubGameStatus.Encounter)
             {
                 return;
             }
             EntityQuery query;
-
             if (targetSubGameStatusData.SubGameStatus is SubGameStatus.PlayerDefend or SubGameStatus.PlayerCity)
             {
                 query = SystemAPI.QueryBuilder().WithAll<PlayerTag>().WithAll<CrystalDef>().WithAll<LocalTransform>().Build();
@@ -465,12 +468,17 @@ namespace SparFlame.Systems.General.Camera
                 query = SystemAPI.QueryBuilder().WithAll<AITag>().WithAll<CrystalDef>().WithAll<LocalTransform>()
                     .Build();
             }
-            while (query.IsEmpty)
+            while (query.IsEmpty )
             {
+                if (debug.enterPlayerCityNoCrystalAllowed &&
+                    targetSubGameStatusData.SubGameStatus == SubGameStatus.PlayerCity)
+                {
+                    break;
+                }
                 await Task.Yield();
             }
-
-            var pos = query.ToComponentDataArray<LocalTransform>(Allocator.Temp)[0].Position;
+            
+            var pos =query.IsEmpty ? debug.roamingStartPos : query.ToComponentDataArray<LocalTransform>(Allocator.Temp)[0].Position;
             var buffer = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
             buffer.Add(new CameraRoamingPosition
             {

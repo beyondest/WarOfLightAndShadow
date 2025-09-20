@@ -57,7 +57,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.General
                 var relationship =
                     FactionUtils.GetRelationship(PlayerFactionData.faction,
                         PlayerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
-                if (relationship == Relationship.Self)
+                if (relationship is Relationship.Self or Relationship.Ally)
                 {
                     ECB.AddComponent<PlayerTag>(index, selfEntity);
                 }

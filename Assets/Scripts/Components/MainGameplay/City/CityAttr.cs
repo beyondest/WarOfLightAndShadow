@@ -1,7 +1,6 @@
 ﻿using System;
 using SparFlame.Components.General;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace SparFlame.Components.MainGameplay
 {

@@ -5,13 +5,14 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 using BinaryReader = Unity.Entities.Serialization.BinaryReader;
 using BinaryWriter = Unity.Entities.Serialization.BinaryWriter;
 
 namespace SparFlame.Systems.General.BasicControl
 {
     [Serializable]
-    public struct SeGlobalId : IComponentData
+    public struct SePrefabId : IComponentData
     {
         public int value;
     }
@@ -213,21 +214,28 @@ namespace SparFlame.Systems.General.BasicControl
         private const string ArmyGroupMainDataName = "ArmyMainData";
         private const string GameMainDataName = "GameMainData";
 
-        public static long GetTmpIdForSaving(Entity entity)
-        {
-            // Index 占低位（0~31），Version 占高位（32~63）
-            return ((long)entity.Version << 32) | (uint)entity.Index;
-        }
+        // public static long GetTmpIdForSaving(Entity entity)
+        // {
+        //     // Index 占低位（0~31），Version 占高位（32~63）
+        //     return ((long)entity.Version << 32) | (uint)entity.Index;
+        // }
+        private const string SaveFolder = "SaveData";
+        
+        private static readonly string SaveRootFolder = Path.Combine(Application.persistentDataPath, SaveFolder);
 
+        public static string GetPlayerSaveSlotFolder(int playerSaveSlot)
+        {
+            return Path.Combine(SaveRootFolder, "Player" + playerSaveSlot);
+        }
         public static string GetCitySubDataFolder(int playerSaveSlot)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
             return cityRootFolder;
         }
         public static string GetCitySubDataPath(int cityId, int playerSaveSlot, bool isTmp)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
             if (!Directory.Exists(cityRootFolder))
                 Directory.CreateDirectory(cityRootFolder);
@@ -239,14 +247,14 @@ namespace SparFlame.Systems.General.BasicControl
 
         public static string GetArmyGroupSubDataFolder(int playerSaveSlot)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var armyGroupRootFolder = Path.Combine(saveRootFolder, ArmyGroupSubDataFolder);
             return armyGroupRootFolder;
         }
 
         public static string GetArmyGroupSubDataPath(long saveId, int playerSaveSlot, bool isTmp)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var armyGroupRootFolder = Path.Combine(saveRootFolder, ArmyGroupSubDataFolder);
             if (!Directory.Exists(armyGroupRootFolder))
                 Directory.CreateDirectory(armyGroupRootFolder);
@@ -258,7 +266,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public static string GetCityMainDataPath(int playerSaveSlot)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var generalDataFolder = Path.Combine(saveRootFolder, GameGeneralDataFolder);
             if (!Directory.Exists(generalDataFolder))
                 Directory.CreateDirectory(generalDataFolder);
@@ -268,7 +276,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public static string GetArmyGroupMainDataPath(int playerSaveSlot)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var generalDataFolder = Path.Combine(saveRootFolder, GameGeneralDataFolder);
             if (!Directory.Exists(generalDataFolder))
                 Directory.CreateDirectory(generalDataFolder);
@@ -278,7 +286,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         public static string GetGameMainDataPath(int playerSaveSlot)
         {
-            var saveRootFolder = FolderPathUtils.GetPlayerSaveSlotFolder(playerSaveSlot);
+            var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var generalDataFolder = Path.Combine(saveRootFolder, GameGeneralDataFolder);
             if (!Directory.Exists(generalDataFolder))
                 Directory.CreateDirectory(generalDataFolder);

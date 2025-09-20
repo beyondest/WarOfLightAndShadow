@@ -1,8 +1,8 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
+using SparFlame.Systems.MainGameplay.ArmyGroup;
 using SparFlame.UI.General;
 using TMPro;
 using Unity.Entities;
@@ -39,6 +39,11 @@ namespace SparFlame.UI.MainGameplay
         public void Hide()
         {
             panel.SetActive(false);
+            if (_em.HasComponent<CityWindow3DComponent>(_targetEntity))
+            {
+                var cityWindow = _em.GetComponentData<CityWindow3DComponent>(_targetEntity);
+                cityWindow.CityWindow3D.Hide();
+            }
             _targetEntity = Entity.Null;
         }
 
@@ -59,6 +64,7 @@ namespace SparFlame.UI.MainGameplay
         {
             return _targetEntity != Entity.Null;
         }
+        public Entity GetTarget() => _targetEntity;
 
         public void ClearCloseUpTarget()
         {
@@ -119,10 +125,17 @@ namespace SparFlame.UI.MainGameplay
             cityDescriptionText.text = item.description;
             generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];
             subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.subFaction];
-            if (CityGarrisonWindow.Instance.TrySwitchTarget(_targetEntity))
-                CityGarrisonWindow.Instance.Show();
-            else
-                CityGarrisonWindow.Instance.Hide();
+            
+            // if (CityGarrisonWindow.Instance.TrySwitchTarget(_targetEntity))
+            //     CityGarrisonWindow.Instance.Show();
+            // else
+            //     CityGarrisonWindow.Instance.Hide();
+
+            if (_em.HasComponent<CityWindow3DComponent>(_targetEntity))
+            {
+                var cityWindow = _em.GetComponentData<CityWindow3DComponent>(_targetEntity);
+                cityWindow.CityWindow3D.Show();
+            }
         }
     }
 }

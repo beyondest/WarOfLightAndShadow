@@ -23,8 +23,17 @@ namespace SparFlame.Systems.General.BasicControl
         public event Action OnEcsSaveArmyGroupMainData;
         public event Action OnEcsSaveCityMainData;
         public event Action OnEcsSaveGameMainData;
+        public event Action OnEcsSaveEnemySpecificArmyGroupSubData;
 
         public event Action OnEcsCopyAndDeleteTmpSubData;
+
+        /// <summary>
+        /// This method should be called when enemy city conjure an army group. Save to tmp.
+        /// </summary>
+        public void SyncSaveEnemySpecificArmyGroupSubData()
+        {
+            OnEcsSaveEnemySpecificArmyGroupSubData?.Invoke();
+        }
         
         public void SyncSaveGame(bool backToMainWorldAutoSave = false)
         {

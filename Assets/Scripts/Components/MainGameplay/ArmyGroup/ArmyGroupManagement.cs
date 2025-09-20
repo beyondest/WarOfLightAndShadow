@@ -1,5 +1,6 @@
 ﻿using System;
 using SparFlame.Components.SubGameplay;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 

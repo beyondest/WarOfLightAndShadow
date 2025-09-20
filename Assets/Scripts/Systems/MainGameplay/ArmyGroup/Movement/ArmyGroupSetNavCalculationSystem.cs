@@ -20,7 +20,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             state.RequireForUpdate<ArmyGroupMovingSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
-            state.RequireForUpdate<ArmyGroupSelected>();
+            // state.RequireForUpdate<ArmyGroupSelected>();
             _armyGroupCalculateEnableLookup = state.GetComponentLookup<ArmyGroupCalculateEnable>(
                 );
         }
@@ -40,8 +40,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
       
         
         [BurstCompile]
-        [WithAll(typeof(ArmyGroupSelected))]
-        [WithNone(typeof(ArmyGroupMovingTag))]
+        // [WithAll(typeof(ArmyGroupSelected))]
+        [WithDisabled(typeof(ArmyGroupMovingTag))]
+        [WithNone(typeof(ArmyGroupInGarrison))]
         public partial struct ArmyGroupSetNavJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -54,7 +55,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 Entity selfEntity)
             {
                 if (!navAgent.calculationComplete) return;
-                // Try add this section way points to final way points first, even target is not reachable
+                // Try to add this section way points to final way points first, even target is not reachable
                 if (wayPoints.Length != 0)
                 {
                     ECB.SetComponentEnabled<PathVisualizeEnabled>(index, selfEntity, true);

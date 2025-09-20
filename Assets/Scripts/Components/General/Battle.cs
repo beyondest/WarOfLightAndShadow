@@ -35,12 +35,6 @@ namespace SparFlame.Components.General
     
     public struct SupportFightTag : IComponentData{}
 
-    public struct SupportFightInvader : IBufferElementData
-    {
-        public Entity Entity;
-    }
-    
-    
     public struct BattleCheckSightTarget : IBufferElementData
     {
         public Entity Entity;
@@ -104,6 +98,15 @@ namespace SparFlame.Components.General
     }
     
     public struct BattleRecorderPlayerUnitsUpgrade : IComponentData{}
-    
+
+
+    public struct InvadingSupportCityTag : IComponentData
+    {
+    }
+
+    public struct InvadeSupportCityConfig : IComponentData
+    {
+        public float ReduceHpPerHour;
+    }
     
 }

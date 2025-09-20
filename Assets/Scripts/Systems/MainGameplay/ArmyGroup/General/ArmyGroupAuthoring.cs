@@ -1,4 +1,6 @@
-﻿using Sirenix.OdinInspector;
+﻿using System;
+using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -16,13 +18,19 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [Header("General")] public FactionTag faction;
         public ArmyGroupIconType iconType;
         public SubFactionTag initialSubFactionTag;
+
+        public string gameplayName = "New Army Group";
         // public int initialId;
         [Header("Moving config")]
         public float movementInitialSpeed;
         
         [Header("Sight config"),AssetsOnly] public GameObject armyGroupSightPrefab;
-        
 
+        [Header("Enemy AI Config")] public bool ifEnemyArmyGroup;
+        [ShowIf(nameof(ifEnemyArmyGroup))]
+        public List<UnitCompositionData> enemyArmyGroupCompositionDatas; 
+
+        
         private class ArmyGroupAuthoringBaker : Baker<ArmyGroupAuthoring>
         {
             public override void Bake(ArmyGroupAuthoring authoring)
@@ -30,6 +38,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 
                 // General
+                AddComponent<GlobalSingleId>(entity);
+                AddComponent<AssignGlobalSingleIDRequest>(entity);
                 AddComponent(entity, new MainGameplayGeneralAttr
                 {
                     faction = authoring.faction,
@@ -39,8 +49,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 AddComponent(entity, new ArmyGroupAttr
                 {
                     iconType = authoring.iconType,
-                    saveId = 0,
-                    gameplayName = "New Army Group",
+                    gameplayName = authoring.gameplayName,
                 });
                 AddComponent(entity, new ArmyGroupStatData());
                 AddComponent(entity, new ArmyGroupSkillTimer());
@@ -133,17 +142,44 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     TargetState = ArmyGroupState.Idle,
                     CurState = ArmyGroupState.Idle
                 });
+
+                // Enemy AI
+                AddComponent(entity, new ArmyGroupThreatenData
+                {
+                    mainUnitType = UnitType.Magic,
+                    totalThreatenValue = 0
+                });
+                
+                if (authoring.ifEnemyArmyGroup)
+                {
+                    var buffer = AddBuffer<EnemyArmyGroupCompositionData>(entity);
+                    foreach (var data in authoring.enemyArmyGroupCompositionDatas)
+                    {
+                        buffer.Add(new EnemyArmyGroupCompositionData
+                        {
+                            Count = data.count,
+                            UnitPrefab = GetEntity(data.unitPrefab, TransformUsageFlags.Dynamic),
+                            Level = data.level
+                        });
+                    }
+                    AddComponent<ArmyGroupCommandData>(entity);
+                    AddComponent<ArmyGroupCommandUpdate>(entity);
+                    SetComponentEnabled<ArmyGroupCommandUpdate>(entity,false);
+                }
             }
         }
     }
-   
 
 
-    
-    public struct PathVisualizer : IComponentData
+
+    [Serializable]
+    public class UnitCompositionData
     {
+        public GameObject unitPrefab;
+        public int count;
+        public int level;
     }
-    public struct PathVisualizeEnabled : IComponentData, IEnableableComponent{}
+    
 
 
     

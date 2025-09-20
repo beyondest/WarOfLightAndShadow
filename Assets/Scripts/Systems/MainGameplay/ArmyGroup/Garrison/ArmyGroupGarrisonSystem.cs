@@ -51,11 +51,15 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                 var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(request.City);
 
-                // Reset hp regeneration timer
-                SystemAPI.SetComponent(request.ArmyGroup, new HpRegenerateTimer
+                // Reset hp regeneration timer. Check first because may remove dead army group
+                if (SystemAPI.HasComponent<HpRegenerateTimer>(request.ArmyGroup))
                 {
-                    lastCheckTotalHours = curTotalHours,
-                });
+                    SystemAPI.SetComponent(request.ArmyGroup, new HpRegenerateTimer
+                    {
+                        lastCheckTotalHours = curTotalHours,
+                    });
+                }
+                
 
                 // ArmyGroup garrison in 
                 if (request.IfGarrisonIn)

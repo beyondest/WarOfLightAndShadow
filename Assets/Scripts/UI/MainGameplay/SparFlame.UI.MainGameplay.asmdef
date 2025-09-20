@@ -18,7 +18,8 @@
     "SparFlame.UI.General",
     "SparFlame.Systems.General.Input",
     "SparFlame.Systems.General.BasicControl",
-    "SparFlame.Database"
+    "SparFlame.Database",
+    "SparFlame.Systems.MainGameplay.ArmyGroup"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

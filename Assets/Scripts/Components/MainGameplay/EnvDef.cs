@@ -1,8 +1,11 @@
 ﻿using System;
+using Unity.Entities;
 using UnityEngine;
 
 namespace SparFlame.Components.MainGameplay
 {
+   
+    
     public enum EcoType
     {
         Unknown = 0,

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -192,6 +191,7 @@ namespace SparFlame.Systems.General.BasicControl
             switch (targetSubGameStatus)
             {
                 case SubGameStatus.PlayerSiege:
+                    loads.Add(SceneGroupType.CityEnv);
                     loads.Add(SceneGroupType.CityInvadeFight);
                     break;
                 case SubGameStatus.PlayerDefend:

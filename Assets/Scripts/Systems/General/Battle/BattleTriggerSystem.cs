@@ -26,9 +26,11 @@ namespace SparFlame.Systems.General.Battle
         {
             // If there are many requests at one time, trigger player's request first
             var findPlayerRequest = false;
+            
             var entities = _requestQuery.ToEntityArray(Allocator.Temp);
             var requests = _requestQuery.ToComponentDataArray<BattleTriggerRequest>(Allocator.Temp);
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
+            var request = requests[0];
             for (var i = 0; i < requests.Length; i++)
             {
                 var req = requests[i];
@@ -40,17 +42,24 @@ namespace SparFlame.Systems.General.Battle
                 {
                     findPlayerRequest = true;
                     var entity = entities[i];
+                    request = requests[i];
                     state.EntityManager.DestroyEntity(entity);
                 }
             }
-
             if (!findPlayerRequest)
             {
                 state.EntityManager.DestroyEntity(entities[0]);
             }
 
+            // Check if enemy army group attack support city. If so , only simulate the vfx 
+            if (SystemAPI.HasComponent<SupportFightTag>(request.Defender)
+                && SystemAPI.HasComponent<AITag>(request.Attacker))
+            {
+                state.EntityManager.AddComponent<InvadingSupportCityTag>(request.Attacker);
+                return;
+            }
+            
             // Calculate battle center position
-            var request = requests[0];
             var attackerPos = SystemAPI.GetComponent<LocalTransform>(request.Attacker).Position;
             var defenderPos = SystemAPI.GetComponent<LocalTransform>(request.Defender).Position;
             var targetPosition = (attackerPos + defenderPos) / 2;

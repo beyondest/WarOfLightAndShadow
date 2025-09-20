@@ -14,7 +14,57 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: GamePlayUI
   m_GUID: 1a0891b1fa76ef94bad09a964e90d557
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 1272637b61518b3468da0f5e20bca28c
+    m_Address: Butterfly
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 25c7924208568a548a0d05b5de9de945
+    m_Address: Bear
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2ad200ade06c073428e5e5a938c3dae4
+    m_Address: Horse
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 38b47ffad24bf44489a3cd38bf4e9a0b
+    m_Address: Dragon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b3e1f737bceed39418f56c9ceb776cc9
+    m_Address: Snake
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c67629fb9fff88c4abe61bc99b222b27
+    m_Address: Rabbit
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: da6d0aaf2a1f878408c0193d8d912944
+    m_Address: Lion
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dac6d909a765ec54d8fda34c8483e5fc
+    m_Address: Deer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f99fb417e28b1de4596fc62e3fc2052d
+    m_Address: Wolf
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ff02583dc8c9f2b4b9c6aff8c5144ab3
+    m_Address: Scorpion
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 81826d70e3a1292478a7633e5486d2b4, type: 2}
   m_SchemaSet:

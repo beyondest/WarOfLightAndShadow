@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using SparFlame.Components.General;
-using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
 using TMPro;
 using UnityEngine;
@@ -19,7 +17,7 @@ namespace SparFlame.UI.General
 
         private void OnEnable()
         {
-            var path = FolderPathUtils.GetPlayerSaveSlotFolder(slotValue);
+            var path = SaveUtilities.GetPlayerSaveSlotFolder(slotValue);
             content.text = !Directory.Exists(path) ? "New Saving" : $"Loading saving {slotValue}";
             deleteButton.SetActive(Directory.Exists(path));
         }
@@ -28,14 +26,14 @@ namespace SparFlame.UI.General
         {
             deleteButton.GetComponent<Button>().onClick.AddListener(() =>
             {
-                var path = FolderPathUtils.GetPlayerSaveSlotFolder(slotValue);
+                var path = SaveUtilities.GetPlayerSaveSlotFolder(slotValue);
                 Directory.Delete(path, true);
                 deleteButton.SetActive(false);
                 content.text = "New Saving";
             });
             saveButton.onClick.AddListener(() =>
             {
-                var path = FolderPathUtils.GetPlayerSaveSlotFolder(slotValue);
+                var path = SaveUtilities.GetPlayerSaveSlotFolder(slotValue);
 
                 GameController.Instance.ClickSlotAndStartGame(isLightFaction
                     ? FactionTag.Light

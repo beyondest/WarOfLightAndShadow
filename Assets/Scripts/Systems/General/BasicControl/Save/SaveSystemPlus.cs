@@ -18,6 +18,7 @@ namespace SparFlame.Systems.General.BasicControl
     public partial class SaveSystemPlus : SystemBase
     {
         private EntityQuery _saveArmyGroupQuery;
+        private EntityQuery _enemySpecificArmyGroupSaveQuery;
 
         public struct SaveTmpTag : IComponentData
         {
@@ -33,10 +34,11 @@ namespace SparFlame.Systems.General.BasicControl
         private ComponentLookup<ArmyGroupMovingTag> _movingTagLookup;
         private ComponentLookup<ArmyGroupCalculateEnable> _calculateEnableLookup;
         private ComponentLookup<ArmyGroupInGarrison> _armyGroupInGarrisonLookup;
-        private ComponentLookup<ArmyGroupAttr> _armyGroupAttrLookup;
         private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
         private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
         private ComponentLookup<CityAttr> _cityAttrLookup;
+        private ComponentLookup<GlobalSingleId> _globalSingleIdLookup;
+
 
         private bool _initialized;
 
@@ -54,12 +56,14 @@ namespace SparFlame.Systems.General.BasicControl
             _movingTagLookup = GetComponentLookup<ArmyGroupMovingTag>(true);
             _calculateEnableLookup = GetComponentLookup<ArmyGroupCalculateEnable>(true);
             _armyGroupInGarrisonLookup = GetComponentLookup<ArmyGroupInGarrison>(true);
-            _armyGroupAttrLookup = GetComponentLookup<ArmyGroupAttr>(true);
             _constructingTimerLookup = GetComponentLookup<ConstructingTimer>(true);
             _cityTaskUniqueIdLookup = GetComponentLookup<CityTaskUniqueId>(true);
             _cityAttrLookup = GetComponentLookup<CityAttr>(true);
+            _globalSingleIdLookup = GetComponentLookup<GlobalSingleId>(true);
 
             _saveArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>().Build();
+            _enemySpecificArmyGroupSaveQuery = SystemAPI.QueryBuilder().WithAll<EnemyArmyGroupSaveTag>()
+                .WithAll<ArmyGroupAttr>().Build();
         }
 
         protected override void OnStartRunning()
@@ -72,6 +76,7 @@ namespace SparFlame.Systems.General.BasicControl
                 SaveLoadController.Instance.OnEcsSaveArmyGroupMainData += SaveArmyGroupMainData;
                 SaveLoadController.Instance.OnEcsSaveGameMainData += SaveGameMainData;
                 SaveLoadController.Instance.OnEcsCopyAndDeleteTmpSubData += CopyDeleteTmpOrInvalidSubData;
+                SaveLoadController.Instance.OnEcsSaveEnemySpecificArmyGroupSubData += SaveEnemySpecificArmyGroupSubData;
                 _initialized = true;
             }
         }
@@ -85,87 +90,117 @@ namespace SparFlame.Systems.General.BasicControl
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
             var armyGroups = _saveArmyGroupQuery.ToEntityArray(Allocator.Temp);
-            var armyGroupAttrs = _saveArmyGroupQuery.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
 
 
-            for (var i = 0; i < armyGroups.Length; i++)
+            foreach (var armyGroup in armyGroups)
             {
-                var armyGroup = armyGroups[i];
-                var armyGroupAttr = armyGroupAttrs[i];
-                var armyGroupUnits = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup);
-
-                // Calculate center position of all units in this army group
-                var sum = float3.zero;
-                for (var j = 0; j < armyGroupUnits.Length; j++)
-                {
-                    var transform = SystemAPI.GetComponent<LocalTransform>(armyGroupUnits[j].Unit);
-                    sum += transform.Position;
-                }
-
-                var center = sum / armyGroupUnits.Length;
-                float2 boundingMin = float2.zero, boundingMax = float2.zero;
-
-                var ecb = new EntityCommandBuffer(Allocator.Temp);
-                for (var index = 0; index < armyGroupUnits.Length; index++)
-                {
-                    var armyGroupUnit = armyGroupUnits[index];
-                    var unit = armyGroupUnit.Unit;
-                    var unitTmpId = SaveUtilities.GetTmpIdForSaving(unit);
-                    armyGroupUnit.SaveTmpId = unitTmpId;
-                    armyGroupUnits[index] = armyGroupUnit;
-
-                    var transform = SystemAPI.GetComponent<LocalTransform>(unit);
-                    var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(unit);
-                    var statData = SystemAPI.GetComponent<StatData>(unit);
-                    var expData = SystemAPI.GetComponent<ExpData>(unit);
-
-                    var saveEntity = ecb.CreateEntity();
-                    var relative = transform.Position - center;
-                    boundingMin = math.min(boundingMin, relative.xz);
-                    boundingMax = math.max(boundingMax, relative.xz);
-
-                    ecb.AddComponent(saveEntity, new SeTransform
-                    {
-                        position = relative, // Save relative position
-                        rotation = transform.Rotation,
-                        scale = transform.Scale,
-                    });
-
-                    ecb.AddComponent(saveEntity, new SeGlobalId { value = generalAttr.PrefabID });
-                    ecb.AddComponent(saveEntity, new SeTmpId { value = unitTmpId });
-                    ecb.AddComponent(saveEntity, statData);
-                    ecb.AddComponent(saveEntity, expData);
-                    ecb.AddComponent(saveEntity, new SeInArmyGroup
-                    {
-                        armyGroupSaveId = armyGroupAttr.saveId
-                    });
-                }
-
-                // Record the bounding box
-                armyGroupAttr.boundingBoxDelta = boundingMax - boundingMin;
-                armyGroupAttr.loadingCenter = center;
-                armyGroupAttr.loadingScale = 1f;
-                SystemAPI.SetComponent(armyGroup, armyGroupAttr);
-
-                using (var serializeWorld = new World("Serialization World"))
-                {
-                    var seEm = serializeWorld.EntityManager;
-                    ecb.Playback(seEm);
-                    ecb.Dispose();
-                    seEm.CreateSingleton(new SaveTmpTag());
-                    seEm.RemoveComponent<SceneTag>(seEm.UniversalQuery);
-                    seEm.RemoveComponent<SceneSection>(seEm.UniversalQuery);
-                    var armyGroupSavePath =
-                        SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot, shouldSaveToTmp);
-                    using (var writer = new StreamBinaryWriter(armyGroupSavePath))
-                    {
-                        SerializeUtility.SerializeWorld(seEm, writer);
-                    }
-                }
+                SaveSingleArmyGroupSubData(shouldSaveToTmp, armyGroup, playerSaveSlot);
             }
 
             armyGroups.Dispose();
-            armyGroupAttrs.Dispose();
+        }
+
+        private void SaveEnemySpecificArmyGroupSubData()
+        {
+            var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            var enemyArmyGroups = _enemySpecificArmyGroupSaveQuery.ToEntityArray(Allocator.Temp);
+            foreach (var armyGroup in enemyArmyGroups)
+            {
+                ecb.RemoveComponent<EnemyArmyGroupSaveTag>(armyGroup);
+                SaveSingleArmyGroupSubData(true, armyGroup, playerSaveSlot,
+                    true);
+            }
+
+            ecb.Playback(EntityManager);
+            ecb.Dispose();
+            enemyArmyGroups.Dispose();
+        }
+
+        private void SaveSingleArmyGroupSubData(
+            bool shouldSaveToTmp, Entity armyGroup, int playerSaveSlot,
+            bool shouldDestroyUnit = false)
+        {
+            var armyGroupUnits = SystemAPI.GetBuffer<ArmyGroupUnit>(armyGroup);
+            var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(armyGroup);
+            var armyGroupSingleId = SystemAPI.GetComponent<GlobalSingleId>(armyGroup).value;
+            // Calculate center position of all units in this army group
+            var sum = float3.zero;
+            for (var j = 0; j < armyGroupUnits.Length; j++)
+            {
+                var transform = SystemAPI.GetComponent<LocalTransform>(armyGroupUnits[j].Unit);
+                sum += transform.Position;
+            }
+
+            var center = sum / armyGroupUnits.Length;
+            float2 boundingMin = float2.zero, boundingMax = float2.zero;
+
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            var ecbMainWorld = new EntityCommandBuffer(Allocator.Temp);
+
+            for (var index = 0; index < armyGroupUnits.Length; index++)
+            {
+                var armyGroupUnit = armyGroupUnits[index];
+                var unit = armyGroupUnit.Unit;
+                if (shouldDestroyUnit)
+                    ecbMainWorld.DestroyEntity(unit);
+
+                var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(unit);
+
+                var unitSingleId = SystemAPI.GetComponent<GlobalSingleId>(unit).value;
+                armyGroupUnit.SaveTmpId = unitSingleId;
+                armyGroupUnits[index] = armyGroupUnit;
+
+                var transform = SystemAPI.GetComponent<LocalTransform>(unit);
+                var statData = SystemAPI.GetComponent<StatData>(unit);
+                var expData = SystemAPI.GetComponent<ExpData>(unit);
+
+                var saveEntity = ecb.CreateEntity();
+                var relative = transform.Position - center;
+                boundingMin = math.min(boundingMin, relative.xz);
+                boundingMax = math.max(boundingMax, relative.xz);
+
+                ecb.AddComponent(saveEntity, new SeTransform
+                {
+                    position = relative, // Save relative position
+                    rotation = transform.Rotation,
+                    scale = transform.Scale,
+                });
+
+                ecb.AddComponent(saveEntity, new SePrefabId { value = generalAttr.PrefabID });
+                ecb.AddComponent(saveEntity, new SeSingleId { value = unitSingleId });
+                ecb.AddComponent(saveEntity, statData);
+                ecb.AddComponent(saveEntity, expData);
+                ecb.AddComponent(saveEntity, new SeInArmyGroup
+                {
+                    armyGroupSaveId = armyGroupSingleId
+                });
+            }
+
+            // Record the bounding box
+            armyGroupAttr.boundingBoxDelta = boundingMax - boundingMin;
+            armyGroupAttr.loadingCenter = center;
+            armyGroupAttr.loadingScale = 1f;
+            SystemAPI.SetComponent(armyGroup, armyGroupAttr);
+
+            using (var serializeWorld = new World("Serialization World"))
+            {
+                var seEm = serializeWorld.EntityManager;
+                ecb.Playback(seEm);
+                ecb.Dispose();
+                seEm.CreateSingleton(new SaveTmpTag());
+                seEm.RemoveComponent<SceneTag>(seEm.UniversalQuery);
+                seEm.RemoveComponent<SceneSection>(seEm.UniversalQuery);
+                var armyGroupSavePath =
+                    SaveUtilities.GetArmyGroupSubDataPath(armyGroupSingleId, playerSaveSlot, shouldSaveToTmp);
+                using (var writer = new StreamBinaryWriter(armyGroupSavePath))
+                {
+                    SerializeUtility.SerializeWorld(seEm, writer);
+                }
+            }
+
+            ecbMainWorld.Playback(EntityManager);
+            ecbMainWorld.Dispose();
         }
 
         private void SaveCitySubData(bool shouldSaveToTmp)
@@ -181,8 +216,10 @@ namespace SparFlame.Systems.General.BasicControl
             _constructingTimerLookup.Update(this);
             _conjuringDataLookup.Update(this);
             _cityTaskUniqueIdLookup.Update(this);
+            _globalSingleIdLookup.Update(this);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
+
             var saveJob = new SaveSubGameplayJob
             {
                 ECB = ecbP,
@@ -193,6 +230,7 @@ namespace SparFlame.Systems.General.BasicControl
                 PhysicsMassLookup = _physicsMassLookup,
                 ConstructingTimerLookup = _constructingTimerLookup,
                 CityTaskUniqueIdLookup = _cityTaskUniqueIdLookup,
+                GlobalSingleIdLookup = _globalSingleIdLookup
             }.ScheduleParallel(Dependency);
             saveJob.Complete();
             using (var serializeWorld = new World("Serialization World"))
@@ -216,11 +254,11 @@ namespace SparFlame.Systems.General.BasicControl
         {
             var path = SaveUtilities.GetCityMainDataPath(SystemAPI.GetSingleton<PlayerSaveSlot>().Value);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            _armyGroupAttrLookup.Update(this);
+            _globalSingleIdLookup.Update(this);
             var job = new SaveCityMainDataJob
             {
                 ECB = ecb.AsParallelWriter(),
-                ArmyGroupAttrLookup = _armyGroupAttrLookup,
+                GlobalSingleIdLookup = _globalSingleIdLookup,
             }.ScheduleParallel(Dependency);
             job.Complete();
 
@@ -247,6 +285,7 @@ namespace SparFlame.Systems.General.BasicControl
             _calculateEnableLookup.Update(this);
             _armyGroupInGarrisonLookup.Update(this);
             _cityAttrLookup.Update(this);
+            _globalSingleIdLookup.Update(this);
             var path = SaveUtilities.GetArmyGroupMainDataPath(SystemAPI.GetSingleton<PlayerSaveSlot>().Value);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var job = new SaveArmyGroupMainDataJob
@@ -255,12 +294,13 @@ namespace SparFlame.Systems.General.BasicControl
                 ArmyGroupCalculateEnableLookup = _calculateEnableLookup,
                 ArmyGroupMovingTagLookup = _movingTagLookup,
                 ArmyGroupInGarrisonLookup = _armyGroupInGarrisonLookup,
-                CityAttrLookup = _cityAttrLookup
+                CityAttrLookup = _cityAttrLookup,
+                GlobalSingleIdLookup = _globalSingleIdLookup
             }.ScheduleParallel(Dependency);
             job.Complete();
             using (var serializeWorld = new World("Serialization World"))
             {
-                EntityManager seEm = serializeWorld.EntityManager;
+                var seEm = serializeWorld.EntityManager;
                 ecb.Playback(seEm);
                 ecb.Dispose();
                 seEm.CreateSingleton(new SaveTmpTag());
@@ -288,6 +328,7 @@ namespace SparFlame.Systems.General.BasicControl
             entities.Add(SystemAPI.GetSingletonEntity<PopulationStorageAddTask>());
             entities.Add(SystemAPI.GetSingletonEntity<PopulationConjureTask>());
             entities.Add(SystemAPI.GetSingletonEntity<CameraMainGameplayHistory>());
+            entities.Add(SystemAPI.GetSingletonEntity<GlobalSingIDCounter>());
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             if (subGameStatusData.SubGameStatus != SubGameStatus.None)
             {
@@ -341,26 +382,26 @@ namespace SparFlame.Systems.General.BasicControl
             }
             // Copy army group sub data from tmp to true save path and delete tmp path
 
-            foreach (var armyGroupAttr in SystemAPI.Query<RefRO<ArmyGroupAttr>>())
+            foreach (var globalSingleId in SystemAPI.Query<RefRO<GlobalSingleId>>().WithAll<ArmyGroupAttr>())
             {
-                var tmpPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.ValueRO.saveId, playerSaveSlot.Value,
+                var tmpPath = SaveUtilities.GetArmyGroupSubDataPath(globalSingleId.ValueRO.value, playerSaveSlot.Value,
                     true);
                 if (File.Exists(tmpPath))
                 {
-                    var truePath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.ValueRO.saveId,
+                    var truePath = SaveUtilities.GetArmyGroupSubDataPath(globalSingleId.ValueRO.value,
                         playerSaveSlot.Value, false);
                     File.Copy(tmpPath, truePath, overwrite: true);
                     File.Delete(tmpPath);
                 }
             }
-            
+
             // Delete non-player city sub data if it exists, delete dead army group sub data if it exists
-            
+
             var playerCityQuery = SystemAPI.QueryBuilder().WithAll<CityAttr>().WithAll<PlayerTag>().Build();
-            var playerArmyGroups = SystemAPI.QueryBuilder().WithAll<ArmyGroupAttr>()
+            var playerArmyGroups = SystemAPI.QueryBuilder().WithAll<ArmyGroupAttr>().WithAll<GlobalSingleId>()
                 .WithAll<PlayerTag>().Build();
             var cityAttrs = playerCityQuery.ToComponentDataArray<CityAttr>(Allocator.Temp);
-            var armyGroupAttrs = playerArmyGroups.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
+            var armyGroupAttrs = playerArmyGroups.ToComponentDataArray<GlobalSingleId>(Allocator.Temp);
             var cityValidSaveIds = new NativeHashSet<int>(3, Allocator.Temp);
             var armyGroupValidSaveIds = new NativeHashSet<long>(3, Allocator.Temp);
 
@@ -369,16 +410,16 @@ namespace SparFlame.Systems.General.BasicControl
                 cityValidSaveIds.Add(cityAttr.globalId);
             }
 
-            foreach (var armyGroupAttr in armyGroupAttrs)
+            foreach (var globalSingleId in armyGroupAttrs)
             {
-                armyGroupValidSaveIds.Add(armyGroupAttr.saveId);
+                armyGroupValidSaveIds.Add(globalSingleId.value);
             }
 
             var citySubDataFolder = SaveUtilities.GetCitySubDataFolder(playerSaveSlot.Value);
             var armyGroupSubDataFolder = SaveUtilities.GetArmyGroupSubDataFolder(playerSaveSlot.Value);
             var citySubDataFiles = Directory.GetFiles(citySubDataFolder);
             var armyGroupSubDataFiles = Directory.GetFiles(armyGroupSubDataFolder);
-            
+
             foreach (var citySubDataFile in citySubDataFiles)
             {
                 var fileName = citySubDataFile.Split(".")[0];
@@ -402,7 +443,6 @@ namespace SparFlame.Systems.General.BasicControl
                     }
                 }
             }
-
         }
     }
 }

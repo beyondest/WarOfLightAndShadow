@@ -34,7 +34,7 @@ namespace SparFlame.Systems.General.BasicControl
     }
 
     [Serializable]
-    public struct SeTmpId : IComponentData
+    public struct SeSingleId : IComponentData
     {
         public long value;
     }
@@ -70,11 +70,12 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public BufferLookup<GarrisonEntity> GarrisonEntitiesLookup;
         [ReadOnly] public BufferLookup<GarrisonTypeData> GarrisonTypeDataLookup;
         [ReadOnly] public BufferLookup<ConjuringData> ConjuringDataLookup;
-        
+
         [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
         [ReadOnly] public ComponentLookup<PhysicsMass> PhysicsMassLookup;
         [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTimerLookup;
         [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
+        [ReadOnly] public ComponentLookup<GlobalSingleId> GlobalSingleIdLookup;
 
         private void Execute([ChunkIndexInQuery] int index, in SubGameplayGeneralAttr generalAttr,
             in LocalTransform transform,
@@ -87,7 +88,7 @@ namespace SparFlame.Systems.General.BasicControl
                 rotation = transform.Rotation,
                 scale = transform.Scale,
             });
-            ECB.AddComponent(index, saveEntity, new SeGlobalId { value = generalAttr.PrefabID });
+            ECB.AddComponent(index, saveEntity, new SePrefabId { value = generalAttr.PrefabID });
             ECB.AddComponent(index, saveEntity, statData);
             if (generalAttr.BaseTag == BaseTag.Units)
             {
@@ -98,12 +99,12 @@ namespace SparFlame.Systems.General.BasicControl
                     ECB.AddComponent(index, saveEntity, new SeInverseMass { value = physicsMass.InverseMass });
                     ECB.AddComponent(index, saveEntity, new SeInGarrison
                     {
-                        buildingTmpId = SaveUtilities.GetTmpIdForSaving(inGarrison.BuildingEntity),
+                        buildingTmpId = GlobalSingleIdLookup[inGarrison.BuildingEntity].value,
                         inBuilding = inGarrison.InBuilding,
                         priorMass = inGarrison.PriorMass,
                     });
                     ECB.AddComponent(index, saveEntity,
-                        new SeTmpId { value = SaveUtilities.GetTmpIdForSaving(selfEntity) });
+                        new SeSingleId { value = GlobalSingleIdLookup[selfEntity].value });
                 }
             }
             else if (generalAttr.BaseTag == BaseTag.Buildings)
@@ -111,8 +112,9 @@ namespace SparFlame.Systems.General.BasicControl
                 // Save city task unique id
                 if (CityTaskUniqueIdLookup.TryGetComponent(selfEntity, out var cityTaskUniqueId))
                 {
-                    ECB.AddComponent(index,saveEntity,cityTaskUniqueId);
+                    ECB.AddComponent(index, saveEntity, cityTaskUniqueId);
                 }
+
                 // Save garrison data
                 if (GarrisonEntitiesLookup.TryGetBuffer(selfEntity, out var garrisonEntities)
                     && garrisonEntities.Length > 0)
@@ -129,17 +131,18 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         ECB.AppendToBuffer(index, saveEntity, new SeGarrisonEntity
                         {
-                            unitTmpId = SaveUtilities.GetTmpIdForSaving(garrisonEntity.Value),
+                            unitTmpId = GlobalSingleIdLookup[garrisonEntity.Value].value,
                             id = garrisonEntity.Id
                         });
                     }
 
                     ECB.AddComponent(index, saveEntity,
-                        new SeTmpId { value = SaveUtilities.GetTmpIdForSaving(selfEntity) });
+                        new SeSingleId { value = GlobalSingleIdLookup[selfEntity].value });
                 }
-                
+
                 // Save conjuring data
-                if (ConjuringDataLookup.TryGetBuffer(selfEntity, out var conjuringDataBuffer) && conjuringDataBuffer.Length > 0)
+                if (ConjuringDataLookup.TryGetBuffer(selfEntity, out var conjuringDataBuffer) &&
+                    conjuringDataBuffer.Length > 0)
                 {
                     ECB.AddBuffer<SeConjuringData>(index, saveEntity);
                     foreach (var conjuringData in conjuringDataBuffer)
@@ -154,13 +157,12 @@ namespace SparFlame.Systems.General.BasicControl
                         });
                     }
                 }
-                
+
                 // Save constructing timer data
                 if (ConstructingTimerLookup.TryGetComponent(selfEntity, out var constructingTimer))
                 {
                     ECB.AddComponent(index, saveEntity, constructingTimer);
                 }
-                
             }
         }
     }
@@ -177,15 +179,15 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public ComponentLookup<HealAbility> HealAbilityLookup;
         [ReadOnly] public ComponentLookup<HarvestAbility> HarvestAbilityLookup;
 
-        private void Execute([ChunkIndexInQuery] int index, in SeTransform seTransform, in SeGlobalId seGlobalId,
-            in SeTmpId seTmpId, in ExpData expData, in StatData statData,
+        private void Execute([ChunkIndexInQuery] int index, in SeTransform seTransform, in SePrefabId sePrefabId,
+            in SeSingleId seSingleId, in ExpData expData, in StatData statData,
             in SeInArmyGroup seInArmyGroup,
             Entity selfEntity)
         {
             ECB.DestroyEntity(index, selfEntity);
-            var instance = ECB.Instantiate(index, GlobalIdxToPrefabs[seGlobalId.value]);
+            var instance = ECB.Instantiate(index, GlobalIdxToPrefabs[sePrefabId.value]);
             ECB.AddComponent<SubGameplayEntityTag>(index, instance);
-            ECB.AddComponent(index, instance, seTmpId);
+            ECB.AddComponent(index, instance, seSingleId);
             ECB.AddComponent(index, instance, seInArmyGroup);
             ECB.SetComponent(index, instance, new LocalTransform
             {
@@ -197,15 +199,15 @@ namespace SparFlame.Systems.General.BasicControl
             ECB.SetComponent(index, instance, expData);
 
 
-            var expStaticConfig = ExpDatabase[seGlobalId.value];
+            var expStaticConfig = ExpDatabase[sePrefabId.value];
 
             // Modify move speed based on exp level
-            var movableData = MovableDataLookup[GlobalIdxToPrefabs[seGlobalId.value]];
+            var movableData = MovableDataLookup[GlobalIdxToPrefabs[sePrefabId.value]];
             movableData.MoveSpeed += (expData.curLevel - 1) * expStaticConfig.MoveSpeedPerLevel;
             ECB.SetComponent(index, instance, movableData);
 
             // Modify abilities based on exp level
-            if (AttackAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[seGlobalId.value], out var attackAbility))
+            if (AttackAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[sePrefabId.value], out var attackAbility))
             {
                 attackAbility.Amount += (expData.curLevel - 1) * expStaticConfig.AttackAmountPerLevel;
                 attackAbility.Speed += (expData.curLevel - 1) * expStaticConfig.AttackSpeedPerLevel;
@@ -214,7 +216,7 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB.SetComponent(index, instance, attackAbility);
             }
 
-            if (HealAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[seGlobalId.value], out var healAbility))
+            if (HealAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[sePrefabId.value], out var healAbility))
             {
                 healAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HealAmountPerLevel;
                 healAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HealSpeedPerLevel;
@@ -223,7 +225,7 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB.SetComponent(index, instance, healAbility);
             }
 
-            if (HarvestAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[seGlobalId.value], out var harvestAbility))
+            if (HarvestAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[sePrefabId.value], out var harvestAbility))
             {
                 harvestAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HarvestAmountPerLevel;
                 harvestAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HarvestSpeedPerLevel;
@@ -238,7 +240,7 @@ namespace SparFlame.Systems.General.BasicControl
     public partial struct LoadSubGameplayJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        
+
         // Component lookups
         [ReadOnly] public ComponentLookup<ExpData> ExpLookup;
         [ReadOnly] public ComponentLookup<SeInGarrison> InGarrisonLookup;
@@ -252,7 +254,7 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public ComponentLookup<HealAbility> HealAbilityLookup;
         [ReadOnly] public ComponentLookup<HarvestAbility> HarvestAbilityLookup;
 
-        [ReadOnly] public ComponentLookup<SeTmpId> TmpIdLookup;
+        [ReadOnly] public ComponentLookup<SeSingleId> TmpIdLookup;
 
         // Buffer lookups
         [ReadOnly] public BufferLookup<SeGarrisonEntity> GarrisonEntitiesLookup;
@@ -263,12 +265,12 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public NativeHashMap<int, ExpStaticConfig> ExpDatabase;
 
         private void Execute([ChunkIndexInQuery] int index,
-            in SeGlobalId globalId, in SeTransform transform, in StatData statData, Entity selfEntity)
+            in SePrefabId prefabId, in SeTransform transform, in StatData statData, Entity selfEntity)
         {
             ECB.DestroyEntity(index, selfEntity);
 
             // Create instance and set general data
-            var instance = ECB.Instantiate(index, GlobalIdxToPrefabs[globalId.value]);
+            var instance = ECB.Instantiate(index, GlobalIdxToPrefabs[prefabId.value]);
             ECB.AddComponent<SubGameplayEntityTag>(index, instance);
             ECB.SetComponent(index, instance, new LocalTransform
             {
@@ -282,15 +284,15 @@ namespace SparFlame.Systems.General.BasicControl
             if (ExpLookup.TryGetComponent(selfEntity, out var expData))
             {
                 ECB.SetComponent(index, instance, expData);
-                var expStaticConfig = ExpDatabase[globalId.value];
+                var expStaticConfig = ExpDatabase[prefabId.value];
 
                 // Modify move speed based on exp level
-                var movableData = MovableDataLookup[GlobalIdxToPrefabs[globalId.value]];
+                var movableData = MovableDataLookup[GlobalIdxToPrefabs[prefabId.value]];
                 movableData.MoveSpeed += (expData.curLevel - 1) * expStaticConfig.MoveSpeedPerLevel;
                 ECB.SetComponent(index, instance, movableData);
 
                 // Modify abilities based on exp level
-                if (AttackAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[globalId.value], out var attackAbility))
+                if (AttackAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[prefabId.value], out var attackAbility))
                 {
                     attackAbility.Amount += (expData.curLevel - 1) * expStaticConfig.AttackAmountPerLevel;
                     attackAbility.Speed += (expData.curLevel - 1) * expStaticConfig.AttackSpeedPerLevel;
@@ -299,7 +301,7 @@ namespace SparFlame.Systems.General.BasicControl
                     ECB.SetComponent(index, instance, attackAbility);
                 }
 
-                if (HealAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[globalId.value], out var healAbility))
+                if (HealAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[prefabId.value], out var healAbility))
                 {
                     healAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HealAmountPerLevel;
                     healAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HealSpeedPerLevel;
@@ -308,7 +310,7 @@ namespace SparFlame.Systems.General.BasicControl
                     ECB.SetComponent(index, instance, healAbility);
                 }
 
-                if (HarvestAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[globalId.value], out var harvestAbility))
+                if (HarvestAbilityLookup.TryGetComponent(GlobalIdxToPrefabs[prefabId.value], out var harvestAbility))
                 {
                     harvestAbility.Amount += (expData.curLevel - 1) * expStaticConfig.HarvestAmountPerLevel;
                     harvestAbility.Speed += (expData.curLevel - 1) * expStaticConfig.HarvestSpeedPerLevel;
@@ -322,7 +324,7 @@ namespace SparFlame.Systems.General.BasicControl
             if (InGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison))
             {
                 ECB.AddComponent(index, instance, inGarrison);
-                var physicsMass = PhysicsMassLookup[GlobalIdxToPrefabs[globalId.value]];
+                var physicsMass = PhysicsMassLookup[GlobalIdxToPrefabs[prefabId.value]];
                 physicsMass.InverseMass = InverseMassLookup[selfEntity].value;
                 ECB.SetComponent(index, instance, physicsMass);
                 ECB.SetComponentEnabled<GarrisonStateTag>(index, instance, true);
@@ -366,31 +368,29 @@ namespace SparFlame.Systems.General.BasicControl
                     });
                 }
             }
-            
+
             // Set constructing timer data
             if (ConstructingTimerLookup.TryGetComponent(selfEntity, out var constructingTimer))
             {
                 ECB.AddComponent(index, instance, constructingTimer);
             }
-            
+
             // Set city task unique id
             if (CityTaskUniqueIdLookup.TryGetComponent(selfEntity, out var cityTaskUniqueId))
             {
                 ECB.AddComponent(index, instance, cityTaskUniqueId);
             }
-            
+
             // Set tmp id
             if (TmpIdLookup.TryGetComponent(selfEntity, out var tmpId))
             {
                 ECB.AddComponent(index, instance, tmpId);
             }
-            
-            
         }
     }
 
     [BurstCompile]
-    [WithAll(typeof(SeTmpId))]
+    [WithAll(typeof(SeSingleId))]
     public partial struct SubGameplayReplaceTmpIdJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -400,7 +400,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Execute([ChunkIndexInQuery] int index, Entity selfEntity)
         {
-            ECB.RemoveComponent<SeTmpId>(index, selfEntity);
+            ECB.RemoveComponent<SeSingleId>(index, selfEntity);
             if (SeInGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison))
             {
                 ECB.AddComponent(index, selfEntity, new InGarrison
@@ -429,16 +429,16 @@ namespace SparFlame.Systems.General.BasicControl
     }
 
     [BurstCompile]
-    [WithAll(typeof(SeTmpId))]
+    [WithAll(typeof(SeSingleId))]
     public partial struct ArmyGroupSubDataReplaceUnitTmpIdJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public NativeHashMap<long, Entity> TmpIdxToInstances;
 
-        private void Execute([ChunkIndexInQuery] int index, in SeInArmyGroup seInArmyGroup, in SeTmpId seTmpId,
+        private void Execute([ChunkIndexInQuery] int index, in SeInArmyGroup seInArmyGroup, in SeSingleId seSingleId,
             Entity selfEntity)
         {
-            ECB.RemoveComponent<SeTmpId>(index, selfEntity);
+            ECB.RemoveComponent<SeSingleId>(index, selfEntity);
             ECB.RemoveComponent<SeInArmyGroup>(index, selfEntity);
             ECB.AddComponent(index, selfEntity, new InArmyGroup
             {
@@ -452,6 +452,7 @@ namespace SparFlame.Systems.General.BasicControl
     public partial struct ArmyGroupSubDataReplaceArmyGroupTmpIdJob : IJobEntity
     {
         [ReadOnly] public NativeHashMap<long, Entity> TmpIdxToInstances;
+
         private void Execute(ref DynamicBuffer<ArmyGroupUnit> units)
         {
             for (var i = 0; i < units.Length; i++)
@@ -462,11 +463,12 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
     }
-    
+
     [BurstCompile]
     public partial struct ArmyGroupSetUnitsRelativePositionJob : IJobEntity
     {
         [ReadOnly] public ComponentLookup<ArmyGroupAttr> ArmyGroupAttrLookup;
+
         private void Execute(ref LocalTransform transform, in InArmyGroup inArmyGroup)
         {
             var position = transform.Position;
@@ -475,6 +477,4 @@ namespace SparFlame.Systems.General.BasicControl
             transform.Position = position;
         }
     }
-    
-
 }

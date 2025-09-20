@@ -14,7 +14,6 @@ namespace SparFlame.Systems.General.Camera
         
         [Header("Sub Game Camera")] public NormalCameraControlConfig subConfig;
         [SerializeField] public float3 subGameplayCameraLocalPos;
-        
         private class CameraControlPlusSystemAuthoringBaker : Baker<NormalCameraControlSystemAuthoring>
         {
             public override void Bake(NormalCameraControlSystemAuthoring authoring)

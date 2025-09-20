@@ -10,6 +10,15 @@ namespace SparFlame.Components.General
     }
 
     [Serializable]
+    public struct GlobalSingIDCounter : IComponentData
+    {
+        public long baseValue;
+        public long addValue;
+    }
+    
+    public struct AssignGlobalSingleIDRequest : IComponentData{}
+
+    [Serializable]
     public struct PlayerFactionData : IComponentData
     {
         public FactionTag faction;

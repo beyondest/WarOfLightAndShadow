@@ -29,6 +29,10 @@ namespace SparFlame.Systems.General.BasicControl
         
         [FoldoutGroup("Exp Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public ExpDebug expDebug;
+        
+        [FoldoutGroup("Camera Debug"), HideLabel][ShowIf(nameof(globalDebugEnable))]
+        public CameraDebug cameraDebug;
+        
         private class GlobalDebugAuthoringBaker : Baker<GlobalDebugAuthoring>
         {
             public override void Bake(GlobalDebugAuthoring authoring)
@@ -49,6 +53,8 @@ namespace SparFlame.Systems.General.BasicControl
                         AddComponent(entity, authoring.waveDebug);
                     if(authoring.expDebug.enabled)
                         AddComponent(entity, authoring.expDebug);
+                    if(authoring.cameraDebug.enabled)
+                        AddComponent(entity, authoring.cameraDebug);
                 }
             }
         }

@@ -30,6 +30,8 @@ namespace SparFlame.Database
             protected void BakeGeneralDataItem(Entity entity, GeneralDataItem item)
             {
                 // General
+                AddComponent<GlobalSingleId>(entity);
+                AddComponent<AssignGlobalSingleIDRequest>(entity);
                 AddComponent(entity, new SubGameplayGeneralAttr
                 {
                     BaseTag = item.baseTag,

@@ -1,23 +1,25 @@
-﻿{
-  "name": "SparFlame.Systems.MainGameplay.EnemyAI",
-  "rootNamespace": "SparFlame",
-  "references": [
-    "Unity.Burst",
-    "Unity.Entities",
-    "Unity.Mathematics",
-    "Unity.Entities.Hybrid",
-    "Unity.Collections",
-    "Unity.Transforms",
-    "SparFlame.Core",
-    "SparFlame.Components"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": true,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+{
+    "name": "SparFlame.Systems.MainGameplay.EnemyAI",
+    "rootNamespace": "SparFlame",
+    "references": [
+        "Unity.Burst",
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.Entities.Hybrid",
+        "Unity.Collections",
+        "Unity.Transforms",
+        "Unity.Entities.Graphics",
+        "SparFlame.Core",
+        "SparFlame.Components",
+        "SparFlame.Systems.General.BasicControl"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

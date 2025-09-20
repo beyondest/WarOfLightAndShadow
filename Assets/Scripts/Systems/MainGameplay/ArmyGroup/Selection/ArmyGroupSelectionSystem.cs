@@ -6,6 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Rendering;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
@@ -16,6 +17,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<ArmyGroupBillboardConfig>();
             state.RequireForUpdate<MainGamingTag>();
             state.RequireForUpdate<InputArmyGroupControlData>();
             state.RequireForUpdate<InputMouseData>();
@@ -282,21 +284,34 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             in Entity entity,
             in bool isEnable, in FactionTag curFaction, in float3 position)
         {
-            var request = ecb.CreateEntity();
-            ecb.AddComponent(request, new VFXRequest
+            var config = SystemAPI.GetSingleton<ArmyGroupBillboardConfig>();
+            var selectionBillboard = SystemAPI.GetBuffer<LinkedEntityGroup>(entity)[config.SelectChildIndex].Value;
+
+            var disableRendering = SystemAPI.HasComponent<DisableRendering>(selectionBillboard);
+            if ( disableRendering&& isEnable)
             {
-                VFXName = VFXName.ArmyGroupSelectionIndicator,
-                Filter = new VFXSubFilter
-                {
-                    FactionFilterEnable = true,
-                    Faction = curFaction,
-                },
-                SpawnPosition = position,
-                KeepDuration = 0,
-                StatChangeRequest = default,
-                RequestType = isEnable ? VFXRequestType.Spawn : VFXRequestType.Kill,
-                VFXTrackTarget = entity
-            });
+                ecb.AddComponent<DisableRendering>(selectionBillboard);
+            }
+
+            if (!disableRendering && !isEnable)
+            {
+                ecb.RemoveComponent<DisableRendering>(selectionBillboard);
+            }
+            // var request = ecb.CreateEntity();
+            // ecb.AddComponent(request, new VFXRequest
+            // {
+            //     VFXName = VFXName.ArmyGroupSelectionIndicator,
+            //     Filter = new VFXSubFilter
+            //     {
+            //         FactionFilterEnable = true,
+            //         Faction = curFaction,
+            //     },
+            //     SpawnPosition = position,
+            //     KeepDuration = 0,
+            //     StatChangeRequest = default,
+            //     RequestType = isEnable ? VFXRequestType.Spawn : VFXRequestType.Kill,
+            //     VFXTrackTarget = entity
+            // });
         }
 
         #endregion

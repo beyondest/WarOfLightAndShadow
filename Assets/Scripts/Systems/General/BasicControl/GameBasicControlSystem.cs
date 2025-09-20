@@ -1,6 +1,7 @@
 ﻿using System;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
@@ -54,6 +55,16 @@ namespace SparFlame.Systems.General.BasicControl
 
             EntityManager.CreateSingleton(new LastUniqueId());
             EntityManager.CreateSingleton(new LastTimeSaveCityId());
+
+            EntityManager.CreateSingleton(new GlobalSingIDCounter
+            {
+                baseValue = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000,
+                addValue =  0
+            });
+            EntityManager.CreateSingleton(new CheckFocusPlayerRequest
+            {
+                EnemyCity = Entity.Null,
+            });
         }
 
         protected override void OnStartRunning()

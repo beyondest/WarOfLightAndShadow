@@ -38,5 +38,11 @@ namespace SparFlame.Components.General
         Hostile = ~1,
         Self = 2
     }
+
+    [Serializable]
+    public struct GlobalSingleId : IComponentData
+    {
+        public long value;
+    }
    
 }

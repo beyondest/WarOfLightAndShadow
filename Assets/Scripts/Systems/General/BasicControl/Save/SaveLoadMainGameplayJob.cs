@@ -48,6 +48,7 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public ComponentLookup<ArmyGroupCalculateEnable> ArmyGroupCalculateEnableLookup;
         [ReadOnly] public ComponentLookup<ArmyGroupInGarrison> ArmyGroupInGarrisonLookup;
         [ReadOnly] public ComponentLookup<CityAttr> CityAttrLookup;
+        [ReadOnly] public ComponentLookup<GlobalSingleId> GlobalSingleIdLookup;
 
         public EntityCommandBuffer.ParallelWriter ECB;
 
@@ -143,7 +144,7 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 ECB.AddComponent(index, saveEntity, new SeArmyGroupInGarrison
                 {
-                    tmpId = SaveUtilities.GetTmpIdForSaving(inGarrison.City),
+                    tmpId = GlobalSingleIdLookup[inGarrison.City].value,
                 });
             }
             ECB.AddComponent(index, saveEntity, hpRegenerateTimer);
@@ -155,7 +156,7 @@ namespace SparFlame.Systems.General.BasicControl
     public partial struct SaveCityMainDataJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
-        [ReadOnly] public ComponentLookup<ArmyGroupAttr> ArmyGroupAttrLookup;
+        [ReadOnly] public ComponentLookup<GlobalSingleId> GlobalSingleIdLookup;
 
         private void Execute([ChunkIndexInQuery] int index, in MainGameplayGeneralAttr generalAttr,
             in LocalTransform transform, in CityAttr cityAttr,
@@ -190,16 +191,16 @@ namespace SparFlame.Systems.General.BasicControl
             // Check if it needs to save garrison data
             if (cityGarrisonEntities.Length > 0)
             {
-                ECB.AddComponent(index, saveEntity, new SeTmpId
+                ECB.AddComponent(index, saveEntity, new SeSingleId
                 {
-                    value = SaveUtilities.GetTmpIdForSaving(selfEntity)
+                    value = GlobalSingleIdLookup[selfEntity].value
                 });
                 ECB.AddBuffer<SeCityGarrisonEntity>(index, saveEntity);
                 foreach (var cityGarrisonEntity in cityGarrisonEntities)
                 {
                     ECB.AppendToBuffer(index, saveEntity, new SeCityGarrisonEntity
                     {
-                        tmpId = ArmyGroupAttrLookup[cityGarrisonEntity.ArmyGroup].saveId
+                        tmpId = GlobalSingleIdLookup[cityGarrisonEntity.ArmyGroup].value
                     });
                 }
             }
@@ -214,7 +215,8 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public ArmyGroupConfig ArmyGroupConfig;
         [ReadOnly] public ComponentLookup<SeArmyGroupInGarrison> SeInGarrisonLookup;
         [ReadOnly] public ComponentLookup<SeLastPassingByCity> SeLastPassingByCityLookup;
-
+        [ReadOnly] public ComponentLookup<GlobalSingleId> GlobalSingleIdLookup;
+        
         private void Execute([ChunkIndexInQuery] int index,
             in MainGameplayGeneralAttr generalAttr,
             in SeTransform transform, in ArmyGroupAttr armyGroupAttr,
@@ -287,14 +289,14 @@ namespace SparFlame.Systems.General.BasicControl
             if (SeInGarrisonLookup.TryGetComponent(selfEntity, out var seArmyGroupInGarrison) )
             {
                 ifAddSeTmpId = true;
-                ECB.AddComponent(index, armyGroup, new SeTmpId { value = armyGroupAttr.saveId });
+                ECB.AddComponent(index, armyGroup, new SeSingleId { value = GlobalSingleIdLookup[selfEntity].value });
                 ECB.AddComponent(index, armyGroup, seArmyGroupInGarrison);
             }
 
             if (SeLastPassingByCityLookup.TryGetComponent(selfEntity, out var seLastPassingByCity))
             {
                 ECB.AddComponent(index, armyGroup, seLastPassingByCity);
-                if(!ifAddSeTmpId)ECB.AddComponent(index, armyGroup, new SeTmpId { value = armyGroupAttr.saveId });
+                if(!ifAddSeTmpId)ECB.AddComponent(index, armyGroup, new SeSingleId { value = GlobalSingleIdLookup[selfEntity].value });
             }
             
             ECB.SetComponent(index, armyGroup, hpRegenerateTimer);
@@ -306,7 +308,7 @@ namespace SparFlame.Systems.General.BasicControl
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public NativeHashMap<int, Entity> GlobalIdxToPrefabs;
-        [ReadOnly] public ComponentLookup<SeTmpId> TmpIdLookup;
+        [ReadOnly] public ComponentLookup<SeSingleId> TmpIdLookup;
         [ReadOnly] public BufferLookup<SeCityGarrisonEntity> CityGarrisonEntitiesLookup;
 
         private void Execute([ChunkIndexInQuery] int index,
@@ -358,7 +360,7 @@ namespace SparFlame.Systems.General.BasicControl
     }
 
     [BurstCompile]
-    [WithAll(typeof(SeTmpId))]
+    [WithAll(typeof(SeSingleId))]
     public partial struct MainGameplayReplaceTmpIdJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -370,7 +372,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Execute([ChunkIndexInQuery] int index, Entity selfEntity)
         {
-            ECB.RemoveComponent<SeTmpId>(index, selfEntity);
+            ECB.RemoveComponent<SeSingleId>(index, selfEntity);
             if (SeInGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison))
             {
                 ECB.AddComponent(index, selfEntity, new ArmyGroupInGarrison

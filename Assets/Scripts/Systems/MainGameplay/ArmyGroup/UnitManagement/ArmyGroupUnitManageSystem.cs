@@ -231,7 +231,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                         break;
                     case AddToArmyGroupType.OnlySpecifiedUnit:
-                        if(SystemAPI.HasComponent<SubGameplayGeneralAttr>(request.Unit))continue;
+                        if(!SystemAPI.HasComponent<SubGameplayGeneralAttr>(request.Unit))continue;
                         var subGameplayGeneralAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(request.Unit);
                         var uAttr = SystemAPI.GetComponent<UnitAttr>(request.Unit);
                         var uStatData = SystemAPI.GetComponent<StatData>(request.Unit);

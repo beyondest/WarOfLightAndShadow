@@ -68,6 +68,60 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 var selfGeneralAttr = GeneralAttrLookup[selfEntity];
 
                 // Check if movement complete
+                if(CheckIfMovementComplete(index, ref movableData, ref stateData, selfEntity, selfGeneralAttr))
+                    return;
+                
+                // Only check sight target when army group is idle or moving
+                if (stateData.CurState != ArmyGroupState.Idle && stateData.CurState != ArmyGroupState.Moving) return;
+
+                
+                // Check should trigger encounter battle
+                var finalTarget = Entity.Null;
+                if (targets.Length > 0)
+                {
+                    var minDisSq = float.MaxValue;
+                    for (var i = 0; i < targets.Length; i++)
+                    {
+                        var target = targets[i].Entity;
+                        var targetGeneralAttr = GeneralAttrLookup[target];
+                        var relationship = FactionUtils.GetRelationship(selfGeneralAttr.faction,
+                            selfGeneralAttr.subFaction, targetGeneralAttr.faction,
+                            targetGeneralAttr.subFaction);
+                        // This cases should not trigger encounter battle
+                        if (relationship is Relationship.Self or Relationship.Ally or Relationship.Neutral)
+                        {
+                            // Record the last passing by city
+                            if (targetGeneralAttr.baseTag == MainGameBaseTag.City
+                                && relationship == Relationship.Self)
+                                lastCity.City = target;
+                            // Exclude same faction army group
+                            continue;
+                        }
+
+                        // If it should trigger invade battle, only triggers when army group moving complete
+                        // If army group happens to nearby the city, the battle should be triggered by city state machine
+                        if (targetGeneralAttr.baseTag == MainGameBaseTag.City) continue;
+
+                        var dis = math.distancesq(TransformLookup[target].Position,
+                            TransformLookup[selfEntity].Position);
+                        if (dis < minDisSq)
+                        {
+                            minDisSq = dis;
+                            finalTarget = target;
+                        }
+                    }
+                }
+
+                if (finalTarget != Entity.Null)
+                {
+                    // Army group only triggers army group
+                    BattleUtils.TriggerBattle(SubGameStatus.Encounter, selfEntity, finalTarget, index, ECB);
+                }
+            }
+
+            private bool CheckIfMovementComplete(int index, ref ArmyGroupMovableData movableData, ref ArmyGroupStateData stateData,
+                Entity selfEntity, MainGameplayGeneralAttr selfGeneralAttr)
+            {
                 if (movableData.movementInfo == ArmyGroupMovementInfo.Complete)
                 {
                     movableData.movementInfo = ArmyGroupMovementInfo.None;
@@ -116,54 +170,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                     stateData.CurState = ArmyGroupState.Idle;
                     stateData.Target = Entity.Null;
-                    return;
+                    stateData.TargetState = ArmyGroupState.Idle;
+                    return true;
                 }
 
-                // Only check sight target when army group is idle or moving
-                if (stateData.CurState != ArmyGroupState.Idle && stateData.CurState != ArmyGroupState.Moving) return;
-
-                // Check should trigger encounter battle
-                var finalTarget = Entity.Null;
-                if (targets.Length > 0)
-                {
-                    var minDisSq = float.MaxValue;
-                    for (var i = 0; i < targets.Length; i++)
-                    {
-                        var target = targets[i].Entity;
-                        var targetGeneralAttr = GeneralAttrLookup[target];
-                        var relationship = FactionUtils.GetRelationship(selfGeneralAttr.faction,
-                            selfGeneralAttr.subFaction, targetGeneralAttr.faction,
-                            targetGeneralAttr.subFaction);
-                        // This cases should not trigger encounter battle
-                        if (relationship is Relationship.Self or Relationship.Ally or Relationship.Neutral)
-                        {
-                            // Record the last passing by city
-                            if (targetGeneralAttr.baseTag == MainGameBaseTag.City
-                                && relationship == Relationship.Self)
-                                lastCity.City = target;
-                            // Exclude same faction army group
-                            continue;
-                        }
-
-                        // If it should trigger invade battle, only triggers when army group moving complete
-                        // If army group happens to nearby the city, the battle should be triggered by city state machine
-                        if (targetGeneralAttr.baseTag == MainGameBaseTag.City) continue;
-
-                        var dis = math.distancesq(TransformLookup[target].Position,
-                            TransformLookup[selfEntity].Position);
-                        if (dis < minDisSq)
-                        {
-                            minDisSq = dis;
-                            finalTarget = target;
-                        }
-                    }
-                }
-
-                if (finalTarget != Entity.Null)
-                {
-                    // Army group only triggers army group
-                    BattleUtils.TriggerBattle(SubGameStatus.Encounter, selfEntity, finalTarget, index, ECB);
-                }
+                return false;
             }
         }
     }

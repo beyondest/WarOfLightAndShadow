@@ -2,9 +2,9 @@
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Core.GlobalMono;
-using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Rendering;
 using Unity.Transforms;
 
 // ReSharper disable Unity.Entities.MustBeSurroundedWithRefRwRo
@@ -27,13 +27,10 @@ namespace SparFlame.UI.MainGameplay
                 ArmyGroupNewWindow.Instance.OnEcsNewArmyGroup += NewArmyGroup;
                 ArmyGroupManageWindow.Instance.OnEcsUpdateStaticData += () => UpdateStaticData();
                 ArmyGroupManageWindow.Instance.OnEcsDeleteArmyGroup += DeleteArmyGroup;
-              
-                ArmyGroupManageWindow.Instance.OnEcsTryNewArmyGroup += TryNewArmyGroup;
-   
-                
-                
 
-                
+                ArmyGroupManageWindow.Instance.OnEcsTryNewArmyGroup += TryNewArmyGroup;
+
+
                 _initialized = true;
             }
         }
@@ -46,14 +43,14 @@ namespace SparFlame.UI.MainGameplay
         private void NewArmyGroup(string name, ArmyGroupIconType iconType)
         {
             var config = SystemAPI.GetSingleton<ArmyGroupConfig>();
+            var armyGroupBillboardConfig = SystemAPI.GetSingleton<ArmyGroupBillboardConfig>();
             var currentSubStatus = SystemAPI.GetSingleton<SubGameStatusData>();
-            var cityGeneralAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(currentSubStatus.City);
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             var garrisonConfig = SystemAPI.GetSingleton<ArmyGroupGarrisonSystemConfig>();
             var prefab = playerFactionData.faction == FactionTag.Light
                 ? config.LightArmyGroupPrefab
                 : config.DarkArmyGroupPrefab;
-       
+
             // Instantiate army group
             var armyGroup = EntityManager.Instantiate(prefab);
             var armyGroupTransform = SystemAPI.GetComponent<LocalTransform>(armyGroup);
@@ -68,9 +65,9 @@ namespace SparFlame.UI.MainGameplay
             {
                 gameplayName = name,
                 iconType = iconType,
-                saveId = SingleIdGenerator.GetNewArmyGroupId(),
                 createTimeInTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours
             });
+            EntityManager.AddComponent<AssignGlobalSingleIDRequest>(armyGroup);
 
             EntityManager.SetComponentData(armyGroup, new MainGameplayGeneralAttr
             {
@@ -78,6 +75,7 @@ namespace SparFlame.UI.MainGameplay
                 baseTag = MainGameBaseTag.ArmyGroup,
                 subFaction = playerFactionData.subFaction,
             });
+            SetArmyGroupBillboardVfx(iconType, armyGroup, armyGroupBillboardConfig, playerFactionData);
 
             // Create garrison request
             var garrisonRequest = EntityManager.CreateEntity();
@@ -90,6 +88,25 @@ namespace SparFlame.UI.MainGameplay
                 IfGarrisonIn = true
             });
             FrameDelayInvoker.Instance.InvokeAfterFrames(1, () => UpdateStaticData(false));
+        }
+
+        private void SetArmyGroupBillboardVfx(ArmyGroupIconType iconType, Entity armyGroup,
+            ArmyGroupBillboardConfig armyGroupBillboardConfig, PlayerFactionData playerFactionData)
+        {
+            var children = EntityManager.GetBuffer<LinkedEntityGroup>(armyGroup);
+            var iconBillboard = children[armyGroupBillboardConfig.IconChildIndex].Value;
+            EntityManager.SetComponentData(iconBillboard, new ArmyGroupBillboardImageIDFloatOverride
+            {
+                Value = (int)iconType
+            });
+            EntityManager.SetComponentData(iconBillboard, new ArmyGroupBillboardBaseColorOverride
+            {
+                Value = playerFactionData.faction == FactionTag.Light
+                    ? armyGroupBillboardConfig.LightColor
+                    : armyGroupBillboardConfig.DarkColor
+            });
+            var selectionVfx = children[armyGroupBillboardConfig.SelectChildIndex].Value;
+            EntityManager.AddComponent<DisableRendering>(selectionVfx);
         }
 
 
@@ -112,10 +129,6 @@ namespace SparFlame.UI.MainGameplay
 
             ArmyGroupManageWindow.Instance.UpdateStaticData(infos, cityAttr.maxGarrisonCount);
         }
-
-  
-
-
 
 
         private void DeleteArmyGroup(Entity armyGroup)
@@ -166,8 +179,5 @@ namespace SparFlame.UI.MainGameplay
                 ArmyGroupNewWindow.Instance.Show();
             }
         }
-
-
-       
     }
 }

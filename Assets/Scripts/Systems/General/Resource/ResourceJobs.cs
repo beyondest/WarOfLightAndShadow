@@ -10,9 +10,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.General.Resource
 {
-    
-      [BurstCompile]
-    [WithAll(typeof(PlayerTag))]
+    [BurstCompile]
     public partial struct CityResourceCheckJob : IJobEntity
     {
         [ReadOnly] public float CurrentTotalHours;
@@ -61,9 +59,19 @@ namespace SparFlame.Systems.General.Resource
                     continue;
                 }
 
-                if (math.abs(cityResourceEntry.resourceData.amountPerHour) < 0.001f)
-                    continue; // This resource is not generating.
+                if (cityResourceEntry.accumulatedHours < 0.001f)
+                {
+                    cityResourceEntry.accumulatedHours = CurrentTotalHours;
+                    cityResourceEntries[i] = cityResourceEntry;
+                    continue;
+                }
 
+                if (math.abs(cityResourceEntry.resourceData.amountPerHour) < 0.001f)
+                {
+                    cityResourceEntry.accumulatedHours = CurrentTotalHours;
+                    cityResourceEntries[i] = cityResourceEntry;
+                    continue; // This resource is not generating.
+                }
                 var deltaTime = CurrentTotalHours - cityResourceEntry.accumulatedHours;
                 var hoursPerUnit = 1f / cityResourceEntry.resourceData.amountPerHour;
                 if (deltaTime >= hoursPerUnit)
@@ -82,7 +90,7 @@ namespace SparFlame.Systems.General.Resource
             }
         }
     }
-    
+
     [BurstCompile]
     [WithNone(typeof(ConstructingTimer))]
     [WithAll(typeof(PlayerTag))]

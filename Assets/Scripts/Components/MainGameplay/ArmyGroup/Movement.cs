@@ -67,6 +67,11 @@ namespace SparFlame.Components.MainGameplay
    
     public struct ArmyGroupWalkableTag : IComponentData{}
 
+    public struct PathVisualizer : IComponentData
+    {
+    }
+    public struct PathVisualizeEnabled : IComponentData, IEnableableComponent{}
+
 
 
     

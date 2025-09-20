@@ -2,6 +2,7 @@
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
+using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.Systems.General.Battle;
 using SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage;
@@ -117,6 +118,22 @@ namespace SparFlame.UI.General
                 }
             }
 
+            // Change city faction
+            CheckChangeCityFaction(subGameStatusData, battleEndRequest, playerFactionData, enemySideSubFactions);
+
+            DealWithArmyGroups(battleEndRequest.Result);
+
+            AddRewards(battleRecorder);
+
+            DestroyBattleSpecifiedSingletons(ifStayToCity, subGameStatusData);
+
+            SaveLoadController.Instance.SyncSaveGame();
+        }
+
+        private void CheckChangeCityFaction(in SubGameStatusData subGameStatusData,
+            in BattleEndRequest battleEndRequest,
+            in PlayerFactionData playerFactionData, NativeList<int> enemySideSubFactions)
+        {
             switch (subGameStatusData.SubGameStatus)
             {
                 case SubGameStatus.PlayerSiege:
@@ -130,6 +147,19 @@ namespace SparFlame.UI.General
                         });
                         ReplaceCityModel(subGameStatusData.City, playerFactionData.faction);
                         ChangeCityVolumeObstacleRequestFaction(subGameStatusData.City);
+                        EntityManager.RemoveComponent<AITag>(subGameStatusData.City);
+                        EntityManager.AddComponent<PlayerTag>(subGameStatusData.City);
+
+                        // When player conquer a city, reset city resources, except for available amount
+                        var resourceDatas = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
+                        for (var i = 0; i < resourceDatas.Length; i++)
+                        {
+                            var entry = resourceDatas[i];
+                            entry.accumulatedHours = 0f;
+                            entry.resourceData.amountPerHour = 0f;
+                            entry.resourceData.storage = 0;
+                            resourceDatas[i] = entry;
+                        }
                     }
 
                     break;
@@ -145,12 +175,32 @@ namespace SparFlame.UI.General
                         });
                         ReplaceCityModel(subGameStatusData.City, ~playerFactionData.faction);
                         ChangeCityVolumeObstacleRequestFaction(subGameStatusData.City);
+                        EntityManager.RemoveComponent<PlayerTag>(subGameStatusData.City);
+                        EntityManager.AddComponent<AITag>(subGameStatusData.City);
+
+                        // Reassign resource data to enemy init resources
+                        var cityAttr = SystemAPI.GetComponent<CityAttr>(subGameStatusData.City);
+                        var item = DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.globalId);
+                        var resourceDatas = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
+                        for (var i = 0; i < resourceDatas.Length; i++)
+                        {
+                            var entry = resourceDatas[i];
+                            entry.accumulatedHours = 0f;
+                            foreach (var resourceData in item.initResources)
+                            {
+                                if (entry.resourceData.resourceType == resourceData.resourceType)
+                                {
+                                    entry.resourceData = resourceData;
+                                    break;
+                                }
+                            }
+
+                            resourceDatas[i] = entry;
+                        }
                     }
 
                     break;
                 case SubGameStatus.Encounter:
-
-
                     break;
 
                 case SubGameStatus.Support:
@@ -160,22 +210,13 @@ namespace SparFlame.UI.General
                     BurstSafe.UnexpectedEnum(subGameStatusData.SubGameStatus);
                     break;
             }
-
-            RemoveOrTeleportDefeatArmyGroups(battleEndRequest.Result);
-
-            AddRewards(battleRecorder);
-            
-            
-            DestroyBattleSpecifiedSingletons(ifStayToCity, subGameStatusData);
-
-            SaveLoadController.Instance.SyncSaveGame();
         }
 
         private void DestroyBattleSpecifiedSingletons(bool ifStayToCity, SubGameStatusData subGameStatusData)
         {
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BeforeBattleTotalSnapShot>());
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<CurrentSubMapInfo>());
-            
+
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (_, entity) in SystemAPI.Query<RefRO<BeforeBattleArmyGroupSnapShot>>().WithEntityAccess())
             {
@@ -212,11 +253,18 @@ namespace SparFlame.UI.General
             }
         }
 
-        private void RemoveOrTeleportDefeatArmyGroups(BattleResult result)
+        /// <summary>
+        /// When battle ends, remove dead army groups,
+        /// retreat army groups, and deal with enemy army group AI logic
+        /// </summary>
+        /// <param name="result"></param>
+        private void DealWithArmyGroups(BattleResult result)
         {
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var enemySideArmyGroups = SystemAPI.QueryBuilder().WithAll<AITag>()
                 .WithAll<BeforeBattleArmyGroupSnapShot>()
+                .WithAll<EnemyArmyGroupBelongsToCity>()
                 .Build();
             var playerSideArmyGroups = SystemAPI.QueryBuilder().WithAll<PlayerTag>()
                 .WithAll<BeforeBattleArmyGroupSnapShot>()
@@ -224,22 +272,25 @@ namespace SparFlame.UI.General
 
 
             var enemyArmyGroups = enemySideArmyGroups.ToEntityArray(Allocator.Temp);
+            var enemyArmyGroupsBelongsToCity =
+                enemySideArmyGroups.ToComponentDataArray<EnemyArmyGroupBelongsToCity>(Allocator.Temp);
             var playerArmyGroups = playerSideArmyGroups.ToEntityArray(Allocator.Temp);
 
-            foreach (var entity in enemyArmyGroups)
+            for (var i = 0; i < enemyArmyGroups.Length; i++)
             {
-                var hasEnemyRetreated = false;
+                var entity = enemyArmyGroups[i];
+                // var hasEnemyRetreated = false;
 
                 if (SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length == 0)
                 {
-                    ecb.DestroyEntity(entity);
+                    ArmyGroupUtils.DestroyArmyGroup(entity, ecb, EntityManager);
                 }
                 else
                 {
+                    // Player win, enemy retreat, this should never happen because there is no enemy retreat logic
                     if (result is BattleResult.PlayerWin or BattleResult.EnemyRetreat)
                     {
-                        hasEnemyRetreated = true;
-
+                        /*hasEnemyRetreated = true;
                         var lastPassByCity = SystemAPI.GetComponent<LastPassingByCity>(entity);
                         var armyGroupGarrisonRequest = ecb.CreateEntity();
                         ecb.AddComponent(armyGroupGarrisonRequest, new ArmyGroupGarrisonRequest
@@ -247,11 +298,37 @@ namespace SparFlame.UI.General
                             City = lastPassByCity.City,
                             ArmyGroup = entity,
                             IfGarrisonIn = true
+                        });*/
+                    }
+                    // Player lose or retreat, enemy army group garrison into new city and add to extra army group buffer
+                    else
+                    {
+                        if (subGameStatusData.SubGameStatus == SubGameStatus.PlayerDefend)
+                        {
+                            ecb.AppendToBuffer(subGameStatusData.City, new ExtraArmyGroup
+                            {
+                                ArmyGroup = entity,
+                            });
+                            var garrisonRequest = ecb.CreateEntity();
+                            ecb.AddComponent(garrisonRequest, new ArmyGroupGarrisonRequest
+                            {
+                                ArmyGroup = entity,
+                                City = subGameStatusData.City,
+                                IfGarrisonIn = true
+                            });
+                            ecb.AddComponent<MainGameplayEntityTag>(garrisonRequest);
+                        }
+
+                        var checkFocusPlayerRequest = ecb.CreateEntity();
+                        ecb.AddComponent<MainGameplayEntityTag>(checkFocusPlayerRequest);
+                        ecb.AddComponent(checkFocusPlayerRequest, new CheckFocusPlayerRequest
+                        {
+                            EnemyCity = enemyArmyGroupsBelongsToCity[i].City
                         });
                     }
                 }
 
-                if (hasEnemyRetreated)
+                /*if (hasEnemyRetreated)
                 {
                     var hint = ecb.CreateEntity();
                     ecb.AddComponent(hint, new HintRequest
@@ -259,7 +336,7 @@ namespace SparFlame.UI.General
                         Name = HintName.EnemyRetreatedArmyGroupBackToLastPassingByCity
                     });
                     ecb.AddComponent<MainGameplayEntityTag>(hint);
-                }
+                }*/
             }
 
             foreach (var entity in playerArmyGroups)
@@ -267,7 +344,8 @@ namespace SparFlame.UI.General
                 var hasPlayerRetreated = false;
                 if (SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length == 0)
                 {
-                    ecb.DestroyEntity(entity);
+                    ArmyGroupUtils.DestroyArmyGroup(entity, ecb, EntityManager);
+                    
                 }
                 else
                 {
@@ -282,7 +360,6 @@ namespace SparFlame.UI.General
                             ArmyGroup = entity,
                             IfGarrisonIn = true
                         });
-                        
                     }
                 }
 

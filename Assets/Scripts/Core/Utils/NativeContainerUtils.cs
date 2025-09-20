@@ -45,7 +45,7 @@ namespace SparFlame.Core.Utils
             NativeParallelMultiHashMap<TKey, TValue> multiHashMap,
             ref NativeList<TValue> values,
             TKey key,
-            int cutOffCount)
+            int cutOffCount = -1)
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {

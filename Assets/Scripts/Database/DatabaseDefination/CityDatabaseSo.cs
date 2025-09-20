@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using GamePlaySystem.Functionality.MainGameplay.City;
 using Sirenix.OdinInspector;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Utils;
-using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
@@ -67,9 +67,17 @@ namespace SparFlame.Database
         [VerticalGroup("General")] public float camMaxCoordinate;
         [VerticalGroup("General")] public float camMinCoordinate;
         
-        [TextArea(3, 10), VerticalGroup("Description"), HideLabel]
+        [TextArea(3, 10), VerticalGroup("General"), HideLabel]
         public string description;
 
+        [VerticalGroup("AI")] public bool isSupportCity;
+        [VerticalGroup("AI")] public bool isFocusOnPlayerAtBeginning;
+        [VerticalGroup("AI"), HideLabel] public EnemyCityStrategy strategy;
+        [VerticalGroup("AI"), HideLabel, LabelText("Defend"), AssetsOnly] public List<EnemyArmyGroupPrefabData> defendArmyGroupPrefabs = new();
+        [VerticalGroup("AI"), HideLabel, LabelText("Attack"), AssetsOnly] public List<EnemyArmyGroupPrefabData> attackArmyGroupPrefabs = new();
+        [VerticalGroup("AI"), HideLabel,LabelText("CheckCity")] public List<int> checkCityIds = new();
+        
+        
         [VerticalGroup("Gameplay"), HideLabel] public FactionTag faction;
 
         [VerticalGroup("Gameplay"), HideLabel] public SubFactionTag subFactionTag;
@@ -77,8 +85,8 @@ namespace SparFlame.Database
         [VerticalGroup("Gameplay"), HorizontalGroup("Gameplay/MaxGarrisonArmyGroupCount")]
         public int maxGarrisonArmyCount;
 
-
-        [VerticalGroup("Gameplay"), HideLabel] public List<ResourceData> initResources; 
+        // Init resources will turn to all 0 when convert to player city
+        [VerticalGroup("Gameplay"), HideLabel,LabelText("EnemyInitResources")] public List<ResourceData> initResources; 
 
         [VerticalGroup("SceneGroup"), HideLabel, LabelText("Env")]
         public SceneGroup envSceneGroup;
@@ -96,5 +104,13 @@ namespace SparFlame.Database
         public SceneGroup darkSupportSceneGroup;
        
         
+    }
+
+    [Serializable]
+    public class EnemyArmyGroupPrefabData
+    {
+        [AssetsOnly]public GameObject prefab;
+        [HideLabel, LabelText("NeedHours")]
+        public float conjureTotalHours;
     }
 }

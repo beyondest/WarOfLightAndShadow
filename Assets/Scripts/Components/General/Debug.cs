@@ -34,6 +34,14 @@ namespace SparFlame.Components.General
         [ShowIf(nameof(enabled))] public float nonPlayerArmyGroupMovementScale;
     }
 
+    [Serializable]
+    public struct CameraDebug : IComponentData
+    {
+        public bool enabled;
+        [ShowIf(nameof(enabled))] public bool enterPlayerCityNoCrystalAllowed;
+        [ShowIf(nameof(enabled))] public float3 roamingStartPos;
+    }
+
 
     [Serializable]
     public struct StatDebug : IComponentData

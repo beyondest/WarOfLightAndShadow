@@ -112,41 +112,20 @@ namespace SparFlame.Systems.General
                 }
             }
 
+            var connectTo = SystemAPI.GetComponent<BattleCheckSightData>(entity);
+            EntityManager.DestroyEntity(connectTo.Value);
+            EntityManager.DestroyEntity(entity);
 
             if (_targetSubGameStatus == SubGameStatus.PlayerSiege)
             {
-                var cityFutureAttackers = SystemAPI.GetBuffer<CityFutureInvaders>(_city);
-                for (int i = cityFutureAttackers.Length - 1; i >= 0; i--)
-                {
-                    var cityFutureAttacker = cityFutureAttackers[i];
-                    // Check if this army group died on the way
-                    if (!SystemAPI.HasComponent<MainGameplayGeneralAttr>(cityFutureAttacker.ArmyGroup))
-                    {
-                        cityFutureAttackers.RemoveAt(i);
-                        continue;
-                    }
-
-                    var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(cityFutureAttacker.ArmyGroup);
-                    var relationShip =
-                        FactionUtils.GetRelationship(playerFactionData.faction,
-                            playerFactionData.subFaction, generalAttr.faction,
-                            generalAttr.subFaction);
-                    if (relationShip == Relationship.Self &&
-                        !NativeContainerUtils.ContainsEq(_playerSideArmyGroups, cityFutureAttacker.ArmyGroup))
-                    {
-                        _notReachedPlayerSideArmyGroups.Add(cityFutureAttacker.ArmyGroup);
-                    }
-                }
+                CalculateNotReachedPlayerSideArmyGroups(playerFactionData);
             }
 
             if (_targetSubGameStatus == SubGameStatus.PlayerDefend)
             {
-                EnemyAICheckShouldAssaultOrNot();
+                if (EnemyAICheckShouldStation(_city))return;
             }
 
-            var connectTo = SystemAPI.GetComponent<BattleCheckSightData>(entity);
-            EntityManager.DestroyEntity(connectTo.Value);
-            EntityManager.DestroyEntity(entity);
 
             CalculateLoadingPositions();
 
@@ -158,84 +137,62 @@ namespace SparFlame.Systems.General
                 _enemySideLoadingPositions);
         }
 
-        private void CalculateLoadingPositions()
+        private void CalculateNotReachedPlayerSideArmyGroups(in PlayerFactionData playerFactionData)
         {
-            LocalTransform cityTrans;
-            _playerSideLoadingPositions.Clear();
-            _enemySideLoadingPositions.Clear();
-            // Calculate loading positions for each side, each situation
-            switch (_targetSubGameStatus)
+            var cityFutureAttackers = SystemAPI.GetBuffer<CityFutureInvaders>(_city);
+            for (int i = cityFutureAttackers.Length - 1; i >= 0; i--)
             {
-                case SubGameStatus.Encounter:
-                    foreach (var _ in _playerSideArmyGroups)
-                    {
-                        _playerSideLoadingPositions.Add(7);
-                    }
+                var cityFutureAttacker = cityFutureAttackers[i];
+                // Check if this army group died on the way
+                if (!SystemAPI.HasComponent<MainGameplayGeneralAttr>(cityFutureAttacker.ArmyGroup))
+                {
+                    cityFutureAttackers.RemoveAt(i);
+                    continue;
+                }
 
-                    foreach (var _ in _enemySideArmyGroups)
-                    {
-                        _enemySideLoadingPositions.Add(3);
-                    }
-
-                    break;
-                case SubGameStatus.PlayerSiege:
-                case SubGameStatus.Support:
-                    cityTrans = SystemAPI.GetComponent<LocalTransform>(_city);
-
-                    foreach (var armyGroup in _playerSideArmyGroups)
-                    {
-                        // A support fight will have no ally army groups garrisoned
-                        var armyGroupPos = SystemAPI.GetComponent<LocalTransform>(armyGroup).Position;
-                        var gridIndex = BattleUtils.GetClosestGrids(armyGroupPos,
-                            cityTrans
-                        );
-                        _playerSideLoadingPositions.Add(gridIndex);
-                    }
-
-                    var cyclicCount = 0;
-                    foreach (var _ in _enemySideArmyGroups)
-                    {
-                        // If player siege/support, enemy army groups auto assign to player side loading positions inner to city
-                        if (_targetSubGameStatus == SubGameStatus.PlayerSiege)
-                        {
-                            _enemySideLoadingPositions.Add(_playerSideLoadingPositions[cyclicCount]);
-                            cyclicCount++;
-                            if (cyclicCount == _playerSideArmyGroups.Length)
-                                cyclicCount = 0;
-                        }
-                    }
-
-                    break;
-
-                case SubGameStatus.PlayerDefend:
-                    cityTrans = SystemAPI.GetComponent<LocalTransform>(_city);
-                    foreach (var _ in _playerSideArmyGroups)
-                    {
-                        // Garrisoned army groups will remain their positions
-                        _playerSideLoadingPositions.Add(-1);
-                    }
-
-                    foreach (var armyGroup in _enemySideArmyGroups)
-                    {
-                        var armyGroupPos = SystemAPI.GetComponent<LocalTransform>(armyGroup).Position;
-                        var gridIndex = BattleUtils.GetClosestGrids(armyGroupPos,
-                            cityTrans
-                        );
-                        _enemySideLoadingPositions.Add(gridIndex);
-                    }
-
-
-                    break;
-                default:
-                case SubGameStatus.None:
-                case SubGameStatus.PlayerCity:
-                    BurstSafe.UnexpectedEnum(_targetSubGameStatus);
-                    break;
+                var generalAttr = SystemAPI.GetComponent<MainGameplayGeneralAttr>(cityFutureAttacker.ArmyGroup);
+                var relationShipWithPlayer =
+                    FactionUtils.GetRelationship(playerFactionData.faction,
+                        playerFactionData.subFaction, generalAttr.faction,
+                        generalAttr.subFaction);
+                if (relationShipWithPlayer == Relationship.Self &&
+                    !NativeContainerUtils.ContainsEq(_playerSideArmyGroups, cityFutureAttacker.ArmyGroup))
+                {
+                    _notReachedPlayerSideArmyGroups.Add(cityFutureAttacker.ArmyGroup);
+                }
             }
         }
 
-        private void EnemyAICheckShouldAssaultOrNot()
+
+        private bool EnemyAICheckShouldStation(Entity city)
         {
+            var cityFutureAttackers = SystemAPI.GetBuffer<CityFutureInvaders>(city);
+            for (var i = cityFutureAttackers.Length - 1; i >= 0; i--)
+            {
+                var cityFutureAttacker = cityFutureAttackers[i];
+                // Check if this army group died on the way
+                if (!SystemAPI.HasComponent<MainGameplayGeneralAttr>(cityFutureAttacker.ArmyGroup))
+                {
+                    cityFutureAttackers.RemoveAt(i);
+                    continue;
+                }
+
+                // As long as there is one army group not reached, station the city
+                if (!NativeContainerUtils.ContainsEq(_enemySideArmyGroups, cityFutureAttacker.ArmyGroup))
+                {
+                    foreach (var armyGroup in _enemySideArmyGroups)
+                    {
+                        var stateData = SystemAPI.GetComponent<ArmyGroupStateData>(armyGroup);
+                        stateData.CurState = ArmyGroupState.Station;
+                        stateData.TargetState = ArmyGroupState.Invade;
+                        SystemAPI.SetComponent(armyGroup, stateData);
+                    }
+                    _isInPreBattleStatus = false;
+                    GameController.Instance.ResumeGame(true);
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -430,6 +387,82 @@ namespace SparFlame.Systems.General
 
         private void BesiegeCity()
         {
+        }
+
+        private void CalculateLoadingPositions()
+        {
+            LocalTransform cityTrans;
+            _playerSideLoadingPositions.Clear();
+            _enemySideLoadingPositions.Clear();
+            // Calculate loading positions for each side, each situation
+            switch (_targetSubGameStatus)
+            {
+                case SubGameStatus.Encounter:
+                    foreach (var _ in _playerSideArmyGroups)
+                    {
+                        _playerSideLoadingPositions.Add(7);
+                    }
+
+                    foreach (var _ in _enemySideArmyGroups)
+                    {
+                        _enemySideLoadingPositions.Add(3);
+                    }
+
+                    break;
+                case SubGameStatus.PlayerSiege:
+                case SubGameStatus.Support:
+                    cityTrans = SystemAPI.GetComponent<LocalTransform>(_city);
+
+                    foreach (var armyGroup in _playerSideArmyGroups)
+                    {
+                        // A support fight will have no ally army groups garrisoned
+                        var armyGroupPos = SystemAPI.GetComponent<LocalTransform>(armyGroup).Position;
+                        var gridIndex = BattleUtils.GetClosestGrids(armyGroupPos,
+                            cityTrans
+                        );
+                        _playerSideLoadingPositions.Add(gridIndex);
+                    }
+
+                    var cyclicCount = 0;
+                    foreach (var _ in _enemySideArmyGroups)
+                    {
+                        // If player siege/support, enemy army groups auto assign to player side loading positions inner to city
+                        if (_targetSubGameStatus == SubGameStatus.PlayerSiege)
+                        {
+                            _enemySideLoadingPositions.Add(_playerSideLoadingPositions[cyclicCount]);
+                            cyclicCount++;
+                            if (cyclicCount == _playerSideArmyGroups.Length)
+                                cyclicCount = 0;
+                        }
+                    }
+
+                    break;
+
+                case SubGameStatus.PlayerDefend:
+                    cityTrans = SystemAPI.GetComponent<LocalTransform>(_city);
+                    foreach (var _ in _playerSideArmyGroups)
+                    {
+                        // Garrisoned army groups will remain their positions
+                        _playerSideLoadingPositions.Add(-1);
+                    }
+
+                    foreach (var armyGroup in _enemySideArmyGroups)
+                    {
+                        var armyGroupPos = SystemAPI.GetComponent<LocalTransform>(armyGroup).Position;
+                        var gridIndex = BattleUtils.GetClosestGrids(armyGroupPos,
+                            cityTrans
+                        );
+                        _enemySideLoadingPositions.Add(gridIndex);
+                    }
+
+
+                    break;
+                default:
+                case SubGameStatus.None:
+                case SubGameStatus.PlayerCity:
+                    BurstSafe.UnexpectedEnum(_targetSubGameStatus);
+                    break;
+            }
         }
     }
 }

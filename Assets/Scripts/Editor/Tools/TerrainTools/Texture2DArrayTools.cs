@@ -54,6 +54,20 @@ namespace Editor
 
         void OnWizardCreate()
         {
+            if (textures == null || textures.Count == 0)
+            {
+                // 从 Project 窗口选中项里筛选 Texture2D
+                var selected = Selection.GetFiltered<Texture2D>(SelectionMode.Assets);
+                if (textures != null)
+                {
+                    textures.AddRange(selected);
+                    if (textures.Count == 0)
+                    {
+                        Debug.LogWarning("没有选中任何 Texture2D，无法生成数组。");
+                        return;
+                    }
+                }
+            }
             CompileArray(textures, path, filename);
         }
 

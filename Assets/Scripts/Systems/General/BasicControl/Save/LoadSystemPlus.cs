@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
 {
-    [UpdateInGroup(typeof(InitializationSystemGroup)),UpdateAfter(typeof(GameBasicControlSystem))]
+    [UpdateInGroup(typeof(InitializationSystemGroup)), UpdateAfter(typeof(GameBasicControlSystem))]
     public partial class LoadSystemPlus : SystemBase
     {
         private EntityQuery _loadArmyGroupQuery;
@@ -26,7 +26,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         // Sub gameplay component lookup
         private ComponentLookup<SeInGarrison> _inGarrisonLookup;
-        private ComponentLookup<SeTmpId> _tmpIdLookup;
+        private ComponentLookup<SeSingleId> _tmpIdLookup;
         private ComponentLookup<PhysicsMass> _physicsMassLookup;
         private ComponentLookup<SeInverseMass> _inverseMassLookup;
         private ComponentLookup<ExpData> _expDataLookup;
@@ -48,6 +48,7 @@ namespace SparFlame.Systems.General.BasicControl
         // Main gameplay component lookup
         private ComponentLookup<SeArmyGroupInGarrison> _armyGroupInGarrisonLookup;
         private BufferLookup<SeCityGarrisonEntity> _cityGarrisonEntitiesLookup;
+        private ComponentLookup<GlobalSingleId> _globalSingleIdLookup;
 
 
         private bool _initialized;
@@ -62,7 +63,7 @@ namespace SparFlame.Systems.General.BasicControl
             RequireForUpdate<GameStatusData>();
             _inGarrisonLookup = GetComponentLookup<SeInGarrison>(true);
             _inverseMassLookup = GetComponentLookup<SeInverseMass>(true);
-            _tmpIdLookup = GetComponentLookup<SeTmpId>(true);
+            _tmpIdLookup = GetComponentLookup<SeSingleId>(true);
             _physicsMassLookup = GetComponentLookup<PhysicsMass>(true);
             _expDataLookup = GetComponentLookup<ExpData>(true);
             _movableDataLookup = GetComponentLookup<MovableData>(true);
@@ -82,7 +83,8 @@ namespace SparFlame.Systems.General.BasicControl
             _armyGroupInGarrisonLookup = GetComponentLookup<SeArmyGroupInGarrison>(true);
             _cityGarrisonEntitiesLookup = GetBufferLookup<SeCityGarrisonEntity>(true);
 
-            _loadArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>().Build();
+            _loadArmyGroupQuery = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<ArmyGroupAttr>()
+                .WithAll<GlobalSingleId>().Build();
         }
 
         protected override void OnDestroy()
@@ -113,8 +115,8 @@ namespace SparFlame.Systems.General.BasicControl
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
             if (gameStatusData.Value == GameStatus.Init)
             {
-                var slot= SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
-                var path = FolderPathUtils.GetPlayerSaveSlotFolder(slot);
+                var slot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
+                var path = SaveUtilities.GetPlayerSaveSlotFolder(slot);
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
@@ -122,7 +124,7 @@ namespace SparFlame.Systems.General.BasicControl
                     var armyGroupSubDataFolder = SaveUtilities.GetArmyGroupSubDataFolder(slot);
                     if (!Directory.Exists(citySubDataFolder))
                         Directory.CreateDirectory(citySubDataFolder);
-                    if(!Directory.Exists(armyGroupSubDataFolder))
+                    if (!Directory.Exists(armyGroupSubDataFolder))
                         Directory.CreateDirectory(armyGroupSubDataFolder);
                 }
                 else
@@ -136,16 +138,22 @@ namespace SparFlame.Systems.General.BasicControl
         private void LoadArmyGroupSubData()
         {
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
-            var armyGroupAttrs = _loadArmyGroupQuery.ToComponentDataArray<ArmyGroupAttr>(Allocator.Temp);
-            foreach (var armyGroupAttr in armyGroupAttrs)
+            var armyGroupSingleIds = _loadArmyGroupQuery.ToComponentDataArray<GlobalSingleId>(Allocator.Temp);
+            foreach (var armyGroupSingleId in armyGroupSingleIds)
             {
                 // Get tmp file first, if not exist, try prior saving
-                var armyGroupPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot, true);
+                var armyGroupPath =
+                    SaveUtilities.GetArmyGroupSubDataPath(armyGroupSingleId.value, playerSaveSlot, true);
                 if (!File.Exists(armyGroupPath))
-                    armyGroupPath = SaveUtilities.GetArmyGroupSubDataPath(armyGroupAttr.saveId, playerSaveSlot, false);
+                    armyGroupPath =
+                        SaveUtilities.GetArmyGroupSubDataPath(armyGroupSingleId.value, playerSaveSlot, false);
                 // If still not exist, this should never happen
-                if (!File.Exists(armyGroupPath)) continue;
-                
+                if (!File.Exists(armyGroupPath))
+                {
+                    Debug.LogError($"Losing saving : slot {playerSaveSlot} army group {armyGroupPath}");
+                    continue;
+                }
+
                 using (var deserializeWorld = new World("Deserialization World"))
                 {
                     var transaction = deserializeWorld.EntityManager.BeginExclusiveEntityTransaction();
@@ -161,7 +169,7 @@ namespace SparFlame.Systems.General.BasicControl
                 }
             }
 
-            armyGroupAttrs.Dispose();
+            armyGroupSingleIds.Dispose();
 
             _movableDataLookup.Update(this);
             _attackAbilityLookup.Update(this);
@@ -186,15 +194,16 @@ namespace SparFlame.Systems.General.BasicControl
             ecb.Playback(EntityManager);
             ecb.Dispose();
             _tmpIdxToInstances.Clear();
-            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeTmpId>>().WithEntityAccess())
+            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeSingleId>>().WithEntityAccess())
             {
                 _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
             }
 
-            foreach (var (armyGroupAttr, entity) in SystemAPI.Query<RefRO<ArmyGroupAttr>>().WithAll<InSubGameTag>()
+            foreach (var (globalSingleId, entity) in SystemAPI.Query<RefRO<GlobalSingleId>>().WithAll<ArmyGroupAttr>()
+                         .WithAll<InSubGameTag>()
                          .WithEntityAccess())
             {
-                _tmpIdxToInstances.Add(armyGroupAttr.ValueRO.saveId, entity);
+                _tmpIdxToInstances.Add(globalSingleId.ValueRO.value, entity);
             }
 
             var ecb2 = new EntityCommandBuffer(Allocator.TempJob);
@@ -226,10 +235,11 @@ namespace SparFlame.Systems.General.BasicControl
             var city = targetSubGameStatusData.City;
             var cityAttr = SystemAPI.GetComponent<CityAttr>(city);
             var playerSaveSlot = SystemAPI.GetSingleton<PlayerSaveSlot>().Value;
-            
+
             // Try tmp save data first
-            var citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot,true);
-            if(!File.Exists(citySavePath))citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot, false);
+            var citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot, true);
+            if (!File.Exists(citySavePath))
+                citySavePath = SaveUtilities.GetCitySubDataPath(cityAttr.globalId, playerSaveSlot, false);
             // Load city data
             if (File.Exists(citySavePath))
             {
@@ -286,11 +296,12 @@ namespace SparFlame.Systems.General.BasicControl
                 ConstructingTimerLookup = _constructingTimerLookup,
                 SeConjuringDataLookup = _seConjuringDataLookup,
                 CityTaskUniqueIdLookup = _cityTaskUniqueIdLookup,
+                
             }.ScheduleParallel(Dependency);
             loadJob.Complete();
             ecb.Playback(EntityManager);
             ecb.Dispose();
-            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeTmpId>>().WithEntityAccess())
+            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeSingleId>>().WithEntityAccess())
             {
                 _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
             }
@@ -386,7 +397,7 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB = ecb.AsParallelWriter(),
                 TmpIdLookup = _tmpIdLookup,
                 GlobalIdxToPrefabs = _globalIdxToPrefabs,
-                CityGarrisonEntitiesLookup = _cityGarrisonEntitiesLookup
+                CityGarrisonEntitiesLookup = _cityGarrisonEntitiesLookup,
             }.ScheduleParallel(Dependency);
             loadCityJob.Complete();
             var loadArmyGroupJob = new LoadArmyGroupMainDataJob
@@ -394,13 +405,14 @@ namespace SparFlame.Systems.General.BasicControl
                 ECB = ecb.AsParallelWriter(),
                 SeInGarrisonLookup = _armyGroupInGarrisonLookup,
                 ArmyGroupConfig = SystemAPI.GetSingleton<ArmyGroupConfig>(),
-                SeLastPassingByCityLookup = _seLastPassingByCityLookup
+                SeLastPassingByCityLookup = _seLastPassingByCityLookup,
+                GlobalSingleIdLookup = _globalSingleIdLookup,
             }.ScheduleParallel(Dependency);
             loadArmyGroupJob.Complete();
             ecb.Playback(EntityManager);
             ecb.Dispose();
 
-            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeTmpId>>().WithEntityAccess())
+            foreach (var (tmpId, entity) in SystemAPI.Query<RefRO<SeSingleId>>().WithEntityAccess())
             {
                 _tmpIdxToInstances.Add(tmpId.ValueRO.value, entity);
             }
@@ -410,7 +422,7 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 cityIdToCityEntity.Add(cityAttr.ValueRO.globalId, entity);
             }
-            
+
             _armyGroupInGarrisonLookup.Update(this);
             _cityGarrisonEntitiesLookup.Update(this);
             _seLastPassingByCityLookup.Update(this);
@@ -445,7 +457,7 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         SerializeUtility.DeserializeWorld(transaction, reader);
                     }
-                
+
                     deserializeWorld.EntityManager.EndExclusiveEntityTransaction();
                     var dem = deserializeWorld.EntityManager;
 
@@ -505,11 +517,16 @@ namespace SparFlame.Systems.General.BasicControl
                     }
 
                     SystemAPI.SetSingleton(saveCityId);
-                    
+
                     // Set Camera main gameplay history
                     var cameraMainGameplayHistory = dem.CreateEntityQuery(typeof(CameraMainGameplayHistory))
                         .GetSingleton<CameraMainGameplayHistory>();
                     SystemAPI.SetSingleton(cameraMainGameplayHistory);
+
+                    // Set global single id data
+                    var globalSingleIDData = dem.CreateEntityQuery(typeof(GlobalSingIDCounter))
+                        .GetSingleton<GlobalSingIDCounter>();
+                    SystemAPI.SetSingleton(globalSingleIDData);
                 }
             }
             else
@@ -560,10 +577,8 @@ namespace SparFlame.Systems.General.BasicControl
             var ct = Directory.GetFiles(citySubDataFolder, "*.tmp.sav", SearchOption.AllDirectories);
             foreach (var file in at)
                 File.Delete(file);
-            foreach(var file in ct)
+            foreach (var file in ct)
                 File.Delete(file);
         }
-        
-  
     }
 }
