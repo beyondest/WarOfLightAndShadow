@@ -20,7 +20,7 @@ namespace SparFlame.Systems.General.BasicControl
     [Serializable]
     public struct SeInGarrison : IComponentData
     {
-        public long buildingTmpId;
+        public long buildingSingleId;
         public bool inBuilding;
         public float priorMass;
     }
@@ -99,7 +99,7 @@ namespace SparFlame.Systems.General.BasicControl
                     ECB.AddComponent(index, saveEntity, new SeInverseMass { value = physicsMass.InverseMass });
                     ECB.AddComponent(index, saveEntity, new SeInGarrison
                     {
-                        buildingTmpId = GlobalSingleIdLookup[inGarrison.BuildingEntity].value,
+                        buildingSingleId = GlobalSingleIdLookup[inGarrison.BuildingEntity].value,
                         inBuilding = inGarrison.InBuilding,
                         priorMass = inGarrison.PriorMass,
                     });
@@ -405,7 +405,7 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 ECB.AddComponent(index, selfEntity, new InGarrison
                 {
-                    BuildingEntity = TmpIdxToInstances[inGarrison.buildingTmpId],
+                    BuildingEntity = TmpIdxToInstances[inGarrison.buildingSingleId],
                     InBuilding = inGarrison.inBuilding,
                     PriorMass = inGarrison.priorMass,
                 });

@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using SparFlame.Core.Utils;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -220,19 +225,21 @@ namespace SparFlame.Systems.General.BasicControl
         //     return ((long)entity.Version << 32) | (uint)entity.Index;
         // }
         private const string SaveFolder = "SaveData";
-        
+
         private static readonly string SaveRootFolder = Path.Combine(Application.persistentDataPath, SaveFolder);
 
         public static string GetPlayerSaveSlotFolder(int playerSaveSlot)
         {
             return Path.Combine(SaveRootFolder, "Player" + playerSaveSlot);
         }
+
         public static string GetCitySubDataFolder(int playerSaveSlot)
         {
             var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
             var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
             return cityRootFolder;
         }
+
         public static string GetCitySubDataPath(int cityId, int playerSaveSlot, bool isTmp)
         {
             var saveRootFolder = GetPlayerSaveSlotFolder(playerSaveSlot);
@@ -293,5 +300,156 @@ namespace SparFlame.Systems.General.BasicControl
             var gameMainDataPath = Path.Combine(generalDataFolder, $"{GameMainDataName}.sav");
             return gameMainDataPath;
         }
+
+
+        static readonly MethodInfo _getCompMethod = typeof(EntityManager)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .First(m => m.IsGenericMethod && m.Name == "GetComponentData" && m.GetParameters().Length == 1 &&
+                        m.GetParameters()[0].ParameterType == typeof(Entity));
+
+        static readonly MethodInfo _setCompMethod = typeof(EntityManager)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .First(m => m.IsGenericMethod && m.Name == "SetComponentData" && m.GetParameters().Length == 2 &&
+                        m.GetParameters()[0].ParameterType == typeof(Entity));
+
+        private static readonly MethodInfo _nativeArrayToBytesGeneric = typeof(SaveUtilities)
+            .GetMethod(nameof(NativeArrayToBytesGeneric), BindingFlags.NonPublic | BindingFlags.Static);
+
+        static readonly Dictionary<Type, MethodInfo> _getCompCache = new();
+        static readonly Dictionary<Type, MethodInfo> _setCompCache = new();
+
+        public static object GetComponentBoxed(EntityManager em, Entity e, Type componentType)
+        {
+            if (!_getCompCache.TryGetValue(componentType, out var mi))
+            {
+                mi = _getCompMethod.MakeGenericMethod(componentType);
+                _getCompCache[componentType] = mi;
+            }
+
+            return mi.Invoke(em, new object[] { e });
+        }
+
+        public static void SetComponentBoxed(EntityManager em, Entity e, object componentBoxed, Type componentType)
+        {
+            if (!_setCompCache.TryGetValue(componentType, out var mi))
+            {
+                mi = _setCompMethod.MakeGenericMethod(componentType);
+                _setCompCache[componentType] = mi;
+            }
+
+            mi.Invoke(em, new object[] { e, componentBoxed });
+        }
+
+        public static byte[] NativeArrayToBytes(object nativeArrayObj, Type elementType, int index)
+        {
+            var method = _nativeArrayToBytesGeneric.MakeGenericMethod(elementType);
+            return (byte[])method.Invoke(null, new object[] { nativeArrayObj, index });
+        }
+
+        private static byte[] NativeArrayToBytesGeneric<T>(NativeArray<T> array, int index) where T : struct
+        {
+            var value = array[index];
+            return StructToBytes(value, typeof(T));
+        }
+
+
+        // ---------- struct <-> bytes via Marshal ----------
+        public static byte[] StructToBytes(object boxedStruct, Type componentType)
+        {
+            if (boxedStruct == null) throw new ArgumentNullException(nameof(boxedStruct));
+            int size = Marshal.SizeOf(componentType);
+            IntPtr buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                // 把托管 struct 拷到非托管内存
+                Marshal.StructureToPtr(boxedStruct, buffer, false);
+                var result = new byte[size];
+                Marshal.Copy(buffer, result, 0, size);
+                return result;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        public static object BytesToStruct(byte[] bytes, Type componentType)
+        {
+            int size = Marshal.SizeOf(componentType);
+            if (bytes.Length != size)
+                throw new ArgumentException($"bytes length {bytes.Length} != struct size {size}");
+
+            IntPtr buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.Copy(bytes, 0, buffer, size);
+                var obj = Marshal.PtrToStructure(buffer, componentType);
+                return obj;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        /// 
+        /// 将 NativeArray T（boxed）通过 Reinterpret byte (elementSize).ToArray() 转为 managed byte[].
+        /// nativeArrayObj: 反射得到的 NativeArray T 的 boxed 实例
+        /// elementSize: 单个元素的字节大小（可用 Marshal.SizeOf(type) 获得）
+        public static byte[] NativeArrayBoxedToBytes(object nativeArrayObj, int elementSize)
+        {
+            if (nativeArrayObj == null) throw new ArgumentNullException(nameof(nativeArrayObj));
+            
+            // 调用 nativeArray.Reinterpret<byte>(elementSize)
+            var nativeArrayType = nativeArrayObj.GetType(); // NativeArray<T>
+            var reinterpretMethod = nativeArrayType.GetMethod("Reinterpret", new[] { typeof(int) });
+            var reinterpretGeneric = reinterpretMethod!.MakeGenericMethod(typeof(byte));
+            var nativeByteArrayObj =
+                reinterpretGeneric.Invoke(nativeArrayObj, new object[] { elementSize }); // NativeArray<byte>
+
+            // 调用 NativeArray<byte>.ToArray()
+            var toArrayMethod = nativeByteArrayObj.GetType().GetMethod("ToArray", Type.EmptyTypes);
+            var managedBytes = (byte[])toArrayMethod!.Invoke(nativeByteArrayObj, null);
+
+            // 不在这里 Dispose reinterpret 结果（它和原 nativeArray 指向同一内存）
+            return managedBytes;
+        }
+        
+        
+        private static readonly Dictionary<Type, Action<EntityCommandBuffer, Entity, object>> _cache =
+            new Dictionary<Type, Action<EntityCommandBuffer, Entity, object>>();
+
+        private static readonly MethodInfo  _toComponentDataArray = typeof(EntityCommandBuffer)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .First(m => m.Name == "AddComponent" &&
+                        m.GetParameters().Length == 2);
+        public static void ECBAddComponentCached(EntityCommandBuffer ecb, Entity e, Type type, object component)
+        {
+            if (!_cache.TryGetValue(type, out var action))
+            {
+                var methodInfo = _toComponentDataArray!.MakeGenericMethod(type);
+
+                var ecbParam = Expression.Parameter(typeof(EntityCommandBuffer), "ecb");
+                var entityParam = Expression.Parameter(typeof(Entity), "e");
+                var compParam = Expression.Parameter(typeof(object), "comp");
+
+                var body = Expression.Call(
+                    ecbParam,
+                    methodInfo,
+                    entityParam,
+                    Expression.Convert(compParam, type)
+                );
+
+                action = Expression.Lambda<Action<EntityCommandBuffer, Entity, object>>(body,
+                    ecbParam, entityParam, compParam).Compile();
+
+                _cache[type] = action;
+            }
+
+            action(ecb, e, component);
+        }
+        
+
+        
     }
 }
