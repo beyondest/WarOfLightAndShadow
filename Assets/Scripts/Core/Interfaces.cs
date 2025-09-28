@@ -7,7 +7,7 @@ namespace SparFlame.Core.Interfaces
     {
         public Entity Prefab { get; set; }
         public T Type { get; set; }
-        public int GlobalIdx { get; set; }
+        public int PrefabId { get; set; }
     }
 
     public interface IPointsData<TData>

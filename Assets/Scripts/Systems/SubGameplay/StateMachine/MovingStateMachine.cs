@@ -210,7 +210,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     // If taunted, should change target to taunted target
                     stateData.TargetEntity = tauntedBuff.TauntedBy;
                     stateData.TargetState = InteractState.Attacking;
-                    MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, boxColliderSize.Value,
+                    MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, boxColliderSize.Box,
                         MovementCommandType.Interactive, AttackLookup[selfEntity].Range);
                     return true;
                 }
@@ -292,7 +292,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         {
                             StateUtils.GarrisonMoveBack(inGarrison, ref stateData, ref movableData,
                                 TransLookup[inGarrison.BuildingEntity].Position,
-                                BoxColliderSizeLookup[inGarrison.BuildingEntity].Value,
+                                BoxColliderSizeLookup[inGarrison.BuildingEntity].Box,
                                 GarrisonSystemConfig.GarrisonRadiusSq, isAi,
                                 selfEntity, index, ECB);
                             return true;
@@ -328,7 +328,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
                 targetSubGameplayGeneralAttr = GeneralLookup[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
-                var targetColliderSize = BoxColliderSizeLookup[stateData.TargetEntity].Value;
+                var targetColliderSize = BoxColliderSizeLookup[stateData.TargetEntity].Box;
                 float range;
                 if (targetSubGameplayGeneralAttr.Faction == selfFactionTag)
                 {

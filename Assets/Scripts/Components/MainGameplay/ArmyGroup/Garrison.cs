@@ -7,6 +7,7 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupInGarrison : IComponentData
     {
         public Entity City;
+        public long SingleId;
     }
     public struct ArmyGroupGarrisonRequest : IComponentData
     {

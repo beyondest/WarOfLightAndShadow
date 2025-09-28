@@ -1,3 +1,4 @@
+using System;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
@@ -102,10 +103,7 @@ namespace SparFlame.UI.SubGameplay
             _selectedData = _em.CreateEntityQuery(typeof(UnitSelectionData));
             _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
-            GameController.Instance.OnEcsSwitchSubGameStatus += _ =>
-            {
-                Hide();
-            };
+          
         }
 
         private void Update()
@@ -243,6 +241,20 @@ namespace SparFlame.UI.SubGameplay
                     ClearCloseUpTarget();
                 }
             }
+        }
+
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)
+                _gamingTag.Dispose();
+            if(_customMouseDataQuery != default)
+                _customMouseDataQuery.Dispose();
+            if(_cursorData != default)
+                _cursorData.Dispose();
+            if(_selectedData != default)
+                _selectedData.Dispose();
+            if(_generalShortcutData != default)
+                _generalShortcutData.Dispose();
         }
 
         public void Show()

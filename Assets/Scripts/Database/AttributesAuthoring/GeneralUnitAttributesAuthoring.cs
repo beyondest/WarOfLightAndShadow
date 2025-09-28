@@ -4,7 +4,7 @@ using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics.Authoring;
+using Unity.Transforms;
 using UnityEngine.AI;
 using Random = Unity.Mathematics.Random;
 
@@ -19,10 +19,12 @@ namespace SparFlame.Database
                 if (authoring.globalIdx == 0)return;
                 
                 var item = DatabaseManager.UnitDatabaseSo.GetItemById(authoring.globalIdx);
-                var unixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var seed = (uint)(unixTimeMs ^ (item.id * 0x9E3779B9)); 
                 
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
+                AddComponent<NeedSaveTag>(entity);
+                SetComponentEnabled<NeedSaveTag>(entity,false);
+                AddComponent(entity, new Rnd{value = new Random((uint)DateTime.Now.Ticks)});
+                AddComponent<AssignRandomRequest>(entity);
                 BakeGeneralDataItem(entity,item);
                 AddComponent<GarrisonStateTag>(entity);
                 SetComponentEnabled<GarrisonStateTag>(entity, false);
@@ -32,7 +34,6 @@ namespace SparFlame.Database
                     Type = item.type,
                     SubTypeIndex = item.GetSubtypeIndex(),
                     ConjureSpeedHoursPerUnit = item.conjureSpeedHoursPerUnit == 0 ? 1f : item.conjureSpeedHoursPerUnit,
-                    Rnd = new Random(seed)
                 });
                 switch (item.type)
                 {
@@ -70,7 +71,15 @@ namespace SparFlame.Database
                 BakeMovementAttr( item,entity,authoring);
                 BakeSelectableAttr(entity);
                 BakeBuff(item,entity);
-                
+                AddComponent(entity, new FormationTransform
+                {
+                    Transform = new LocalTransform
+                    {
+                        Position = float3.zero,
+                        Rotation = quaternion.identity,
+                        Scale = 1f
+                    }
+                });
             }
             
             
@@ -89,7 +98,6 @@ namespace SparFlame.Database
                     agentId = authoring.GetComponent<NavMeshAgent>().agentTypeID
                 });
 
-                var physicsShape = item.prefab.GetComponent<PhysicsShapeAuthoring>();
                 AddComponent(entity, new MovableData
                 {
                     MoveSpeed = item.moveSpeed,
@@ -100,7 +108,7 @@ namespace SparFlame.Database
                     DetailInfo = DetailInfo.None,
                     MovementState = MovementState.NotMoving,
                     ForceCalculate = false,
-                    SelfColliderShapeXz = new float2(physicsShape.m_PrimitiveSize.x,physicsShape.m_PrimitiveSize.z),
+                    // SelfColliderShapeXz = new float2(physicsShape.m_PrimitiveSize.x,physicsShape.m_PrimitiveSize.z),
                 });
                 AddComponent(entity, new Surroundings
                 {

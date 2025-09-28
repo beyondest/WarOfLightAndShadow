@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
@@ -57,7 +58,7 @@ namespace SparFlame.Systems.General.BasicControl
         
         // Internal Data
         private readonly ResourceLoadingUtils.AddressableResourceGroup _group = new();
-
+        private readonly ResourceLoadingUtils.AddressableResourceGroup _preLoadGroup = new();
        
 
         private void Awake()
@@ -71,6 +72,7 @@ namespace SparFlame.Systems.General.BasicControl
         private void Start()
         {
             GeneralResourceManager.Instance.Register(this);
+            PreLoadResources();
         }
 
         public bool IsInitialized => _group.IsHandleCreated() && _group.IsDone;
@@ -112,11 +114,7 @@ namespace SparFlame.Systems.General.BasicControl
             _group.Add(ResourceLoadingUtils.LoadTypeSuffix<FactionTag, Sprite>(factionCrystalHpBlankSpriteSuffix,
                 result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, FactionCrystalHpBlankSprites)));
             
-            _group.Add(ResourceLoadingUtils.LoadTypeSuffix<FactionTag, Sprite>(generalFactionCitySpriteSuffix,
-                result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, GeneralFactionIconSprites)));
-            _group.Add(ResourceLoadingUtils.LoadTypeSuffix<SubFactionTag, Sprite>(subFactionCitySpriteSuffix,
-                result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, SubFactionIconSprites)));
-            
+           
             _group.Add(ResourceLoadingUtils.LoadTypeSuffix<MainGameplayCursorType, Sprite>(mainGameplayCursorTypeSuffix,
                 result => {ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, MainGameplayCursorSprites); }));
             
@@ -135,18 +133,28 @@ namespace SparFlame.Systems.General.BasicControl
             SubGameplayCursorSprites.Clear();
             TierSprites.Clear();
             
-            // FactionWaveTimeBasicSprites.Clear();
-            // DarkWaveColorTypeSprites.Clear();
-            // LightWaveColorTypeSprites.Clear();
-
+          
             FactionCrystalHpFilledSprites.Clear();
             FactionCrystalHpBlankSprites.Clear();
-        
-            GeneralFactionIconSprites.Clear();
-            SubFactionIconSprites.Clear();
             
             EcoBuffSprites.Clear();
             
+        }
+
+        private void PreLoadResources()
+        {
+            _preLoadGroup.Add(ResourceLoadingUtils.LoadTypeSuffix<FactionTag, Sprite>(generalFactionCitySpriteSuffix,
+                result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, GeneralFactionIconSprites)));
+            _preLoadGroup.Add(ResourceLoadingUtils.LoadTypeSuffix<SubFactionTag, Sprite>(subFactionCitySpriteSuffix,
+                result => ResourceLoadingUtils.OnTypeSuffixLoadComplete(result, SubFactionIconSprites)));
+
+        }
+
+        private void OnDestroy()
+        {
+            _preLoadGroup.Release();
+            GeneralFactionIconSprites.Clear();
+            SubFactionIconSprites.Clear();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -56,5 +57,12 @@ namespace SparFlame.Components.MainGameplay
     public struct LastPassingByCity : IComponentData
     {
         public Entity City;
+        public long SingleId;
+    }
+
+    public struct ArmyGroupEntityPrefabData : IBufferElementData
+    {
+        public Entity Prefab;
+        public int PrefabId;
     }
 }

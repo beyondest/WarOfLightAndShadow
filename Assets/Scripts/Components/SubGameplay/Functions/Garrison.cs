@@ -32,8 +32,9 @@ namespace SparFlame.Components.SubGameplay
     /// </summary>
     public struct GarrisonEntity : IBufferElementData
     {
-        public Entity Value;
-        public int Id; // For fast filter
+        public Entity Unit;
+        public int PrefabId; // For fast filter
+        public long SingleId; // For saving
     }
     
     /// <summary>
@@ -57,6 +58,7 @@ namespace SparFlame.Components.SubGameplay
         public Entity BuildingEntity;
         public bool InBuilding;
         public float PriorMass;
+        public long SingleId; // For saving
     }
 
    

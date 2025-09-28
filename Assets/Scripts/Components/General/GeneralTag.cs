@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using System.ComponentModel;
+using Unity.Entities;
 
 namespace SparFlame.Components.General
 {

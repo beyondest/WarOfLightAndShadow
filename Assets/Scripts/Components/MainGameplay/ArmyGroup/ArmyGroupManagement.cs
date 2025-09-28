@@ -1,6 +1,5 @@
 ﻿using System;
 using SparFlame.Components.SubGameplay;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -9,6 +8,7 @@ namespace SparFlame.Components.MainGameplay
     public struct InArmyGroup : IComponentData
     {
         public Entity BelongsTo;
+        public long SingleId;
     }
 
     
@@ -51,19 +51,19 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupUnit : IBufferElementData
     {
         public Entity Unit;
-        public int GlobalId;
-        public long SaveTmpId;
+        public int PrefabId;
+        public long SingleId;
     }
 
     public struct ArmyGroupUnitTypeData : IBufferElementData, IEquatable<ArmyGroupUnitTypeData>
     {
         public UnitType UnitType;
-        public int Id;
+        public int PrefabId;
         public int Count;
 
         public bool Equals(ArmyGroupUnitTypeData other)
         {
-            return Id == other.Id;
+            return PrefabId == other.PrefabId;
         }
 
      

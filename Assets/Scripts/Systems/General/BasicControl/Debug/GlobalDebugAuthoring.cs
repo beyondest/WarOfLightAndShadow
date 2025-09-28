@@ -21,18 +21,21 @@ namespace SparFlame.Systems.General.BasicControl
         [FoldoutGroup("Interact Ability Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public InteractAbilityDebug interactAbility;
 
-        [FoldoutGroup("EnemyAIDebug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
-        public EnemyAIDebug aiDebug;
+        [FoldoutGroup("Old EnemyAI Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public OldEnemyAIDebug aiDebug;
 
         [FoldoutGroup("WaveDebug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public WaveDebug waveDebug;
-        
+
         [FoldoutGroup("Exp Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public ExpDebug expDebug;
-        
-        [FoldoutGroup("Camera Debug"), HideLabel][ShowIf(nameof(globalDebugEnable))]
+
+        [FoldoutGroup("Camera Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public CameraDebug cameraDebug;
-        
+
+        [FoldoutGroup("Enemy AI Main Gameplay Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
+        public EnemyAIMainGameplayDebug enemyAIMainGameplayDebug;
+
         private class GlobalDebugAuthoringBaker : Baker<GlobalDebugAuthoring>
         {
             public override void Bake(GlobalDebugAuthoring authoring)
@@ -49,18 +52,16 @@ namespace SparFlame.Systems.General.BasicControl
                         AddComponent(entity, authoring.interactAbility);
                     if (authoring.aiDebug.enabled)
                         AddComponent(entity, authoring.aiDebug);
-                    if(authoring.waveDebug.enabled)
+                    if (authoring.waveDebug.enabled)
                         AddComponent(entity, authoring.waveDebug);
-                    if(authoring.expDebug.enabled)
+                    if (authoring.expDebug.enabled)
                         AddComponent(entity, authoring.expDebug);
-                    if(authoring.cameraDebug.enabled)
+                    if (authoring.cameraDebug.enabled)
                         AddComponent(entity, authoring.cameraDebug);
+                    if(authoring.enemyAIMainGameplayDebug.enabled)
+                        AddComponent(entity, authoring.enemyAIMainGameplayDebug);
                 }
             }
         }
     }
-
-    
-
-   
 }

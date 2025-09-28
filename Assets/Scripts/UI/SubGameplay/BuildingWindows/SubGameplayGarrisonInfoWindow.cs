@@ -78,6 +78,7 @@ namespace SparFlame.UI.SubGameplay
         {
             base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if(_gamingTag != default)_gamingTag.Dispose();
             _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             Hide();
         }
@@ -94,6 +95,11 @@ namespace SparFlame.UI.SubGameplay
             }
 
             UpdateDynamicData();
+        }
+
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)_gamingTag.Dispose();
         }
 
         private void UpdateDynamicData()

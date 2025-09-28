@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using Unity.Burst;
@@ -23,7 +24,6 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GeneralRandom>();
             state.RequireForUpdate<PlayerFactionData>();
-            state.RequireForUpdate<SubGamingTag>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _linkedEntityGroupLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
@@ -48,11 +48,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
  
         }
 
-
         [BurstCompile]
         [WithNone(typeof(AITag))]
         [WithNone(typeof(PlayerTag))]
         [WithNone(typeof(ResourceAttr))]
+        [WithNone(typeof(FakeUnitNeedAddToArmyGroupAfterAssignSingleId))]
         public partial struct DistinguishEnemyJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -65,7 +65,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 // General distinguish
                 var relationship = FactionUtils.GetRelationship(PlayerFactionData.faction,
                     PlayerFactionData.subFaction, attr.Faction, attr.SubFaction);
-                if (relationship == Relationship.Self)
+                if (relationship is Relationship.Self or Relationship.Ally)
                 {
                     ECB.AddComponent<PlayerTag>(index, selfEntity);
                     if (attr.BaseTag == BaseTag.Buildings)
@@ -85,8 +85,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 }
 
                 ECB.AddComponent<AITag>(index, selfEntity);
-
-
+                
                 // Detail distinguishes
                 switch (attr.BaseTag)
                 {

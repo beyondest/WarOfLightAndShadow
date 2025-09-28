@@ -138,6 +138,8 @@ namespace SparFlame.UI.SubGameplay
         {
             base.Start();
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            
+            if(_gamingTag != default)   _gamingTag.Dispose();
             _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             var rt = new RenderTexture(
                 (int)closeUpRawImage.rectTransform.rect.width,
@@ -169,6 +171,12 @@ namespace SparFlame.UI.SubGameplay
             }
 
             UpdateDynamicData();
+        }
+
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)   _gamingTag.Dispose();
+
         }
 
         private void UpdateDynamicData()
@@ -232,12 +240,13 @@ namespace SparFlame.UI.SubGameplay
         private void UpdateStaticData()
         {
             var attr = _em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
-            _closeUpTargetColliderSize = _em.GetComponentData<BoxColliderSize>(_targetEntity).Value;
+            var prefabId = _em.GetComponentData<PrefabId>(_targetEntity);
+            _closeUpTargetColliderSize = _em.GetComponentData<BoxColliderSize>(_targetEntity).Box;
             closeUpTargetName.text = attr.BaseTag switch
             {
-                BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(attr.PrefabID).gameplayName,
-                BaseTag.Buildings => DatabaseManager.BuildingDatabaseSo.GetItemById(attr.PrefabID).gameplayName,
-                BaseTag.Resources => DatabaseManager.ResourceDatabaseSo.GetItemById(attr.PrefabID).gameplayName,
+                BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(prefabId.value).gameplayName,
+                BaseTag.Buildings => DatabaseManager.BuildingDatabaseSo.GetItemById(prefabId.value).gameplayName,
+                BaseTag.Resources => DatabaseManager.ResourceDatabaseSo.GetItemById(prefabId.value).gameplayName,
                 _ => BurstSafe.UnexpectedEnum(attr.BaseTag, "Wrong")
             };
             if (_em.HasComponent<ExpData>(_targetEntity))

@@ -16,10 +16,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
         private ComponentLookup<MainGameplayGeneralAttr> _generalAttrLookup;
         private ComponentLookup<SupportFightTag> _supportFightTagLookup;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -27,6 +29,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _generalAttrLookup = state.GetComponentLookup<MainGameplayGeneralAttr>(true);
             _supportFightTagLookup = state.GetComponentLookup<SupportFightTag>(true);
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
         }
 
         [BurstCompile]
@@ -34,9 +37,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
             if (gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming) return;
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            if(GameStatusUtils.IsInBattle(subGameStatusData))return;
             _localTransformLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             _supportFightTagLookup.Update(ref state);
+            _singleIdLookup.Update(ref state);
             new ArmyGroupStateMachineJob
             {
                 TransformLookup = _localTransformLookup,
@@ -44,7 +50,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 GeneralAttrLookup = _generalAttrLookup,
-                SupportFightTagLookup = _supportFightTagLookup
+                SupportFightTagLookup = _supportFightTagLookup,
+                GlobalSingleId = _singleIdLookup
             }.ScheduleParallel();
         }
 
@@ -57,6 +64,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<MainGameplayGeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<SupportFightTag> SupportFightTagLookup;
+            [ReadOnly] public ComponentLookup<GlobalSingleId> GlobalSingleId;
 
             private void Execute([ChunkIndexInQuery] int index,
                 in ArmyGroupAttr armyGroupAttr,
@@ -93,7 +101,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             // Record the last passing by city
                             if (targetGeneralAttr.baseTag == MainGameBaseTag.City
                                 && relationship == Relationship.Self)
+                            {
                                 lastCity.City = target;
+                                lastCity.SingleId = GlobalSingleId[target].value;
+                            }
                             // Exclude same faction army group
                             continue;
                         }

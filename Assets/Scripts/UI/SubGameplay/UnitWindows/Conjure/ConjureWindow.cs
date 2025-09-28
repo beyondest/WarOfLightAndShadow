@@ -149,6 +149,12 @@ namespace SparFlame.UI.SubGameplay
             var customInputActions = InputListener.Instance.GetCustomInputActions();
             customInputActions.GeneralShortcut.CloseWindow.performed += _ => Hide();
         }
+
+        private void OnDestroy()
+        {
+            
+        }
+
         #endregion
 
         
@@ -156,11 +162,10 @@ namespace SparFlame.UI.SubGameplay
         {
             if (!UnitWindowResourceManager.Instance.IsResourceLoaded()) return;
             _infos.Clear();
-            _currentFaction = _em.CreateEntityQuery(typeof(UnitSelectionData)).GetSingleton<UnitSelectionData>()
-                .CurrentSelectFaction;
+            using var query = _em.CreateEntityQuery(typeof(PlayerFactionData));
+            _currentFaction = query.GetSingleton<PlayerFactionData>()
+                .faction;
             
-            // _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType,_currentFaction,
-            //     _currentSubType, _currentTier, true,_shouldFilterSubType, _shouldFilterTier);
             _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType,_currentFaction,
                 _currentSubType, _em.GetComponentData<ExpData>(_targetEntity).curTier, true,_shouldFilterSubType,true);
             var count = _infos.Count;

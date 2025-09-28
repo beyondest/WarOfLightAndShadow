@@ -22,7 +22,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 {
                     IconChildIndex = authoring.armyGroupIconChildIndex,
                     SelectChildIndex = authoring.armyGroupSelectChildIndex,
-                    DarkColor = authoring.lightColor.ToFloat4(),
+                    DarkColor = authoring.darkColor.ToFloat4(),
                     LightColor = authoring.lightColor.ToFloat4(),
                 });
             }

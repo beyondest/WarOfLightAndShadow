@@ -19,6 +19,8 @@ namespace SparFlame.UI.General
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            
+          
             _subGamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             _mainGamingTag = _em.CreateEntityQuery(typeof(MainGamingTag));
             _unitSelectionDataQuery = _em.CreateEntityQuery(typeof(UnitSelectionData));
@@ -61,6 +63,18 @@ namespace SparFlame.UI.General
 
             selectionBoxImage.rectTransform.position = (Vector2)min; 
             selectionBoxImage.rectTransform.sizeDelta = size; 
+        }
+
+        private void OnDestroy()
+        {
+            if(_subGamingTag != default)
+                _subGamingTag.Dispose();
+            if(_mainGamingTag != default)
+                _mainGamingTag.Dispose();
+            if(_unitSelectionDataQuery != default)
+                _unitSelectionDataQuery.Dispose();
+            if(_armyGroupSelectionDataQuery != default)
+                _armyGroupSelectionDataQuery.Dispose();
         }
     }
 }

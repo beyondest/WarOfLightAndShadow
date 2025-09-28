@@ -16,7 +16,6 @@ namespace SparFlame.Components.General
         public long addValue;
     }
     
-    public struct AssignGlobalSingleIDRequest : IComponentData{}
 
     [Serializable]
     public struct PlayerFactionData : IComponentData
@@ -25,7 +24,7 @@ namespace SparFlame.Components.General
         public SubFactionTag subFaction;
     }
 
-    public struct PlayerSaveSlot : IComponentData
+    public struct CurrentSaveSlot : IComponentData
     {
         public int Value;
     }

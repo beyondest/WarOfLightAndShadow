@@ -6,6 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
+
 // ReSharper disable UseIndexFromEndExpression
 
 namespace SparFlame.Systems.SubGameplay.Movement
@@ -20,10 +21,11 @@ namespace SparFlame.Systems.SubGameplay.Movement
         [ReadOnly] public float ElapsedTime;
         [ReadOnly] public MovementConfig Config;
         [ReadOnly] public MovementDebug Debug;
+
         private void Execute(
             ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
-            ref Surroundings surroundings, ref PhysicsVelocity physicsVelocity,in PhysicsMass mass,
-            in DynamicBuffer<WaypointBuffer> waypointBuffer,InteractAbilityBonus bonus
+            ref Surroundings surroundings, in BoxColliderSize boxColliderSize,
+            in DynamicBuffer<WaypointBuffer> waypointBuffer, InteractAbilityBonus bonus
         )
         {
             navAgent.targetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
@@ -32,7 +34,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var curPosY0 = new float3(transform.Position.x, 0f, transform.Position.z);
             var interactiveRangeSq = math.square(movableData.InteractRange + bonus.RangeBonus);
             var shouldMove = false;
-            DetectSurrounding(ref surroundings, in transform, in movableData);
+            DetectSurrounding(ref surroundings, transform, movableData, boxColliderSize);
 
 
             switch (movableData.MovementCommandType)
@@ -202,7 +204,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
                 TryMove(ref transform, ref movableData, ref surroundings, navAgent,
-                    idealDirection, curPosY0 , ref physicsVelocity, mass,
+                    idealDirection, curPosY0,
                     bonus
                 );
                 // surroundings.IdealDirection = idealDirection;
@@ -226,9 +228,8 @@ namespace SparFlame.Systems.SubGameplay.Movement
             ref Surroundings surroundings,
             in NavAgentComponent navAgent,
             in float3 idealFront, in float3 curPosY0,
-            ref PhysicsVelocity velocity,
-            in PhysicsMass mass,in InteractAbilityBonus bonus
-            )
+            in InteractAbilityBonus bonus
+        )
         {
             var scale = Debug.enabled ? Debug.playerMovementScale : 1f;
             var moveLength = DeltaTime * (movableData.MoveSpeed + bonus.MoveSpeedBonus) * scale;
@@ -245,42 +246,37 @@ namespace SparFlame.Systems.SubGameplay.Movement
             // targetRotation =  math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
             transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
 
-            // Physics moving
-            // var targetPos = transform.Position + moveLength * idealFront;
-            // var targetTransform = new RigidTransform(targetRotation, targetPos);
-            // velocity = PhysicsVelocity.CalculateVelocityToTarget(mass, transform.Position, transform.Rotation,
-            //     targetTransform, 1/DeltaTime);
-            
+
             // Normal Moving
             transform.Position += moveLength * idealFront;
         }
 
         private void DetectSurrounding(ref Surroundings surroundings, in LocalTransform transform,
-            in MovableData movableData)
+            in MovableData movableData, in BoxColliderSize boxColliderSize)
         {
             var realFront = math.mul(transform.Rotation, new float3(0, 0, -1));
             var left = MovementUtils.GetLeftOrRight(realFront, true);
             var right = MovementUtils.GetLeftOrRight(realFront, false);
-            var head = transform.Position + realFront * movableData.SelfColliderShapeXz.y * Config.DetectFrontBiasRatio;
+            var head = transform.Position + realFront * boxColliderSize.Box.z * Config.DetectFrontBiasRatio;
             MovementUtils.ObstacleInDirection(ref PhysicsWorld, 0f,
                 head,
                 Config.ObstacleLayerMask, Config.DetectRaycastBelongsTo,
                 realFront,
-                movableData.SelfColliderShapeXz.y * Config.DetectLengthRatio,
+                boxColliderSize.Box.z * Config.DetectLengthRatio,
                 out surroundings.FrontEntity);
 
-            MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+            MovementUtils.ObstacleInDirection(ref PhysicsWorld, boxColliderSize.Box.x,
                 head,
                 Config.ObstacleLayerMask,
                 Config.DetectRaycastBelongsTo,
                 left,
-                movableData.SelfColliderShapeXz.x * Config.DetectLengthRatio, out surroundings.LeftEntity);
-            MovementUtils.ObstacleInDirection(ref PhysicsWorld, movableData.SelfColliderShapeXz.x,
+                boxColliderSize.Box.x * Config.DetectLengthRatio, out surroundings.LeftEntity);
+            MovementUtils.ObstacleInDirection(ref PhysicsWorld, boxColliderSize.Box.x,
                 head,
                 Config.ObstacleLayerMask,
                 Config.DetectRaycastBelongsTo,
                 right,
-                movableData.SelfColliderShapeXz.x * Config.DetectLengthRatio, out surroundings.RightEntity);
+                boxColliderSize.Box.x * Config.DetectLengthRatio, out surroundings.RightEntity);
         }
     }
 }

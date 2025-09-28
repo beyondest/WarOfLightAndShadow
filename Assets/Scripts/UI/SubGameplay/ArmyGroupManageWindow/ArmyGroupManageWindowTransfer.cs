@@ -87,7 +87,7 @@ namespace SparFlame.UI.MainGameplay
                 City = SystemAPI.GetSingleton<SubGameStatusData>().City,
                 IfGarrisonIn = true
             });
-            FrameDelayInvoker.Instance.InvokeAfterFrames(1, () => UpdateStaticData(false));
+            FrameDelayInvoker.Instance.InvokeAfterFrames(3, () => UpdateStaticData(false));
         }
 
         private void SetArmyGroupBillboardVfx(ArmyGroupIconType iconType, Entity armyGroup,
@@ -114,7 +114,7 @@ namespace SparFlame.UI.MainGameplay
         {
             var infos = new List<ArmyGroupManageInfo>();
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
-            var cityAttr = SystemAPI.GetComponent<CityAttr>(subGameStatusData.City);
+            var cityGarrisonAttr = SystemAPI.GetComponent<CityGarrisonAttr>(subGameStatusData.City);
             var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(subGameStatusData.City);
             foreach (var armyGroup in garrisonEntities)
             {
@@ -127,7 +127,7 @@ namespace SparFlame.UI.MainGameplay
                     ArmyGroupUtils.UpdateArmyGroupInfoForCompoChanged(EntityManager, armyGroup.ArmyGroup);
             }
 
-            ArmyGroupManageWindow.Instance.UpdateStaticData(infos, cityAttr.maxGarrisonCount);
+            ArmyGroupManageWindow.Instance.UpdateStaticData(infos, cityGarrisonAttr.maxGarrisonCount);
         }
 
 
@@ -164,7 +164,7 @@ namespace SparFlame.UI.MainGameplay
         {
             if (currentGarrisonArmyGroupCount >= maxArmyGroupCountForSlots
                 || currentGarrisonArmyGroupCount >= SystemAPI
-                    .GetComponent<CityAttr>(SystemAPI.GetSingleton<SubGameStatusData>().City).maxGarrisonCount)
+                    .GetComponent<CityGarrisonAttr>(SystemAPI.GetSingleton<SubGameStatusData>().City).maxGarrisonCount)
             {
                 var hintRequest = EntityManager.CreateEntity();
                 EntityManager.AddComponent<HintRequest>(hintRequest);

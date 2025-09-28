@@ -8,10 +8,10 @@ namespace SparFlame.UI.General
     {
   
         [Header("Events triggered when cursor is in left half of screen")]
-        public UnityEvent onCursorLeftSide;
+        public UnityEvent onCursorInLeftSide;
 
         [Header("Events triggered when cursor is in right half of screen")]
-        public UnityEvent onCursorRightSide;
+        public UnityEvent onCursorInRightSide;
 
         private bool lastFrameLeft = false;
 
@@ -26,9 +26,9 @@ namespace SparFlame.UI.General
                 lastFrameLeft = isLeft;
 
                 if (isLeft)
-                    onCursorLeftSide?.Invoke();
+                    onCursorInLeftSide?.Invoke();
                 else
-                    onCursorRightSide?.Invoke();
+                    onCursorInRightSide?.Invoke();
             }
         }
 

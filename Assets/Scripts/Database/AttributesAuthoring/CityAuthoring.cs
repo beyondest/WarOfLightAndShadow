@@ -4,6 +4,7 @@ using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
+using SparFlame.Systems.MainGameplay.ArmyGroup;
 using Unity.Entities;
 using Unity.Physics.Authoring;
 using UnityEngine;
@@ -25,27 +26,29 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 var item = items[authoring.globalIdx - DatabaseManager.CityDatabaseSo.idStart];
                 // General
+                AddComponent(entity, new PrefabId{value =  authoring.globalIdx});
                 AddComponent<GlobalSingleId>(entity);
                 AddComponent<AssignGlobalSingleIDRequest>(entity);
+                AddComponent(entity, new Rnd{value =new Random( (uint)DateTime.Now.Ticks)});
+                AddComponent<AssignRandomRequest>(entity);
                 AddComponent(entity, new MainGameplayGeneralAttr
                 {
                     faction = item.faction,
                     baseTag = MainGameBaseTag.City,
                     subFaction = item.subFactionTag,
                 });
-                AddComponent(entity, new CityAttr
+                AddComponent(entity, new CityAttr());
+                AddComponent(entity, new CityGarrisonAttr
                 {
-                    globalId = authoring.globalIdx,
                     maxGarrisonCount = item.maxGarrisonArmyCount,
-                    lightModelIndex = item.lightModelIndex,
-                    darkModelIndex = item.darkModelIndex,
+                    garrisonOutBias = item.garrisonOutBias
                 });
                 AddComponent<CityNeedInitModelTag>(entity);
 
 
                 AddComponent(entity, new BoxColliderSize
                 {
-                    Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
+                    Box = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
                 });
 
                 // City hp regeneration timer
@@ -121,7 +124,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 });
                 SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
 
-                // Enemy AI
+                // --------------------------- Enemy AI ------------------------------//
                 // Defend and attack army groups
                 var defendBuffer = AddBuffer<DefendArmyGroupPrefab>(entity);
                 var attackBuffer = AddBuffer<AttackArmyGroupPrefab>(entity);
@@ -129,16 +132,18 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 {
                     defendBuffer.Add(new DefendArmyGroupPrefab
                     {
-                        ArmyGroupPrefab = GetEntity(prefabData.prefab, TransformUsageFlags.Dynamic),
-                        NeedHours = prefabData.conjureTotalHours
+                        Prefab = GetEntity(prefabData.prefab, TransformUsageFlags.Dynamic),
+                        NeedHours = prefabData.conjureTotalHours,
+                        PrefabId = GetComponent<ArmyGroupAuthoring>(prefabData.prefab).globalIdx
                     });
                 }
                 foreach (var prefabData in item.attackArmyGroupPrefabs)
                 {
                     attackBuffer.Add(new AttackArmyGroupPrefab
                     {
-                        ArmyGroupPrefab = GetEntity(prefabData.prefab, TransformUsageFlags.Dynamic),
-                        NeedHours = prefabData.conjureTotalHours
+                        Prefab = GetEntity(prefabData.prefab, TransformUsageFlags.Dynamic),
+                        NeedHours = prefabData.conjureTotalHours,
+                        PrefabId = GetComponent<ArmyGroupAuthoring>(prefabData.prefab).globalIdx
                     });
                 }
                 AddBuffer<ExtraArmyGroup>(entity);
@@ -155,8 +160,6 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                     });
                 }
                 
-                AddComponent<FocusOnPlayerTag>(entity);
-                SetComponentEnabled<FocusOnPlayerTag>(entity, item.isFocusOnPlayerAtBeginning);
                 AddBuffer<InvadeTarget>(entity);
                 if(item.isSupportCity)
                     AddComponent<SupportFightTag>(entity);
@@ -165,7 +168,8 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 {
                     Strategy = item.strategy,
                     StartConjuringTotalHours = 0f,
-                    Rnd = new Random( (uint)DateTime.Now.Ticks )
+                    FightCountWithPlayer = 0,
+                    IsFocusOnPlayer = item.isFocusOnPlayerAtBeginning
                 });
                 
             }

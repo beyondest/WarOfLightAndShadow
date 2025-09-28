@@ -30,7 +30,7 @@ namespace Editor
                         continue;
 
                     UnityEventBase sourceEvent = entry.callback;
-                    var targetEvent = cursorTrigger.onCursorLeftSide;
+                    var targetEvent = cursorTrigger.onCursorInLeftSide;
 
                     // 利用反射复制所有 persistent calls
                     var count = sourceEvent.GetPersistentEventCount();

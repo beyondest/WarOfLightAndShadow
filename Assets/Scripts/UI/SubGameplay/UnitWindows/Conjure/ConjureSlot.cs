@@ -112,6 +112,7 @@ namespace SparFlame.UI.SubGameplay
         public void LoadResources()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if(_gamingTag != default)_gamingTag.Dispose();
             _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             conjureCountSlider.onValueChanged.AddListener(_ =>
             {
@@ -125,6 +126,7 @@ namespace SparFlame.UI.SubGameplay
         {
             conjureCountSlider.onValueChanged.RemoveAllListeners();
             detailInfoSlot.UnloadResources();
+            if(_gamingTag != default)_gamingTag.Dispose();
         }
     }
 }

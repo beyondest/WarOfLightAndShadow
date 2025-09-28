@@ -84,7 +84,7 @@ namespace SparFlame.Components.MainGameplay
         public static void ResetArmyGroupMovableData(ref ArmyGroupMovableData movableData,
             ref ArmyGroupCalculatePathData pathData,
             ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWaypoints,
-            ref PathVisualizeData visualizeData,
+            ref ArmyGroupPathVisualizeData visualizeData,
             ref NavAgentComponent navAgent,
             EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity)
         {
@@ -103,7 +103,7 @@ namespace SparFlame.Components.MainGameplay
         public static void ResetArmyGroupMovableData(ref ArmyGroupMovableData movableData,
             ref ArmyGroupCalculatePathData pathData,
             ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWaypoints,
-            ref PathVisualizeData visualizeData,
+            ref ArmyGroupPathVisualizeData visualizeData,
             ref NavAgentComponent navAgent,
             EntityCommandBuffer ecb, Entity selfEntity)
         {

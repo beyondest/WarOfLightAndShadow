@@ -4,14 +4,17 @@ using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
+using SparFlame.Systems.General.BasicControl.GlobalMonos;
 using SparFlame.Systems.General.Battle;
 using SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
+using Unity.Transforms;
 
 namespace SparFlame.UI.General
 {
+    // TODO : Change this system to battle system assembly
     [UpdateBefore(typeof(BattleEndCheckingSystem))]
     public partial class AfterBattleTransfer : SystemBase
     {
@@ -67,23 +70,19 @@ namespace SparFlame.UI.General
         {
             AfterBattleCheckOut(false);
             GameController.Instance.ResumeGame(true);
-            GameController.Instance.BackToMainWorld(false);
             _isInAfterBattleWindow = false;
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BattleEndRequest>());
+            CustomCoroutineRunner.Instance.StartCoroutine(GameController.Instance.SubWorldToMainWorld());
         }
 
         private void StayToCity()
         {
             AfterBattleCheckOut(true);
-
             HideRetreatPortals();
-
-            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
-            subGameStatusData.SubGameStatus = SubGameStatus.PlayerCity;
             GameController.Instance.ResumeGame(true);
-            GameController.Instance.SwitchSubGameStatus(subGameStatusData);
             _isInAfterBattleWindow = false;
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BattleEndRequest>());
+            GameController.Instance.StayToCityAfterBattle();
         }
 
         private void HideRetreatPortals()
@@ -127,7 +126,7 @@ namespace SparFlame.UI.General
 
             DestroyBattleSpecifiedSingletons(ifStayToCity, subGameStatusData);
 
-            SaveLoadController.Instance.SyncSaveGame();
+            CustomCoroutineRunner.Instance.StartCoroutine(SaveLoadController.Instance.SaveAsync(SaveType.Automatic, -1));
         }
 
         private void CheckChangeCityFaction(in SubGameStatusData subGameStatusData,
@@ -179,8 +178,8 @@ namespace SparFlame.UI.General
                         EntityManager.AddComponent<AITag>(subGameStatusData.City);
 
                         // Reassign resource data to enemy init resources
-                        var cityAttr = SystemAPI.GetComponent<CityAttr>(subGameStatusData.City);
-                        var item = DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.globalId);
+                        var cityAttr = SystemAPI.GetComponent<PrefabId>(subGameStatusData.City);
+                        var item = DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.value);
                         var resourceDatas = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
                         for (var i = 0; i < resourceDatas.Length; i++)
                         {
@@ -345,7 +344,6 @@ namespace SparFlame.UI.General
                 if (SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length == 0)
                 {
                     ArmyGroupUtils.DestroyArmyGroup(entity, ecb, EntityManager);
-                    
                 }
                 else
                 {
@@ -383,13 +381,40 @@ namespace SparFlame.UI.General
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            var cityAttr = SystemAPI.GetComponent<CityAttr>(city);
-            var children = SystemAPI.GetBuffer<LinkedEntityGroup>(city);
-            var activeIndex = turnIntoFaction == FactionTag.Dark ? cityAttr.darkModelIndex : cityAttr.lightModelIndex;
-            var inactiveIndex = turnIntoFaction == FactionTag.Dark ? cityAttr.lightModelIndex : cityAttr.darkModelIndex;
+            var children = SystemAPI.GetBuffer<Child>(city);
+            var darkIndex = 0;
+            var lightIndex = 0;
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (SystemAPI.HasComponent<CityDarkModelRoot>(children[i].Value))
+                {
+                    darkIndex = i;
+                    break;
+                }
+            }
 
-            ecb.AddComponent<DisableRendering>(children[inactiveIndex].Value);
-            ecb.RemoveComponent<DisableRendering>(children[activeIndex].Value);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (SystemAPI.HasComponent<CityLightModelRoot>(children[i].Value))
+                {
+                    lightIndex = i;
+                    break;
+                }
+            }
+            var activeIndex = turnIntoFaction == FactionTag.Dark ? darkIndex :lightIndex;
+            var inactiveIndex = turnIntoFaction == FactionTag.Dark ? lightIndex : darkIndex;
+
+            var inactiveModels = SystemAPI.GetBuffer<Child>(children[inactiveIndex].Value);
+            var activeModels = SystemAPI.GetBuffer<Child>(children[activeIndex].Value);
+            for (var i = 0; i < inactiveModels.Length; i++)
+            {
+                ecb.AddComponent<DisableRendering>(inactiveModels[i].Value);
+            }
+
+            for (var i = 0; i < activeModels.Length; i++)
+            {
+                ecb.RemoveComponent<DisableRendering>(activeModels[i].Value);
+            }
 
             ecb.Playback(EntityManager);
             ecb.Dispose();

@@ -1,6 +1,7 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.Systems.General.Battle;
+using SparFlame.UI.General;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,11 +10,61 @@ namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
 {
     public class SubGameplayStaticButtonManager : MonoBehaviour
     {
-        public GameObject constructButton;
-        public GameObject armyGroupManageButton;
-        public GameObject enterAccurateSelectionButton;
-        public GameObject backToMainWorldButton;
-        public GameObject retreatButton;
+        [SerializeField] private GameObject constructButton;
+        [SerializeField] private GameObject armyGroupManageButton;
+        [SerializeField] private GameObject enterAccurateSelectionButton;
+        [SerializeField] private GameObject backToMainWorldButton;
+        [SerializeField] private GameObject retreatButton;
+
+        public static SubGameplayStaticButtonManager Instance;
+
+        #region ButtonMethod
+
+        public void OnClickBackToMainWorldButton()
+        {
+            if (_isSaving)
+            {
+                ConfirmWindow.Instance.Show("You cannot go back to main world while saving not complete",
+                    showCancelButton: false);
+                return;
+            }
+            StartCoroutine(GameController.Instance.SubWorldToMainWorld());
+        }
+
+        public void OnClickRetreatButton()
+        {
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            using var query = em.CreateEntityQuery(typeof(PlayerRetreatRequest));
+            using var query2 = em.CreateEntityQuery(typeof(BattleEndRequest));
+            if (!query.IsEmpty || !query2.IsEmpty) return;
+            BattleUtils.StartRetreat(em, true);
+        }
+
+        #endregion
+
+        public void TogglePlayerCityUI(bool enable)
+        {
+            backToMainWorldButton.SetActive(enable);
+            constructButton.SetActive(enable);
+            armyGroupManageButton.SetActive(enable);
+            enterAccurateSelectionButton.SetActive(enable);
+        }
+
+        public void ToggleBattleUI(bool enable)
+        {
+            retreatButton.SetActive(enable);
+        }
+
+        private bool _isSaving;
+
+        private void Awake()
+        {
+            if (!Instance)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
+
 
         private void Start()
         {
@@ -21,31 +72,11 @@ namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
             armyGroupManageButton.SetActive(false);
             enterAccurateSelectionButton.SetActive(false);
             backToMainWorldButton.SetActive(false);
-            GameController.Instance.OnEcsSwitchSubGameStatus += targetSubgameStatus =>
-            {
-                backToMainWorldButton.SetActive(targetSubgameStatus.SubGameStatus == SubGameStatus.PlayerCity);
-                constructButton.SetActive(targetSubgameStatus.SubGameStatus == SubGameStatus.PlayerCity);
-                armyGroupManageButton.SetActive(targetSubgameStatus.SubGameStatus == SubGameStatus.PlayerCity);
-                enterAccurateSelectionButton.SetActive(targetSubgameStatus.SubGameStatus == SubGameStatus.PlayerCity);
-                retreatButton.SetActive(targetSubgameStatus.SubGameStatus != SubGameStatus.None &&
-                                        targetSubgameStatus.SubGameStatus != SubGameStatus.PlayerCity);
-            };
             backToMainWorldButton.GetComponent<Button>().onClick.AddListener(OnClickBackToMainWorldButton);
             retreatButton.GetComponent<Button>().onClick.AddListener(OnClickRetreatButton);
-        }
 
-        public void OnClickBackToMainWorldButton()
-        {
-            GameController.Instance.BackToMainWorld(false);
-        }
-
-        public void OnClickRetreatButton()
-        {
-            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            var query = em.CreateEntityQuery(typeof(PlayerRetreatRequest));
-            var query2 = em.CreateEntityQuery(typeof(BattleEndRequest));
-            if(!query.IsEmpty || !query2.IsEmpty)return;
-            BattleUtils.StartRetreat(em, true);
+            SaveLoadController.Instance.OnStartSave += _ => { _isSaving = true; };
+            SaveLoadController.Instance.OnSaveComplete += _ => { _isSaving = false; };
         }
     }
 }

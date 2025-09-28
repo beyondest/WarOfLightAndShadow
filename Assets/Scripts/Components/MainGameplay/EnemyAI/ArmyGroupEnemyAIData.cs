@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 
@@ -8,6 +10,7 @@ namespace SparFlame.Components.MainGameplay
     public struct EnemyArmyGroupBelongsToCity : IComponentData
     {
         public Entity City;
+        public long SingleId;
     }
 
     public struct EnemyArmyGroupCompositionData : IBufferElementData
@@ -27,6 +30,7 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupCommandData : IComponentData
     {
         public Entity TargetCity;
+        public bool WaitForGarrisonOut;
     }
     public struct ArmyGroupCommandUpdate : IComponentData, IEnableableComponent{}
     
@@ -46,7 +50,7 @@ namespace SparFlame.Components.MainGameplay
     }
 
     [Serializable]
-    public struct VeryRadicalPossibility : IBufferElementData
+    public struct VeryRadicalPossibilityConfig : IBufferElementData
     {
         public float minSelfTotalThreaten;
         public float maxSelfTotalThreaten;
@@ -60,7 +64,15 @@ namespace SparFlame.Components.MainGameplay
     }
 
 
-    public struct EnemyArmyGroupShouldSaveTag : IComponentData{}
+    public struct EnemyArmyGroupShouldSaveTag : IComponentData
+    {
+        public int TotalUnitCount;
+    }
     public struct EnemyArmyGroupSaveTag : IComponentData {}
-    
+
+    public struct FakeUnitNeedAddToArmyGroupAfterAssignSingleId : IComponentData
+    {
+        public Entity ArmyGroup;
+    }
+
 }

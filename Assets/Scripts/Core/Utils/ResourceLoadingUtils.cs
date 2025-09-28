@@ -1,11 +1,44 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+
 namespace SparFlame.Core.Utils
 {
+
+
+    public class ResourceOperation : IEnumerator
+    {
+        private readonly IEnumerator _routine;
+        private bool _done;
+
+        public ResourceOperation(IEnumerator routine)
+        {
+            _routine = routine;
+        }
+
+        public virtual float Progress => _done ? 1f : 0f;
+        public object Current => _routine.Current;
+
+        public bool MoveNext()
+        {
+            if (_done) return false;
+
+            bool hasNext = _routine.MoveNext();
+            if (!hasNext) _done = true;
+            return hasNext;
+        }
+
+        public void Reset()
+        {
+            _routine.Reset();
+            _done = false;
+        }
+    }
+
     /// <summary>
     /// Custom Resource Loader, provide simple helper functions
     /// </summary>
@@ -13,7 +46,7 @@ namespace SparFlame.Core.Utils
     {
         public class LoadingProgress : IProgress<float>
         {
-            public event Action<float> ProgressChanged;
+            public event Action<float> OnProgressChanged;
             private readonly float _denominator;
 
             public LoadingProgress(float denominator = 1f)
@@ -23,7 +56,7 @@ namespace SparFlame.Core.Utils
 
             public void Report(float value)
             {
-                ProgressChanged?.Invoke(value / _denominator);
+                OnProgressChanged?.Invoke(value / _denominator);
             }
         }
 
@@ -83,6 +116,7 @@ namespace SparFlame.Core.Utils
                 _handles.Clear();
             }
         }
+
         /// <summary>
         /// <para>Addressable keys = EnumType name + Property name, all the combinations of them</para>>
         /// <para>e.g. Use this function to load Attack/Heal/Harvest Amount/Range/Speed/Targets Sprites</para>
@@ -190,6 +224,7 @@ namespace SparFlame.Core.Utils
 
                     throw new ArgumentException("Load Addressable assets wrong, missing some assets");
                 }
+
                 onComplete?.Invoke(handle.Result);
             };
             return handle;
@@ -212,7 +247,6 @@ namespace SparFlame.Core.Utils
                     Console.WriteLine(e);
                     throw;
                 }
-               
             }
         }
 
@@ -247,7 +281,4 @@ namespace SparFlame.Core.Utils
 
         #endregion
     }
-
-
-  
 }

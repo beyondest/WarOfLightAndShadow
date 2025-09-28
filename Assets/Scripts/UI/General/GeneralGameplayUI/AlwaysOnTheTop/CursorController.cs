@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Systems.General.BasicControl;
 using UnityEngine;
@@ -146,6 +147,17 @@ namespace SparFlame.UI.General
             
         }
 
+        private void OnDestroy()
+        {
+            if(_subGameplayCursorData != default)
+                _subGameplayCursorData.Dispose();
+            if(_circleCursorData != default)
+                _circleCursorData.Dispose();
+            if(_mainGameplayCursorData != default)
+                _mainGameplayCursorData.Dispose();
+            if(_gameStatus != default)
+                _gameStatus.Dispose();
+        }
 
         private static bool HandleFocus()
         {
@@ -161,5 +173,6 @@ namespace SparFlame.UI.General
             Cursor.SetCursor(texture2D, new Vector2(x: texture2D.width / 2f, y: texture2D.height / 2f),
                 useSoftwareCursor ? CursorMode.ForceSoftware : CursorMode.Auto);
         }
+        
     }
 }

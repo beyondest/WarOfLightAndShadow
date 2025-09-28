@@ -33,6 +33,7 @@ namespace SparFlame.UI.SubGameplay
                 BuildingDetailWindow.Instance.EcsRecycleTarget += RecycleBuilding;
                 BuildingUpgradePopUpWindow.Instance.EcsUpgradeBuilding += UpgradeBuilding;
                 BuildingDetailWindow.Instance.EcsGetExpStaticConfig += UpdateExpStaticConfig;
+                _isEventInit = true;
             }
 
             if (!_expDatabase.IsCreated)
@@ -41,7 +42,7 @@ namespace SparFlame.UI.SubGameplay
                 var buffer = SystemAPI.GetSingletonBuffer<ExpStaticConfig>();
                 foreach (var config in buffer)
                 {
-                    _expDatabase.Add(config.GlobalIdx, config);
+                    _expDatabase.Add(config.PrefabId, config);
                 }
             }
         }
@@ -120,8 +121,8 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateExpStaticConfig(Entity targetEntity)
         {
-            var generalAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(targetEntity);
-            BuildingDetailWindow.Instance.ExpStaticConfig = _expDatabase[generalAttr.PrefabID];
+            var generalAttr = SystemAPI.GetComponent<PrefabId>(targetEntity);
+            BuildingDetailWindow.Instance.ExpStaticConfig = _expDatabase[generalAttr.value];
         }
     }
     

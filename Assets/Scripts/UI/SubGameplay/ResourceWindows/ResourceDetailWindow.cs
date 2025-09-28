@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
@@ -70,7 +71,7 @@ namespace SparFlame.UI.SubGameplay
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -97,14 +98,20 @@ namespace SparFlame.UI.SubGameplay
             UpdateDynamicInfo();
         }
 
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)
+                _gamingTag.Dispose();
+        }
+
         private void UpdateStaticInfo()
         {
-            var generalAttr = _em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
+            var prefabId = _em.GetComponentData<PrefabId>(_targetEntity);
             var resourceAttr = _em.GetComponentData<ResourceAttr>(_targetEntity);
             resourceTypeIcon.sprite = BasicUIResourceManager.Instance.ResourceSprites[resourceAttr.Type];
             resourceTypeText.text = resourceAttr.Type.ToString();
             resourceAmountText.text = resourceAttr.AmountRange.lower + " - " + resourceAttr.AmountRange.upper;
-            descriptionText.text = DatabaseManager.ResourceDatabaseSo.GetItemById(generalAttr.PrefabID).description;
+            descriptionText.text = DatabaseManager.ResourceDatabaseSo.GetItemById(prefabId.value).description;
         }
 
         private void UpdateDynamicInfo()

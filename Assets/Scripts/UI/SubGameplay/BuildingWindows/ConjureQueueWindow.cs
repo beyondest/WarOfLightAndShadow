@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
@@ -68,9 +69,13 @@ namespace SparFlame.UI.SubGameplay
             UpdateDynamicData();
         }
 
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)
+                _gamingTag.Dispose();
+        }
 
-        
-        
+
         private void UpdateDynamicData()
         {
             var conjureAttribute = _em.GetComponentData<ConjureAttr>(_targetEntity);
@@ -85,9 +90,9 @@ namespace SparFlame.UI.SubGameplay
                     Slots[i].SetActive(true);
                     var slotComponent = SlotComponents[i];
                     var conjureData = conjuringDatas[i];
-                    var subGameplayGeneralAttr = _em.GetComponentData<SubGameplayGeneralAttr>(conjureData.ConjuringEntity);
+                    var subGameplayGeneralAttr = _em.GetComponentData<PrefabId>(conjureData.ConjuringEntity);
                     var info = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(conjureAttribute.ConjuringType,
-                        subGameplayGeneralAttr.PrefabID);
+                        subGameplayGeneralAttr.value);
                     slotComponent.unitNameText.text = info.GameplayName;
                     slotComponent.button!.image.sprite = info.Sprite;
                     slotComponent.remainedCountText.text =

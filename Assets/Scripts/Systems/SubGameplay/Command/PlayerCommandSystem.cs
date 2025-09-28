@@ -64,7 +64,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -98,7 +98,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                         InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,
@@ -116,7 +116,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -132,7 +132,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -160,7 +160,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Value,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = true,
                         InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,

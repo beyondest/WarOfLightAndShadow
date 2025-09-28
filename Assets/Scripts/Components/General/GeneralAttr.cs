@@ -1,5 +1,6 @@
 ﻿using System;
 using Unity.Entities;
+using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.Components.General
 {
@@ -44,5 +45,22 @@ namespace SparFlame.Components.General
     {
         public long value;
     }
+    public struct AssignGlobalSingleIDRequest : IComponentData{}
+
+    [Serializable]
+    public struct PrefabId : IComponentData
+    {
+        public int value;
+    }
    
+    public struct NeedSaveTag : IComponentData, IEnableableComponent
+    {
+    }
+
+    [Serializable]
+    public struct Rnd : IComponentData
+    {
+        public Random value;
+    }
+    public struct AssignRandomRequest : IComponentData{}
 }

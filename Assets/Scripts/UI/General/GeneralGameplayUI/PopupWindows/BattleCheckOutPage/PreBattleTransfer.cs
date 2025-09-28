@@ -2,6 +2,7 @@
 using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
+using SparFlame.Systems.General.BasicControl.GlobalMonos;
 using SparFlame.Systems.General.Battle;
 using SparFlame.UI.General;
 using Unity.Collections;
@@ -329,7 +330,8 @@ namespace SparFlame.Systems.General
 
             _isInPreBattleStatus = false;
             GameController.Instance.ResumeGame(true);
-            GameController.Instance.EnterBattleScene(_city, _ecoType, _targetSubGameStatus);
+            CustomCoroutineRunner.Instance.StartCoroutine(
+                GameController.Instance.EnterBattleScene(_city, _ecoType, _targetSubGameStatus));
         }
 
         private void CreateBattleSpecifiedSingletons(int enemySideTotalUnitCount, int playerSideTotalUnitCount,
@@ -346,7 +348,9 @@ namespace SparFlame.Systems.General
             {
                 MapInfo = mapInfo
             });
+
             var cameraRoamingPositions = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
+            cameraRoamingPositions.Clear();
             foreach (var pos in playerSideLoadingPositions)
             {
                 cameraRoamingPositions.Add(new CameraRoamingPosition

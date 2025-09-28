@@ -18,7 +18,7 @@ namespace SparFlame.UI.General
         public void SetTarget(in ArmyGroupUnitTypeData data)
         {
             var info = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(data.UnitType,
-                data.Id);
+                data.PrefabId);
             button!.image.sprite =info.Sprite ;
             unitName.text = info.GameplayName;
             tierImage.sprite = BasicUIResourceManager.Instance.TierSprites[info.Tier];

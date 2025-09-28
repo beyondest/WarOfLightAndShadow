@@ -1,6 +1,4 @@
-﻿using System;
-using Unity.Collections;
-using Unity.Entities;
+﻿using Unity.Entities;
 using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.Components.MainGameplay
@@ -19,7 +17,19 @@ namespace SparFlame.Components.MainGameplay
         Defend
     }
 
+    public interface ICityArmyGroupElement
+    {
+        Entity ArmyGroup { get; set; }
+        long SingleId { get; set; }
+    }
 
+    public interface ICityArmyGroupPrefabElement
+    {
+        Entity Prefab { get; set; }
+        int PrefabId { get; set; }
+        float NeedHours { get; set; }
+    }
+    
     // Need to be initialized each time enter game; no need to be saved
     // Will be useless when its target is player
     // These cities should not contain support fight city id
@@ -29,54 +39,59 @@ namespace SparFlame.Components.MainGameplay
     }
 
 
-
     // Spawn army group in sequence, no any other logic
-    public struct AttackArmyGroupPrefab : IBufferElementData
+    public struct AttackArmyGroupPrefab : IBufferElementData,ICityArmyGroupPrefabElement
     {
-        public Entity ArmyGroupPrefab;
-        public float NeedHours;
-
+        public Entity Prefab { get; set; }
+        public int PrefabId { get; set; }
+        public float NeedHours { get; set; }
     }
 
-    public struct DefendArmyGroupPrefab : IBufferElementData
+    public struct DefendArmyGroupPrefab : IBufferElementData,ICityArmyGroupPrefabElement
     {
-        public Entity ArmyGroupPrefab;
-        public float NeedHours;
+        public Entity Prefab { get; set; }
+        public int PrefabId { get; set; }
+        public float NeedHours { get; set; }
     }
 
-    public struct AttackArmyGroup : IBufferElementData
+
+
+    public struct AttackArmyGroup : IBufferElementData, ICityArmyGroupElement
     {
-        public Entity ArmyGroup;
-        // public ArmyGroupIconType IconType;
+        public Entity ArmyGroup { get; set; }
+        public long SingleId { get; set; }
     }
 
-    public struct InvadingArmyGroup : IBufferElementData
+    public struct InvadingArmyGroup : IBufferElementData,ICityArmyGroupElement
     {
-        public Entity ArmyGroup;
+        public Entity ArmyGroup { get; set; }
+        public long SingleId { get; set; }
     }
 
-    public struct DefendArmyGroup : IBufferElementData
+    public struct DefendArmyGroup : IBufferElementData,ICityArmyGroupElement
     {
-        public Entity ArmyGroup;
-        // public ArmyGroupIconType IconType;
+        public Entity ArmyGroup { get; set; }
+        public long SingleId { get; set; }
     }
 
-    public struct ExtraArmyGroup : IBufferElementData
+    public struct ExtraArmyGroup : IBufferElementData,ICityArmyGroupElement
     {
-        public Entity ArmyGroup;
+        public Entity ArmyGroup { get; set; }
+        public long SingleId { get; set; }
     }
 
     // Need to be saved and updated when first time loaded; will update during gameplay
     public struct InvadeTarget : IBufferElementData
     {
         public Entity City;
-        public int CityId;
+        public int CityPrefabId;
+        public long SingleId;
     }
-    
+
 
     public struct ArmyGroupConjureStack : IBufferElementData
     {
-        public Entity ArmyGroupPrefab;
+        public int PrefabId;
         public float NeedHours;
         public EnemyArmyGroupDuty Duty;
     }
@@ -85,13 +100,10 @@ namespace SparFlame.Components.MainGameplay
     {
         public float StartConjuringTotalHours;
         public EnemyCityStrategy Strategy;
-        public Random Rnd;
         public int FightCountWithPlayer;
+        public bool IsFocusOnPlayer;
     }
 
-    public struct FocusOnPlayerTag : IComponentData, IEnableableComponent
-    {
-    }
 
     public struct CheckFocusPlayerRequest : IComponentData
     {

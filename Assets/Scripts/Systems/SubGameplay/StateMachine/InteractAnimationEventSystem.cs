@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
@@ -172,9 +171,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<LinkedEntityGroup> children,
-                in BasicStateData stateData, in LocalTransform transform, ref UnitAttr unitAttr, in ExpData expData,
-                Entity selfEntity,
-                in InteractAbilityBonus bonus, in DynamicBuffer<InsightTarget> targets
+                ref Rnd rnd,
+                in BasicStateData stateData, in LocalTransform transform, in UnitAttr unitAttr, in ExpData expData,
+                in InteractAbilityBonus bonus, in DynamicBuffer<InsightTarget> targets,
+                Entity selfEntity
             )
             {
                 if (stateData.CurState != InteractState.Attacking
@@ -265,7 +265,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             {
                                 var config = DarkArcherBuffConfigs[(int)expData.curTier - 3];
                                 var count = 0;
-                                if (unitAttr.Rnd.NextFloat(0f, 1f) < config.extraArrowTriggerChance)
+                                if (rnd.value.NextFloat(0f, 1f) < config.extraArrowTriggerChance)
                                 {
                                     foreach (var target in targets)
                                     {

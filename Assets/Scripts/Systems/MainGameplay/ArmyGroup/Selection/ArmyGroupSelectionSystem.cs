@@ -1,7 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
-using SparFlame.Components.VFX;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
@@ -117,7 +116,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 armyGroupSelectionData.ValueRO.CurrentSelectFaction, position);
             if (isArmyGroupSelected && SystemAPI.IsComponentEnabled<ArmyGroupMovingTag>(entity))
             {
-                ecb.SetComponentEnabled<PathVisualizeEnabled>(entity,true);
+                ecb.SetComponentEnabled<ArmyGroupPathVisualizeEnabled>(entity,true);
             }
         }
 
@@ -133,7 +132,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 armyGroupSelectionData.ValueRO.CurrentSelectFaction, position);
             if (!isArmyGroupSelected && SystemAPI.IsComponentEnabled<ArmyGroupMovingTag>(entity))
             {
-                ecb.SetComponentEnabled<PathVisualizeEnabled>(entity,true);
+                ecb.SetComponentEnabled<ArmyGroupPathVisualizeEnabled>(entity,true);
             }
         }
 
@@ -290,12 +289,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             var disableRendering = SystemAPI.HasComponent<DisableRendering>(selectionBillboard);
             if ( disableRendering&& isEnable)
             {
-                ecb.AddComponent<DisableRendering>(selectionBillboard);
+                ecb.RemoveComponent<DisableRendering>(selectionBillboard);
             }
 
             if (!disableRendering && !isEnable)
             {
-                ecb.RemoveComponent<DisableRendering>(selectionBillboard);
+                ecb.AddComponent<DisableRendering>(selectionBillboard);
             }
             // var request = ecb.CreateEntity();
             // ecb.AddComponent(request, new VFXRequest

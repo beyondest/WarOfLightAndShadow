@@ -17,7 +17,7 @@ namespace SparFlame.Database
                     buffer.Add(new CityEntityPrefabData
                     {
                         Prefab = GetEntity(cityDataItem.prefab, TransformUsageFlags.Dynamic),
-                        GlobalIdx = cityDataItem.id
+                        PrefabId = cityDataItem.id
                     });
                 }
             }

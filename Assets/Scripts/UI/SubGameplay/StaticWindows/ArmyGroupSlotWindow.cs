@@ -21,7 +21,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         [SerializeField] private Image sortImage;
 
         [SerializeField] private Image tierFilterButtonImage;
-        
+
         [SerializeField] private List<Image> unitTypeFilterSelectedImages;
 
         [SerializeField] private GameObject otherSubGameplayStaticPanel;
@@ -29,12 +29,12 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         [SerializeField] private GameObject accurateSelectionPanel;
 
         [SerializeField] private GameObject enterAccurateSelectionButton;
-        
+
         public static ArmyGroupSlotWindow Instance;
-        
+
         public event Action OnEcsRemoveSelectedUnitsFromTheirArmyGroup;
         public event Action<bool, Tier, List<UnitType>> OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned;
-        public event Action<Entity,bool> OnEcsSelectArmyGroupUnits;
+        public event Action<Entity, bool> OnEcsSelectArmyGroupUnits;
         public event Action<Entity> OnEcsSprintArmyGroupUnits;
         public event Action<Entity> OnEcsHoldSwitchArmyGroup;
 
@@ -46,12 +46,11 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         public bool HasSelectedUnitAlreadyInArmyGroup { get; set; }
 
 
-
         public void SwitchSelectionMode(bool enter)
         {
             _isInSelectionMode = enter;
             enterAccurateSelectionButton.SetActive(!enter);
-            var query =
+            using var query =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(UnitSelectionFilter));
             var data = query.GetSingletonRW<UnitSelectionFilter>();
             data.ValueRW.UnitTypeFilterEnabled = enter;
@@ -59,6 +58,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             {
                 data.ValueRW.TierFilterEnabled = false;
             }
+
             foreach (var slot in SlotComponents)
             {
                 slot.SetAddButton(enter);
@@ -105,7 +105,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             }
         }
 
-        public void SelectArmyGroupUnits(Entity armyGroup,bool ifAdd,int slotIndex)
+        public void SelectArmyGroupUnits(Entity armyGroup, bool ifAdd, int slotIndex)
         {
             OnEcsSelectArmyGroupUnits?.Invoke(armyGroup, ifAdd);
             if (!ifAdd)
@@ -113,7 +113,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 for (int i = 0; i < SlotComponents.Count; i++)
                 {
                     var slotComponent = SlotComponents[i];
-                    if(i == slotIndex)continue;
+                    if (i == slotIndex) continue;
                     slotComponent.SlotMoveLeft();
                 }
             }
@@ -145,14 +145,13 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         }
 
 
-     
-
         #region ButtonMethods
 
         public void OnClickEnterSelectionMode()
         {
             SwitchSelectionMode(true);
         }
+
         public void OnClickChangeSortTypeButton()
         {
             if (_currentArmyGroupSortType == ArmyGroupSortType.ByCurrentUnitCountDescending)
@@ -172,21 +171,22 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         {
             OnEcsRemoveSelectedUnitsFromTheirArmyGroup?.Invoke();
         }
-        
+
         public void OnClickQuickSelectAllUnitsWithoutArmyGroupAndGarrisoned()
         {
-            OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned?.Invoke(_tierFilterEnabled, _currentFilterTier, _currentFilterUnitTypes);
+            OnEcsSelectAllUnitsWithoutArmyGroupAndGarrisoned?.Invoke(_tierFilterEnabled, _currentFilterTier,
+                _currentFilterUnitTypes);
         }
 
         public void OnClickExitSelectionMode()
         {
             SwitchSelectionMode(false);
-           OnEcsUpdateArmyGroupAvgData?.Invoke();
+            OnEcsUpdateArmyGroupAvgData?.Invoke();
         }
 
         public void OnClickTierFilterButton()
         {
-            var query =
+            using var query =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(UnitSelectionFilter));
             var data = query.GetSingletonRW<UnitSelectionFilter>();
             if (!_tierFilterEnabled)
@@ -208,6 +208,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 data.ValueRW.FilteredUnitTier = _currentFilterTier;
                 return;
             }
+
             _currentFilterTier = (Tier)((int)_currentFilterTier + 1);
             tierFilterButtonImage.sprite = BasicUIResourceManager.Instance.TierSprites[_currentFilterTier];
             data.ValueRW.TierFilterEnabled = _tierFilterEnabled;
@@ -216,7 +217,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         public void OnClickUnitTypeFilter(int typeIndex)
         {
-            var query =
+            using var query =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(UnitSelectionFilter));
             var data = query.GetSingletonRW<UnitSelectionFilter>();
 
@@ -232,11 +233,8 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 _currentFilterUnitTypes.Add(unitType);
                 unitTypeFilterSelectedImages[typeIndex].enabled = true;
                 data.ValueRW.FilteredUnitTypes.Add(typeIndex);
-                
             }
-
         }
-        
 
         #endregion
 
@@ -254,21 +252,22 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         protected override void Start()
         {
             base.Start();
-            
+
             _currentArmyGroupSortType = ArmyGroupSortType.ByCreateTimeAscending;
             UpdateSortButtonIcon();
-            
+
             foreach (var image in unitTypeFilterSelectedImages)
             {
                 image.enabled = true;
             }
+
             tierFilterButtonImage.color = Color.gray;
             _currentFilterUnitTypes.Add(UnitType.Cavalry);
             _currentFilterUnitTypes.Add(UnitType.Ranged);
             _currentFilterUnitTypes.Add(UnitType.Shield);
             _currentFilterUnitTypes.Add(UnitType.Magic);
             _currentFilterUnitTypes.Add(UnitType.Worker);
-            
+
             accurateSelectionPanel.SetActive(false);
         }
 
@@ -292,7 +291,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 }
             }
         }
-        
+
         public enum ArmyGroupSortType
         {
             ByCreateTimeAscending = 0,

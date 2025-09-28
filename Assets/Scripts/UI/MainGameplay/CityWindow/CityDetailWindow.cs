@@ -77,7 +77,7 @@ namespace SparFlame.UI.MainGameplay
 
         public void OnClickEnterCity()
         {
-            GameController.Instance.EnterPlayerCity(_targetEntity);
+            StartCoroutine(GameController.Instance.EnterPlayerCity(_targetEntity));
         }
 
         #endregion
@@ -111,8 +111,9 @@ namespace SparFlame.UI.MainGameplay
         private void UpdateStaticData()
         {
             var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(_targetEntity);
-            var cityAttr = _em.GetComponentData<CityAttr>(_targetEntity);
-            var playerFactionData = _em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
+            var prefabId = _em.GetComponentData<PrefabId>(_targetEntity);
+            using var query = _em.CreateEntityQuery(typeof(PlayerFactionData));
+            var playerFactionData =query.GetSingleton<PlayerFactionData>();
             var relationShip =
                 FactionUtils.GetRelationship(playerFactionData.faction,
                     playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
@@ -120,7 +121,7 @@ namespace SparFlame.UI.MainGameplay
                                    || (relationShip == Relationship.Ally &&
                                        !_em.HasComponent<SupportFightTag>(_targetEntity)));
 
-            var item = DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.globalId);
+            var item = DatabaseManager.CityDatabaseSo.GetItemById(prefabId.value);
             cityNameText.text = item.gameplayName;
             cityDescriptionText.text = item.description;
             generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];

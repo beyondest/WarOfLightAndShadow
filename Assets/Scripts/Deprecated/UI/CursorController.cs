@@ -39,8 +39,7 @@
 //         private void Start()
 //         {
 //             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-//             _gamingTag = _em.CreateEntityQuery(typeof(GameBasicStatus));
-//             _cursorData = _em.CreateEntityQuery(typeof(CursorData));
+//             
 //             _cursorLeftRectTransform = cursorLeftImage.rectTransform;
 //             _cursorRightRectTransform = cursorRightImage.rectTransform;
 //             _cursorLeftRotation = cursorLeftImage.rectTransform.rotation;

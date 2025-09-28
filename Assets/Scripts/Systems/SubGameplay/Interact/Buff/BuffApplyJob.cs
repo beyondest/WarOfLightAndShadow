@@ -17,7 +17,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
         [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
         [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
-        [NativeDisableParallelForRestriction] public ComponentLookup<UnitAttr> UnitAttrLookup;
+        [NativeDisableParallelForRestriction] public ComponentLookup<Rnd> UnitAttrLookup;
 
         [ReadOnly] public DynamicBuffer<DarkShieldBuffConfig> DarkShieldBuffConfigs;
         [ReadOnly] public DynamicBuffer<LightShieldBuffConfig> LightShieldBuffConfigs;
@@ -61,7 +61,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             if (request.Type == StatChangeType.Attack)
             {
-                ApplyGeneralAttackRelativeBuff(ref request, index);
+                ApplyGeneralAttackRelativeBuff(ref request);
             }
 
             if (request.Type == StatChangeType.Heal)
@@ -70,7 +70,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             }
         }
 
-        private void ApplyGeneralAttackRelativeBuff(ref StatChangeRequest request, int index)
+        private void ApplyGeneralAttackRelativeBuff(ref StatChangeRequest request)
         {
             // Apply cavalry move reduce damage buff
             if (CavalryMoveBuffLookup.HasComponent(request.Interactee) &&
@@ -216,7 +216,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 var unitAttr = UnitAttrLookup.GetRefRW(request.Interactor);
                 var expData = ExpDataLookup[request.Interactor];
                 var buffConfig = LightArcherBuffConfigs[(int)expData.curTier - 3];
-                if (unitAttr.ValueRW.Rnd.NextFloat(0f, 1f) < buffConfig.bonusTriggerChance)
+                if (unitAttr.ValueRW.value.NextFloat(0f, 1f) < buffConfig.bonusTriggerChance)
                 {
                     var stat = StatDataLookup[request.Interactee];
                     var damageBonus = interacteeAttr.BaseTag == BaseTag.Buildings

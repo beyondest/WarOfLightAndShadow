@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Systems.General.BasicControl;
 using Unity.AI.Navigation;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,34 +15,36 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         private readonly Dictionary<Entity, GameObject> _entityMap = new();
         private readonly Dictionary<FactionTag, GameObject> _obstacleTypePrefabMap = new();
-        
+        private bool _initialized;
         
         protected override void OnCreate()
         {
             RequireForUpdate<ArmyGroupVolumeObstacleConfig>();
-            RequireForUpdate<UpdateCityNavMeshRequest>();
         }
 
         protected override void OnStartRunning()
         {
             // Init prefab dictionary
-            if (_obstacleTypePrefabMap.Count == 0)
+            if (!_initialized)
             {
                 var config = SystemAPI.ManagedAPI.GetSingleton<ArmyGroupVolumeObstacleConfig>();
                 _obstacleTypePrefabMap.Add(FactionTag.Light, config.lightCityObstacle);
                 _obstacleTypePrefabMap.Add(FactionTag.Dark, config.darkCityObstacle);
                 _obstacleTypePrefabMap.Add(FactionTag.Neutral, config.neutralCityObstacle);
+                _initialized = true;
+                GameController.Instance.OnSwitchGameStatus += (targetSubGameStatus, _) =>
+                {
+                    if (targetSubGameStatus.SubGameStatus == SubGameStatus.None)
+                        ClearAndBakeNavMeshInMainGameplay();
+                };
             }
         }
 
         protected override void OnUpdate()
         {
-            // This system only update when there is update city navmesh request
-            SpawnVolumeObstacleInMainScene();
-            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<UpdateCityNavMeshRequest>());
         }
 
-        private void SpawnVolumeObstacleInMainScene()
+        private void ClearAndBakeNavMeshInMainGameplay()
         {
             foreach (var go in _entityMap.Values)
             {
@@ -94,7 +97,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 {
                     FactionTag = FactionTag.Light
                 });
-                ecb.AddComponent<SubGameplayEntityTag>(entity);
+                ecb.AddComponent<MainGameplayEntityTag>(entity);
 
             }
             if (shouldUpdateEnemyMesh)
@@ -104,7 +107,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 {
                     FactionTag = FactionTag.Dark
                 });
-                ecb.AddComponent<SubGameplayEntityTag>(entity2);
+                ecb.AddComponent<MainGameplayEntityTag>(entity2);
 
             }
         }

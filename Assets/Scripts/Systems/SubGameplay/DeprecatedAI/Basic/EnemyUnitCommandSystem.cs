@@ -68,7 +68,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 var targetColliderShape = float3.zero;
                 if (GeneralAttrLookUp.TryGetComponent(commandData.TargetEntity, out var boxColliderSize))
                 {
-                    targetColliderShape = boxColliderSize.Value;
+                    targetColliderShape = boxColliderSize.Box;
                 }
                 switch (commandData.CommandType)
                 {

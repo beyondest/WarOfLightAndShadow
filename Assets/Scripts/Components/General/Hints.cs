@@ -39,7 +39,7 @@ namespace SparFlame.Components.General
         EnemyRetreatedArmyGroupBackToLastPassingByCity = 24,
         
         EnemyIsGoingToInvade = 25,
-        DebugEnemyArmyGroupNotReachable = 26
+        DebugEnemyArmyGroupNotReachable = 26,
     }
 
     public enum HintType

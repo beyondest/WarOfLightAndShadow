@@ -52,9 +52,9 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             var curPointType2Interval = _wavePoint2Type2Interval[curPoint];
             var curPointType2Entries = _wavePoint2Type2Entries[curPoint];
 
-            if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out EnemyAIDebug debug)))
+            if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out OldEnemyAIDebug debug)))
             {
-                debug = new EnemyAIDebug
+                debug = new OldEnemyAIDebug
                 {
                     enabled = false
                 };
@@ -66,7 +66,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 CurTime = curTime,
                 Type2Interval = curPointType2Interval,
                 Type2Entries = curPointType2Entries,
-                EnemyAIDebug = debug
+                OldEnemyAIDebug = debug
             }.ScheduleParallel();
         }
 
@@ -74,7 +74,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         private partial struct EnemyUnitSpawnJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [ReadOnly] public EnemyAIDebug EnemyAIDebug;
+            [ReadOnly] public OldEnemyAIDebug OldEnemyAIDebug;
             [ReadOnly] public float CurTime;
             [ReadOnly] public NativeHashMap<int, int> Type2Interval;
             [ReadOnly] public NativeParallelMultiHashMap<int, PrefabEntryUtils.ProbabilityPrefabEntry> Type2Entries;
@@ -85,8 +85,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             {
                 if (CurTime < data.ConjureTime) return;
                 float interval = Type2Interval[(int)attr.ConjuringType];
-                if (EnemyAIDebug.enabled)
-                    interval /= EnemyAIDebug.unitSpawnSpeedScale;
+                if (OldEnemyAIDebug.enabled)
+                    interval /= OldEnemyAIDebug.unitSpawnSpeedScale;
                 data.ConjureTime = CurTime + interval;
                 var entry = PrefabEntryUtils.RandomChoosePrefab(ref data.Rnd, Type2Entries,
                     (int)attr.ConjuringType);

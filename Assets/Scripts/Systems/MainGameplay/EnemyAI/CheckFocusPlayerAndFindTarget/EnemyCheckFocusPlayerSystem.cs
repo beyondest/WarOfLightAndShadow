@@ -10,7 +10,8 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
 {
     public partial struct EnemyCheckFocusPlayerSystem : ISystem
     {
-        private ComponentLookup<FocusOnPlayerTag> _focusOnPlayerTagLookup;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
+        private EntityQuery _assignIdQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -20,12 +21,17 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<CheckFocusPlayerRequest>();
             state.RequireForUpdate<CityAIData>();
-            _focusOnPlayerTagLookup = state.GetComponentLookup<FocusOnPlayerTag>(true);
+            state.RequireForUpdate<GameStatusData>();
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
+            _assignIdQuery = SystemAPI.QueryBuilder().WithAll<AssignGlobalSingleIDRequest>().Build();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if (gameStatusData != GameStatus.MainGaming && gameStatusData != GameStatus.SubGaming) return;
+            if(!_assignIdQuery.IsEmpty)return;
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (request, entity) in SystemAPI.Query<RefRO<CheckFocusPlayerRequest>>().WithEntityAccess())
             {
@@ -38,14 +44,13 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
 
-            var ecb2 = new EntityCommandBuffer(Allocator.TempJob);
-            var ecbP = ecb2.AsParallelWriter();
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
-            var cityQuery = SystemAPI.QueryBuilder().WithAll<CityAttr>().WithAll<MainGameplayGeneralAttr>().Build();
+            var cityQuery = SystemAPI.QueryBuilder().WithAll<CityAttr>().WithAll<PrefabId>()
+                .WithAll<MainGameplayGeneralAttr>().Build();
             var cityIdToPlayerRelations = new NativeParallelHashMap<int, Relationship>(12, Allocator.TempJob);
             var cityIdToEntities = new NativeParallelHashMap<int, Entity>(12, Allocator.TempJob);
             var generalAttrs = cityQuery.ToComponentDataArray<MainGameplayGeneralAttr>(Allocator.Temp);
-            var cityAttrs = cityQuery.ToComponentDataArray<CityAttr>(Allocator.Temp);
+            var cityAttrs = cityQuery.ToComponentDataArray<PrefabId>(Allocator.Temp);
             var cityEntities = cityQuery.ToEntityArray(Allocator.Temp);
             for (var i = 0; i < generalAttrs.Length; i++)
             {
@@ -55,29 +60,24 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
 
                 var relationWithPlayer = FactionUtils.GetRelationship(playerFactionData.faction,
                     playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
-                cityIdToPlayerRelations.Add(cityAttr.globalId, relationWithPlayer);
-                cityIdToEntities.Add(cityAttr.globalId, entity);
+                cityIdToPlayerRelations.Add(cityAttr.value, relationWithPlayer);
+                cityIdToEntities.Add(cityAttr.value, entity);
             }
-            _focusOnPlayerTagLookup.Update(ref state);
 
+            _singleIdLookup.Update(ref state);
             var job = new EnemyCityCheckShouldFocusOnPlayerJob
             {
                 Config = SystemAPI.GetSingleton<EnemyCheckFocusPlayerConfig>(),
                 CityIdRelationships = cityIdToPlayerRelations,
                 CityIdToEntities = cityIdToEntities,
                 SupportFightCityId = SystemAPI.HasSingleton<SupportFightTag>()
-                    ? SystemAPI.GetComponent<CityAttr>(SystemAPI.GetSingletonEntity<SupportFightTag>()).globalId
+                    ? SystemAPI.GetComponent<PrefabId>(SystemAPI.GetSingletonEntity<SupportFightTag>()).value
                     : -1,
-                ECB = ecbP,
                 DirectRoadPoints = SystemAPI.GetSingletonBuffer<DirectRoadPointData>(),
-                FocusOnPlayerTagLookup = _focusOnPlayerTagLookup,
+                SingleIdLookup = _singleIdLookup,
             }.ScheduleParallel(state.Dependency);
 
             job.Complete();
-
-            ecb2.Playback(state.EntityManager);
-            ecb2.Dispose();
-
             cityIdToPlayerRelations.Dispose();
             cityIdToEntities.Dispose();
             generalAttrs.Dispose();
@@ -87,25 +87,23 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
         [BurstCompile]
         public partial struct EnemyCityCheckShouldFocusOnPlayerJob : IJobEntity
         {
-            public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public NativeParallelHashMap<int, Relationship> CityIdRelationships;
             [ReadOnly] public NativeParallelHashMap<int, Entity> CityIdToEntities;
             [ReadOnly] public EnemyCheckFocusPlayerConfig Config;
             [ReadOnly] public int SupportFightCityId;
             [ReadOnly] public DynamicBuffer<DirectRoadPointData> DirectRoadPoints;
-            [ReadOnly] public ComponentLookup<FocusOnPlayerTag> FocusOnPlayerTagLookup;
+            [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIdLookup;
 
-            private void Execute([ChunkIndexInQuery] int index,
-                in DynamicBuffer<CheckCity> checkCities,
+            private void Execute(in DynamicBuffer<CheckCity> checkCities,
                 ref DynamicBuffer<InvadeTarget> targets,
-                in CityAttr cityAttr, Entity selfEntity,
-                in CityAIData aiData)
+                in PrefabId prefabId,
+                ref CityAIData cityAIData)
             {
                 targets.Clear();
-                var isCountExceed = aiData.FightCountWithPlayer >= Config.countThresholdToFocusPlayer;
+                var isCountExceed = cityAIData.FightCountWithPlayer >= Config.countThresholdToFocusPlayer;
 
                 var playerHaveCheckCity =
-                    SupportFightCityId == -1 || FocusOnPlayerTagLookup.IsComponentEnabled(selfEntity)
+                    SupportFightCityId == -1 || cityAIData.IsFocusOnPlayer
                                              || isCountExceed;
                 if (!playerHaveCheckCity)
                 {
@@ -123,7 +121,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 if (playerHaveCheckCity)
                 {
                     var playerCities = new NativeList<int>(Allocator.Temp);
-                    EnemyAIUtils.FindReachablePlayerCities(DirectRoadPoints, cityAttr.globalId,
+                    EnemyAIUtils.FindReachablePlayerCities(DirectRoadPoints, prefabId.value,
                         CityIdRelationships, playerCities);
                     foreach (var cityId in playerCities)
                     {
@@ -132,20 +130,23 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         targets.Add(new InvadeTarget
                         {
                             City = cityEntity,
-                            CityId = cityId
+                            CityPrefabId = cityId,
+                            SingleId = SingleIdLookup[cityEntity].value
                         });
                     }
 
-                    ECB.SetComponentEnabled<FocusOnPlayerTag>(index, selfEntity, true);
+                    cityAIData.IsFocusOnPlayer = true;
                 }
                 else
                 {
+                    var supportCity = CityIdToEntities[SupportFightCityId];
                     targets.Add(new InvadeTarget
                     {
-                        City = CityIdToEntities[SupportFightCityId],
-                        CityId = SupportFightCityId
+                        City = supportCity,
+                        CityPrefabId = SupportFightCityId,
+                        SingleId = SingleIdLookup[supportCity].value
                     });
-                    ECB.SetComponentEnabled<FocusOnPlayerTag>(index, selfEntity, false);
+                    cityAIData.IsFocusOnPlayer = false;
                 }
             }
         }

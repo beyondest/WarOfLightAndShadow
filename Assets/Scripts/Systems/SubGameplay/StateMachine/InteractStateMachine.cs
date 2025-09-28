@@ -406,7 +406,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 in TInteractAbility ability, Entity entity, int index)
             {
                 var tarPos = TransformLookup[stateData.TargetEntity].Position;
-                var tarColliderShape = BoxColliderSizeLookup[stateData.TargetEntity].Value;
+                var tarColliderShape = BoxColliderSizeLookup[stateData.TargetEntity].Box;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
                     ability.Range
@@ -429,8 +429,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             {
                 var curPos2 = new float2(curPos.x, curPos.z);
                 var targetPos2 = new float2(targetPos.x, targetPos.z);
-                var targetColliderSizeXz = new float2(targetSubGameplayGeneralAttr.Value.x,
-                    targetSubGameplayGeneralAttr.Value.z);
+                var targetColliderSizeXz = new float2(targetSubGameplayGeneralAttr.Box.x,
+                    targetSubGameplayGeneralAttr.Box.z);
                 var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
                 return disSqPointToRect < rangeSq;
             }

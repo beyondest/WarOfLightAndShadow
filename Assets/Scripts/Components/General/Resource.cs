@@ -12,7 +12,7 @@ namespace SparFlame.Components.General
         [HideLabel] public ResourceType type;
         [HideLabel] public int amount;
     }
-
+    
     public struct CostList : IBufferElementData
     {
         public ResourceType Type;
@@ -48,7 +48,7 @@ namespace SparFlame.Components.General
     {
         public Entity Prefab { get; set; }
         public ResourceType Type { get; set; }
-        public int GlobalIdx { get; set; }
+        public int PrefabId { get; set; }
         public float Probability;
         public Range AmountRange;
     }
@@ -75,7 +75,7 @@ namespace SparFlame.Components.General
     [Serializable]
     public struct PopulationStorageAddTask : IBufferElementData
     {
-        public int fromBuildingUniqueId;
+        public long fromBuildingSingleId;
         public int addAmount;
         public float finishTotalHours;
     }
@@ -83,8 +83,9 @@ namespace SparFlame.Components.General
     [Serializable]
     public struct PopulationConjureTask : IBufferElementData
     {
-        public int fromBuildingUniqueId;
+        public long fromBuildingSingleId;
         public float hoursPerUnit;
+        
         public int remainingConjuredUnitCount;
         public float accumulatedHours;
     }
@@ -128,7 +129,7 @@ namespace SparFlame.Components.General
 
         public ResourceRequestType RequestType;
 
-        public int FromBuildingUniqueId;
+        public long FromBuildingSingleId;
 
         public float FinishTotalHours;
         // public ResourceBuildingDestroyType DestroyType;

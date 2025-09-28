@@ -69,7 +69,7 @@ namespace SparFlame.UI.General
                         var posY = config.startPos.y - r * (cellHeight + config.rowSpacing);
                         slotRect.sizeDelta = new Vector2(cellWidth, cellHeight);
                         slotRect.anchoredPosition = new Vector2(posX, posY);
-                        slot.SetActive(false);
+                        slot.SetActive(config.shouldSlotShow);
                         var slotComponent = slot.GetComponent<TMultiShowSlot>();
                         slotComponent.Index = r * config.cols + c;
                         if (onClickSlot != null && slotComponent.button)
@@ -77,7 +77,6 @@ namespace SparFlame.UI.General
                             // TODO : Extend original button class to support right click event and long click event
                             slotComponent.button.onClick.AddListener(() => { onClickSlot(slotComponent.Index); });
                         }
-
                         slots.Add(slot);
                         slotComponents.Add(slotComponent);
                     }
@@ -94,7 +93,7 @@ namespace SparFlame.UI.General
                     var slotRect = slot.GetComponent<RectTransform>();
                     slotRect.sizeDelta = new Vector2(cellWidth, cellHeight);
                     slotRect.anchoredPosition = points[(i + config.elemBias) % config.circleElemCount];
-                    slot.SetActive(false);
+                    slot.SetActive(config.shouldSlotShow);
 
                     var slotComponent = slot.GetComponent<TMultiShowSlot>();
                     slotComponent.Index = i;
@@ -225,8 +224,8 @@ namespace SparFlame.UI.General
         [Serializable]
         public struct MultiShowSlotConfig
         {
-            [Header("Choose Square or Circle")] public bool ifSquare;
-
+            [Header("General Config")] public bool ifSquare;
+            public bool shouldSlotShow;
             [Header("Square Config")] [Tooltip("If disable auto cell size, will use prefab width and height")]
             public bool autoCellSize;
 

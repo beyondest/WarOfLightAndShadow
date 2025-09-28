@@ -133,7 +133,7 @@ public static class EnemyAIUtils
         minDistance = float.MaxValue;
         foreach (var e in targets)
         {
-            var distance = distanceMap[new IntPair(currentCityId, e.CityId)];
+            var distance = distanceMap[new IntPair(currentCityId, e.CityPrefabId)];
             if (distance < minDistance)
             {
                 minDistance = distance;

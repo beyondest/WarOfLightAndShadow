@@ -128,8 +128,7 @@ namespace SparFlame.UI.SubGameplay
         private Tier _currentTier = Tier.Tier1;
         private bool _shouldFilterTier;
         private BuildingType _currentGeneralType = BuildingType.Fortifications;
-        private FactionTag _currentFaction;
-
+        private EntityQuery _factionQuery;
 
 
 
@@ -161,24 +160,28 @@ namespace SparFlame.UI.SubGameplay
             tierFilterIcon.color = Color.gray;
             panel.SetActive(false);
             constructWindowPanel.SetActive(false);
-            GameController.Instance.OnClickSlotAndStartGame += (factionTag,_,_) => _currentFaction = factionTag;
+            var em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _factionQuery = em.CreateEntityQuery(typeof(PlayerFactionData));
+        }
+
+        private void OnDestroy()
+        {
+            if(_factionQuery != default)_factionQuery.Dispose();
         }
 
         private void UpdateCandidates()
         {
-            
+            var currentFaction = _factionQuery.GetSingleton<PlayerFactionData>().faction;
             _infos.Clear();
-            _infos = BuildingWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, _currentFaction,
+            _infos = BuildingWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, currentFaction,
                 _currentSubType, _currentTier, true, _shouldFilterSubType, _shouldFilterTier);
             if (_currentGeneralType == BuildingType.Ornaments)
             {
                 for (int i = _infos.Count - 1; i >= 0; i--)
                 {
-                    // Light faction cannot construct crystal, dark faction cannot construct beacon
-                    if (_currentFaction == FactionTag.Light && _infos[i].SubtypeIndex == (int)OrnamentType.Crystal)
+                    if (currentFaction == FactionTag.Light && _infos[i].SubtypeIndex == (int)OrnamentType.Crystal)
                         _infos.RemoveAt(i);
-                    if(_currentFaction == FactionTag.Dark && _infos[i].SubtypeIndex == (int)OrnamentType.Beacon)
-                        _infos.RemoveAt(i);
+                    
                 }
             }
             var count = _infos.Count;

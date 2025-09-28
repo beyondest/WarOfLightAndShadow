@@ -15,7 +15,9 @@ namespace SparFlame.Components.MainGameplay
     }
     public struct ArmyGroupSelected : IComponentData, IEnableableComponent{}
 
-    // TODO : Linked army group data
 
-
+    public struct LockArmyGroupSelectedWorkForDrag : IComponentData,IEnableableComponent
+    {
+        
+    }
 }

@@ -141,6 +141,7 @@ namespace SparFlame.UI.SubGameplay
         protected virtual void Start()
         {
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if(_gamingTag != default)_gamingTag.Dispose();
             _gamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
             for (var i = 0; i < interactTypeColorPairs.Count; i++)
             {
@@ -179,6 +180,11 @@ namespace SparFlame.UI.SubGameplay
                     BurstSafe.UnexpectedEnum(_currentBar);
                     break;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)_gamingTag.Dispose();
         }
 
         private void UpdateInteractAbilityInfo(IInteractAbility interactAbility)

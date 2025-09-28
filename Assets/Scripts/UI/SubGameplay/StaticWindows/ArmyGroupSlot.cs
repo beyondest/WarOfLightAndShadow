@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.Input;
+﻿using SparFlame.Components.Input;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
 using TMPro;
@@ -69,6 +68,8 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         private void Start()
         {
+            if(_inputQuery != default)
+                _inputQuery.Dispose();
             _inputQuery =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(InputUnitControlData));
             
@@ -107,6 +108,12 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             {
                 if(_isRight)SlotMoveLeft();
             }
+        }
+
+        private void OnDestroy()
+        {
+            if(_inputQuery != default)
+                _inputQuery.Dispose();
         }
 
         #endregion

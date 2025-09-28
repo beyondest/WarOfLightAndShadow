@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.MainGameplay;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using Unity.Burst;
@@ -30,7 +31,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
             if (!_removeRequestQuery.IsEmpty)
                 DealRemoveFromArmyGroupRequests(ref state, ecb);
-            if(!_addRequestQuery.IsEmpty)
+            if (!_addRequestQuery.IsEmpty)
                 DealAddToArmyGroupRequests(ref state, ecb);
 
             ecb.Playback(state.EntityManager);
@@ -64,19 +65,20 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         {
                             ecb.RemoveComponent<InArmyGroup>(armyGroupUnit.Unit);
                         }
+
                         // Clear count , buff, buffer, continue
                         entityBuffer.Clear();
                         dataBuffer.Clear();
                         SystemAPI.SetComponent(request.ArmyGroup, new ArmyGroupStatData());
                         continue;
-                    case RemoveFromArmyGroupType.RemoveSpecifiedUnitWithoutRemovingInArmyGroup: 
+                    case RemoveFromArmyGroupType.RemoveSpecifiedUnitWithoutRemovingInArmyGroup:
                     case RemoveFromArmyGroupType.MoveOutAllSameId:
                     case RemoveFromArmyGroupType.RandomRemoveSingleSameId:
                         int i;
                         for (i = 0; i < dataBuffer.Length; i++)
                         {
                             var data = dataBuffer[i];
-                            if (data.Id == request.MoveOutId)
+                            if (data.PrefabId == request.MoveOutId)
                                 break;
                         }
 
@@ -92,12 +94,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             dataBuffer.RemoveAt(i);
                             for (var j = entityBuffer.Length - 1; j >= 0; j--)
                             {
-                                if (entityBuffer[j].GlobalId != request.MoveOutId) continue;
+                                if (entityBuffer[j].PrefabId != request.MoveOutId) continue;
                                 var garrisonEntity = entityBuffer[j];
                                 var statData = SystemAPI.GetComponent<StatData>(garrisonEntity.Unit);
                                 armyGroupStatData.totalCurrentHp -= statData.curValue;
                                 armyGroupStatData.totalMaxHp -= statData.maxValue;
-                                
+
                                 // Move out garrison units
                                 ecb.RemoveComponent<InArmyGroup>(garrisonEntity.Unit);
                                 entityBuffer.RemoveAt(j);
@@ -113,11 +115,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             for (var j = entityBuffer.Length - 1; j >= 0; j--)
                             {
                                 var armyGroupUnit = entityBuffer[j];
-                                if (armyGroupUnit.GlobalId != request.MoveOutId) continue;
+                                if (armyGroupUnit.PrefabId != request.MoveOutId) continue;
                                 // Move out garrison units
                                 ecb.RemoveComponent<InArmyGroup>(armyGroupUnit.Unit);
                                 entityBuffer.RemoveAt(j);
-                                
+
                                 // Calculate hp info
                                 var statData = SystemAPI.GetComponent<StatData>(armyGroupUnit.Unit);
                                 armyGroupStatData.totalCurrentHp -= statData.curValue;
@@ -148,12 +150,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                     {
                                         armyGroupStatData.totalMaxHp -= request.StatMaxValue;
                                     }
+
                                     entityBuffer.RemoveAt(j);
                                     break;
                                 }
                             }
                         }
-                        
+
                         SystemAPI.SetComponent(request.ArmyGroup, armyGroupStatData);
 
                         break;
@@ -162,7 +165,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         BurstSafe.UnexpectedEnum(request.RemoveType);
                         break;
                 }
-
             }
         }
 
@@ -173,6 +175,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             for (int i = 0; i < entities.Length; i++)
             {
                 var request = requests[i];
+                if(SystemAPI.HasComponent<AssignGlobalSingleIDRequest>(request.Unit)) continue;
                 ecb.DestroyEntity(entities[i]);
                 var datas = SystemAPI.GetBuffer<ArmyGroupUnitTypeData>(request.ArmyGroup);
                 var units = SystemAPI.GetBuffer<ArmyGroupUnit>(request.ArmyGroup);
@@ -182,9 +185,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 {
                     case AddToArmyGroupType.AllSelectedExceptAlreadyIn:
                     case AddToArmyGroupType.AllSelectedOverrideAlreadyIn:
-                        foreach (var (generalAttr, unitAttr,statData, unit) in SystemAPI
-                                     .Query<RefRO<SubGameplayGeneralAttr>, RefRO<UnitAttr>,
-                                     RefRO<StatData>>().WithAll<Selected>()
+                        foreach (var (generalAttr, unitAttr, statData, unit) in SystemAPI
+                                     .Query<RefRO<PrefabId>, RefRO<UnitAttr>,
+                                         RefRO<StatData>>().WithAll<Selected>()
                                      .WithEntityAccess())
                         {
                             if (SystemAPI.HasComponent<InArmyGroup>(unit))
@@ -201,9 +204,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                         Unit = unit,
                                         RemoveType = RemoveFromArmyGroupType
                                             .RemoveSpecifiedUnitWithoutRemovingInArmyGroup,
-                                        MoveOutId = generalAttr.ValueRO.PrefabID
+                                        MoveOutId = generalAttr.ValueRO.value
                                     });
                                     inArmyGroup.BelongsTo = request.ArmyGroup;
+                                    inArmyGroup.SingleId =
+                                        SystemAPI.GetComponent<GlobalSingleId>(request.ArmyGroup).value;
                                 }
                                 else
                                 {
@@ -215,37 +220,47 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                                 ecb.AddComponent(unit, new InArmyGroup
                                 {
                                     BelongsTo = request.ArmyGroup,
+                                    SingleId = SystemAPI.GetComponent<GlobalSingleId>(request.ArmyGroup).value
                                 });
                             }
+
                             // Add to buffer
                             units.Add(new ArmyGroupUnit
                             {
                                 Unit = unit,
-                                GlobalId = generalAttr.ValueRO.PrefabID
+                                PrefabId = generalAttr.ValueRO.value,
+                                SingleId = SystemAPI.GetComponent<GlobalSingleId>(unit).value
                             });
                             armyGroupStatData.totalCurrentHp += statData.ValueRO.curValue;
                             armyGroupStatData.totalMaxHp += statData.ValueRO.maxValue;
                             FindAndAddOneTypeDatas(ref datas, generalAttr.ValueRO, unitAttr.ValueRO);
                         }
+
                         SystemAPI.SetComponent(request.ArmyGroup, armyGroupStatData);
 
                         break;
                     case AddToArmyGroupType.OnlySpecifiedUnit:
-                        if(!SystemAPI.HasComponent<SubGameplayGeneralAttr>(request.Unit))continue;
-                        var subGameplayGeneralAttr = SystemAPI.GetComponent<SubGameplayGeneralAttr>(request.Unit);
+                        if (!SystemAPI.HasComponent<PrefabId>(request.Unit)) continue;
+                        var prefabId = SystemAPI.GetComponent<PrefabId>(request.Unit);
                         var uAttr = SystemAPI.GetComponent<UnitAttr>(request.Unit);
                         var uStatData = SystemAPI.GetComponent<StatData>(request.Unit);
-                        
-                        FindAndAddOneTypeDatas(ref datas, subGameplayGeneralAttr, uAttr);
+
+                        FindAndAddOneTypeDatas(ref datas, prefabId, uAttr);
                         units.Add(new ArmyGroupUnit
                         {
                             Unit = request.Unit,
-                            GlobalId = subGameplayGeneralAttr.PrefabID
+                            PrefabId = prefabId.value,
+                            SingleId = SystemAPI.GetComponent<GlobalSingleId>(request.Unit).value
                         });
-                        
+
                         armyGroupStatData.totalCurrentHp += uStatData.curValue;
                         armyGroupStatData.totalMaxHp += uStatData.maxValue;
                         SystemAPI.SetComponent(request.ArmyGroup, armyGroupStatData);
+                        ecb.AddComponent(request.Unit, new InArmyGroup
+                        {
+                            BelongsTo = request.ArmyGroup,
+                            SingleId = SystemAPI.GetComponent<GlobalSingleId>(request.ArmyGroup).value
+                        });
                         break;
                     default:
                         BurstSafe.UnexpectedEnum(request.Type);
@@ -254,7 +269,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             }
         }
 
-        private static void FindAndAddOneTypeDatas(ref DynamicBuffer<ArmyGroupUnitTypeData> datas, SubGameplayGeneralAttr generalAttr,
+        private static void FindAndAddOneTypeDatas(ref DynamicBuffer<ArmyGroupUnitTypeData> datas, PrefabId generalAttr,
             UnitAttr unitAttr)
         {
             int j;
@@ -262,18 +277,19 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             for (j = 0; j < datas.Length; j++)
             {
                 var data = datas[j];
-                if (data.Id == generalAttr.PrefabID)
+                if (data.PrefabId == generalAttr.value)
                 {
                     break;
                 }
             }
+
             // If not exists, add this unit type
             if (j == datas.Length)
             {
                 datas.Add(new ArmyGroupUnitTypeData
                 {
                     UnitType = unitAttr.Type,
-                    Id = generalAttr.PrefabID,
+                    PrefabId = generalAttr.value,
                     Count = 1
                 });
             }

@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.UI.General;
 using TMPro;
@@ -26,7 +28,7 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private float maxCellSize = 80f; // 最大 icon 尺寸（像素）
         [SerializeField] private float initCellSize = 50f;
         [SerializeField] private bool faceCameraOnlyY; // 只绕 Y 轴面对摄像机（可避免俯仰）
-
+        [SerializeField] private bool followCamera = true;
         [Header("References")] [SerializeField]
         private TMP_Text garrisonCountText;
 
@@ -37,6 +39,7 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private GameObject formingPanel;
         [SerializeField] private Image formingArmyGroupImage;
         [SerializeField] private Image filledFormingBorder;
+
 
         public void Hide()
         {
@@ -51,10 +54,14 @@ namespace SparFlame.UI.MainGameplay
         public void SetCity(Entity city)
         {
             _city = city;
-            _cityAttr = _em.GetComponentData<CityAttr>(city);
+            _cityGarrisonAttr = _em.GetComponentData<CityGarrisonAttr>(city);
+            var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(city);
+            using var query = _em.CreateEntityQuery(typeof(PlayerFactionData));
+            var playerFaction = query.GetSingleton<PlayerFactionData>();
+            _isPlayerCity = FactionUtils.GetRelationship(generalAttr.faction, generalAttr.subFaction,
+                playerFaction.faction, playerFaction.subFaction) is Relationship.Self or Relationship.Ally;
         }
 
-        // 添加一个驻军 UI（调用方负责传入唯一 id、Sprite，以及可选的 3D billboard GameObject 用来隐藏）
         public void AddGarrison(Entity armyGroup)
         {
             if (_entityToSlot.ContainsKey(armyGroup)) return;
@@ -64,10 +71,10 @@ namespace SparFlame.UI.MainGameplay
 
             var slot = Instantiate(iconPrefab, contentRect);
             slot.name = "GarrisonIcon_" + armyGroupAttr.gameplayName;
-            var btn = slot.GetComponent<CityGarrisonSlot3D>().button;
-            if (btn)
+            if (_isPlayerCity)
             {
-                btn.onClick.AddListener(() => OnIconClicked(armyGroup));
+                var btn = slot.GetComponent<CityGarrisonSlot3D>().button;
+                btn?.onClick.AddListener(() => OnIconClicked(armyGroup));
             }
 
             var cityGarrisonSlot3D = slot.GetComponent<CityGarrisonSlot3D>();
@@ -75,7 +82,7 @@ namespace SparFlame.UI.MainGameplay
 
 
             _entityToSlot[armyGroup] = slot.GetComponent<CityGarrisonSlot3D>();
-            UpdateLayout();
+            // UpdateLayout();
         }
 
         public void RemoveGarrison(Entity armyGroup)
@@ -84,7 +91,7 @@ namespace SparFlame.UI.MainGameplay
             Destroy(g.gameObject);
             _entityToSlot.Remove(armyGroup);
 
-            UpdateLayout();
+            // UpdateLayout();
         }
 
 
@@ -93,29 +100,46 @@ namespace SparFlame.UI.MainGameplay
         private readonly Dictionary<Entity, CityGarrisonSlot3D> _entityToSlot = new();
         private EntityManager _em;
         private Entity _city;
-        private CityAttr _cityAttr;
+        private CityGarrisonAttr _cityGarrisonAttr;
         private Camera _targetCamera;
         private EntityQuery _worldTimeQuery;
+        private EntityQuery _gameStatusDataQuery;
+        private bool _isPlayerCity;
+        private Canvas _canvas;
+        private EnemyAIMainGameplayDebug _debug;
 
         private void Awake()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            DontDestroyOnLoad(gameObject);
+            _canvas = GetComponent<Canvas>();
+            
         }
 
         private void Start()
         {
             grid.spacing = spacing;
             _worldTimeQuery = _em.CreateEntityQuery(typeof(WorldTimeData));
+            _gameStatusDataQuery = _em.CreateEntityQuery(typeof(GameStatusData));
+
+            using var debugTag = _em.CreateEntityQuery(typeof(DebugTag));
+            using var enemyAIDebug = _em.CreateEntityQuery(typeof(EnemyAIMainGameplayDebug));
+            if (!debugTag.IsEmpty && !enemyAIDebug.IsEmpty)
+                _debug = enemyAIDebug.GetSingleton<EnemyAIMainGameplayDebug>();
         }
 
         private void Update()
         {
+            var gameStatusData = _gameStatusDataQuery.GetSingleton<GameStatusData>();
+            if(gameStatusData.Value != GameStatus.MainGaming )return;
             if (!CityDetailWindow.Instance.IsOpened()
-                || CityDetailWindow.Instance.GetTarget() != _city)
+                || CityDetailWindow.Instance.GetTarget() != _city
+                || !_em.HasBuffer<ArmyGroupConjureStack>(_city))
             {
                 Hide();
                 return;
             }
+
             var notEmptyArmyGroupsCount = 0;
             foreach (var pair in _entityToSlot)
             {
@@ -137,9 +161,9 @@ namespace SparFlame.UI.MainGameplay
                 }
             }
 
-            garrisonCountText.text = $"{notEmptyArmyGroupsCount}/{_cityAttr.maxGarrisonCount}";
+            garrisonCountText.text = $"{notEmptyArmyGroupsCount}/{_cityGarrisonAttr.maxGarrisonCount}";
 
-
+            
             var stack = _em.GetBuffer<ArmyGroupConjureStack>(_city);
             formingPanel.SetActive(!stack.IsEmpty);
             if (!stack.IsEmpty)
@@ -147,43 +171,64 @@ namespace SparFlame.UI.MainGameplay
                 var armyGroup = stack[stack.Length - 1];
                 var worldTime = _worldTimeQuery.GetSingleton<WorldTimeData>();
                 var aiData = _em.GetComponentData<CityAIData>(_city);
+                var needHours = _debug.enabled
+                    ? armyGroup.NeedHours * _debug.armyGroupConjureTimeScale
+                    : armyGroup.NeedHours;
 
                 var leftHours = math.max(0f,
-                    armyGroup.NeedHours - (worldTime.totalHours - aiData.StartConjuringTotalHours));
-                var armyGroupAttr = _em.GetComponentData<ArmyGroupAttr>(armyGroup.ArmyGroupPrefab);
+                    needHours - (worldTime.totalHours - aiData.StartConjuringTotalHours));
+                var iconType = DatabaseManager.ArmyGroupDatabaseSo.GetItemById(armyGroup.PrefabId).iconType;
                 leftFormingTime.text = $"{UIMathMethods.FormatTimeFromHours(leftHours)}";
                 formingArmyGroupImage.sprite =
-                    ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
-                filledFormingBorder.fillAmount = armyGroup.NeedHours != 0 ? 1f - leftHours / armyGroup.NeedHours : 0;
+                    ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[iconType];
+                filledFormingBorder.fillAmount = needHours != 0 ? 1f - leftHours / armyGroup.NeedHours : 0;
             }
         }
 
+        
+        
         private void LateUpdate()
         {
             _targetCamera = Camera.main;
-            if (!panel || !_targetCamera) return;
-
+            if (!followCamera || !panel || !_targetCamera ) return;
+            _canvas.worldCamera = _targetCamera;
             // 使 Canvas 面向摄像机
             if (faceCameraOnlyY)
             {
                 var dir = _targetCamera.transform.position - panel.transform.position;
                 dir.y = 0; // 保持竖直朝向
                 if (dir.sqrMagnitude > 0.0001f)
-                    panel.transform.rotation = Quaternion.LookRotation(dir.normalized);
+                    panel.transform.rotation = Quaternion.LookRotation(-dir.normalized);
             }
             else
             {
+                var dir = _targetCamera.transform.position - panel.transform.position;
                 // 完全面向摄像机（包括俯仰）
                 panel.transform.rotation =
-                    Quaternion.LookRotation(_targetCamera.transform.position - panel.transform.position);
+                    Quaternion.LookRotation(-dir);
             }
         }
 
 
-        // Icon 点击事件（在这里触发选择/出城等逻辑）
+        private void OnDestroy()
+        {
+            if(_worldTimeQuery != default)
+                _worldTimeQuery.Dispose();
+            if(_gameStatusDataQuery != default)
+                _gameStatusDataQuery.Dispose();
+        }
+
         private void OnIconClicked(Entity armyGroup)
         {
-            Debug.Log($"Garrison icon clicked: {armyGroup} ");
+            var request = _em.CreateEntity();
+            _em.AddComponent<ArmyGroupGarrisonRequest>(request);
+            _em.SetComponentData(request, new ArmyGroupGarrisonRequest
+            {
+                City = _city,
+                ArmyGroup = armyGroup,
+                IfGarrisonIn = false,
+            });
+            _em.AddComponent<MainGameplayEntityTag>(request);
         }
 
         // 核心：根据当前 icon 数量计算列数与 cellSize，然后强制刷新布局

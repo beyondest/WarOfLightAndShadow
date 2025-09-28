@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.BasicControl;
 using Unity.Entities;
@@ -50,7 +51,13 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
 
         }
-        
-    
+
+        private void OnDestroy()
+        {
+            if(_crystalQuery != default)
+                _crystalQuery.Dispose();
+            if(_subGameStatusQuery != default)
+                _subGameStatusQuery.Dispose();
+        }
     }
 }

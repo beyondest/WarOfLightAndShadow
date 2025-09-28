@@ -111,7 +111,8 @@ namespace SparFlame.UI.General
 
             var playerSideSubFactionTypes = new List<SubFactionTag>();
             var enemySideSubFactionTypes = new List<SubFactionTag>();
-            var playerFactionData = em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
+            using var query = em.CreateEntityQuery(typeof(PlayerFactionData));
+            var playerFactionData = query.GetSingleton<PlayerFactionData>();
             var playerSideGeneralFaction = playerFactionData.faction;
             var enemySideGeneralFaction = ~playerSideGeneralFaction; 
 
@@ -177,12 +178,12 @@ namespace SparFlame.UI.General
             buttonPanelForPlayerSiege.SetActive(targetSubGameStatus == SubGameStatus.PlayerSiege);
 
 
-            var cityAttr = targetSubGameStatus == SubGameStatus.Encounter
-                ? new CityAttr()
-                : em.GetComponentData<CityAttr>(city);
+            var prefabId = targetSubGameStatus == SubGameStatus.Encounter
+                ? new PrefabId()
+                : em.GetComponentData<PrefabId>(city);
             var cityDataItem = targetSubGameStatus == SubGameStatus.Encounter
                 ? new CityDataItem()
-                : DatabaseManager.CityDatabaseSo.GetItemById(cityAttr.globalId);
+                : DatabaseManager.CityDatabaseSo.GetItemById(prefabId.value);
             var cityGeneralAttr = em.GetComponentData<MainGameplayGeneralAttr>(city);
             centerCityImage.color = cityGeneralAttr.faction == FactionTag.Light ? Color.white : Color.black;
 
@@ -371,6 +372,7 @@ namespace SparFlame.UI.General
         public void Show()
         {
             panel.SetActive(true);
+            GeneralModalWindowController.Instance.Show();
         }
 
         public void Hide()
@@ -380,6 +382,7 @@ namespace SparFlame.UI.General
                 blinker.StopBlink();
             }
             panel.SetActive(false);
+            GeneralModalWindowController.Instance.Hide();
         }
 
         #region ButtonMethods

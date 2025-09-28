@@ -6,6 +6,7 @@ using SparFlame.Components.General;
 using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using SparFlame.Database;
+using SparFlame.Systems.General.BasicControl.GlobalMonos;
 using Unity.Entities;
 using UnityEngine;
 
@@ -96,7 +97,7 @@ namespace SparFlame.Systems.General.BasicControl
                 entities.Add(type, new List<Entity>());
             }
 
-            var query = _em.CreateEntityQuery(typeof(TEntityPrefabData));
+            using var query = _em.CreateEntityQuery(typeof(TEntityPrefabData));
             var buffer = query.GetSingletonBuffer<TEntityPrefabData>();
             // var bufferEntity = query.GetSingletonEntity();
             foreach (var buildingSlot in buffer)
@@ -124,14 +125,14 @@ namespace SparFlame.Systems.General.BasicControl
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             while (true)
             {
-                var query = _em.CreateEntityQuery(typeof(TEntityPrefabData));
+                using var query = _em.CreateEntityQuery(typeof(TEntityPrefabData));
                 if (!query.IsEmptyIgnoreFilter)
                     break;
-                _elapsedTime += UnityEngine.Time.deltaTime;
+                _elapsedTime += Time.deltaTime;
                 if (_elapsedTime >= loadResourceTimeOutSeconds)
                     throw new ArgumentException(
                         $"Resource manager : {nameof(TData)} wait for entity query time out of {loadResourceTimeOutSeconds} seconds.)");
-                yield return null;
+                yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);
             }
 
             var databaseSo = DatabaseManager.GetDatabaseSo<TData>();

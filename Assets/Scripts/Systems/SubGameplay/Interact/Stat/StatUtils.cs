@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
@@ -86,7 +85,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
         public static void GenerateResourceTaskRemoveRequest(
             int index, 
-            int uniqueId,
+            long uniqueId,
             Entity city,
             ResourceRequestType requestType,
             EntityCommandBuffer.ParallelWriter ecb
@@ -97,13 +96,13 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 AbsAmount = 0,
                 RequestType = requestType,
-                FromBuildingUniqueId = uniqueId,
+                FromBuildingSingleId = uniqueId,
                 City = city,
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, request);
         }
         public static void GenerateGarrisonUnitDieRequest(Entity interacteeEntity, int index,
-            in SubGameplayGeneralAttr interacteeAttr,
+            int prefabId,
             ref ComponentLookup<InGarrison> inGarrisonLookup, EntityCommandBuffer.ParallelWriter ecb)
         {
             if (!inGarrisonLookup.TryGetComponent(interacteeEntity, out var inGarrison)) return;
@@ -112,7 +111,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 BuildingEntity = inGarrison.BuildingEntity,
                 UnitEntity = interacteeEntity,
-                Id = interacteeAttr.PrefabID
+                Id = prefabId
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, garrisonUnitDieRequest);
         }

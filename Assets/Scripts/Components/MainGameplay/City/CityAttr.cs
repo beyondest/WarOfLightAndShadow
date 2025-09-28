@@ -1,16 +1,21 @@
 ﻿using System;
 using SparFlame.Components.General;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.Components.MainGameplay
 {
     [Serializable]
     public struct CityAttr : IComponentData
     {
-        public int globalId;
+      
+    }
+
+    [Serializable]
+    public struct CityGarrisonAttr : IComponentData
+    {
         public int maxGarrisonCount;
-        public int lightModelIndex;
-        public int darkModelIndex;
+        public float3 garrisonOutBias;
     }
 
     public struct CityData : IComponentData
@@ -23,11 +28,17 @@ namespace SparFlame.Components.MainGameplay
         
     }
 
+    public struct CityLightModelRoot : IComponentData
+    {
+        
+    }
+    public struct CityDarkModelRoot : IComponentData{}
     
     //-----------------Army Group--------------------------//
-    public struct CityGarrisonEntity : IBufferElementData
+    public struct CityGarrisonEntity : IBufferElementData, ICityArmyGroupElement
     {
-        public Entity ArmyGroup;
+        public Entity ArmyGroup { get; set; }
+        public long SingleId { get; set; }
     }
 
     // [Serializable]
@@ -40,7 +51,7 @@ namespace SparFlame.Components.MainGameplay
     public struct CityEntityPrefabData : IBufferElementData
     {
         public Entity Prefab;
-        public int GlobalIdx;
+        public int PrefabId;
     }
 
     //----------------------- Resource -------------------------//
@@ -57,9 +68,9 @@ namespace SparFlame.Components.MainGameplay
         public ResourceType resourceType;
         public int storageAddAmount;
         public float finishTotalHours;
-        public int fromBuildingUniqueId;
+        public long fromBuildingSingleId;
         public float hoursPerUnit;
-        public int remainingConjuredUnitCount;
+        
         public CityTaskType taskType;
     }
     

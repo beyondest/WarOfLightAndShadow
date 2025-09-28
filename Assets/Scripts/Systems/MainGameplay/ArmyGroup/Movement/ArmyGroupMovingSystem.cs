@@ -69,7 +69,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 ref DynamicBuffer<ArmyGroupFinalWayPoint> finalWaypoints,
                 in MainGameplayGeneralAttr generalData, ref DynamicBuffer<ArmyGroupMovingTarget> targets,
                 ref ArmyGroupCalculatePathData pathData, ref NavAgentComponent navAgentComponent,
-                ref PathVisualizeData visualizeData,
+                ref ArmyGroupPathVisualizeData visualizeData,
                 in ArmyGroupStateData stateData,
                 Entity selfEntity)
             {

@@ -12,15 +12,12 @@ using UnityEngine;
 
 namespace SparFlame.Database
 {
-    // TODO Change all databases to this variant
-    public class BaseDatabase<TItem> : ScriptableObject
+    public interface IIDBasedDatabase<out TDataItem>
     {
-        [TableList]
-        public List<TItem> items;
-        public int idStart;
+        TDataItem GetItemById(int id);
     }
-    
-    
+
+
     public class GeneralDataItemAuthoring : MonoBehaviour
     {
         [SerializeField] public int globalIdx;
@@ -30,6 +27,7 @@ namespace SparFlame.Database
             protected void BakeGeneralDataItem(Entity entity, GeneralDataItem item)
             {
                 // General
+                AddComponent(entity, new PrefabId { value = item.id });
                 AddComponent<GlobalSingleId>(entity);
                 AddComponent<AssignGlobalSingleIDRequest>(entity);
                 AddComponent(entity, new SubGameplayGeneralAttr
@@ -37,12 +35,25 @@ namespace SparFlame.Database
                     BaseTag = item.baseTag,
                     Faction = item.factionTag,
                     SubFaction = SubFactionTag.None,
-                    PrefabID = item.id,
                 });
+                var box = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize;
+
                 AddComponent(entity, new BoxColliderSize
                 {
-                    Value = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
+                    Box = box,
+                    Radius = math.length(box.xz) / 2f
                 });
+                if (item.baseTag == BaseTag.Units)
+                {
+                    AddComponent(entity, new FakeCollisionTriggerRequest
+                    {
+                        TriggerPrefab = !item.fakeCollisionTriggerPrefab
+                            ? Entity.Null
+                            : GetEntity(item.fakeCollisionTriggerPrefab, TransformUsageFlags.Dynamic),
+                    });
+                    AddBuffer<FakeColliderTarget>(entity);
+                }
+               
 
                 // Stat 
                 AddComponent(entity, new StatData
@@ -122,7 +133,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.attackAmount,
                         Speed = item.attackSpeed,
-                        Range = item.attackRange ,
+                        Range = item.attackRange,
                         Targets = item.attackTargets,
                         InteractType = InteractType.Attack
                     });
@@ -136,7 +147,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.healAmount,
                         Speed = item.healSpeed,
-                        Range = item.healRange ,
+                        Range = item.healRange,
                         Targets = item.healTargets,
                         InteractType = InteractType.Heal
                     });
@@ -150,7 +161,7 @@ namespace SparFlame.Database
                     {
                         Amount = item.harvestAmount,
                         Speed = item.harvestSpeed,
-                        Range = item.harvestRange ,
+                        Range = item.harvestRange,
                         Targets = item.harvestTargets,
                         InteractType = InteractType.Harvest
                     });

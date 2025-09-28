@@ -220,9 +220,9 @@ namespace SparFlame.UI.SubGameplay
             EcsGetExpStaticConfig?.Invoke(_targetEntity);
             var list = CalculateUpgradeCostList();
             var oriInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
-                Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity).PrefabID);
+                Em.GetComponentData<PrefabId>(_targetEntity).value);
             var upGradeInfo = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(_buildingAttr.Type,
-                Em.GetComponentData<SubGameplayGeneralAttr>(ExpStaticConfig.NextTierPrefab).PrefabID);
+                Em.GetComponentData<PrefabId>(ExpStaticConfig.NextTierPrefab).value);
             BuildingUpgradePopUpWindow.Instance.PopUp(list, oriInfo, upGradeInfo, _targetEntity);
         }
 
@@ -244,6 +244,7 @@ namespace SparFlame.UI.SubGameplay
         protected EntityManager Em;
         private EntityQuery _gamingTag;
         private EntityQuery _playerFactionQuery;
+        private EntityQuery _worldTimeQuery;
 
         #region EventFunction
 
@@ -262,6 +263,7 @@ namespace SparFlame.UI.SubGameplay
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _gamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
             _playerFactionQuery = Em.CreateEntityQuery(typeof(PlayerFactionData));
+            _worldTimeQuery = Em.CreateEntityQuery(typeof(WorldTimeData));
         }
 
         protected virtual void Update()
@@ -279,15 +281,25 @@ namespace SparFlame.UI.SubGameplay
             UpdateDynamicData();
         }
 
+        private void OnDestroy()
+        {
+            if (_gamingTag != default)
+                _gamingTag.Dispose();
+            if (_playerFactionQuery != default)
+                _playerFactionQuery.Dispose();
+            if (_worldTimeQuery != default)
+                _worldTimeQuery.Dispose();
+        }
+
         #endregion
 
 
         private void UpdateStaticData()
         {
-            var currentTotalHours =
-                Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
+            var currentTotalHours = _worldTimeQuery.GetSingleton<WorldTimeData>().totalHours;
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
-            var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(generalAttr.PrefabID);
+            var prefabId = Em.GetComponentData<PrefabId>(_targetEntity);
+            var dataItem = DatabaseManager.BuildingDatabaseSo.GetItemById(prefabId.value);
             // Visualize faction info
             if (generalAttr.Faction == FactionTag.Neutral)
             {
@@ -317,7 +329,7 @@ namespace SparFlame.UI.SubGameplay
             generalTypeIcon.sprite =
                 BuildingWindowResourceManager.Instance.BuildingGeneralTypeSprites[_buildingAttr.Type];
             idSingleIcon.sprite = BuildingWindowResourceManager.Instance
-                .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, generalAttr.PrefabID).Sprite;
+                .GetInfoByGeneralTypeAndIdx(_buildingAttr.Type, prefabId.value).Sprite;
 
 
             interactAbilityPanel.SetActive(false);
@@ -355,13 +367,14 @@ namespace SparFlame.UI.SubGameplay
             var relationship = FactionUtils.GetRelationship(_playerFactionData.faction,
                 _playerFactionData.subFaction, generalAttr.Faction,
                 generalAttr.SubFaction);
-            
+
             // Retreat portal should not show any panels
             if (_buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.RetreatPortal })
             {
                 constructPanel.SetActive(false);
                 return;
             }
+
             if (Em.HasComponent<GarrisonAttr>(_targetEntity))
             {
                 var garrisonAttr = Em.GetComponentData<GarrisonAttr>(_targetEntity);
@@ -376,11 +389,11 @@ namespace SparFlame.UI.SubGameplay
                 if (prefab != Entity.Null)
                 {
                     upgradePanel.SetActive(true);
-                    var nextTierGeneralAttr = Em.GetComponentData<SubGameplayGeneralAttr>(prefab);
+                    var prefabId = Em.GetComponentData<PrefabId>(prefab);
                     var buildingAttr = Em.GetComponentData<BuildingAttr>(prefab);
                     nextTierImage.sprite = BuildingWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(
                         buildingAttr.Type,
-                        nextTierGeneralAttr.PrefabID).Sprite;
+                        prefabId.value).Sprite;
                 }
             }
 
@@ -445,7 +458,8 @@ namespace SparFlame.UI.SubGameplay
             }
 
             // Check should open these control windows for player
-            if (relationship == Relationship.Self)
+            if (relationship is Relationship.Self or Relationship.Ally &&
+                !Em.HasComponent<ConstructingTimer>(_targetEntity))
             {
                 constructPanel.SetActive(true);
                 if (isMainInfoSingleton)
@@ -486,8 +500,8 @@ namespace SparFlame.UI.SubGameplay
 
         private void UpdateDynamicData()
         {
-            var currentTotalHours =
-                Em.CreateEntityQuery(typeof(WorldTimeData)).GetSingleton<WorldTimeData>().totalHours;
+            var currentTotalHours = _worldTimeQuery
+                .GetSingleton<WorldTimeData>().totalHours;
             _buildingAttr = Em.GetComponentData<BuildingAttr>(_targetEntity);
             // Visualize function panel and doingThings panel
             var underAttack = Em.HasComponent<OocTag>(_targetEntity) && Em.IsComponentEnabled<OocTag>(_targetEntity);
@@ -622,7 +636,9 @@ namespace SparFlame.UI.SubGameplay
                 if (expDynamicData.curTier != ExpStaticConfig.MaxTier)
                 {
                     var curCost = Em.GetBuffer<CostList>(_targetEntity);
-                    var tarCost =Em.HasBuffer<CostList>(ExpStaticConfig.NextTierPrefab) ? Em.GetBuffer<CostList>(ExpStaticConfig.NextTierPrefab) : curCost;
+                    var tarCost = Em.HasBuffer<CostList>(ExpStaticConfig.NextTierPrefab)
+                        ? Em.GetBuffer<CostList>(ExpStaticConfig.NextTierPrefab)
+                        : curCost;
                     foreach (var costList in tarCost)
                     {
                         var e = costList;

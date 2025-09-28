@@ -8,10 +8,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
-    public struct ArmyGroupSightRequest : IComponentData
-    {
-        public Entity Prefab;
-    }
+ 
 
     public struct ArmyGroupSightData : IComponentData
     {

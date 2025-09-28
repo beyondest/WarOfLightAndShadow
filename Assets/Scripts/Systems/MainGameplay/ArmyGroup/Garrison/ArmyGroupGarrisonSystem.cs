@@ -16,7 +16,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     public partial struct ArmyGroupGarrisonSystem : ISystem
     {
         private EntityQuery _requestQuery;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -31,8 +30,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             DealGarrisonRequest(ref state, ecb);
-
-
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
@@ -47,6 +44,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             {
                 var entity = entities[k];
                 var request = requests[k];
+                if(SystemAPI.HasComponent<AssignGlobalSingleIDRequest>(request.ArmyGroup))continue;
                 ecb.DestroyEntity(entity);
 
                 var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(request.City);
@@ -67,12 +65,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     // Add to buffer
                     garrisonEntities.Add(new CityGarrisonEntity
                     {
-                        ArmyGroup = request.ArmyGroup
+                        ArmyGroup = request.ArmyGroup,
+                        SingleId = SystemAPI.GetComponent<GlobalSingleId>(request.ArmyGroup).value
                     });
 
                     ecb.AddComponent(request.ArmyGroup, new ArmyGroupInGarrison
                     {
                         City = request.City,
+                        SingleId = SystemAPI.GetComponent<GlobalSingleId>(request.City).value
                     });
                     var selfTransform = SystemAPI.GetComponent<LocalTransform>(request.ArmyGroup);
                     var cityTransform = SystemAPI.GetComponent<LocalTransform>(request.City);
@@ -121,6 +121,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                             // Show the get out army group entity
                             var transform = SystemAPI.GetComponent<LocalTransform>(garrisonEntity.ArmyGroup);
                             transform.Position -= config.hidePositionBias;
+                            transform.Position +=
+                                SystemAPI.GetComponent<CityGarrisonAttr>(request.City).garrisonOutBias;
                             ecb.SetComponent(garrisonEntity.ArmyGroup, transform);
                         }
                         break;

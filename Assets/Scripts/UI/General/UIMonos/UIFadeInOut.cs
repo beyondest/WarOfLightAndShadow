@@ -13,6 +13,8 @@ namespace SparFlame.UI.General
         public bool fadeAllChildren;
         public bool fadeSelf = true;
         public bool ifStartShow;
+        public float fadeInTargetAlpha = 1f;
+        public float fadeOutTargetAlpha;
         private CanvasGroup _canvasGroup;
         private Coroutine _currentFade;
 
@@ -27,7 +29,7 @@ namespace SparFlame.UI.General
             if (useCanvasGroup)
             {
                 _canvasGroup = GetComponent<CanvasGroup>();
-                if (_canvasGroup == null)
+                if (!_canvasGroup)
                     _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
             else
@@ -35,11 +37,11 @@ namespace SparFlame.UI.General
                 if (fadeSelf)
                 {
                     var img = GetComponent<Image>();
-                    if (img != null)
+                    if (img)
                         _images.Add(img);
 
                     var tmp = GetComponent<TextMeshProUGUI>();
-                    if (tmp != null)
+                    if (tmp)
                         _texts.Add(tmp);
                 }
 
@@ -80,13 +82,34 @@ namespace SparFlame.UI.General
         public void FadeIn()
         {
             if (_currentFade != null) StopCoroutine(_currentFade);
-            _currentFade = StartCoroutine(Fade(1f));
+            _currentFade = StartCoroutine(Fade(fadeInTargetAlpha));
         }
 
         public void FadeOut()
         {
             if (_currentFade != null) StopCoroutine(_currentFade);
-            _currentFade = StartCoroutine(Fade(0f));
+            _currentFade = StartCoroutine(Fade(fadeOutTargetAlpha));
+        }
+
+        public void FadeInThenFadeOut(float stayDelay )
+        {
+            if (_currentFade != null) StopCoroutine(_currentFade);
+            _currentFade = StartCoroutine(FadeInThenOutCoroutine( stayDelay));
+        }
+
+        private IEnumerator FadeInThenOutCoroutine( float fadeOutDelay)
+        {
+            // 先淡入
+            yield return Fade(1f);
+
+            // 可选：淡入后停留一小段时间
+            if (fadeOutDelay > 0f)
+                yield return new WaitForSecondsRealtime(fadeOutDelay);
+
+            // 再淡出
+            yield return Fade(0f);
+
+            _currentFade = null;
         }
 
         private IEnumerator Fade(float targetAlpha)
@@ -129,18 +152,18 @@ namespace SparFlame.UI.General
             }
             else
             {
-                for (int i = 0; i < _images.Count; i++)
+                foreach (var t in _images)
                 {
-                    var color = _images[i].color;
+                    var color = t.color;
                     color.a = targetAlpha;
-                    _images[i].color = color;
+                    t.color = color;
                 }
 
-                for (int i = 0; i < _texts.Count; i++)
+                foreach (var t in _texts)
                 {
-                    var color = _texts[i].color;
+                    var color = t.color;
                     color.a = targetAlpha;
-                    _texts[i].color = color;
+                    t.color = color;
                 }
             }
 

@@ -23,7 +23,7 @@ namespace SparFlame.Database
                         Prefab = GetEntity(resourceData.prefab, TransformUsageFlags.Dynamic),
                         Probability = resourceData.prob,
                         AmountRange = resourceData.amountRange,
-                        GlobalIdx = resourceData.id
+                        PrefabId = resourceData.id
                     });
                 }
             }

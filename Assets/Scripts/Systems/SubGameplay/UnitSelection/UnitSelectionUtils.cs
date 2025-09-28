@@ -11,7 +11,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
         /// If drag select, use query to make it faster
         /// </summary>
         /// <param name="entityManager"></param>
-        /// <param name="data"></param>
+        /// <param name="playerFactionData"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
         public static bool IsSelectable(EntityManager entityManager,
@@ -24,7 +24,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
             var attr = entityManager.GetComponentData<SubGameplayGeneralAttr>(entity);
             var relationship = FactionUtils.GetRelationship(playerFactionData.faction,
                 playerFactionData.subFaction, attr.Faction, attr.SubFaction);
-            if (relationship != Relationship.Self) return false;
+            if (relationship != Relationship.Self && relationship != Relationship.Ally) return false;
             if (entityManager.HasComponent<InGarrison>(entity)) return false;
             return true;
         }

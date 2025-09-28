@@ -26,8 +26,5 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     }
 
  
-    public struct LockArmyGroupSelectedWorkForDrag : IComponentData,IEnableableComponent
-    {
-        
-    }
+    
 }

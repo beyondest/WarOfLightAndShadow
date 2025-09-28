@@ -96,12 +96,14 @@ namespace SparFlame.UI.SubGameplay
         public void LoadResources()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if(_gamingTag != default)_gamingTag.Dispose();
             _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             detailInfoPartWindow.LoadResources();
         }
         public void UnloadResources()
         {
             detailInfoPartWindow.UnloadResources();
+            if(_gamingTag != default)_gamingTag.Dispose();
         }
     }
 }

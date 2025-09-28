@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
@@ -32,7 +33,7 @@ namespace SparFlame.Systems.Map
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
             foreach (var (attr, entity) in SystemAPI.Query<RefRO<SubGameplayGeneralAttr>>().WithEntityAccess()
-                         .WithNone<MiniMapInitCompleteTag>())
+                         .WithNone<MiniMapInitCompleteTag>().WithAll<SubGameplayEntityTag>())
             {
                 var buffer = SystemAPI.GetBuffer<LinkedEntityGroup>(entity);
                 ecb.AddComponent<MiniMapInitCompleteTag>(entity);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
@@ -11,15 +12,36 @@ using Unity.Scenes;
 
 namespace SparFlame.Systems.General.BasicControl
 {
+    public enum SceneGroupType
+    {
+        Init,
+        MainWorld,
+        SubWorld,
+        CityEnv,
+        BattleField,
+        CityInvadeFight,
+        CitySupportFight,
+        CurrentLoadingSubGameplaySceneGroup,
+    }
+
     public class SceneController : MonoBehaviour, IResourceManager
     {
         [SerializeField] private SceneGroup lightInitSceneGroup;
         [SerializeField] private SceneGroup darkInitSceneGroup;
         [SerializeField] private SceneGroup mainWorldSceneGroup;
         [SerializeField] private SceneGroup subWorldSceneGroup;
+        [SerializeField] private float checkInterval = 0.1f;
 
-        
-       
+        public class Operation : ResourceOperation
+        {
+            public override float Progress => _sceneController.InitProgress;
+
+            public Operation(IEnumerator routine) : base(routine)
+            {
+                _sceneController = Instance;
+            }
+            private readonly SceneController _sceneController;
+        }
 
         // Interface
         public static SceneController Instance;
@@ -28,7 +50,49 @@ namespace SparFlame.Systems.General.BasicControl
         public bool IsInitialized => _normalSceneLoaded && _subsceneLoaded;
         public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) / 2f;
 
-        public void SetSubsceneLoadingProgress(float progress)
+        public Operation LoadSceneGroupAsync(List<SceneGroupType> sceneGroupTypes, int cityId ,
+            bool ifEnterSubGameplay , EcoType ecoType = EcoType.Unknown) =>
+            new(SelfLoadSceneGroupAsync(sceneGroupTypes, cityId, ifEnterSubGameplay, ecoType));
+
+        public Operation UnloadSceneGroupAsync(List<SceneGroupType> sceneGroupTypes) =>
+            new(SelfUnloadSceneGroup(sceneGroupTypes));
+        
+
+        // After select faction
+        public void LoadResources()
+        {
+            var sceneGroupTypes = new List<SceneGroupType>();
+
+            if (_ifNewSaving)
+            {
+                sceneGroupTypes.Add(SceneGroupType.Init);
+                sceneGroupTypes.Add(SceneGroupType.MainWorld);
+            }
+            else
+            {
+                if (_cityPrefabId == 0) sceneGroupTypes.Add(SceneGroupType.MainWorld);
+                else
+                {
+                    sceneGroupTypes.Add(SceneGroupType.SubWorld);
+                    sceneGroupTypes.Add(SceneGroupType.CityEnv);
+                }
+            }
+
+            StartLoadSceneGroup(sceneGroupTypes, _cityPrefabId,_cityPrefabId != 0);
+        }
+
+        // Return to main menu
+        public void UnloadResources()
+        {
+            // Other scene groups will be unloaded manually by game controller
+            var sceneGroupTypes = new List<SceneGroupType>
+            {
+                SceneGroupType.Init
+            };
+            StartCoroutine(SelfUnloadSceneGroup(sceneGroupTypes));
+        }
+
+        internal void SetSubsceneLoadingProgress(float progress)
         {
             _subsceneLoadProgress = progress;
             if (progress > 0.99f)
@@ -37,29 +101,24 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        // After select faction
-        public void LoadResources()
+
+        private IEnumerator SelfLoadSceneGroupAsync(List<SceneGroupType> sceneGroupTypes, int cityId,
+            bool ifEnterSubGameplay , EcoType ecoType = EcoType.Unknown)
         {
-            var sceneGroupTypes = new List<SceneGroupType>
-            {
-                SceneGroupType.MainWorld
-            };
-            if(_ifNewSaving) sceneGroupTypes.Add(SceneGroupType.Init);
-            LoadSceneGroup(sceneGroupTypes);
+            StartLoadSceneGroup(sceneGroupTypes, cityId, ifEnterSubGameplay, ecoType);
+            yield return CheckSceneLoading();
         }
 
-        // Return to main menu
-        public void UnloadResources()
-        {
-            var sceneGroupTypes = new List<SceneGroupType>
-            {
-                SceneGroupType.Init
-            };
-            UnloadSceneGroup(sceneGroupTypes);
-        }
-        
-        public void LoadSceneGroup(List<SceneGroupType> sceneGroupTypes, int cityId = -1,
-            bool ifEnterSubGameplay = false, EcoType ecoType = EcoType.Unknown)
+        /// <summary>
+        /// Ecs subscene will not be full loaded when this method return
+        /// </summary>
+        /// <param name="sceneGroupTypes"></param>
+        /// <param name="cityId"></param>
+        /// <param name="ifEnterSubGameplay"></param>
+        /// <param name="ecoType"></param>
+        /// <returns></returns>
+        private void StartLoadSceneGroup(List<SceneGroupType> sceneGroupTypes, int cityId ,
+            bool ifEnterSubGameplay , EcoType ecoType = EcoType.Unknown)
         {
             // Reset Loading Progress
             _subsceneLoaded = false;
@@ -67,11 +126,11 @@ namespace SparFlame.Systems.General.BasicControl
             _normalSceneLoadProgress = 0f;
             _subsceneLoadProgress = 0f;
 
-            var sceneGroup = GetSceneGroup(sceneGroupTypes, ecoType,cityId);
+            var sceneGroup = GetSceneGroup(sceneGroupTypes, ecoType, cityId);
             // Only record subGameplay scene group
-            if(ifEnterSubGameplay)
+            if (ifEnterSubGameplay)
                 _currentLoadingSubGameplaySceneGroup = sceneGroup;
-            
+
             StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading,
                 onSceneGroupLoaded: _onNormalSceneLoaded));
             EcsStartLoadScene?.Invoke();
@@ -83,9 +142,20 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        public void UnloadSceneGroup(List<SceneGroupType> sceneGroupTypes)
+        private IEnumerator SelfUnloadSceneGroup(List<SceneGroupType> sceneGroupTypes)
         {
-            var sceneGroup = GetSceneGroup(sceneGroupTypes,EcoType.Unknown);
+            var sceneGroup = GetSceneGroup(sceneGroupTypes, EcoType.Unknown);
+            yield return _normalSceneLoader.UnloadSceneGroupAsync(sceneGroup);
+            foreach (var subsceneData in sceneGroup.subscenes)
+            {
+                SceneSystem.UnloadScene(World.DefaultGameObjectInjectionWorld.Unmanaged,
+                    subsceneData.sceneRef.SceneGUID);
+            }
+        }
+        [Obsolete]
+        public void UnloadSceneGroupOld(List<SceneGroupType> sceneGroupTypes)
+        {
+            var sceneGroup = GetSceneGroup(sceneGroupTypes, EcoType.Unknown);
             StartCoroutine(_normalSceneLoader.UnloadSceneGroupAsync(sceneGroup));
             foreach (var subsceneData in sceneGroup.subscenes)
             {
@@ -94,6 +164,12 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
+        public void SetSceneLoadInitData(FactionTag faction, bool ifNewGame, int cityPrefabId)
+        {
+            _playerFaction = faction;
+            _ifNewSaving = ifNewGame;
+            _cityPrefabId = cityPrefabId;
+        }
 
         // Cache
         private bool _normalSceneLoaded;
@@ -109,6 +185,7 @@ namespace SparFlame.Systems.General.BasicControl
         private Action<SceneGroup> _onNormalSceneLoaded;
         private FactionTag _playerFaction;
         private bool _ifNewSaving;
+        private int _cityPrefabId;
 
         private void Awake()
         {
@@ -116,7 +193,7 @@ namespace SparFlame.Systems.General.BasicControl
                 Instance = this;
             else
                 Destroy(this);
-            _loading.ProgressChanged += (f => _normalSceneLoadProgress = f);
+            _loading.OnProgressChanged += (f => _normalSceneLoadProgress = f);
             _onNormalSceneLoaded += _ =>
             {
                 _normalSceneLoaded = true;
@@ -127,27 +204,28 @@ namespace SparFlame.Systems.General.BasicControl
         private void Start()
         {
             GeneralResourceManager.Instance.Register(this);
-            GameController.Instance.OnClickSlotAndStartGame += (factionTag, ifNewSaving, _) =>
-            {
-                _playerFaction = factionTag;
-                _ifNewSaving = ifNewSaving;
-            };
         }
 
+        private IEnumerator CheckSceneLoading()
+        {
+            while (!IsInitialized)
+            {
+                yield return new WaitForSecondsRealtime(checkInterval);
+            }
+        }
 
-      
-
-
-        private SceneGroup GetSceneGroup(List<SceneGroupType> sceneGroupTypes, EcoType ecoType,int cityId = -1)
+        private SceneGroup GetSceneGroup(List<SceneGroupType> sceneGroupTypes, EcoType ecoType, int cityId = 0)
         {
             var sceneGroup = new SceneGroup();
-            var cityItem = cityId < 0 ? new CityDataItem() : DatabaseUtils.GetCityDataItemById(cityId);
+            var cityItem = cityId <= 0 ? new CityDataItem() : DatabaseUtils.GetCityDataItemById(cityId);
             foreach (var sceneGroupType in sceneGroupTypes)
             {
                 switch (sceneGroupType)
                 {
                     case SceneGroupType.Init:
-                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Light ? lightInitSceneGroup : darkInitSceneGroup);
+                        sceneGroup.AddSceneGroup(_playerFaction == FactionTag.Light
+                            ? lightInitSceneGroup
+                            : darkInitSceneGroup);
                         break;
                     case SceneGroupType.MainWorld:
                         sceneGroup.AddSceneGroup(mainWorldSceneGroup);
@@ -183,20 +261,5 @@ namespace SparFlame.Systems.General.BasicControl
 
             return sceneGroup;
         }
-
-
-      
-    }
-    
-    public enum SceneGroupType
-    {
-        Init,
-        MainWorld,
-        SubWorld,
-        CityEnv,
-        BattleField,
-        CityInvadeFight,
-        CitySupportFight,
-        CurrentLoadingSubGameplaySceneGroup,
     }
 }

@@ -2,9 +2,9 @@
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
-using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
+using Unity.Transforms;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
@@ -21,7 +21,6 @@ namespace SparFlame.Systems.General.BasicControl
         private bool _initialized;
         private bool _isPaused;
         private bool _enterSystemInitState;
-        private bool _ifNewSlot;
         private GameBasicConfig _gameBasicConfig;
 
         private CustomInputActions _customInputActions;
@@ -51,10 +50,7 @@ namespace SparFlame.Systems.General.BasicControl
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
             });
-            EntityManager.CreateSingleton(new PlayerSaveSlot());
-
-            EntityManager.CreateSingleton(new LastUniqueId());
-            EntityManager.CreateSingleton(new LastTimeSaveCityId());
+            EntityManager.CreateSingleton(new CurrentSaveSlot());
 
             EntityManager.CreateSingleton(new GlobalSingIDCounter
             {
@@ -65,6 +61,7 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 EnemyCity = Entity.Null,
             });
+            EntityManager.CreateSingleton(new PlayerFactionData());
         }
 
         protected override void OnStartRunning()
@@ -76,11 +73,16 @@ namespace SparFlame.Systems.General.BasicControl
                 _initialized = true;
                 GameController.Instance.OnPause += isSwitching => { PauseOrResumeGame(true, isSwitching); };
                 GameController.Instance.OnResume += isSwitching => { PauseOrResumeGame(false, isSwitching); };
-                GameController.Instance.OnBackToMainMenu += DestroyInitialization;
-                GameController.Instance.OnClickSlotAndStartGame += SetSavingSlotAndPlayerFactionData;
-                GeneralResourceManager.Instance.OnAllResourceLoaded += BeginSystemInit;
-                GameController.Instance.OnEcsSwitchSubGameStatus += EcsSwitchSubGameStatus;
+                GameController.Instance.OnEcsDestroyInitialization += EcsDestroyInitialization;
+                GameController.Instance.OnSwitchGameStatus += EcsSwitchSubGameStatus;
+                GameController.Instance.OnEcsBeginSystemInit += BeginSystemInit;
+                GameController.Instance.OnSetPlayerFactionData += SetPlayerFactionData;
             }
+        }
+
+        private void SetPlayerFactionData(PlayerFactionData data)
+        {
+            SystemAPI.SetSingleton(data);   
         }
 
         protected override void OnUpdate()
@@ -98,77 +100,26 @@ namespace SparFlame.Systems.General.BasicControl
 
             if (gameBasicState.ValueRW.Value == GameStatus.Init) // This is the time all systems init complete
             {
-                // _alreadyToWin = false;
-                gameBasicState.ValueRW.Value = GameStatus.MainGaming;
-                var gaming = EntityManager.CreateEntity();
-                EntityManager.AddComponent<MainGamingTag>(gaming);
-              
-                GameController.Instance.MainGameStartForPlayer(false);
+                gameBasicState.ValueRW.Value = GameStatus.Pause;
             }
 
             _gameBasicConfig = SystemAPI.GetSingleton<GameBasicConfig>();
-            // var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().Value;
-            //
-            // var enemyCrystalInfo = SystemAPI.GetSingleton<EnemyCrystalInfo>();
-            // var playerCrystalInfo = SystemAPI.GetSingleton<PlayerCrystalInfo>();
-            // if (!_alreadyToWin)
-            // {
-            //     if (playerCrystalInfo.TotalCount != 0 && enemyCrystalInfo.TotalCount != 0)
-            //         _alreadyToWin = true;
-            //     else
-            //     {
-            //         return;
-            //     }
-            // }
 
             if (_gameBasicConfig.enablePause)
                 CheckPlayerPauseAction();
-            // if (enemyCrystalInfo.TotalCount == 0)
-            // {
-            //     SystemAPI.SetSingleton(new GameStatusData
-            //     {
-            //         Value = GameStatus.NotStarted
-            //     });
-            //     GameController.Instance.GameOver(playerFaction);
-            //     _alreadyToWin = false;
-            // }
-            // else if(playerCrystalInfo.TotalCount == 0)
-            // {
-            //     SystemAPI.SetSingleton(new GameStatusData
-            //     {
-            //         Value = GameStatus.NotStarted
-            //     });
-            //     GameController.Instance.GameOver(~playerFaction);
-            //     _alreadyToWin = false;
-            // }
         }
 
-        private void BeginSystemInit()
+        private void BeginSystemInit(  )
         {
             _enterSystemInitState = true;
-            if (!_ifNewSlot)
-            {
-                SaveLoadController.Instance.LoadGameMainData();
-                SaveLoadController.Instance.LoadMainGameplayData();
-            }
-         
+          
         }
 
-        private void SetSavingSlotAndPlayerFactionData(FactionTag factionTag,bool ifNewSlot,int slotIndex)
-        {
-            _ifNewSlot = ifNewSlot;
-            EntityManager.CreateSingleton(new PlayerFactionData
-            {
-                faction = factionTag,
-                subFaction = SubFactionTag.None
-            });
-            SystemAPI.SetSingleton(new PlayerSaveSlot { Value = slotIndex });
+      
 
-        }
-
-        private void DestroyInitialization()
+        private void EcsDestroyInitialization()
         {
-            InputListener.Instance.DisableAllMaps();
+            UnityEngine.Time.timeScale = 1;
             SystemAPI.SetSingleton(new GameStatusData
             {
                 Value = GameStatus.NotStarted
@@ -178,19 +129,14 @@ namespace SparFlame.Systems.General.BasicControl
                 SubGameStatus = SubGameStatus.None,
                 City = Entity.Null,
             });
-           
-            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerFactionData>());
-
             if (SystemAPI.HasSingleton<SubGamingTag>())
             {
                 EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SubGamingTag>());
             }
-
             if (SystemAPI.HasSingleton<MainGamingTag>())
             {
                 EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<MainGamingTag>());
             }
-            GameController.Instance.DestroyGameplayEntities(ClearGameplayEntitiesType.All);
         }
 
 
@@ -226,7 +172,6 @@ namespace SparFlame.Systems.General.BasicControl
                     throw new ArgumentException(
                         "This should never happen, because pause is valid only when enter game");
                 }
-
                 _isPaused = false;
             }
         }
@@ -244,16 +189,25 @@ namespace SparFlame.Systems.General.BasicControl
             }
         }
 
-        private void EcsSwitchSubGameStatus( SubGameStatusData targetSubGameStatusData)
+        private void EcsSwitchSubGameStatus( SubGameStatusData targetSubGameStatusData,
+            SubGameStatusData currentSubGameStatusData )
         {
+            
+            
             if (targetSubGameStatusData.SubGameStatus == SubGameStatus.None)
             {
                 SystemAPI.SetSingleton(new GameStatusData
                 {
                     Value = GameStatus.MainGaming
                 });
-                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SubGamingTag>());
-                EntityManager.CreateSingleton<MainGamingTag>();
+                if (SystemAPI.HasSingleton<SubGamingTag>())
+                {
+                    EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<SubGamingTag>());
+                }
+                if (!SystemAPI.HasSingleton<MainGamingTag>())
+                {
+                    EntityManager.CreateSingleton<MainGamingTag>();
+                }
             }
             else
             {
@@ -264,10 +218,12 @@ namespace SparFlame.Systems.General.BasicControl
                 if (SystemAPI.HasSingleton<MainGamingTag>())
                 {
                     EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<MainGamingTag>());
+                }
+                if (!SystemAPI.HasSingleton<SubGamingTag>())
+                {
                     EntityManager.CreateSingleton<SubGamingTag>();
                 }
             }
-            
             SystemAPI.SetSingleton(targetSubGameStatusData);
         }
 

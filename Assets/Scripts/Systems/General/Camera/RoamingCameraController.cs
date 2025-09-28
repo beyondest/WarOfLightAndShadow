@@ -47,7 +47,7 @@ namespace SparFlame.Systems.General.Camera
                 var position = positions[index];
                 rigTransform.position = position;
                 index++;
-                yield return new WaitForSeconds(waitSecondsPerPosition);
+                yield return new WaitForSecondsRealtime(waitSecondsPerPosition);
                 if(index >= positions.Count)break;
                 if (index == enemyCount)
                 {
@@ -56,7 +56,7 @@ namespace SparFlame.Systems.General.Camera
                 }
                 var nextPosition = positions[index];
                 StartMovingCamera(rigTransform, nextPosition, moveSecondsPerPosition);
-                yield return new WaitForSeconds(moveSecondsPerPosition);
+                yield return new WaitForSecondsRealtime(moveSecondsPerPosition);
                 
             }
             OnEndRoamingCamera?.Invoke();

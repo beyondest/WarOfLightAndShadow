@@ -35,7 +35,6 @@ namespace SparFlame.UI.SubGameplay
 
         // Internal Data
         private EntityManager _em;
-        private EntityQuery _gamingTag;
         private EntityQuery _hintsInfo;
         private EntityQuery _timeData;
         private RectTransform _hintWindowRect;
@@ -61,7 +60,6 @@ namespace SparFlame.UI.SubGameplay
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
             _hintsInfo = _em.CreateEntityQuery(typeof(HintsInfo));
             _timeData = _em.CreateEntityQuery(typeof(GameTimeData));
 
@@ -97,8 +95,15 @@ namespace SparFlame.UI.SubGameplay
 
         private void Update()
         {
-            if (_gamingTag.IsEmpty) return;
             UpdateDynamicInfo();
+        }
+
+        private void OnDestroy()
+        {
+            if(_hintsInfo!= default)
+                _hintsInfo.Dispose();
+            if(_timeData!= default)
+                _timeData.Dispose();
         }
 
         #endregion

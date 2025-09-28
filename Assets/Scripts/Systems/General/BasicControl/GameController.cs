@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Structs;
 using SparFlame.Core.Utils;
+using SparFlame.Systems.General.BasicControl.GlobalMonos;
 using SparFlame.Systems.General.Input;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,45 +16,61 @@ namespace SparFlame.Systems.General.BasicControl
 {
     public class GameController : MonoBehaviour
     {
-        [SerializeField] private float checkInitInterval = 0.1f;
+        [Serializable]
+        public struct ExtraWaitConfig
+        {
+            public int maxSubGameplayGeneralAttrEntityCount;
+            public int waitFrameCount;
+        }
 
+        [SerializeField] private List<ExtraWaitConfig> extraWaitConfigs;
         public static GameController Instance;
 
-        #region PublicEvents
+        #region UI
 
-        public event Action<ResourceLoadingUtils.LoadingProgress> OnSwitchStatusLoadingProgress;
+        public readonly ResourceLoadingUtils.LoadingProgress LoadingProgress = new();
+        public event Action OnShowLoadingScreen;
+        public event Action OnHideLoadingScreen;
 
-        public event Action<bool> OnPause;
-        public event Action<bool> OnResume;
+        public event Action OnStartWait;
+        public event Action OnEndWait;
 
-        public event Action OnBackToMainMenu;
+        #endregion
 
-        public event Action<FactionTag> OnWinnerWin;
+        #region Init Calls
 
-        // Choose faction, if new slot, slot index
-        public event Action<FactionTag, bool, int> OnClickSlotAndStartGame;
+        public event Action<PlayerFactionData> OnSetPlayerFactionData;
 
-        public event Action OnSubGameStartForPlayer;
-        public event Action<bool> OnMainGameStartForPlayer;
-
-        public event Action<SubGameStatusData> OnEcsSwitchSubGameStatus; // All systems will start running AFTER this action is called.
-
-        public event Action<SubGameStatusData> OnEcsDealInSubGameTag;
-        public event Action<ClearGameplayEntitiesType> OnEcsClearGameplayEntities;
+        public event Action OnEcsBeginSystemInit;
 
         #endregion
 
 
-        #region GameControlMethods
+        #region Clean Calls
 
-        public void GameOver(FactionTag winnerFaction)
-        {
-            OnWinnerWin?.Invoke(winnerFaction);
-            PauseGame(false);
-        }
+        public event Action OnEcsDestroyInitialization;
+
+
+        public event Action<ClearGameplayEntitiesType> OnEcsClearGameplayEntities;
+        public event Action OnCleanDontDestroyOnLoads;
+
+        #endregion
+
+        #region Switch Calls
+
+        // Target sub game status, Current Sub Game status
+        public event Action<SubGameStatusData, SubGameStatusData> OnSwitchGameStatus;
+
+        // This event should be invoked before load sub data or enter main gameplay from sub gameplay
+        public event Action<SubGameStatusData, SubGameStatusData> OnEcsDealWithInSubGameTag;
+
+        #endregion
+
+
+        #region Simple game control
 
         /// <summary>
-        /// If true, pause menu will not show and unity time scale will not be set to 0.
+        /// If true, pause menu will not show and unity timescale will not be set to 0.
         /// </summary>
         /// <param name="isSwitchingGameplay"></param>
         public void PauseGame(bool isSwitchingGameplay)
@@ -60,25 +78,11 @@ namespace SparFlame.Systems.General.BasicControl
             OnPause?.Invoke(isSwitchingGameplay);
         }
 
+        public event Action<bool> OnPause;
+
         public void ResumeGame(bool isSwitchingGameplay)
         {
             OnResume?.Invoke(isSwitchingGameplay);
-        }
-
-        public void EndGameToMainMenu(bool ifFromSubGameplay)
-        {
-            _ifInMainMenu = true;
-            InputListener.Instance.DisableAllMaps();
-            ResumeGame(false);
-            SaveLoadController.Instance.SyncSaveGame();
-            var unloads = new List<SceneGroupType>
-            {
-                ifFromSubGameplay
-                    ? SceneGroupType.CurrentLoadingSubGameplaySceneGroup
-                    : SceneGroupType.MainWorld
-            };
-            SceneController.Instance.UnloadSceneGroup(unloads);
-            OnBackToMainMenu?.Invoke();
         }
 
         public void ExitGame()
@@ -86,104 +90,260 @@ namespace SparFlame.Systems.General.BasicControl
             Application.Quit();
         }
 
-        public void ClickSlotAndStartGame(FactionTag playerFaction,
-            bool ifNewSlot, int slotIndex)
+        public event Action<bool> OnResume;
+
+        #endregion
+
+        #region Complex game control
+
+        // -------------------------------Start Game First Time ---------------------------//
+        public IEnumerator StartGameFirstTime(FactionTag playerFaction,
+            bool ifNewGame, int slotIndex, int cityPrefabId)
         {
-            OnClickSlotAndStartGame?.Invoke(playerFaction, ifNewSlot, slotIndex);
-        }
+            // Show loading screen
+            OnSetPlayerFactionData?.Invoke(new PlayerFactionData
+                { faction = playerFaction, subFaction = SubFactionTag.LightFaction1 });
+            OnShowLoadingScreen?.Invoke();
 
-
-        public void SubGameStartForPlayer()
-        {
-            StartCoroutine(CheckLoadSubGameplay());
-            
-        }
-
-        public void MainGameStartForPlayer(bool isTransitionProgress)
-        {
-            // if (!_ifNewSlot && _ifInMainMenu)
-            // {
-            //     SaveLoadController.Instance.LoadGameMainData();
-            //     SaveLoadController.Instance.LoadMainGameplayData();
-            // }
-
-            var lastTimeSaveCitySlot = _em.CreateEntityQuery(typeof(LastTimeSaveCityId))
-                .GetSingleton<LastTimeSaveCityId>().value;
-            isTransitionProgress = isTransitionProgress || (_ifInMainMenu && lastTimeSaveCitySlot != 0);
-            _ifInMainMenu = false;
-            InputListener.Instance.EnableMainGameMaps();
-            OnMainGameStartForPlayer?.Invoke(isTransitionProgress);
-            _em.CreateSingleton<UpdateCityNavMeshRequest>();
-        }
-
-        public void EnterPlayerCity(Entity city, bool mainGameplayTransition = false)
-        {
-            // This is used for enter player city directly after load game
-            if (mainGameplayTransition)
+            // Set init data
+            SaveLoadController.Instance.SetSavingSlotAndDoSomeCleaning(ifNewGame, slotIndex);
+            SceneController.Instance.SetSceneLoadInitData(playerFaction, ifNewGame, cityPrefabId);
+            // Load game main data and resources
+            var ops = new List<ResourceOperation>
             {
-                var saveCityId = _em.CreateEntityQuery(typeof(LastTimeSaveCityId)).GetSingletonRW<LastTimeSaveCityId>();
-                var query = _em.CreateEntityQuery(typeof(CityAttr));
-                var cities = query.ToEntityArray(Allocator.Temp);
-                var cityAttrs = query.ToComponentDataArray<CityAttr>(Allocator.Temp);
-                for (var i = 0; i < cityAttrs.Length; i++)
-                {
-                    var cityAttr = cityAttrs[i];
-                    if (cityAttr.globalId == saveCityId.ValueRO.value)
-                        city = cities[i];
-                }
-
-                saveCityId.ValueRW.value = 0; // Reset save city id
+                GeneralResourceManager.Instance.LoadResourcesAsync()
+            };
+            var shouldEnterCityDirectly = cityPrefabId != 0;
+            var targetSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = shouldEnterCityDirectly ? SubGameStatus.PlayerCity : SubGameStatus.None,
+                City = Entity.Null
+            };
+            var currentSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = SubGameStatus.None,
+                City = Entity.Null
+            };
+            if (!ifNewGame)
+            {
+                ops.Add(SaveLoadController.Instance.LoadGameMainDataAsync());
             }
 
+
+            yield return CustomCoroutineRunner.Instance.WhenAll(ops, LoadingProgress);
+            if (shouldEnterCityDirectly)
+            {
+                targetSubGameStatusData.City = GetCity(cityPrefabId);
+                OnEcsDealWithInSubGameTag?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+                yield return SaveLoadController.Instance.LoadGameSubDataAsync(targetSubGameStatusData);
+            }
+
+            OnEcsBeginSystemInit?.Invoke();
+            yield return CheckEcsSystemInitComplete();
+            yield return CheckNecessaryEntities(targetSubGameStatusData, currentSubGameStatusData);
+            yield return WaitForExtraFramesBeforeSwitchGameplay(targetSubGameStatusData);
+            OnSwitchGameStatus?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            if (shouldEnterCityDirectly) InputListener.Instance.EnableSubGameMaps();
+            else InputListener.Instance.EnableMainGameMaps();
+            OnHideLoadingScreen?.Invoke();
+        }
+
+        // ------------------------------Load Saving Slot In Game-----------------------------//
+        public IEnumerator LoadSavingSlot(int slotIndex,
+            RiftGameFileQuickData quickData)
+        {
+            OnSetPlayerFactionData?.Invoke(new PlayerFactionData
+                { faction = quickData.Faction, subFaction = quickData.SubFaction });
+            OnShowLoadingScreen?.Invoke();
+            yield return CheckSaveComplete();
+            InputListener.Instance.DisableAllMaps();
+            // Reset scenes and initialization
+            var currentSubGameStatus = _subGameStatusDataQuery.GetSingleton<SubGameStatusData>().SubGameStatus;
+            var ifFromSubGameplay = currentSubGameStatus != SubGameStatus.None;
+            var unloads = new List<SceneGroupType>
+            {
+                ifFromSubGameplay
+                    ? SceneGroupType.CurrentLoadingSubGameplaySceneGroup
+                    : SceneGroupType.MainWorld,
+                SceneGroupType.Init
+            };
+            yield return SceneController.Instance.UnloadSceneGroupAsync(unloads);
+            ResumeGame(false); // Load from pause menu
+            OnEcsDestroyInitialization?.Invoke();
+            OnEcsClearGameplayEntities?.Invoke(ClearGameplayEntitiesType.All);
+            OnCleanDontDestroyOnLoads?.Invoke();
+            // Set init data
+            SaveLoadController.Instance.SetSavingSlotAndDoSomeCleaning(false, slotIndex);
+            SceneController.Instance.SetSceneLoadInitData(quickData.Faction, false, quickData.CityPrefabId);
+            // Start loading
+            var shouldEnterCityDirectly = quickData.CityPrefabId != 0;
+            var loads = new List<SceneGroupType>();
+            if (shouldEnterCityDirectly)
+            {
+                loads.Add(SceneGroupType.SubWorld);
+                loads.Add(SceneGroupType.CityEnv);
+            }
+            else
+            {
+                loads.Add(SceneGroupType.MainWorld);
+            }
+
+            var ops = new List<ResourceOperation>
+            {
+                SaveLoadController.Instance.LoadGameMainDataAsync(),
+                SceneController.Instance.LoadSceneGroupAsync(loads, quickData.CityPrefabId, shouldEnterCityDirectly)
+            };
+            var targetSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = shouldEnterCityDirectly ? SubGameStatus.PlayerCity : SubGameStatus.None,
+                City = Entity.Null
+            };
+            var currentSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = SubGameStatus.None,
+                City = Entity.Null
+            };
+
+            yield return CustomCoroutineRunner.Instance.WhenAll(ops, LoadingProgress);
+
+            if (shouldEnterCityDirectly)
+            {
+                targetSubGameStatusData.City = GetCity(quickData.CityPrefabId);
+                OnEcsDealWithInSubGameTag?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+                yield return SaveLoadController.Instance.LoadGameSubDataAsync(targetSubGameStatusData);
+            }
+
+            // Load complete, start init ecs system
+            OnEcsBeginSystemInit?.Invoke();
+            yield return CheckEcsSystemInitComplete();
+            yield return CheckNecessaryEntities(targetSubGameStatusData, currentSubGameStatusData);
+            yield return WaitForExtraFramesBeforeSwitchGameplay(targetSubGameStatusData);
+            OnSwitchGameStatus?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            if (shouldEnterCityDirectly) InputListener.Instance.EnableSubGameMaps();
+            else InputListener.Instance.EnableMainGameMaps();
+            OnHideLoadingScreen?.Invoke();
+        }
+
+        // ----------------------------Ene Game to Main Menu--------------------------//
+        public IEnumerator EndGameToMainMenu()
+        {
+            OnShowLoadingScreen?.Invoke();
+            yield return CheckSaveComplete();
+            var currentSubGameStatusData = _subGameStatusDataQuery.GetSingleton<SubGameStatusData>().SubGameStatus;
+            var ifFromSubGameplay = currentSubGameStatusData != SubGameStatus.None;
+            var unloads = new List<SceneGroupType>
+            {
+                ifFromSubGameplay
+                    ? SceneGroupType.CurrentLoadingSubGameplaySceneGroup
+                    : SceneGroupType.MainWorld
+            };
+            var ops = new List<ResourceOperation> { SceneController.Instance.UnloadSceneGroupAsync(unloads) };
+            yield return CustomCoroutineRunner.Instance.WhenAll(ops, LoadingProgress);
+            ResumeGame(false);
+            OnCleanDontDestroyOnLoads?.Invoke();
+            OnEcsDestroyInitialization?.Invoke();
+            OnEcsClearGameplayEntities?.Invoke(ClearGameplayEntitiesType.All);
+            GeneralResourceManager.Instance.ReleaseAllResources();
+            InputListener.Instance.DisableAllMaps();
+            OnHideLoadingScreen?.Invoke();
+        }
+
+        // ------------------------ Sub World to Main World -----------------//
+        public IEnumerator SubWorldToMainWorld()
+        {
+            OnShowLoadingScreen?.Invoke();
+            yield return CheckSaveComplete();
+            PauseGame(true);
+            InputListener.Instance.DisableAllMaps();
+
+            yield return SaveLoadController.Instance.SaveAsync(SaveType.SaveSubGameplayDataToTmp, -1);
+            var targetSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = SubGameStatus.None,
+                City = Entity.Null,
+            };
+            var currentSubGameStatusData = _subGameStatusDataQuery.GetSingleton<SubGameStatusData>();
+            OnEcsDealWithInSubGameTag?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            OnEcsClearGameplayEntities?.Invoke(ClearGameplayEntitiesType.SubGameplay);
+
+            // Save, unload, and load
+            var loads = new List<SceneGroupType> { SceneGroupType.MainWorld };
+            var unloads = new List<SceneGroupType> { SceneGroupType.CurrentLoadingSubGameplaySceneGroup };
+            var ops = new List<ResourceOperation>
+            {
+                SceneController.Instance.UnloadSceneGroupAsync(unloads),
+                SceneController.Instance.LoadSceneGroupAsync(loads, 0, false),
+            };
+            yield return CustomCoroutineRunner.Instance.WhenAll(ops, LoadingProgress);
+            yield return CheckNecessaryEntities(targetSubGameStatusData, currentSubGameStatusData);
+            yield return WaitForExtraFramesBeforeSwitchGameplay(targetSubGameStatusData);
+            ResumeGame(true);
+            OnSwitchGameStatus?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            InputListener.Instance.EnableMainGameMaps();
+            OnHideLoadingScreen?.Invoke();
+        }
+
+
+        // -------------------- Enter Player City --------------------//
+        public IEnumerator EnterPlayerCity(Entity city)
+        {
+            OnShowLoadingScreen?.Invoke();
+            yield return CheckSaveComplete();
+            PauseGame(true);
+            InputListener.Instance.DisableAllMaps();
             // Set status change type
-            _targetSubGameStatusData = new SubGameStatusData
+            var targetSubGameStatusData = new SubGameStatusData
             {
                 SubGameStatus = SubGameStatus.PlayerCity,
                 City = city,
             };
-
-            // Pause game
-            PauseGame(true);
-
-            // Load and unload scenes
+            var currentSubGameStatusData = _subGameStatusDataQuery.GetSingleton<SubGameStatusData>();
             var loads = new List<SceneGroupType>
             {
                 SceneGroupType.SubWorld,
                 SceneGroupType.CityEnv
             };
             var unloads = new List<SceneGroupType> { SceneGroupType.MainWorld };
-            SceneController.Instance.LoadSceneGroup(loads, _em.GetComponentData<CityAttr>(city).globalId, true);
-            SceneController.Instance.UnloadSceneGroup(unloads);
-
-            // Show and check loading progress
-            OnSwitchStatusLoadingProgress?.Invoke(_loadingProgress);
-            StartCoroutine(CheckResourceLoading());
-
-            // Load needed saved data
-            OnEcsDealInSubGameTag?.Invoke(_targetSubGameStatusData);
-            SaveLoadController.Instance.SyncLoadSubGameData(_targetSubGameStatusData);
+            var ops = new List<ResourceOperation>()
+            {
+                SceneController.Instance.LoadSceneGroupAsync(loads, _em.GetComponentData<PrefabId>(city).value,
+                    true),
+                SceneController.Instance.UnloadSceneGroupAsync(unloads),
+                SaveLoadController.Instance.LoadGameSubDataAsync(targetSubGameStatusData)
+            };
+            OnEcsDealWithInSubGameTag?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            yield return CustomCoroutineRunner.Instance.WhenAll(ops, LoadingProgress);
+            yield return CheckNecessaryEntities(targetSubGameStatusData, currentSubGameStatusData);
+            yield return WaitForExtraFramesBeforeSwitchGameplay(targetSubGameStatusData);
+            ResumeGame(true);
+            OnSwitchGameStatus?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            InputListener.Instance.EnableSubGameMaps();
+            OnHideLoadingScreen?.Invoke();
         }
 
-        public void EnterBattleScene(Entity city, EcoType ecoType, SubGameStatus targetSubGameStatus)
+        // ----------------- Enter Battle Scene -----------------//
+        public IEnumerator EnterBattleScene(Entity city, EcoType ecoType, SubGameStatus targetSubGameStatus)
         {
-            var gameStatusData = _em.CreateEntityQuery(typeof(GameStatusData)).GetSingleton<GameStatusData>();
+            OnShowLoadingScreen?.Invoke();
+            yield return CheckSaveComplete();
+            var gameStatusData = _mainGameStatusDataQuery.GetSingleton<GameStatusData>();
             if (gameStatusData.Value == GameStatus.SubGaming)
             {
-                BackToMainWorld(true);
-                StartCoroutine(CheckBackToMainWorldAndEnterBattleScene(city,ecoType, targetSubGameStatus));
-                return;
+                yield return SubWorldToMainWorld(); // Automatically save sub data to tmp
             }
+            OnShowLoadingScreen?.Invoke();
+            PauseGame(true);
             // Set status change type
-            _targetSubGameStatusData = new SubGameStatusData
+            var targetSubGameStatusData = new SubGameStatusData
             {
                 SubGameStatus = targetSubGameStatus,
                 City = city,
             };
-
-            // Pause game
-            PauseGame(true);
-
-            // Load and unload scenes
+            var currentSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = SubGameStatus.None,
+                City = Entity.Null
+            };
             var loads = new List<SceneGroupType>
             {
                 SceneGroupType.SubWorld,
@@ -211,68 +371,172 @@ namespace SparFlame.Systems.General.BasicControl
             }
 
             var unloads = new List<SceneGroupType> { SceneGroupType.MainWorld };
-            var cityId = city == Entity.Null? -1 : _em.GetComponentData<CityAttr>(city).globalId;
-            SceneController.Instance.LoadSceneGroup(loads, cityId, true);
-            SceneController.Instance.UnloadSceneGroup(unloads);
-
-            // Show and check loading progress
-            OnSwitchStatusLoadingProgress?.Invoke(_loadingProgress);
-            StartCoroutine(CheckResourceLoading());
-
-            // Load needed saved data
-            OnEcsDealInSubGameTag?.Invoke(_targetSubGameStatusData);
-            SaveLoadController.Instance.SyncLoadSubGameData(_targetSubGameStatusData);
-        }
-
-        public void BackToMainWorld(bool isTransitionProgress)
-        {
-            // Set status change type
-            _targetSubGameStatusData = new SubGameStatusData
+            var cityId = city == Entity.Null ? -1 : _em.GetComponentData<PrefabId>(city).value;
+            var ops = new List<ResourceOperation>()
             {
-                SubGameStatus = SubGameStatus.None,
-                City = Entity.Null,
+                SceneController.Instance.LoadSceneGroupAsync(loads, cityId, true, ecoType),
+                SceneController.Instance.UnloadSceneGroupAsync(unloads),
+                SaveLoadController.Instance.LoadGameSubDataAsync(targetSubGameStatusData)
             };
-
-            // Resume game
-            PauseGame(true);
-
-            // Save needed saved data. This is auto save, so should save to tmp only
-            SaveLoadController.Instance.SyncSaveGame(true);
-            OnEcsDealInSubGameTag?.Invoke(_targetSubGameStatusData);
-            DestroyGameplayEntities(ClearGameplayEntitiesType.SubGameplay);
-
-            // Load and unload scenes
-            var loads = new List<SceneGroupType> { SceneGroupType.MainWorld };
-            var unloads = new List<SceneGroupType> { SceneGroupType.CurrentLoadingSubGameplaySceneGroup };
-            SceneController.Instance.LoadSceneGroup(loads);
-            SceneController.Instance.UnloadSceneGroup(unloads);
-
-            // Show and check loading progress
-            OnSwitchStatusLoadingProgress?.Invoke(_loadingProgress);
-            _isTransitionProgress = isTransitionProgress;
-            StartCoroutine(CheckResourceLoading());
+            OnEcsDealWithInSubGameTag?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            yield return CustomCoroutineRunner.Instance.WhenAll(ops, LoadingProgress);
+            yield return CheckNecessaryEntities(targetSubGameStatusData, currentSubGameStatusData);
+            yield return WaitForExtraFramesBeforeSwitchGameplay(targetSubGameStatusData);
+            // All resources and saving data loaded
+            ResumeGame(true);
+            OnSwitchGameStatus?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
+            InputListener.Instance.EnableSubGameMaps();
+            OnHideLoadingScreen?.Invoke();
         }
 
-        public void SwitchSubGameStatus(in SubGameStatusData targetSubGameStatusData)
+        // ----------------- Stay To City After Battle -----------------//
+        public void StayToCityAfterBattle()
         {
-            OnEcsSwitchSubGameStatus?.Invoke(targetSubGameStatusData);
+            // Enemy has no retreated AI, so when this function is called, no need to save sub data
+            var currentSubGameStatusData = _subGameStatusDataQuery.GetSingleton<SubGameStatusData>();
+            var targetSubGameStatusData = new SubGameStatusData
+            {
+                SubGameStatus = SubGameStatus.PlayerCity,
+                City = currentSubGameStatusData.City,
+            };
+            OnSwitchGameStatus?.Invoke(targetSubGameStatusData, currentSubGameStatusData);
         }
 
-        public void DestroyGameplayEntities(ClearGameplayEntitiesType clearType)
+        // ----------------- Wait Personalized or Wait Until Battle-----------------//
+        public IEnumerator Wait(WaitInfo wai)
         {
-            OnEcsClearGameplayEntities?.Invoke(clearType);
+            using var query = _em.CreateEntityQuery(typeof(GameTimeConfig));
+            var timeConfig = query.GetSingleton<GameTimeConfig>();
+            using var query2 = _em.CreateEntityQuery(typeof(GameTimeScale));
+            var timeScale = query2
+                .GetSingletonRW<GameTimeScale>();
+            timeScale.ValueRW.Value = timeConfig.waitTimeScale;
+            var waitInfo = _waitInfoQuery
+                .GetSingletonRW<WaitInfo>();
+            waitInfo.ValueRW = wai;
+            OnStartWait?.Invoke();
+            InputListener.Instance.DisableAllMaps();
+            yield return CheckWaitComplete();
+            OnEndWait?.Invoke();
+            InputListener.Instance.ReEnableLastEnabledMap();
         }
 
         #endregion
 
 
         // Internal Data
-        private SubGameStatusData _targetSubGameStatusData;
-        private readonly ResourceLoadingUtils.LoadingProgress _loadingProgress = new();
         private EntityManager _em;
-        private bool _ifInMainMenu = true;
+        private EntityQuery _subGameStatusDataQuery;
+        private EntityQuery _mainGameStatusDataQuery;
+        private EntityQuery _waitInfoQuery;
 
-        private bool _isTransitionProgress; // Transition progress should not hide loading screen when first time loading complete
+        #region Private Methods
+
+        private Entity GetCity(int cityPrefabId)
+        {
+            using var query = _em.CreateEntityQuery(typeof(CityAttr), typeof(PrefabId));
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            using var prefabIds = query.ToComponentDataArray<PrefabId>(Allocator.Temp);
+            for (var i = 0; i < prefabIds.Length; i++)
+            {
+                var id = prefabIds[i];
+                if (id.value == cityPrefabId)
+                    return entities[i];
+            }
+
+            throw new ArgumentException("City prefab id not found, this should never happen");
+        }
+
+        private IEnumerator CheckEcsSystemInitComplete()
+        {
+            while (_mainGameStatusDataQuery.GetSingleton<GameStatusData>().Value != GameStatus.Pause)
+            {
+                yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);
+            }
+        }
+
+        private IEnumerator CheckWaitComplete()
+        {
+            while (_waitInfoQuery.GetSingleton<WaitInfo>().WaitType != WaitType.None)
+            {
+                yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);
+            }
+        }
+
+        private IEnumerator CheckNecessaryEntities(SubGameStatusData targetSubGameStatusData,
+            SubGameStatusData currentSubGameStatusData)
+        {
+            if (targetSubGameStatusData.SubGameStatus == SubGameStatus.PlayerCity &&
+                currentSubGameStatusData.SubGameStatus != SubGameStatus.None) yield break;
+            using var queryGroup = new QueriesGroup(Allocator.Persistent);
+            switch (targetSubGameStatusData.SubGameStatus)
+            {
+                case SubGameStatus.None:
+                    break;
+                case SubGameStatus.PlayerCity:
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(CrystalDef)));
+                    break;
+                case SubGameStatus.PlayerSiege:
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(CrystalDef)));
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(UnitAttr), typeof(PlayerTag)));
+                    break;
+                case SubGameStatus.PlayerDefend:
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(CrystalDef)));
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(UnitAttr), typeof(AITag)));
+                    break;
+                case SubGameStatus.Support:
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(CrystalDef)));
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(UnitAttr), typeof(AITag)));
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(UnitAttr), typeof(PlayerTag)));
+                    break;
+                case SubGameStatus.Encounter:
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(UnitAttr), typeof(AITag)));
+                    queryGroup.AddQuery(_em.CreateEntityQuery(typeof(UnitAttr), typeof(PlayerTag)));
+                    break;
+                default:
+                    BurstSafe.UnexpectedEnum(targetSubGameStatusData.SubGameStatus);
+                    break;
+            }
+
+            while (!queryGroup.IsAllNotEmpty())
+            {
+                yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);
+            }
+        }
+
+        private IEnumerator WaitForExtraFramesBeforeSwitchGameplay(SubGameStatusData targetSubGameStatusData)
+        {
+            if (targetSubGameStatusData.SubGameStatus == SubGameStatus.None) yield break;
+            var c = 0;
+            using var query = _em.CreateEntityQuery(typeof(SubGameplayGeneralAttr));
+            var count = query.CalculateEntityCount();
+            var waitFrameCount = 0;
+            foreach (var config in extraWaitConfigs)
+            {
+                if (count < config.maxSubGameplayGeneralAttrEntityCount)
+                {
+                    waitFrameCount = config.waitFrameCount;
+                    break;
+                }
+            }
+
+            while (c < waitFrameCount)
+            {
+                c += 1;
+                yield return null;
+            }
+        }
+
+        private IEnumerator CheckSaveComplete()
+        {
+            while (SaveLoadController.Instance.IsSaving)
+            {
+                yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);
+            }
+        }
+
+        #endregion
+
 
         #region EventFunctions
 
@@ -294,59 +558,22 @@ namespace SparFlame.Systems.General.BasicControl
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _subGameStatusDataQuery = _em.CreateEntityQuery(typeof(SubGameStatusData));
+            _mainGameStatusDataQuery = _em.CreateEntityQuery(typeof(GameStatusData));
+            _waitInfoQuery = _em.CreateEntityQuery(typeof(WaitInfo));
+        }
+
+        private void OnDestroy()
+        {
+            if (_subGameStatusDataQuery != default)
+                _subGameStatusDataQuery.Dispose();
+
+            if (_mainGameStatusDataQuery != default)
+                _mainGameStatusDataQuery.Dispose();
+            if (_waitInfoQuery != default)
+                _waitInfoQuery.Dispose();
         }
 
         #endregion
-
-        private IEnumerator CheckResourceLoading()
-        {
-            while (true)
-            {
-                if (SceneController.Instance.IsInitialized)
-                    break;
-                _loadingProgress.Report(SceneController.Instance.InitProgress);
-                yield return new WaitForSeconds(checkInitInterval);
-            }
-
-            if (_targetSubGameStatusData.SubGameStatus == SubGameStatus.None)
-            {
-                MainGameStartForPlayer(_isTransitionProgress);
-            }
-            else
-            {
-                SubGameStartForPlayer();
-            }
-
-            ResumeGame(true);
-            OnEcsSwitchSubGameStatus?.Invoke(_targetSubGameStatusData);
-            _isTransitionProgress = false;
-        }
-
-        private IEnumerator CheckBackToMainWorldAndEnterBattleScene(Entity city, EcoType ecoType, SubGameStatus targetSubGameStatus)
-        {
-            while (_isTransitionProgress)
-            {
-                yield return null;
-            }
-
-            var gameStatusData = _em.CreateEntityQuery(typeof(GameStatusData)).GetSingleton<GameStatusData>();
-            if (gameStatusData.Value == GameStatus.SubGaming)
-            {
-                throw new InvalidOperationException("Game status should not be sub gaming here. Something wrong");
-            }
-            EnterBattleScene(city, ecoType, targetSubGameStatus);
-        }
-
-        private IEnumerator CheckLoadSubGameplay()
-        {
-            var crystalQuery = _em.CreateEntityQuery(typeof(CrystalDef));
-            var unitsQuery  = _em.CreateEntityQuery(typeof(UnitAttr));
-            while (crystalQuery.IsEmpty && unitsQuery.IsEmpty)
-            {
-                yield return null;
-            }
-            InputListener.Instance.EnableSubGameMaps();
-            OnSubGameStartForPlayer?.Invoke();
-        }
     }
 }

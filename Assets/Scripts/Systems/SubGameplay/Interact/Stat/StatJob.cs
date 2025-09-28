@@ -28,9 +28,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetListLookup;
         [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatLookup;
         [NativeDisableParallelForRestriction] public ComponentLookup<OocTag> OocTagLookup;
-        [NativeDisableParallelForRestriction] public ComponentLookup<UnitAttr> UnitAttrLookup;
 
-
+        [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
         [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
         [ReadOnly] public ComponentLookup<VolumeObstacleTag> ObstacleTagLookup;
         [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
@@ -39,12 +38,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
         [ReadOnly] public ComponentLookup<CapacityBuildingAttr> CapacityBuildingAttrLookup;
         [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTimerLookup;
-        [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
+        [ReadOnly] public ComponentLookup<GlobalSingleId> GlobalSingleIdLookup;
         [ReadOnly] public ComponentLookup<ConjuringTag> ConjuringTagLookup;
         [ReadOnly] public ComponentLookup<GeneratingTag> GeneratingTagLookup;
         [ReadOnly] public ComponentLookup<GenerateAttr> GenerateAttrLookup;
         [ReadOnly] public ComponentLookup<InArmyGroup> InArmyGroupLookup;
-
+        [ReadOnly] public ComponentLookup<PrefabId> PrefabIdLookup;
 
         [ReadOnly] public BufferLookup<CostList> CostListLookup; // For population release
 
@@ -270,7 +269,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             switch (interacteeAttr.BaseTag)
             {
                 case BaseTag.Units:
-                    StatUtils.GenerateGarrisonUnitDieRequest(request.Interactee, index, interacteeAttr,
+                    StatUtils.GenerateGarrisonUnitDieRequest(request.Interactee, index, PrefabIdLookup[request.Interactee].value,
                         ref InGarrisonLookup, ECB);
                     StatUtils.GenerateReleasePopulationRequest(request.Interactee, index,
                         CurrentCity,
@@ -285,7 +284,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     if (InArmyGroupLookup.TryGetComponent(request.Interactee, out var inArmyGroup))
                     {
                         StatUtils.GenerateRemoveFromArmyGroupRequest(request.Interactee, 
-                            interacteeAttr.PrefabID,
+                            PrefabIdLookup[request.Interactee].value,
                             index,
                             statInteractee.maxValue,
                             inArmyGroup, ECB);
@@ -320,7 +319,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         if (buildingAttr is { Type: BuildingType.CapacityBuildings } or
                             { Type: BuildingType.Generators, SubTypeIndex: (int)GeneratorType.PlantGenerator })
                         {
-                            var uniqueId = CityTaskUniqueIdLookup[request.Interactee].value;
+                            var uniqueId = GlobalSingleIdLookup[request.Interactee].value;
                             StatUtils.GenerateResourceTaskRemoveRequest(index, uniqueId,
                                 CurrentCity, ResourceRequestType.ConstructingBuildingDestroyedAndRemoveTask, ECB);
                         }
@@ -342,7 +341,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         if (buildingAttr.Type == BuildingType.ConjuringShrines &&
                             ConjuringTagLookup.HasComponent(request.Interactee))
                         {
-                            var uniqueId = CityTaskUniqueIdLookup[request.Interactee].value;
+                            var uniqueId = GlobalSingleIdLookup[request.Interactee].value;
                             StatUtils.GenerateResourceTaskRemoveRequest(index,
                                 uniqueId, CurrentCity, ResourceRequestType.ConjureBuildingDestroyed, ECB);
                         }

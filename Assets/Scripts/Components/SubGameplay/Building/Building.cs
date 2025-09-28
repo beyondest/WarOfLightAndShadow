@@ -97,7 +97,7 @@ namespace SparFlame.Components.SubGameplay
     {
         public Entity Prefab { get; set; }
         public BuildingType Type { get; set; }
-        public int GlobalIdx { get; set; }
+        public int PrefabId { get; set; }
     }
     public struct CapacityBuildingAttr : IComponentData
     {

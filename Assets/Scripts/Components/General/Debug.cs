@@ -112,7 +112,7 @@ namespace SparFlame.Components.General
     }
 
     [Serializable]
-    public struct EnemyAIDebug : IComponentData
+    public struct OldEnemyAIDebug : IComponentData
     {
         public bool enabled;
         [ShowIf(nameof(enabled))] public float unitSpawnSpeedScale;
@@ -139,5 +139,12 @@ namespace SparFlame.Components.General
         public bool enabled;
         [ShowIf(nameof(enabled))] public float playerExpGainScale;
         [ShowIf(nameof(enabled))] public float aiExpGainScale;
+    }
+
+    [Serializable]
+    public struct EnemyAIMainGameplayDebug : IComponentData
+    {
+        public bool enabled;
+        [ShowIf(nameof(enabled))] public float armyGroupConjureTimeScale;
     }
 }

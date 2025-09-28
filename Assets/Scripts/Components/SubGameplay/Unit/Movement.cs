@@ -27,7 +27,7 @@ namespace SparFlame.Components.SubGameplay
         /// <summary>
         /// This is the collider of object itself, used for raycast for obstacle avoidance 
         /// </summary>
-        public float2 SelfColliderShapeXz;
+        // public float2 SelfColliderShapeXz;
     }
 
     public struct Surroundings : IComponentData
@@ -196,8 +196,12 @@ namespace SparFlame.Components.SubGameplay
         public FactionTag FactionTag;
     }
 
-    public struct UpdateCityNavMeshRequest : IComponentData
+    public struct FakeCollisionTriggerRequest : IComponentData
     {
-        
+        public Entity TriggerPrefab;
+    }
+    public struct FakeColliderTarget : IBufferElementData
+    {
+        public Entity Target;
     }
 }

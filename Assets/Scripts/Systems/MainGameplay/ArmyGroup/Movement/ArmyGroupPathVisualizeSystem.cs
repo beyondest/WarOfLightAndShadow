@@ -17,25 +17,32 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ArmyGroupSelectionData>();
             state.RequireForUpdate<InputArmyGroupControlData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<ArmyGroupPathVisualizeConfig>();
-            state.RequireForUpdate<MainGamingTag>();
             _movingTagLookup = state.GetComponentLookup<ArmyGroupMovingTag>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
+            if (gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming) return;
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            if (GameStatusUtils.IsInBattle(subGameStatusData)) return;
+
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var inputArmyGroupControlData = SystemAPI.GetSingleton<InputArmyGroupControlData>();
             var selectionData = SystemAPI.GetSingleton<ArmyGroupSelectionData>();
             _movingTagLookup.Update(ref state);
             if (inputArmyGroupControlData.StartMoving || selectionData.CurrentSelectCount == 0
-                || inputArmyGroupControlData.ClearAllTargets || inputArmyGroupControlData.DeleteLastTarget
-                || inputArmyGroupControlData.EndMovingAndClearAllTargets)
+                                                      || inputArmyGroupControlData.ClearAllTargets ||
+                                                      inputArmyGroupControlData.DeleteLastTarget
+                                                      || inputArmyGroupControlData.EndMovingAndClearAllTargets)
             {
                 new ArmyGroupClearAllPathVisualizersJob
                 {
@@ -66,7 +73,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
         [BurstCompile]
         [WithAll(typeof(ArmyGroupSelected))]
-        [WithAll(typeof(PathVisualizeEnabled))]
+        [WithAll(typeof(ArmyGroupPathVisualizeEnabled))]
         public partial struct ArmyGroupPathVisualizeJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -75,13 +82,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
             private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<ArmyGroupFinalWayPoint> finalWaypoints,
                 in ArmyGroupMovableData movableData,
-                ref PathVisualizeData visualizeData,
+                ref ArmyGroupPathVisualizeData visualizeData,
                 in NavAgentComponent navAgent, Entity selfEntity)
             {
                 var isMoving = MovingTagLookup.IsComponentEnabled(selfEntity);
                 var notUpdate = !isMoving && visualizeData.preWaypoint == finalWaypoints.Length;
                 if (!navAgent.calculationComplete || finalWaypoints.Length == 0 || notUpdate) return;
-                ECB.SetComponentEnabled<PathVisualizeEnabled>(index, selfEntity, false);
+                ECB.SetComponentEnabled<ArmyGroupPathVisualizeEnabled>(index, selfEntity, false);
                 var startIndex = isMoving
                     ? movableData.curWaypoint
                     : visualizeData.preWaypoint;

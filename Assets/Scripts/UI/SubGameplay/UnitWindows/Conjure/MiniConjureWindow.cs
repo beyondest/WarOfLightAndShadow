@@ -83,7 +83,7 @@ namespace SparFlame.UI.SubGameplay
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -99,7 +99,8 @@ namespace SparFlame.UI.SubGameplay
         private void UpdateCandidates()
         {
             if (!UnitWindowResourceManager.Instance.IsResourceLoaded()) return;
-            var currentSelectFaction = _em.CreateEntityQuery(typeof(UnitSelectionData))
+            using var query = _em.CreateEntityQuery(typeof(UnitSelectionData));
+            var currentSelectFaction = query
                 .GetSingleton<UnitSelectionData>()
                 .CurrentSelectFaction;
             _infos.Clear();

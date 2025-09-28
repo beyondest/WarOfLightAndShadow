@@ -1,8 +1,7 @@
 using UnityEngine;
 using SparFlame.Components.General;
-using SparFlame.Core.GlobalMono;
-using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
+using SparFlame.Systems.General.BasicControl.GlobalMonos;
 using TMPro;
 using Unity.Entities;
 using UnityEngine.UI;
@@ -11,47 +10,46 @@ namespace SparFlame.UI.General
 {
     public class MenuOutController : MonoBehaviour
     {
-        [Header("Gameplay UI Panel")]
-        [SerializeField] private GameObject subGameplayUI;
-        [SerializeField] private GameObject mainGameplayUI;
-        [SerializeField] private GameObject staticWindowPanel;
-        
-        [Header("Menus")]
-        [SerializeField] private GameObject pauseMenu;
+        [Header("Menus")] [SerializeField] private GameObject pauseMenu;
         [SerializeField] private GameObject mainMenu;
         [SerializeField] private GameObject gameOverMenu;
         [SerializeField] private GameObject selectMenu;
         [SerializeField] private GameObject selectMenuElements;
-        [Header("Loading Screen")]
-        [SerializeField] private GameObject loadingLight;
+
+        [Header("Loading Screen")] [SerializeField]
+        private GameObject loadingLight;
+
         [SerializeField] private GameObject loadingDark;
         [SerializeField] private Image loadingFillLight;
         [SerializeField] private Image loadingFillDark;
-        
-        [Header("Settings")]
-        [SerializeField] private GameObject settings;
 
-        [Header("GameOver Menu")]
-        [SerializeField] private Image gameOverImage;
+        [Header("Settings")] [SerializeField] private GameObject settings;
+
+        [Header("GameOver Menu")] [SerializeField]
+        private Image gameOverImage;
+
         [SerializeField] private TMP_Text gameOverText;
 
- 
+
         // Internal Data
-        
+
         private FactionTag _playerFaction;
         private Image _loadingImage;
         private EntityManager _em;
         private EntityQuery _subGameStatusQuery;
-        
-        // Cache
-        private ResourceLoadingUtils.LoadingProgress _progress;
-        
+
+
         // Interface
         public static MenuOutController Instance;
-        
+
         public void ShowPauseMenu()
         {
             pauseMenu.SetActive(true);
+        }
+
+        public void HideMainMenu()
+        {
+            mainMenu.SetActive(false);
         }
 
         #region ButtonMethods
@@ -68,72 +66,59 @@ namespace SparFlame.UI.General
             if (GameStatusUtils.IsInBattle(subGameStatusData))
             {
                 ConfirmWindow.Instance.Show("You cannot save game while in battle",
-                    OnClickResume);
+                    OnClickResume, showCancelButton: false);
             }
             else
             {
-                SaveLoadController.Instance.SyncSaveGame();
-                OnClickResume();
+                SaveLoadMenu.Instance.SetModeAndShow(SaveLoadMenu.WindowMode.Save);
             }
-            
         }
 
         public void OnClickExit()
         {
-            var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if (GameStatusUtils.IsInBattle(subGameStatusData))
-            {
-                ConfirmWindow.Instance.Show("Are you sure you want to exit the game? You cannot save the game when in battle",
-                    () =>
-                    {
-                        GameController.Instance.ExitGame();
-                    });
-            }
-            else
-            {
-                SaveLoadController.Instance.SyncSaveGame();
-                GameController.Instance.ExitGame();
-            }
+            ConfirmWindow.Instance.Show(
+                "Are you sure you want to exit the game? You will lose non saving progress",
+                () => { GameController.Instance.ExitGame(); });
         }
 
         public void OnClickGoToMainMenu()
         {
-            var subGameStatusData = _subGameStatusQuery.GetSingleton<SubGameStatusData>();
-            if (GameStatusUtils.IsInBattle(subGameStatusData))
-            {
-                ConfirmWindow.Instance.Show("Are you sure you want to go back to the main menu? You cannot save the game when in battle",
-                    () =>
-                    {
-                        pauseMenu.SetActive(false);
-                        mainMenu.SetActive(true);
-                        gameOverMenu.SetActive(false);
-                        subGameplayUI.SetActive(false);
-                        staticWindowPanel.SetActive(false);
-                        GameController.Instance.EndGameToMainMenu(subGameStatusData.SubGameStatus != SubGameStatus.None);
-                    });
-            }
-            else
-            {
-                pauseMenu.SetActive(false);
-                mainMenu.SetActive(true);
-                gameOverMenu.SetActive(false);
-                mainGameplayUI.SetActive(false);
-                staticWindowPanel.SetActive(false);
-                GameController.Instance.EndGameToMainMenu(subGameStatusData.SubGameStatus != SubGameStatus.None);
-            }
-           
+            ConfirmWindow.Instance.Show(
+                "Are you sure you want to go back to the main menu? You will lose non saving progress",
+                () =>
+                {
+                    pauseMenu.SetActive(false);
+                    mainMenu.SetActive(true);
+                    gameOverMenu.SetActive(false);
+                    CustomCoroutineRunner.Instance.StartCoroutine(GameController.Instance.EndGameToMainMenu());
+                });
         }
 
-        public void OnClickPlay()
+        public void OnClickNewGame()
         {
             mainMenu.SetActive(false);
             selectMenu.SetActive(true);
             selectMenuElements.SetActive(true);
         }
 
-       
+        public void OnClickFactionButton(int faction)
+        {
+            _playerFaction = (FactionTag)faction;
+            StartCoroutine(
+                GameController.Instance.StartGameFirstTime(_playerFaction, true, SaveUtilities.NewGameSaveSlot, 0));
+            selectMenu.SetActive(false);
+            selectMenuElements.SetActive(false);
+        }
 
-     
+        public void OnClickLoadGameInMainMenu()
+        {
+            SaveLoadMenu.Instance.SetModeAndShow(SaveLoadMenu.WindowMode.LoadInMainMenu);
+        }
+
+        public void OnClickLoadGameInGame()
+        {
+            SaveLoadMenu.Instance.SetModeAndShow(SaveLoadMenu.WindowMode.LoadInGame);
+        }
 
         public void OnClickContinue()
         {
@@ -155,11 +140,9 @@ namespace SparFlame.UI.General
 
         #region EventFunctions
 
-        
-
         private void Awake()
         {
-            if(!Instance)
+            if (!Instance)
                 Instance = this;
             else
                 Destroy(gameObject);
@@ -169,17 +152,15 @@ namespace SparFlame.UI.General
         {
             GameController.Instance.OnPause += PauseGame;
             GameController.Instance.OnResume += ResumeGame;
-            GameController.Instance.OnWinnerWin += WinnerWin;
-            GameController.Instance.OnSubGameStartForPlayer += SubGameStartForPlayer;
-            GameController.Instance.OnMainGameStartForPlayer += MainGameStartForPlayer;
-            GameController.Instance.OnClickSlotAndStartGame += ClickSlotAndStartGame;
-            // Init loading screen
-            GeneralResourceManager.Instance.OnLoadAllResources += () =>
-                ShowLoadingScreen(GeneralResourceManager.Instance.LoadingProgress);
-            
-            GameController.Instance.OnSwitchStatusLoadingProgress += ShowLoadingScreen;
+            GameController.Instance.LoadingProgress.OnProgressChanged += UpdateLoadingScreen;
+            GameController.Instance.OnShowLoadingScreen += ShowLoadingScreen;
+            GameController.Instance.OnHideLoadingScreen += HideLoadingScreen;
+            GameController.Instance.OnSetPlayerFactionData += data =>
+            {
+                _playerFaction = data.faction;
+            };
             // Switch gameplay loading screen
-            
+
             mainMenu.SetActive(true);
             loadingLight.SetActive(false);
             loadingDark.SetActive(false);
@@ -188,12 +169,15 @@ namespace SparFlame.UI.General
             pauseMenu.SetActive(false);
             gameOverMenu.SetActive(false);
             settings.SetActive(false);
-            mainGameplayUI.SetActive(false);
-            subGameplayUI.SetActive(false);
-            staticWindowPanel.SetActive(false);
 
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
             _subGameStatusQuery = _em.CreateEntityQuery(typeof(SubGameStatusData));
+        }
+
+        private void OnDestroy()
+        {
+            if(_subGameStatusQuery != default)
+                _subGameStatusQuery.Dispose();
         }
 
         #endregion
@@ -201,54 +185,19 @@ namespace SparFlame.UI.General
 
         private void PauseGame(bool isSwitching)
         {
-            if(isSwitching)return;  
+            if (isSwitching) return;
             pauseMenu.SetActive(true);
         }
 
         private void ResumeGame(bool isSwitching)
         {
-            if(isSwitching)return;
+            if (isSwitching) return;
             pauseMenu.SetActive(false);
         }
-        private void SubGameStartForPlayer()
-        {
-            FrameDelayInvoker.Instance.InvokeAfterFrames(1, () =>
-            {
-                HideLoadingScreen();
-                subGameplayUI.SetActive(true);
-                mainGameplayUI.SetActive(false);
-            });
-        }
 
-        private void MainGameStartForPlayer(bool isTransitionProgress)
-        {
-            staticWindowPanel.SetActive(true);
-            if (!isTransitionProgress)
-            {
-                HideLoadingScreen();
-                selectMenu.SetActive(false);
-                selectMenuElements.SetActive(false);
-                mainGameplayUI.SetActive(true);
-                subGameplayUI.SetActive(false);
-            }
-            else
-            {
-                _progress.ProgressChanged -= UpdateLoadingScreen;
-            }
-        }
 
-        private void WinnerWin(FactionTag winner)
+        private void ShowLoadingScreen()
         {
-            gameOverImage.sprite = BasicUIResourceManager.Instance.FactionGameOverSprites[winner];
-            gameOverMenu.SetActive(true);
-            subGameplayUI.SetActive(false);
-            gameOverText.text = winner == _playerFaction ? "Victory" : "Defeat";
-        }
-    
-        private void ShowLoadingScreen(ResourceLoadingUtils.LoadingProgress progress)
-        {
-            mainGameplayUI.SetActive(false);
-            subGameplayUI.SetActive(false);
             if (_playerFaction == FactionTag.Light)
             {
                 loadingLight.SetActive(true);
@@ -256,31 +205,20 @@ namespace SparFlame.UI.General
             }
             else
             {
-                loadingDark.SetActive(false);
+                loadingDark.SetActive(true);
                 _loadingImage = loadingFillDark;
             }
-            _progress = progress;
-            progress.ProgressChanged += UpdateLoadingScreen;
         }
 
         private void UpdateLoadingScreen(float progress)
         {
-            _loadingImage.fillAmount = progress;   
+            _loadingImage.fillAmount = progress;
         }
 
         private void HideLoadingScreen()
         {
             loadingLight.SetActive(false);
             loadingDark.SetActive(false);
-            _progress.ProgressChanged -= UpdateLoadingScreen;
-        }
-        private void ClickSlotAndStartGame(FactionTag faction,bool ifNewSlot,int slotIndex)
-        {
-            _playerFaction = faction;
-            selectMenu.SetActive(false);
-            selectMenuElements.SetActive(false);
-            loadingLight.SetActive(faction == FactionTag.Light);
-            loadingDark.SetActive(faction == FactionTag.Dark);
         }
     }
 }

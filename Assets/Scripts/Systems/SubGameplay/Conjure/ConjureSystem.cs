@@ -87,7 +87,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 if (_alreadyTagged.Add(request.BuildingEntity))
                     ecb.AddComponent<ConjuringTag>(request.BuildingEntity);
                 var hoursPerUnit = SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab).ConjureSpeedHoursPerUnit;
-                var uniqueId = SystemAPI.GetComponent<CityTaskUniqueId>(request.BuildingEntity).value;
+                var uniqueId = SystemAPI.GetComponent<GlobalSingleId>(request.BuildingEntity).value;
                 
                 // Add task to city buffer
                 var resourceChangeRequest = ecb.CreateEntity();
@@ -98,7 +98,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                     RequestType = ResourceRequestType.ConjureUnitByTask,
                     AbsAmount = request.Count,
                     HoursPerUnit = hoursPerUnit,
-                    FromBuildingUniqueId = uniqueId,
+                    FromBuildingSingleId = uniqueId,
                 });
                 ecb.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
                 
@@ -119,7 +119,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                     buffer.Add(new ConjuringData
                     {
                         ConjuringEntity = request.UnitPrefab,
-                        UnitGlobalId = SystemAPI.GetComponent<SubGameplayGeneralAttr>(request.UnitPrefab).PrefabID,
+                        PrefabId = SystemAPI.GetComponent<PrefabId>(request.UnitPrefab).value,
                         TargetAmount = request.Count,
                         ConjuredAmount = 0,
                         LastCheckTotalHours = curTotalHours,

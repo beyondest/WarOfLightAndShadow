@@ -79,22 +79,32 @@ namespace SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage
             
             unitsUpgraded.text = recorder.PlayerUnitsUpgradeCount.ToString();
             essenceRewardValue.text = essenceReward.ToString();
-            
-            windowPanel.SetActive(true);
+            Show();
         }
 
+        public void Show()
+        {
+            windowPanel.SetActive(true);
+            GeneralModalWindowController.Instance.Show();
+        }
+
+        public void Hide()
+        {
+            windowPanel.SetActive(false);
+            GeneralModalWindowController.Instance.Hide();
+        }
         #region ButtonMethods
 
 
         public void OnClickReturn()
         {
-            windowPanel.SetActive(false);
+            Hide();
             OnEcsReturn?.Invoke();
         }
 
         public void OnClickStay()
         {
-            windowPanel.SetActive(false);
+            Hide();
             OnEcsStay?.Invoke();
         }
 
@@ -114,7 +124,7 @@ namespace SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage
 
         private void Start()
         {
-            windowPanel.SetActive(false);
+            Hide();
         }
         #endregion
 

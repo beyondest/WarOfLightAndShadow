@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine.UI;
@@ -76,6 +77,11 @@ namespace SparFlame.UI.General
 
             if (image != null)
                 image.color = to;
+        }
+
+        private void OnDisable()
+        {
+            StopBlink();
         }
     }
 

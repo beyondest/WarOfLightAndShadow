@@ -19,7 +19,7 @@ namespace SparFlame.Database
                     {
                         Type = unitData.type,
                         Prefab = GetEntity(unitData.prefab, TransformUsageFlags.Dynamic),
-                        GlobalIdx = unitData.id
+                        PrefabId = unitData.id
                     });
                 }
             }

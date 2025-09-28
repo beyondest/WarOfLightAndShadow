@@ -4,6 +4,7 @@ using SparFlame.Database;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using SparFlame.Database.DatabaseDefinition;
 
 namespace Editor
 {
@@ -45,6 +46,9 @@ namespace Editor
         [Unity.Collections.ReadOnly, LabelText("Eco Databases"), ShowInInspector]
         public List<EcoDatabaseSo> ecoDatabaseSos = new();
         
+        [Unity.Collections.ReadOnly, LabelText("ArmyGroup Databases"), ShowInInspector]
+        public List<ArmyGroupDatabaseSo> armyGroupDatabases = new();
+        
         [PropertySpace(10)]
         [Button(ButtonSizes.Large), GUIColor(0.4f, 1f, 0.4f)]
         private void RefreshDatabases()
@@ -60,6 +64,7 @@ namespace Editor
             hintDatabases = FindAllAssets<HintDatabaseSo>("Hint Database");
             cityDatabases = FindAllAssets<CityDatabaseSo>("City Database");
             ecoDatabaseSos = FindAllAssets<EcoDatabaseSo>("Eco Database");
+            armyGroupDatabases = FindAllAssets<ArmyGroupDatabaseSo>("ArmyGroup Database");
         }
 
         private List<T> FindAllAssets<T>(string label) where T : ScriptableObject

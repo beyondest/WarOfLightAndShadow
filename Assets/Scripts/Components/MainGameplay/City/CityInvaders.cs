@@ -7,8 +7,9 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
         public Entity City;
     }
-    public struct CityFutureInvaders : IBufferElementData
+    public struct CityFutureInvaders : IBufferElementData, ICityArmyGroupElement
     {
-        public Entity ArmyGroup;
+        public Entity ArmyGroup { get; set; }
+        public long SingleId { get; set; }
     }
 }

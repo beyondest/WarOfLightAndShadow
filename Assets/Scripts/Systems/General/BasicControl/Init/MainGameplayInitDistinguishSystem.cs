@@ -16,14 +16,11 @@ namespace GamePlaySystem.Functionality.MainGameplay.General
         {
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GameStatusData>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            if (gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming) return;
             var ecbP = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             new InitDistinguishJob
@@ -81,7 +78,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.General
                 var relationship =
                     FactionUtils.GetRelationship(PlayerFactionData.faction,
                         PlayerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
-                if (relationship == Relationship.Self)
+                if (relationship == Relationship.Self || relationship == Relationship.Ally)
                 {
                     ECB.RemoveComponent<AITag>(index, selfEntity);
                     ECB.AddComponent<PlayerTag>(index, selfEntity);

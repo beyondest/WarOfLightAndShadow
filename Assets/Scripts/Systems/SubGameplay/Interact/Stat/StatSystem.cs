@@ -1,7 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.Garrison;
 using SparFlame.Systems.SubGameplay.Ooc;
 using Unity.Burst;
@@ -24,9 +23,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<OocTag> _oocTagLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<InTeamTag> _inTeamTagLookup;
-        private ComponentLookup<UnitAttr> _unitAttrLookup;
+        private ComponentLookup<Rnd> _rndLookup;
         private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
         private ComponentLookup<ExpData> _expDataLookup;
+        private ComponentLookup<UnitAttr> _unitAttrLookup;
 
         private BufferLookup<InsightTarget> _insightTargetLookup;
         private BufferLookup<CostList> _costListLookup;
@@ -46,11 +46,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<UnitGarrisonBuff> _unitGarrisonBuffLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<ConstructingTimer> _constructingTimerLookup;
-        private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
         private ComponentLookup<ConjuringTag> _conjuringTagLookup;
         private ComponentLookup<GeneratingTag> _generatingTagLookup;
         private ComponentLookup<GenerateAttr> _generateAttrLookup;
         private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
+        private ComponentLookup<PrefabId> _prefabIdLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -65,23 +66,26 @@ namespace SparFlame.Systems.SubGameplay.Interact
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<OocSystemConfig>();
 
+            _resourceAttrLookup = state.GetComponentLookup<ResourceAttr>();
+            _rndLookup = state.GetComponentLookup<Rnd>();
+            _statDataLookup = state.GetComponentLookup<StatData>();
+            
             _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
             _volumeObstacleTagLookup = state.GetComponentLookup<VolumeObstacleTag>(true);
-            _statDataLookup = state.GetComponentLookup<StatData>();
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _resourceAttrLookup = state.GetComponentLookup<ResourceAttr>();
             _renewableResourceDataLookup = state.GetComponentLookup<RenewableData>(true);
             _oocTagLookup = state.GetComponentLookup<OocTag>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
             _costListLookup = state.GetBufferLookup<CostList>(true);
             _inTeamTagLookup = state.GetComponentLookup<InTeamTag>(true);
-            _unitAttrLookup = state.GetComponentLookup<UnitAttr>();
             _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
             _generateAttrLookup = state.GetComponentLookup<GenerateAttr>(true);
             _generatingTagLookup = state.GetComponentLookup<GeneratingTag>(true);
+            _prefabIdLookup = state.GetComponentLookup<PrefabId>(true);
+            _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
             
             _lightShieldUnderDefendLookup = state.GetComponentLookup<LightShieldUnderDefend>(true);
             _lightShieldBuffLookup = state.GetComponentLookup<LightShieldBuff>(true);
@@ -96,7 +100,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _buildingGarrisonBuffLookup = state.GetComponentLookup<BuildingGarrisonBuff>(true);
             _unitGarrisonBuffLookup = state.GetComponentLookup<UnitGarrisonBuff>(true);
             _constructingTimerLookup = state.GetComponentLookup<ConstructingTimer>(true);
-            _cityTaskUniqueIdLookup = state.GetComponentLookup<CityTaskUniqueId>(true);
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
             _conjuringTagLookup = state.GetComponentLookup<ConjuringTag>(true);
             _inArmyGroupLookup = state.GetComponentLookup<InArmyGroup>(true);
         }
@@ -104,6 +108,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _prefabIdLookup.Update(ref state);
             _statDataLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             _volumeObstacleTagLookup.Update(ref state);
@@ -115,14 +120,15 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _buildingAttrLookup.Update(ref state);
             _costListLookup.Update(ref state);
             _inTeamTagLookup.Update(ref state);
-            _unitAttrLookup.Update(ref state);
+            _rndLookup.Update(ref state);
             _dwellingAttrLookup.Update(ref state);
             _expDataLookup.Update(ref state);
             _inGarrisonLookup.Update(ref state);
             _conjuringTagLookup.Update(ref state);
             _generateAttrLookup.Update(ref state);
             _generatingTagLookup.Update(ref state);
-            
+            _prefabIdLookup.Update(ref state);
+            _unitAttrLookup.Update(ref state);
             
             _lightShieldUnderDefendLookup.Update(ref state);
             _lightShieldBuffLookup.Update(ref state);
@@ -137,7 +143,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _buildingGarrisonBuffLookup.Update(ref state);
             _unitGarrisonBuffLookup.Update(ref state);
             _constructingTimerLookup.Update(ref state);
-            _cityTaskUniqueIdLookup.Update(ref state);
+            _singleIdLookup.Update(ref state);
             _inArmyGroupLookup.Update(ref state);
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
             var oocSystemConfig = SystemAPI.GetSingleton<OocSystemConfig>();
@@ -164,7 +170,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 GeneralAttrLookup = _generalAttrLookup,
                 ExpDataLookup = _expDataLookup,
                 StatDataLookup = _statDataLookup,
-                UnitAttrLookup = _unitAttrLookup,
+                UnitAttrLookup = _rndLookup,
 
                 LightShieldUnderDefendLookup = _lightShieldUnderDefendLookup,
                 LightShieldBuffLookup = _lightShieldBuffLookup,
@@ -222,11 +228,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 CapacityBuildingAttrLookup = _dwellingAttrLookup,
                 ExpDataLookup = _expDataLookup,
                 ConstructingTimerLookup =_constructingTimerLookup,
-                CityTaskUniqueIdLookup =_cityTaskUniqueIdLookup ,
+                GlobalSingleIdLookup =_singleIdLookup ,
                 ConjuringTagLookup = _conjuringTagLookup,
                 GeneratingTagLookup = _generatingTagLookup,
                 GenerateAttrLookup = _generateAttrLookup,
-                InArmyGroupLookup = _inArmyGroupLookup
+                InArmyGroupLookup = _inArmyGroupLookup,
+                PrefabIdLookup = _prefabIdLookup
             }.Schedule();
         }
     }

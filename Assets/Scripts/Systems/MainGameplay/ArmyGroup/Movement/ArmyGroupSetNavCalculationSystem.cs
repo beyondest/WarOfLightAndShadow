@@ -19,7 +19,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             state.RequireForUpdate<ArmyGroupMovingSystemConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<GameStatusData>();
             // state.RequireForUpdate<ArmyGroupSelected>();
             _armyGroupCalculateEnableLookup = state.GetComponentLookup<ArmyGroupCalculateEnable>(
                 );
@@ -58,7 +57,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 // Try to add this section way points to final way points first, even target is not reachable
                 if (wayPoints.Length != 0)
                 {
-                    ECB.SetComponentEnabled<PathVisualizeEnabled>(index, selfEntity, true);
+                    ECB.SetComponentEnabled<ArmyGroupPathVisualizeEnabled>(index, selfEntity, true);
                     foreach (var waypoint in wayPoints)
                     {
                         finalWayPoints.Add(new ArmyGroupFinalWayPoint { position = waypoint.position });

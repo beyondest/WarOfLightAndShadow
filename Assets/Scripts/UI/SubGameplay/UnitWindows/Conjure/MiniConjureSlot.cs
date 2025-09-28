@@ -30,6 +30,7 @@ namespace SparFlame.UI.SubGameplay
         private void Start()
         {
             _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if(_gamingTag != default)_gamingTag.Dispose();
             _gamingTag = _em.CreateEntityQuery(typeof(SubGamingTag));
         }
 
@@ -38,6 +39,11 @@ namespace SparFlame.UI.SubGameplay
             if(_gamingTag.IsEmpty)return;
             if(_targetEntity == Entity.Null)return;
             CalculateMaxConjureCount();
+        }
+
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)_gamingTag.Dispose();
         }
 
         private void CalculateMaxConjureCount()

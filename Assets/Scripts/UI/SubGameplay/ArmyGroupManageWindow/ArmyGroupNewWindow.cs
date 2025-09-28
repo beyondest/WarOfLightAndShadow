@@ -14,15 +14,16 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private GameObject armyGroupNewPanel;
         [SerializeField] private TMP_Text newArmyGroupName;
         [SerializeField] private GameObject selectIconPanel;
+
+        [SerializeField] private ArmyGroupIconType initIconType = ArmyGroupIconType.Horse;
         // Interface
         public static ArmyGroupNewWindow Instance;
         public event Action<string, ArmyGroupIconType> OnEcsNewArmyGroup;
         
-        
         public override void Show(Vector2? pos = null)
         {
             newArmyGroupName.text = "New Army";
-            newArmyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[ArmyGroupIconType.Bear];
+            newArmyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[initIconType];
             armyGroupNewPanel.SetActive(true);
             foreach (var slot in Slots)
             {

@@ -45,9 +45,10 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     _allyAgentRadius = config.AllyAgentRadius;
                     _enemyAgentRadius = config.EnemyAgentRadius;
                 }
-                GameController.Instance.OnEcsSwitchSubGameStatus += _=>
+                GameController.Instance.OnSwitchGameStatus += (targetSubGameStatus, _)=>
                 {
-                    ClearMappingWhenSwitchScene();
+                    if(targetSubGameStatus.SubGameStatus == SubGameStatus.None)
+                        ClearMappingWhenSwitchScene();
                 };
                 
                 _initialized = true;

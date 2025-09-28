@@ -29,15 +29,6 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         public void OnUpdate(ref SystemState state)
         {
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
-            if (gameStatus == GameStatus.Init)
-            {
-                // SystemAPI.SetSingleton(new EnemyCrystalInfo
-                // {
-                //     CurTotalHp = 1,
-                //     MaxTotalHp = 1
-                // });
-                return;
-            }
 
             if (gameStatus != GameStatus.SubGaming) return;
             _buildingAttrLookup.Update(ref state);

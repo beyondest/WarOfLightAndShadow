@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GamePlaySystem.Database;
+using SparFlame.Database.DatabaseDefinition;
 using UnityEngine;
 using UnityEditor;
 
@@ -24,6 +25,7 @@ namespace SparFlame.Database
         private static HintDatabaseSo _hintDatabaseSo;
         private static CityDatabaseSo _cityDatabaseSo;
         private static EcoDatabaseSo _ecoDatabaseSo;
+        private static ArmyGroupDatabaseSo _armyGroupDatabaseSo;
         
         public static BuildingDatabaseSo BuildingDatabaseSo =>
             _buildingDatabaseSo ??= LoadAndMergeDatabase<BuildingDatabaseSo, BuildingDataItem>("items");
@@ -59,6 +61,9 @@ namespace SparFlame.Database
         
         public static EcoDatabaseSo EcoDatabaseSo =>
         _ecoDatabaseSo ??= LoadAndMergeDatabase<EcoDatabaseSo, EcoDataItem>("items");
+        
+        public static ArmyGroupDatabaseSo ArmyGroupDatabaseSo => 
+            _armyGroupDatabaseSo ??= LoadAndMergeDatabase<ArmyGroupDatabaseSo, ArmyGroupDataItem>("items");
         
         // This method only works for general databases
         public static GeneralDatabase<TData> GetDatabaseSo<TData>() where TData : GeneralDataItem
@@ -186,6 +191,7 @@ namespace SparFlame.Database
             _hintDatabaseSo = null;
             _cityDatabaseSo = null;
             _ecoDatabaseSo = null;
+            _armyGroupDatabaseSo = null;
             _ = BuildingDatabaseSo;
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
@@ -197,6 +203,7 @@ namespace SparFlame.Database
             _ = HintDatabaseSo;
             _ = CityDatabaseSo;
             _ = EcoDatabaseSo;
+            _ = ArmyGroupDatabaseSo;
             Debug.Log(" All Databases reloaded successfully!");
         }
 #endif

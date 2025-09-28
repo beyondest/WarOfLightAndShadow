@@ -101,7 +101,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                 }
                 for (var j = entityBuffer.Length - 1; j >= 0; j--)
                 {
-                    if (entityBuffer[j].Value == request.UnitEntity)
+                    if (entityBuffer[j].Unit == request.UnitEntity)
                         entityBuffer.RemoveAt(j);
                 }
 
@@ -138,9 +138,9 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     foreach (var garrisonEntity in entityBuffer)
                     {
                         // Move out garrison units
-                        if (_alreadyTagged.Add(garrisonEntity.Value))
+                        if (_alreadyTagged.Add(garrisonEntity.Unit))
                         {
-                            ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Value);
+                            ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Unit);
                         }
                     }
                     // Clear count , buff, buffer, continue
@@ -174,12 +174,12 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     dataBuffer.RemoveAt(i);
                     for (var j = entityBuffer.Length - 1; j >= 0; j--)
                     {
-                        if (entityBuffer[j].Id != command.MoveOutUnitId) continue;
+                        if (entityBuffer[j].PrefabId != command.MoveOutUnitId) continue;
                         var garrisonEntity = entityBuffer[j];
                         // Move out garrison units
-                        if (_alreadyTagged.Add(garrisonEntity.Value))
+                        if (_alreadyTagged.Add(garrisonEntity.Unit))
                         {
-                            ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Value);
+                            ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Unit);
                         }
                         entityBuffer.RemoveAt(j);
                     }
@@ -195,11 +195,11 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     for (var j = entityBuffer.Length - 1; j >= 0; j--)
                     {
                         var garrisonEntity = entityBuffer[j];
-                        if (garrisonEntity.Id != command.MoveOutUnitId) continue;
+                        if (garrisonEntity.PrefabId != command.MoveOutUnitId) continue;
                         // Move out garrison units
-                        if (_alreadyTagged.Add(garrisonEntity.Value))
+                        if (_alreadyTagged.Add(garrisonEntity.Unit))
                         {
-                            ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Value);
+                            ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Unit);
                         }
                         entityBuffer.RemoveAt(j);
                         break;
@@ -261,8 +261,9 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                 // Add to buffer
                 garrisonEntities.Add(new GarrisonEntity
                 {
-                    Id = inRequest.Id,
-                    Value = inRequest.UnitEntity
+                    PrefabId = inRequest.Id,
+                    Unit = inRequest.UnitEntity,
+                    SingleId = SystemAPI.GetComponent<GlobalSingleId>(inRequest.UnitEntity).value
                 });
 
               

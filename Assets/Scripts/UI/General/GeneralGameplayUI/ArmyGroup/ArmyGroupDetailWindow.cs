@@ -132,7 +132,8 @@ namespace SparFlame.UI.General
 
         private void UpdateStaticData()
         {
-            var playerFactionData = Em.CreateEntityQuery(typeof(PlayerFactionData)).GetSingleton<PlayerFactionData>();
+            using var query = Em.CreateEntityQuery(typeof(PlayerFactionData));
+            var playerFactionData = query.GetSingleton<PlayerFactionData>();
             var generalAttr = Em.GetComponentData<MainGameplayGeneralAttr>(_targetEntity);
             if (generalAttr.faction == FactionTag.Neutral)
             {

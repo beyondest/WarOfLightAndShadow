@@ -229,7 +229,7 @@ namespace SparFlame.Systems.MainGameplay.City
                             populationStorageTasks.Add(new PopulationStorageAddTask
                             {
                                 finishTotalHours = request.FinishTotalHours,
-                                fromBuildingUniqueId = request.FromBuildingUniqueId,
+                                fromBuildingSingleId = request.FromBuildingSingleId,
                                 addAmount = request.AbsAmount,
                             });
                         }
@@ -240,7 +240,7 @@ namespace SparFlame.Systems.MainGameplay.City
                                 resourceType = request.ResourceType,
                                 finishTotalHours = request.FinishTotalHours,
                                 storageAddAmount = request.AbsAmount,
-                                fromBuildingUniqueId = request.FromBuildingUniqueId,
+                                fromBuildingSingleId = request.FromBuildingSingleId,
                             });
                         }
 
@@ -252,7 +252,7 @@ namespace SparFlame.Systems.MainGameplay.City
                             resourceType = request.ResourceType,
                             finishTotalHours = request.FinishTotalHours,
                             hoursPerUnit = request.HoursPerUnit,
-                            fromBuildingUniqueId = request.FromBuildingUniqueId,
+                            fromBuildingSingleId = request.FromBuildingSingleId,
                             taskType = CityTaskType.PlantGenerator,
                         });
                         break;
@@ -264,7 +264,7 @@ namespace SparFlame.Systems.MainGameplay.City
                             for (var i = populationStorageTasks.Length - 1; i >= 0; i--)
                             {
                                 var task = populationStorageTasks[i];
-                                if (task.fromBuildingUniqueId != request.FromBuildingUniqueId) continue;
+                                if (task.fromBuildingSingleId != request.FromBuildingSingleId) continue;
                                 populationStorageTasks.RemoveAt(i);
                                 break;
                             }
@@ -274,7 +274,7 @@ namespace SparFlame.Systems.MainGameplay.City
                             for (var i = cityTasks.Length - 1; i >= 0; i--)
                             {
                                 var task = cityTasks[i];
-                                if (task.fromBuildingUniqueId != request.FromBuildingUniqueId) continue;
+                                if (task.fromBuildingSingleId != request.FromBuildingSingleId) continue;
                                 cityTasks.RemoveAt(i);
                                 break;
                             }
@@ -317,7 +317,7 @@ namespace SparFlame.Systems.MainGameplay.City
                         for (var i = 0; i < populationConjureTasks.Length; i++)
                         {
                             var task = populationConjureTasks[i];
-                            if (task.fromBuildingUniqueId == request.FromBuildingUniqueId
+                            if (task.fromBuildingSingleId == request.FromBuildingSingleId
                                 && math.abs(task.hoursPerUnit - request.HoursPerUnit) < 0.01f)
                             {
                                 task.remainingConjuredUnitCount += request.AbsAmount;
@@ -332,7 +332,7 @@ namespace SparFlame.Systems.MainGameplay.City
                             populationConjureTasks.Add(new PopulationConjureTask
                             {
                                 hoursPerUnit = request.HoursPerUnit,
-                                fromBuildingUniqueId = request.FromBuildingUniqueId,
+                                fromBuildingSingleId = request.FromBuildingSingleId,
                                 remainingConjuredUnitCount = request.AbsAmount,
                                 accumulatedHours = curTotalHours,
                             });
@@ -343,7 +343,7 @@ namespace SparFlame.Systems.MainGameplay.City
                         for (var i = populationConjureTasks.Length - 1; i >= 0; i--)
                         {
                             var task = populationConjureTasks[i];
-                            if (task.fromBuildingUniqueId == request.FromBuildingUniqueId)
+                            if (task.fromBuildingSingleId == request.FromBuildingSingleId)
                             {
                                 populationConjureTasks.RemoveAt(i);
                                 populationResourceData.virtualOccupiedCount -= task.remainingConjuredUnitCount;

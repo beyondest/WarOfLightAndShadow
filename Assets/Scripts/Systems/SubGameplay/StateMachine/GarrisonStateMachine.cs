@@ -31,6 +31,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<OocTag> _oocTagLookup;
         private ComponentLookup<ConstructingTimer> _constructingTagLookup;
         private ComponentLookup<UnitRetreatTag> _unitRetreatTagLookup;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -51,6 +52,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
             _selectedAttrLookup = state.GetComponentLookup<Selected>();
             _unitRetreatTagLookup = state.GetComponentLookup<UnitRetreatTag>(true);
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
         }
 
         [BurstCompile]
@@ -68,6 +70,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _garrisonEntityLookup.Update(ref state);
             _selectedAttrLookup.Update(ref state);
             _unitRetreatTagLookup.Update(ref state);
+            _singleIdLookup.Update(ref state);
             var config = SystemAPI.GetSingleton<GarrisonSystemConfig>();
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -81,6 +84,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 OocTagLookup = _oocTagLookup,
                 ConstructingTagLookup = _constructingTagLookup,
                 SelectedLookup = _selectedAttrLookup,
+                SingleIdLookup = _singleIdLookup,
                 Config = config,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = job;
@@ -189,7 +193,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     {
                         StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
                             TransformLookup[inGarrison.BuildingEntity].Position,
-                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Value,
+                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Box,
                             Config.GarrisonRadiusSq,false,
                             selfEntity,index, ECB);
                     }
@@ -218,7 +222,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         // This should happen when self is healer and target is wounded
                         StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
                             TransformLookup[inGarrison.BuildingEntity].Position,
-                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Value,
+                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Box,
                             Config.GarrisonRadiusSq,false,
                             selfEntity,index, ECB);
                         return;
@@ -257,13 +261,14 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public BufferLookup<AllowGarrisonUnit> AllowGarrisonUnitLookup;
             [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
             [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTagLookup;
+            [ReadOnly] public ComponentLookup<GlobalSingleId>   SingleIdLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<Selected> SelectedLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
 
 
             private void Execute([ChunkIndexInQuery] int index, ref BasicStateData stateData,
                 ref PhysicsMass physicsMass,
-                in SubGameplayGeneralAttr subGameplayGeneralAttr,
+                in PrefabId prefabId,
                 in UnitAttr unitAttr, in GarrisonStateTag tag, Entity selfEntity)
             {
                 if (stateData.CurState != InteractState.Garrison) return;
@@ -323,7 +328,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 var inGarrison = new InGarrison
                 {
                     BuildingEntity = stateData.TargetEntity,
-                    InBuilding = true
+                    InBuilding = true,
+                    SingleId = SingleIdLookup[stateData.TargetEntity].value
                 };
                 ref var selfTransform = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
                 GarrisonUtils.PosGetIn(ref inGarrison, ref selfTransform,
@@ -345,7 +351,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ECB.AddComponent(index, request, new GarrisonInBuildingRequest
                 {
                     BuildingEntity = stateData.TargetEntity,
-                    Id = subGameplayGeneralAttr.PrefabID,
+                    Id = prefabId.value,
                     UnitType = unitAttr.Type,
                     UnitEntity = selfEntity
                 });

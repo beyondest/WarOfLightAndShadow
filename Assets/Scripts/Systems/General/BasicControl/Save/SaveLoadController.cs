@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.IO;
 using SparFlame.Components.General;
 using SparFlame.Core.Utils;
 using Unity.Entities;
@@ -8,127 +10,113 @@ namespace SparFlame.Systems.General.BasicControl
 {
     public class SaveLoadController : MonoBehaviour
     {
+        [SerializeField] private float checkInterval = 0.1f;
+
+        public class Operation : ResourceOperation
+        {
+            public Operation(IEnumerator routine) : base(routine)
+            {
+            }
+        }
+
         public static SaveLoadController Instance;
 
-        // Load actions
-        public event Action OnEcsLoadArmyGroupSubData;
-        public event Action<SubGameStatusData> OnEcsLoadCitySubData;
-        public event Action OnEcsLoadGameMainData;
+        public event Action<SaveType> OnSaveComplete;
+        public event Action<SaveType> OnStartSave;
 
-        public event Action OnEcsLoadMainGameplayData;
-        
-        // Save actions
-        public event Action<bool> OnEcsSaveCitySubData;
-        public event Action<bool> OnEcsSaveArmyGroupSubData;
-        public event Action OnEcsSaveArmyGroupMainData;
-        public event Action OnEcsSaveCityMainData;
-        public event Action OnEcsSaveGameMainData;
-        public event Action OnEcsSaveEnemySpecificArmyGroupSubData;
-
-        public event Action OnEcsCopyAndDeleteTmpSubData;
+        public void SetSavingSlotAndDoSomeCleaning(bool isNewGame, int saveSlot)
+        {
+            var playerSaveSlot = _saveSlotQuery.GetSingletonRW<CurrentSaveSlot>();
+            playerSaveSlot.ValueRW.Value = saveSlot;
+            var slot = playerSaveSlot.ValueRO.Value;
+            var folder = SaveUtilities.GetSaveSlotFolder(slot);
+            if (isNewGame)
+            {
+                SaveUtilities.InitializeSaveSlotFolder(folder, saveSlot);
+            }
+            else
+            {
+                // Delete tmp sub data save
+                var armyGroupSubDataFolder = SaveUtilities.GetArmyGroupSubDataFolder(slot);
+                var citySubDataFolder = SaveUtilities.GetCitySubDataFolder(slot);
+                var at = Directory.GetFiles(armyGroupSubDataFolder, "*.tmp", SearchOption.AllDirectories);
+                var ct = Directory.GetFiles(citySubDataFolder, "*.tmp", SearchOption.AllDirectories);
+                foreach (var file in at)
+                    File.Delete(file);
+                foreach (var file in ct)
+                    File.Delete(file);
+            }
+        }
 
         /// <summary>
-        /// This method should be called when enemy city conjure an army group. Save to tmp.
+        /// 
         /// </summary>
-        public void SyncSaveEnemySpecificArmyGroupSubData()
-        {
-            OnEcsSaveEnemySpecificArmyGroupSubData?.Invoke();
-        }
-        
-        public void SyncSaveGame(bool backToMainWorldAutoSave = false)
-        {
-            var subGameStatusData = _currentSubGameStatusQuery.GetSingleton<SubGameStatusData>();
-            
-            // If battle not complete, save game is not allowed, player only has the pre-battle saving;
-            // If battle complete but player failed, city sub game data still not save, because now city does not belong to player;
-            // If battle complete and player win, city sub game data will be saved;
-            
-            switch (subGameStatusData.SubGameStatus)
-            {
-                // This happens when player manually save in the city
-                case SubGameStatus.PlayerCity :
-                    if (!backToMainWorldAutoSave)
-                    {
-                        OnEcsSaveCityMainData?.Invoke();
-                        OnEcsSaveCitySubData?.Invoke(false); // Should save to tmp = false
-                        OnEcsSaveArmyGroupSubData?.Invoke(false);
-                        OnEcsSaveArmyGroupMainData?.Invoke();
-                        OnEcsSaveGameMainData?.Invoke();
-                        OnEcsCopyAndDeleteTmpSubData?.Invoke();
-                    }
-                    else
-                    {
-                        // This happens when player back to main world auto save
-                        OnEcsSaveCitySubData?.Invoke(true);
-                        OnEcsSaveArmyGroupSubData?.Invoke(true);
-                    }
-                
-                    break;
-                // This happens when player save in the main world
-                case SubGameStatus.None:
-                    OnEcsSaveArmyGroupMainData?.Invoke();
-                    OnEcsSaveCityMainData?.Invoke();
-                    OnEcsSaveGameMainData?.Invoke();
-                    OnEcsCopyAndDeleteTmpSubData?.Invoke();
-                    
-                    break;
-                case SubGameStatus.PlayerDefend:
-                    // Player defend save sub data to tmp file
-                    OnEcsSaveCitySubData?.Invoke(true);
-                    OnEcsSaveArmyGroupSubData?.Invoke(true);
-                    break;
+        /// <param name="saveType"></param>
+        /// <param name="targetSlot">This value is only valid when saveType == Manual</param>
+        /// <returns></returns>
+        public Operation SaveAsync(SaveType saveType, int targetSlot) => new(SelfSaveAsync(saveType, targetSlot));
+        public Operation LoadGameMainDataAsync() => new(SelfLoadGameMainDataAsync());
 
-                // These will happen when a battle ends, but saving job is handled by after battle transfer system
-                case SubGameStatus.PlayerSiege:
-                case SubGameStatus.Encounter:
-                    OnEcsSaveArmyGroupSubData?.Invoke(true);
-                    break;
-                case SubGameStatus.Support:
-                default:
-                    break;
+        public Operation LoadGameSubDataAsync(SubGameStatusData targetSubGameStatusData) =>
+            new(SelfLoadGameSubDataAsync(targetSubGameStatusData));
+
+    
+
+        #region Internal Callbacks or Events
+
+        // Load actions
+        internal event Action OnEcsStartLoadArmyGroupSubData;
+        internal event Action<SubGameStatusData> OnEcsStartLoadCitySubData;
+        internal event Action OnEcsStartLoadGameMainData;
+
+
+        // Save actions
+        internal event Action<bool> OnEcsStartSavingCitySubData;
+        internal event Action<bool> OnEcsStartSaveArmyGroupSubData;
+        internal event Action OnEcsStartSaveGameMainData;
+        internal event Action OnEcsStartSaveEnemySpecificArmyGroupSubData;
+
+        // int : Target saving slot. Not current saving slot
+        internal event Action<int> OnEcsCopyDeleteTmpSubDatas;
+
+        // int : Target saving slot.
+        internal event Action<int> OnEcsCopyOverrideSavingSlot;
+
+        internal event Action OnEcsDeleteInvalidSubDatas;
+
+
+        internal void OneTaskSaveComplete()
+        {
+            _stillSaveTaskCount--;
+            if (_stillSaveTaskCount == 0)
+            {
+                IsSaving = false;
+                OnSaveComplete?.Invoke(_saveType);
             }
         }
 
-        public void LoadGameMainData()
+        internal void OneTaskLoadComplete()
         {
-            OnEcsLoadGameMainData?.Invoke();
-        }
-
-        public void LoadMainGameplayData()
-        {
-            OnEcsLoadMainGameplayData?.Invoke();
-        }
-        
-
-        public void SyncLoadSubGameData(SubGameStatusData targetSubGameStatusData)
-        {
-            switch (targetSubGameStatusData.SubGameStatus)
+            _stillLoadTaskCount--;
+            if (_stillLoadTaskCount == 0)
             {
-                case SubGameStatus.PlayerCity:
-                case SubGameStatus.PlayerDefend:
-                    OnEcsLoadCitySubData?.Invoke(targetSubGameStatusData);
-                    OnEcsLoadArmyGroupSubData?.Invoke();
-                    break;
-                case SubGameStatus.None:
-                    // This should never happen
-                    break;
-                case SubGameStatus.PlayerSiege:
-                case SubGameStatus.Encounter:
-                case SubGameStatus.Support:
-                    OnEcsLoadArmyGroupSubData?.Invoke();
-                    break;
-                default:
-                    BurstSafe.UnexpectedEnum(targetSubGameStatusData.SubGameStatus);
-                    break;
+                _isLoading = false;
             }
         }
 
-        private int _saveSlot;
+        #endregion
+
         private EntityQuery _currentSubGameStatusQuery;
+        private EntityQuery _saveSlotQuery;
         private EntityManager _em;
-
-        #region EventFunctions
+        private SaveType _saveType;
+        private int _stillSaveTaskCount;
+        private int _stillLoadTaskCount;
+        [NonSerialized] public bool IsSaving;
+        [NonSerialized] private bool _isLoading;
         
+        #region EventFunctions
+
         private void Awake()
         {
             if (!Instance)
@@ -139,12 +127,206 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Start()
         {
+            _em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _saveSlotQuery = _em.CreateEntityQuery(typeof(CurrentSaveSlot));
             _currentSubGameStatusQuery =
-                World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(SubGameStatusData));
+                _em.CreateEntityQuery(typeof(SubGameStatusData));
         }
-        
+
+        private void OnDestroy()
+        {
+            if(_saveSlotQuery != default)
+                _saveSlotQuery.Dispose();
+            if(_currentSubGameStatusQuery != default)
+                _currentSubGameStatusQuery.Dispose();
+        }
+
+        #endregion
+
+        #region Start Save/Load Methods
+
+        private void StartSaveGame(SaveType saveType, int targetSlot)
+        {
+            _saveType = saveType;
+            IsSaving = true;
+            OnStartSave?.Invoke(saveType);
+            var subGameStatusData = _currentSubGameStatusQuery.GetSingleton<SubGameStatusData>();
+            switch (saveType)
+            {
+                // These save types will clear all tmp files and change current save slot singleton
+                case SaveType.Manual:
+                case SaveType.Automatic:
+                    var currentSaveSlot = _saveSlotQuery.GetSingletonRW<CurrentSaveSlot>();
+                    var actualTargetSlot =
+                        saveType == SaveType.Automatic ? SaveUtilities.AutomaticSaveSlot : targetSlot;
+
+                    if (currentSaveSlot.ValueRO.Value != actualTargetSlot)
+                        OnEcsCopyOverrideSavingSlot?.Invoke(actualTargetSlot);
+                    OnEcsCopyDeleteTmpSubDatas?.Invoke(actualTargetSlot);
+                    // Switch saving slot
+                    currentSaveSlot.ValueRW.Value = actualTargetSlot;
+
+                    switch (subGameStatusData.SubGameStatus)
+                    {
+                        case SubGameStatus.PlayerCity:
+                            _stillSaveTaskCount = 3;
+                            OnEcsStartSavingCitySubData?.Invoke(false);
+                            OnEcsStartSaveArmyGroupSubData?.Invoke(false);
+                            OnEcsStartSaveGameMainData?.Invoke();
+                            break;
+                        // This happens when player save in the main world
+                        case SubGameStatus.None:
+                            _stillSaveTaskCount = 1;
+                            OnEcsStartSaveGameMainData?.Invoke();
+                            break;
+                        // This will never happen
+                        case SubGameStatus.PlayerDefend:
+                        case SubGameStatus.PlayerSiege:
+                        case SubGameStatus.Encounter:
+                        case SubGameStatus.Support:
+                        default:
+                            BurstSafe.UnexpectedEnum(subGameStatusData.SubGameStatus);
+                            break;
+                    }
+
+                    // Clear all invalid sub datas/tmp sub datas(when army group died or city faction change)
+                    OnEcsDeleteInvalidSubDatas?.Invoke();
+                    break;
+
+                // This save type is made for fast save in current slot
+                case SaveType.SaveSubGameplayDataToTmp:
+                    switch (subGameStatusData.SubGameStatus)
+                    {
+                        case SubGameStatus.PlayerCity:
+                        case SubGameStatus.PlayerDefend:
+                            _stillSaveTaskCount = 2;
+                            OnEcsStartSaveArmyGroupSubData?.Invoke(true);
+                            OnEcsStartSavingCitySubData?.Invoke(true);
+                            break;
+                        case SubGameStatus.PlayerSiege:
+                        case SubGameStatus.Encounter:
+                            _stillSaveTaskCount = 1;
+                            OnEcsStartSaveArmyGroupSubData?.Invoke(true);
+                            break;
+                        // This will never happen
+                        case SubGameStatus.Support:
+                        case SubGameStatus.None:
+                        default:
+                            BurstSafe.UnexpectedEnum(saveType);
+                            break;
+                    }
+
+                    break;
+
+                case SaveType.SaveEnemySpecificArmyGroupSubData:
+                    _stillSaveTaskCount = 1;
+                    OnEcsStartSaveEnemySpecificArmyGroupSubData?.Invoke();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(saveType), saveType, null);
+            }
+
+            // If battle not complete, save game is not allowed, player only has the pre-battle saving;
+            // If battle complete but player failed, city sub game data still not save, because now city does not belong to player;
+            // If battle complete and player win, city sub game data will be saved;
+        }
+
+        private void StartLoadGameMainData()
+        {
+            _isLoading = true;
+            _stillLoadTaskCount += 1;
+            OnEcsStartLoadGameMainData?.Invoke();
+        }
+
+
+        private void StartLoadGameSubData(SubGameStatusData targetSubGameStatusData)
+        {
+            _isLoading = true;
+            switch (targetSubGameStatusData.SubGameStatus)
+            {
+                case SubGameStatus.PlayerCity:
+                case SubGameStatus.PlayerDefend:
+                    _stillLoadTaskCount += 1;
+                    OnEcsStartLoadArmyGroupSubData?.Invoke();
+                    StartCoroutine(CheckLoadArmyGroupSubDataCompleteAndStartLoadCitySubData(targetSubGameStatusData));
+                    break;
+                case SubGameStatus.PlayerSiege:
+                case SubGameStatus.Encounter:
+                case SubGameStatus.Support:
+                    _stillLoadTaskCount += 1;
+                    OnEcsStartLoadArmyGroupSubData?.Invoke();
+                    break;
+
+                case SubGameStatus.None:
+                default:
+                    BurstSafe.UnexpectedEnum(targetSubGameStatusData.SubGameStatus);
+                    break;
+            }
+        }
+
         #endregion
 
 
+        /// <summary>
+        /// If multiple save command is called at the same time, will save it one by one
+        /// </summary>
+        /// <param name="saveType"></param>
+        /// <param name="targetSlot"></param>
+        /// <returns></returns>
+        private IEnumerator SelfSaveAsync(SaveType saveType, int targetSlot)
+        {
+            if (IsSaving)
+                yield return CheckSavingComplete();
+            StartSaveGame(saveType, targetSlot);
+            yield return CheckSavingComplete();
+        }
+
+        /// <summary>
+        /// If multiple load command is called at the same time, will load it async, but complete until all load complete
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator SelfLoadGameMainDataAsync()
+        {
+            StartLoadGameMainData();
+            yield return CheckLoadComplete();
+        }
+
+        private IEnumerator SelfLoadGameSubDataAsync(SubGameStatusData targetSubGameStatusData)
+        {
+            StartLoadGameSubData(targetSubGameStatusData);
+            yield return CheckLoadComplete();
+        }
+        
+        private IEnumerator CheckSavingComplete()
+        {
+            while (IsSaving)
+            {
+                yield return new WaitForSecondsRealtime(checkInterval);
+            }
+        }
+
+        private IEnumerator CheckLoadComplete()
+        {
+            while (_isLoading)
+            {
+                yield return new WaitForSecondsRealtime(checkInterval);
+            }
+            yield return new WaitForSecondsRealtime(checkInterval); // Wait for new job to load
+            while (_isLoading)
+            {
+                yield return new WaitForSecondsRealtime(checkInterval);
+            }
+        }
+
+        private IEnumerator CheckLoadArmyGroupSubDataCompleteAndStartLoadCitySubData(SubGameStatusData targetSubGameStatusData)
+        {
+            while (_isLoading)
+            {
+                yield return new WaitForSecondsRealtime(checkInterval);
+            }
+            _isLoading = true;
+            _stillLoadTaskCount += 1;
+            OnEcsStartLoadCitySubData?.Invoke(targetSubGameStatusData);
+        }
     }
 }

@@ -60,7 +60,7 @@ namespace SparFlame.Components.MainGameplay
     }
   
     [Serializable]
-    public struct PathVisualizeData : IComponentData
+    public struct ArmyGroupPathVisualizeData : IComponentData
     {
         public int preWaypoint;
     }
@@ -70,7 +70,7 @@ namespace SparFlame.Components.MainGameplay
     public struct PathVisualizer : IComponentData
     {
     }
-    public struct PathVisualizeEnabled : IComponentData, IEnableableComponent{}
+    public struct ArmyGroupPathVisualizeEnabled : IComponentData, IEnableableComponent{}
 
 
 

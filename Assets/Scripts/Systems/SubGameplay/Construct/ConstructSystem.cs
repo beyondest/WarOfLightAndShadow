@@ -175,7 +175,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     targetTransform.Rotation =
                         math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
                     var rotationAbsAngle = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                    MathUtils.GetSnapGridPosition(customInputData.HitPosition, rotationAbsAngle, boxColliderSize.Value,
+                    MathUtils.GetSnapGridPosition(customInputData.HitPosition, rotationAbsAngle, boxColliderSize.Box,
                         gridSize, out var snapPosition);
                     // targetTransform.Position = customInputData.HitPosition;
                     targetTransform.Position = snapPosition;
@@ -218,7 +218,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     else data.PreviewAttackRangeEntity = Entity.Null;
 
 
-                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Value, gridSize,
+                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Box, gridSize,
                         out data.PreviewCube);
                     // VisualizeGrid(ref state, gridSize, playerBaseTrans,constructableRadiusSq, prefabs.GridPrefab);
 
@@ -269,13 +269,8 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         if (buildingAttr.Type == BuildingType.CapacityBuildings)
                         {
                             var capacityBuildingAttr = SystemAPI.GetComponent<CapacityBuildingAttr>(targetBuilding);
-                            state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
-                            var uniqueId =
-                                UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
-                            SystemAPI.SetComponent(targetBuilding, new CityTaskUniqueId
-                            {
-                                value = uniqueId
-                            });
+                            var singleId = SystemAPI.GetComponent<GlobalSingleId>(targetBuilding);
+                            
                             var resourceChangeRequest = state.EntityManager.CreateEntity();
                             state.EntityManager.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
                             state.EntityManager.AddComponent<ResourceChangeRequest>(resourceChangeRequest);
@@ -283,7 +278,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                             {
                                 City = subGameStatusData.City,
                                 FinishTotalHours = worldTimeData.totalHours + buildingAttr.ConstructTimeHours,
-                                FromBuildingUniqueId = uniqueId,
+                                FromBuildingSingleId = singleId.value,
                                 ResourceType = capacityBuildingAttr.ResourceType,
                                 AbsAmount = capacityBuildingAttr.StorageAmount,
                                 RequestType = ResourceRequestType.StorageAddByTask,
@@ -295,13 +290,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                         if (buildingAttr is { Type: BuildingType.Generators, SubTypeIndex: (int)GeneratorType.PlantGenerator })
                         {
                             var generatorAttr = SystemAPI.GetComponent<GenerateAttr>(targetBuilding);
-                            state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
-                            var uniqueId =
-                                UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
-                            SystemAPI.SetComponent(targetBuilding, new CityTaskUniqueId
-                            {
-                                value = uniqueId
-                            });
+                            var singleId = SystemAPI.GetComponent<GlobalSingleId>(targetBuilding);
                             var resourceChangeRequest = state.EntityManager.CreateEntity();
                             state.EntityManager.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
                             state.EntityManager.AddComponent<ResourceChangeRequest>(resourceChangeRequest);
@@ -309,26 +298,14 @@ namespace SparFlame.Systems.SubGameplay.Construct
                             {
                                 City = subGameStatusData.City,
                                 FinishTotalHours = worldTimeData.totalHours + buildingAttr.ConstructTimeHours,
-                                FromBuildingUniqueId = uniqueId,
+                                FromBuildingSingleId = singleId.value,
                                 ResourceType = generatorAttr.GenerateResourceType,
                                 RequestType = ResourceRequestType.GenerateSpeedAddByTask,
                                 HoursPerUnit = generatorAttr.GenerateSpeedHoursPerUnit,
                             });
                         }
                         
-                        // Add city task unique id for conjuring buildings
-                        if (buildingAttr.Type == BuildingType.ConjuringShrines)
-                        {
-                            var uniqueId =
-                                UniqueIDUtils.GetUniqueId(ref SystemAPI.GetSingletonRW<LastUniqueId>().ValueRW);
-                            state.EntityManager.AddComponent<CityTaskUniqueId>(targetBuilding);
-                            SystemAPI.SetComponent(targetBuilding, new CityTaskUniqueId
-                            {
-                                value = uniqueId
-                            });
-                        }
                         
-
 
                         SystemAPI.SetComponent(targetBuilding, newTransform);
                         var generalAttr = state.EntityManager.GetComponentData<SubGameplayGeneralAttr>(targetBuilding);
@@ -349,7 +326,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
                         // Exchange grid preview
                         _grids.Add(data.PreviewCube);
-                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Value, gridSize,
+                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Box, gridSize,
                             out data.PreviewCube);
 
                         data.CommandType = ConstructCommandType.Drag; // Continue building
@@ -483,7 +460,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
             for (var i = 0; i < trans.Length; i++)
             {
-                var boxColliderSize = boxColliderSizes[i].Value;
+                var boxColliderSize = boxColliderSizes[i].Box;
                 var tran = trans[i];
 
                 // 1. 获取旋转角度（只支持 90° 的倍数）

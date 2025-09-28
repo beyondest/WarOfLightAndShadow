@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
@@ -108,6 +109,7 @@ namespace SparFlame.UI.SubGameplay
         {
             base.Start();
             Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            if(_gamingTag != default)_gamingTag.Dispose();
             _gamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
             panel.SetActive(false);
             _originalPanelPos = panel.GetComponent<RectTransform>().anchoredPosition;
@@ -129,11 +131,17 @@ namespace SparFlame.UI.SubGameplay
             UpdateDynamicInfo();
         }
 
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)_gamingTag.Dispose();
+        }
+
         #endregion
         
         private void UpdateStaticInfo()
         {
             var generalAttr = Em.GetComponentData<SubGameplayGeneralAttr>(TargetEntity);
+            var prefabId = Em.GetComponentData<PrefabId>(TargetEntity);
             var unitAttr = Em.GetComponentData<UnitAttr>(TargetEntity);
             if (generalAttr.Faction == FactionTag.Neutral)
             {
@@ -152,10 +160,10 @@ namespace SparFlame.UI.SubGameplay
                 generalFactionImage.color = color;
                 subFactionImage.color = color;
             }
-            description.text = DatabaseManager.UnitDatabaseSo.GetItemById(generalAttr.PrefabID).description;
+            description.text = DatabaseManager.UnitDatabaseSo.GetItemById(prefabId.value).description;
             generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.Type];
             generalTypeText.text = unitAttr.Type.ToString();
-            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, generalAttr.PrefabID).Sprite;
+            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, prefabId.value).Sprite;
             UpdateCostSlots();
         }
         

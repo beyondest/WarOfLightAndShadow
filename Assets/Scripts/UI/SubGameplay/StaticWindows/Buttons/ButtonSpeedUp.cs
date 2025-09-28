@@ -17,19 +17,19 @@ namespace SparFlame.UI.SubGameplay.StaticWindows.Buttons
         [SerializeField] private List<float> speedUpScaleConfigList = new();
         
         
-        private EntityQuery _timeScale;
         private int _currentSpeedUpIndex;
 
         private void Start()
         {
-            _timeScale = World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(GameTimeScale));
-            var currentTimeScale = _timeScale.GetSingleton<GameTimeScale>().Value;
+            using var query  = World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(GameTimeScale));
+            var currentTimeScale = query.GetSingleton<GameTimeScale>().Value;
             timeScaleText.text = currentTimeScale.ToString("F1");
         }
 
         public override void OnClick()
         {
-            var scale = _timeScale.GetSingletonRW<GameTimeScale>();
+            using var query  = World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(GameTimeScale));
+            var scale = query.GetSingletonRW<GameTimeScale>();
             if (_currentSpeedUpIndex == speedUpScaleConfigList.Count - 1)
                 _currentSpeedUpIndex = 0;
             else

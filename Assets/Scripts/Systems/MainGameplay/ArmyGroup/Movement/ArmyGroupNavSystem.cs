@@ -28,8 +28,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
+            state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ArmyGroupNavConfig>();
-            state.RequireForUpdate<MainGamingTag>();
+            state.RequireForUpdate<ArmyGroupCalculateEnable>();
             _validArmyGroupQuery = SystemAPI.QueryBuilder()
                 .WithAllRW<NavAgentComponent>()
                 .WithAll<ArmyGroupCalculatePathData>()
@@ -41,6 +43,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>().Value;
+            if(gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming) return;
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            if(GameStatusUtils.IsInBattle(subGameStatusData))return;
+            
             var config = SystemAPI.GetSingleton<ArmyGroupNavConfig>();
             if (!_navMeshQueries.IsCreated)
             {

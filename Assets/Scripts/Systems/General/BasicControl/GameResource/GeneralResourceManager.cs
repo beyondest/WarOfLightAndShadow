@@ -10,15 +10,25 @@ namespace SparFlame.Systems.General.BasicControl
 {
     public class GeneralResourceManager : MonoBehaviour
     {
+        public class Operation : ResourceOperation
+        {
+            private readonly GeneralResourceManager _resourceManager;
+            public override float Progress => _resourceManager._initProgress;
+
+            public Operation(IEnumerator routine) : base(routine)
+            {
+                _resourceManager =Instance;
+            }
+        }
+
         [SerializeField] private float checkInitInterval = 0.3f;
 
         // Interface
-
+        private float _initProgress;
         public static GeneralResourceManager Instance;
         public event Action OnLoadAllResources;
-        public event Action OnAllResourceLoaded;
-        public readonly ResourceLoadingUtils.LoadingProgress LoadingProgress = new();
         public event Action OnReleaseAllResources;
+
 
         public void Register(IResourceManager provider)
         {
@@ -39,19 +49,32 @@ namespace SparFlame.Systems.General.BasicControl
 
         public void ReleaseAllResources()
         {
+            _initProgress = 0f;
             OnReleaseAllResources?.Invoke();
         }
 
-        public void StartLoadResources()
+        public Operation LoadResourcesAsync()
         {
-            OnLoadAllResources?.Invoke();
-            StartCoroutine(CheckAllResourceLoadingCoroutine());
+            return new Operation(Load());
         }
 
-        
+        private IEnumerator Load()
+        {
+            OnLoadAllResources?.Invoke();
+            while (true)
+            {
+                var allReady = _providers.All(p => p.IsInitialized);
+                if (allReady)
+                    break;
+                _initProgress = _providers.Average(p => p.InitProgress);
+                yield return new WaitForSecondsRealtime(checkInitInterval);
+            }
+            _initProgress = 1f;
+        }
 
         // Internal Data
         private readonly List<IResourceManager> _providers = new();
+
         private void Awake()
         {
             if (!Instance)
@@ -60,30 +83,7 @@ namespace SparFlame.Systems.General.BasicControl
                 Destroy(gameObject);
         }
 
-        private void Start()
-        {
-            GameController.Instance.OnClickSlotAndStartGame += (_,_,_) =>
-            {
-                StartLoadResources();
-            };
-            GameController.Instance.OnBackToMainMenu += ReleaseAllResources;
-        }
 
-        private IEnumerator CheckAllResourceLoadingCoroutine()
-        {
-            while (true)
-            {
-                var allReady = _providers.All(p => p.IsInitialized);
-                if (allReady)
-                    break;
-                var avgProgress = _providers.Average(p => p.InitProgress);
-                LoadingProgress?.Report(avgProgress);
-                yield return new WaitForSeconds(checkInitInterval);
-            }
-
-            OnAllResourceLoaded?.Invoke();
-        }
-        
-        
+       
     }
 }

@@ -1,6 +1,5 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
-using TMPro;
 using Unity.Entities;
 
 namespace SparFlame.UI.SubGameplay
@@ -10,8 +9,8 @@ namespace SparFlame.UI.SubGameplay
         public static int CalMaxCountForConjureOrConstruct(
             EntityManager em, Entity targetEntity)
         {
-
-            var city = em.CreateEntityQuery(typeof(SubGameStatusData)).GetSingleton<SubGameStatusData>().City;
+            using var query = em.CreateEntityQuery(typeof(SubGameStatusData));
+            var city = query.GetSingleton<SubGameStatusData>().City;
             var cityResourceEntries = em.GetBuffer<CityResourceEntry>(city);
             var costData = em.GetBuffer<CostList>(targetEntity);
             var minCount = int.MaxValue;
@@ -21,6 +20,7 @@ namespace SparFlame.UI.SubGameplay
                 if (count < minCount)
                     minCount = count;
             }
+
             return minCount;
         }
     }

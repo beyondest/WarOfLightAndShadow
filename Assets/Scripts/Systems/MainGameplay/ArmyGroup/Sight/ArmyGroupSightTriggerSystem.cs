@@ -31,7 +31,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
             if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
-            
+            var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+            if(GameStatusUtils.IsInBattle(subGameStatusData))return;
             
             _targetLookup.Update(ref state);
             new ArmyGroupSightTriggerJob

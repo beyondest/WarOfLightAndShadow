@@ -16,7 +16,7 @@ namespace SparFlame.Database
                 {
                     buffer.Add(new ExpStaticConfig
                     {
-                        GlobalIdx = item.id,
+                        PrefabId = item.id,
                         MaxTier = item.maxTier,
                         NextTierPrefab = !item.nextTierPrefab
                             ? Entity.Null
@@ -44,7 +44,7 @@ namespace SparFlame.Database
                 {
                     buffer.Add(new ExpStaticConfig
                     {
-                        GlobalIdx = item.id,
+                        PrefabId = item.id,
                         MaxTier = item.maxTier,
                         NextTierPrefab = !item.nextTierPrefab
                             ? Entity.Null

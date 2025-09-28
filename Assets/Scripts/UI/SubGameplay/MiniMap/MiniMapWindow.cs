@@ -35,11 +35,19 @@ namespace SparFlame.UI.SubGameplay
                 (int)miniMapImage.rectTransform.rect.height, 16);
             miniMapCamera.targetTexture = rt;
             miniMapImage.texture = rt;
-            GameController.Instance.OnEcsSwitchSubGameStatus += targetSubGameStatus =>
-            {
-                miniMapPanel.SetActive(targetSubGameStatus.SubGameStatus != SubGameStatus.None
-                && targetSubGameStatus.SubGameStatus != SubGameStatus.PlayerCity);
-            };
+            HideMiniMap();
+        }
+
+        public void HideMiniMap()
+        {
+            miniMapPanel.SetActive(false);
+            miniMapCamera.enabled = false;
+        }
+
+        public void ShowMiniMap()
+        {
+            miniMapPanel.SetActive(true);
+            miniMapCamera.enabled = true;
         }
 
         public void OnSquareDrag(BaseEventData data)

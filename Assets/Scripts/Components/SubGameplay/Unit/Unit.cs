@@ -11,7 +11,6 @@ namespace SparFlame.Components.SubGameplay
         public UnitType Type;
         public int SubTypeIndex;
         public float ConjureSpeedHoursPerUnit;
-        public Random Rnd;
     }
 
     public struct ShieldTag : IComponentData{}
@@ -83,7 +82,7 @@ namespace SparFlame.Components.SubGameplay
     {
         public Entity Prefab { get; set; }
         public UnitType Type { get; set; }
-        public int GlobalIdx { get; set; }
+        public int PrefabId { get; set; }
     }
     
 }

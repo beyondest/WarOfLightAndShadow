@@ -46,7 +46,7 @@ namespace SparFlame.UI.MainGameplay
             foreach(var unitTypeData in unitTypeDatas)
             {
                 if (i >= Slots.Count) break;
-                var item = DatabaseManager.UnitDatabaseSo.GetItemById(unitTypeData.Id);
+                var item = DatabaseManager.UnitDatabaseSo.GetItemById(unitTypeData.PrefabId);
                 if(tierFilterEnabled && currentFilterTier != item.curTier)continue;
                 if(!currentFilterUnitTypes.Contains(item.type))continue;
                 var slot = Slots[i];
@@ -118,7 +118,7 @@ namespace SparFlame.UI.MainGameplay
                 {
                     ArmyGroup = _targetEntity,
                     RemoveType = RemoveFromArmyGroupType.MoveOutAllSameId,
-                    MoveOutId = typeData.Id
+                    MoveOutId = typeData.PrefabId
                 });
                 ecb.AddComponent<SubGameplayEntityTag>(request);
             }

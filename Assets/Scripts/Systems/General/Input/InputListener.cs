@@ -1,5 +1,6 @@
 ﻿using System;
 using SparFlame.Components.Input;
+using SparFlame.Core.Utils;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
@@ -18,6 +19,23 @@ namespace SparFlame.Systems.General.Input
 
         #region MapSwitch Methods
 
+        public void ReEnableLastEnabledMap()
+        {
+            switch (_lastTypeEnabledMap)
+            {
+                case LastTypeEnabledMap.None:
+                    break;
+                case LastTypeEnabledMap.SubGameplayMap:
+                    EnableSubGameMaps();
+                    break;
+                case LastTypeEnabledMap.MainGameplayMap:
+                    EnableMainGameMaps();
+                    break;
+                default:
+                    BurstSafe.UnexpectedEnum(_lastTypeEnabledMap);
+                    break;
+            }
+        }
         public void ToggleConstructMap()
         {
             if (!_customInputActions.Construct.enabled)
@@ -55,6 +73,7 @@ namespace SparFlame.Systems.General.Input
             _customInputActions.Conjure.Enable();
 
             _customInputActions.ArmyGroupControl.Disable();
+            _lastTypeEnabledMap = LastTypeEnabledMap.SubGameplayMap;
         }
 
         public void EnableMainGameMaps()
@@ -66,6 +85,7 @@ namespace SparFlame.Systems.General.Input
             _customInputActions.UnitControl.Disable();
             _customInputActions.ModeSwitch.Disable();
             _customInputActions.Conjure.Disable();
+            _lastTypeEnabledMap = LastTypeEnabledMap.MainGameplayMap;
         }
 
         #endregion
@@ -73,6 +93,11 @@ namespace SparFlame.Systems.General.Input
 
         private CustomInputActions _customInputActions;
         private EntityQuery _overInputText;
+        private LastTypeEnabledMap _lastTypeEnabledMap;
+
+        #region Event Functions
+
+        
 
         private void Awake()
         {
@@ -87,6 +112,7 @@ namespace SparFlame.Systems.General.Input
         {
             _overInputText =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(IsOverInputText));
+            DisableAllMaps();
         }
 
         private void Update()
@@ -96,7 +122,15 @@ namespace SparFlame.Systems.General.Input
             rw.ValueRW.IsOver = IsTextInputActive();
         }
 
-        public bool IsTextInputActive()
+        private void OnDestroy()
+        {
+            if(_overInputText != default)
+                _overInputText.Dispose();
+        }
+
+        #endregion
+
+        private bool IsTextInputActive()
         {
             if (!EventSystem.current) return false;
             var go = EventSystem.current.currentSelectedGameObject;
@@ -111,6 +145,13 @@ namespace SparFlame.Systems.General.Input
                 return true;
 
             return false;
+        }
+        
+        private enum LastTypeEnabledMap
+        {
+            None,
+            SubGameplayMap,
+            MainGameplayMap,
         }
     }
 }

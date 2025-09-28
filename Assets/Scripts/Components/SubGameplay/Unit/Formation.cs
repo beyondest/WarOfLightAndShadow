@@ -1,4 +1,5 @@
 ﻿using Unity.Entities;
+using Unity.Transforms;
 
 namespace SparFlame.Components.SubGameplay
 {
@@ -10,7 +11,11 @@ namespace SparFlame.Components.SubGameplay
         Side,
     }
 
-   
+    public struct FormationTransform : IComponentData
+    {
+        public LocalTransform Transform;
+    }
+
     
 
 }

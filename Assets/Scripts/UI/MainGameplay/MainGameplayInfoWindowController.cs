@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Systems.General.BasicControl;
@@ -83,10 +84,6 @@ namespace SparFlame.UI.MainGameplay
             _selectedData = _em.CreateEntityQuery(typeof(ArmyGroupSelectionData));
             _generalShortcutData = _em.CreateEntityQuery(typeof(InputGeneralShortcutData));
             infoPanel.SetActive(false);
-            GameController.Instance.OnEcsSwitchSubGameStatus += _ =>
-            {
-                Hide();
-            };
         }
 
         private void Update()
@@ -106,10 +103,11 @@ namespace SparFlame.UI.MainGameplay
                                    && checkInfoPerformed
                                    && cursorData.CursorType != MainGameplayCursorType.None
                                    && cursorData.CursorType != MainGameplayCursorType.March;
-           
+
             var leftClickOnInvalid = !inputMouseData.IsOverUI
                                      && checkInfoPerformed
-                                     && cursorData.CursorType is MainGameplayCursorType.None or MainGameplayCursorType.March;
+                                     && cursorData.CursorType is MainGameplayCursorType.None
+                                         or MainGameplayCursorType.March;
             if (leftClickOnValid)
             {
                 UpdateCloseUpTarget(inputMouseData.HitEntity);
@@ -209,6 +207,20 @@ namespace SparFlame.UI.MainGameplay
             }
         }
 
+        private void OnDestroy()
+        {
+            if(_gamingTag != default)
+                _gamingTag.Dispose();
+            if(_customMouseDataQuery != default)
+                _customMouseDataQuery.Dispose();
+            if(_cursorData != default)
+                _cursorData.Dispose();
+            if(_selectedData != default)
+                _selectedData.Dispose();
+            if(_generalShortcutData != default)
+                _generalShortcutData.Dispose();
+        }
+
         public void Show()
         {
             infoPanel.SetActive(true);
@@ -236,6 +248,5 @@ namespace SparFlame.UI.MainGameplay
             // MiniConjureWindow.Instance.ClearCloseUpTarget();
             // ConjureWindow.Instance.ClearCloseUpTarget();
         }
-
     }
 }

@@ -2,7 +2,6 @@
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
-using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Audio;
 using Unity.Burst;
 using Unity.Collections;
@@ -34,7 +33,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<UnitAttr> _unitAttrLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
-        private ComponentLookup<CityTaskUniqueId> _cityTaskUniqueIdLookup;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
         private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
         private ComponentLookup<PlayerTag> _playerTagLookup;
 
@@ -44,6 +43,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<AttackAbility> _attackAbilityLookup;
         private ComponentLookup<HealAbility> _healAbilityLookup;
         private ComponentLookup<HarvestAbility> _harvestAbilityLookup;
+        private ComponentLookup<PrefabId> _prefabIdLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -65,9 +65,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
-            _cityTaskUniqueIdLookup = state.GetComponentLookup<CityTaskUniqueId>(true);
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
             _inArmyGroupLookup = state.GetComponentLookup<InArmyGroup>(true);
             _playerTagLookup = state.GetComponentLookup<PlayerTag>(true);
+            _prefabIdLookup = state.GetComponentLookup<PrefabId>(true);
 
             _statDataLookup = state.GetComponentLookup<StatData>();
             _movableDataLookup = state.GetComponentLookup<MovableData>();
@@ -104,9 +105,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _localTransformLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             _dwellingAttrLookup.Update(ref state);
-            _cityTaskUniqueIdLookup.Update(ref state);
+            _singleIdLookup.Update(ref state);
             _inArmyGroupLookup.Update(ref state);
             _playerTagLookup.Update(ref state);
+            _prefabIdLookup.Update(ref state);
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var ecbP = ecb.AsParallelWriter();
             var job =new UpgradeJob
@@ -128,10 +130,11 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ECB = ecbP,
                 CurrentTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours,
                 DwellingAttrLookup = _dwellingAttrLookup,
-                CityTaskUniqueIdLookup = _cityTaskUniqueIdLookup,
+                SingleIdLookup = _singleIdLookup,
                 City = SystemAPI.GetSingleton<SubGameStatusData>().City,
                 InArmyGroupLookup = _inArmyGroupLookup,
                 PlayerTagLookup = _playerTagLookup,
+                PrefabIdLookup = _prefabIdLookup,
             }.ScheduleParallel(state.Dependency);
             job.Complete();
             ecb.Playback(state.EntityManager);
@@ -144,7 +147,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             var buffer = SystemAPI.GetSingletonBuffer<ExpStaticConfig>();
             foreach (var config in buffer)
             {
-                _expDatabase.Add(config.GlobalIdx, config);
+                _expDatabase.Add(config.PrefabId, config);
             }
         }
 
@@ -156,6 +159,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public Entity City;
             
             [ReadOnly] public NativeHashMap<int, ExpStaticConfig> ExpDatabase;
+            [ReadOnly] public ComponentLookup<PrefabId> PrefabIdLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
@@ -165,9 +169,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<CapacityBuildingAttr> DwellingAttrLookup;
-            [ReadOnly] public ComponentLookup<CityTaskUniqueId> CityTaskUniqueIdLookup;
             [ReadOnly] public ComponentLookup<InArmyGroup> InArmyGroupLookup;
             [ReadOnly] public ComponentLookup<PlayerTag> PlayerTagLookup;
+            [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIdLookup;
 
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatDataLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableDataLookup;
@@ -195,7 +199,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 
                 var trans = LocalTransformLookup[request.FromEntity];
                 var expData = ExpDataLookup[request.FromEntity];
-                var expStaticConfig = ExpDatabase[fromEntityGeneralAttr.PrefabID];
+                var expStaticConfig = ExpDatabase[PrefabIdLookup[request.FromEntity].value];
                 if (fromEntityGeneralAttr.BaseTag == BaseTag.Units && expData.curLevel <= expStaticConfig.MaxLevel)
                 {
                     // Next level upgrade
@@ -304,7 +308,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         ECB.AddComponent(index, garrisonInBuildingRequest, new GarrisonInBuildingRequest
                         {
                             BuildingEntity = preInGarrison.BuildingEntity,
-                            Id = GeneralAttrLookup[expStaticConfig.NextTierPrefab].PrefabID,
+                            Id = PrefabIdLookup[expStaticConfig.NextTierPrefab].value,
                             UnitEntity = nextTierEntity,
                             UnitType = UnitAttrLookup[expStaticConfig.NextTierPrefab].Type,
                         });
@@ -335,7 +339,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         {
                             
                             var capacityBuildingAttr = DwellingAttrLookup[expStaticConfig.NextTierPrefab];
-                            ECB.AddComponent(index, nextTierEntity, CityTaskUniqueIdLookup[request.FromEntity]);
                             
                             var cityTaskAddRequest = ECB.CreateEntity(index);
                             ECB.AddComponent<SubGameplayEntityTag>(index, cityTaskAddRequest);
@@ -346,15 +349,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
                                 ResourceType = capacityBuildingAttr.ResourceType,
                                 FinishTotalHours = BuildingAttrLookup[expStaticConfig.NextTierPrefab]
                                     .ConstructTimeHours + CurrentTotalHours,
-                                FromBuildingUniqueId = CityTaskUniqueIdLookup[request.FromEntity].value,
+                                FromBuildingSingleId = SingleIdLookup[request.FromEntity].value,
                                 RequestType = ResourceRequestType.StorageAddByTask,
                             });
                         }
 
-                        if (buildingAttr.Type == BuildingType.ConjuringShrines)
-                        {
-                            ECB.AddComponent(index, nextTierEntity, CityTaskUniqueIdLookup[request.FromEntity]);
-                        }
+                     
                     }
 
                     var vfx = ECB.CreateEntity(index);

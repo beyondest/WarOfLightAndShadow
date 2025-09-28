@@ -156,15 +156,15 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             {
                 ArmyGroup = armyGroup,
                 Type = type,
-                Unit = Entity.Null
+                Unit = Entity.Null,
             });
         }
 
         private void RemoveSelectedUnitsFromTheirArmyGroup()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var (inArmyGroup, generalAttr, unit) in SystemAPI
-                         .Query<RefRO<InArmyGroup>, RefRO<SubGameplayGeneralAttr>>().WithAll<Selected>()
+            foreach (var (inArmyGroup, prefabId, unit) in SystemAPI
+                         .Query<RefRO<InArmyGroup>, RefRO<PrefabId>>().WithAll<Selected>()
                          .WithEntityAccess())
             {
                 var request = ecb.CreateEntity();
@@ -174,7 +174,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                     ArmyGroup = inArmyGroup.ValueRO.BelongsTo,
                     Unit = unit,
                     RemoveType = RemoveFromArmyGroupType.RemoveSpecifiedUnitWithoutRemovingInArmyGroup,
-                    MoveOutId = generalAttr.ValueRO.PrefabID
+                    MoveOutId = prefabId.ValueRO.value
                 });
                 ecb.RemoveComponent<InArmyGroup>(unit);
             }

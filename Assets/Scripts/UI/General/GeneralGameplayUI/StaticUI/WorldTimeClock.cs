@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using UnityEngine;
 using TMPro;
 using Unity.Entities;
@@ -8,6 +9,7 @@ namespace SparFlame.UI.General
 {
     public class WorldTimeClock : MonoBehaviour
     {
+        [SerializeField] private GameObject panel;
         [Header("Clock Hands")] [SerializeField]
         private RectTransform hourHand;
 
@@ -18,25 +20,48 @@ namespace SparFlame.UI.General
         [SerializeField] private TMP_Text dayText;
         [SerializeField] private TMP_Text pmAmText;
 
+        public static WorldTimeClock Instance;
+
+        public void SetEnable(bool enable)
+        {
+            _enabled = enable;
+            panel.SetActive(enable);
+        }
         private readonly string[] months =
             { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
         private EntityQuery _worldTime;
+        private bool _enabled;
+    
+        private void Awake()
+        {
+            if(!Instance)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
         private void Start()
         {
             _worldTime = World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(WorldTimeData));
+            SetEnable(false);
         }
 
         private void Update()
         {
-            if (_worldTime.IsEmpty) return;
+            if (!_enabled ||_worldTime.IsEmpty) return;
 
             var worldTime = _worldTime.GetSingleton<WorldTimeData>();
             UpdateClock(worldTime);
         }
 
-        public void UpdateClock(WorldTimeData data)
+        private void OnDestroy()
+        {
+            if(_worldTime != default)
+                _worldTime.Dispose();
+        }
+
+        private void UpdateClock(WorldTimeData data)
         {
             // 1. 时针分针
             // hour: [0, 24)，minute = hour的小数部分
@@ -48,14 +73,7 @@ namespace SparFlame.UI.General
             var hourAngle = (hours % 12 + minutes / 60f) * 30f;
             var minuteAngle = minutes * 6f;
 
-            if (hours > 12)
-            {
-                pmAmText.text = "P.M.";
-            }
-            else
-            {
-                pmAmText.text = "A.M.";
-            }
+            pmAmText.text = hours > 12 ? "P.M." : "A.M.";
 
             if (hourHand)
                 hourHand.localRotation = Quaternion.Euler(0, 0, -hourAngle);
@@ -76,5 +94,6 @@ namespace SparFlame.UI.General
             if (dayText)
                 dayText.text = $"{data.day}";
         }
+        
     }
 }

@@ -10,4 +10,12 @@ namespace SparFlame.Core.Utils
             return new float4(c.r, c.g, c.b, c.a);
         }
     }
+
+    public static class ThreadUtils
+    {
+        public static void CheckThreadInfo()
+        {
+            Debug.Log("Thread: " + System.Threading.Thread.CurrentThread.ManagedThreadId);
+        }
+    }
 }

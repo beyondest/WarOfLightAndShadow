@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace SparFlame.Core.Structs
@@ -32,4 +33,52 @@ namespace SparFlame.Core.Structs
         public bool Equals(IntPair other) => A == other.A && B == other.B;
         public override int GetHashCode() => (A * 73856093) ^ (B * 19349663);
     }
+
+    public struct QueriesGroup: IDisposable
+    {
+        private NativeList<EntityQuery> _queries;
+
+        public QueriesGroup(Allocator allocator)
+        {
+            _queries = new NativeList<EntityQuery>(allocator);
+        }
+        public bool IsAllNotEmpty()
+        {
+            foreach (var query in _queries)
+            {
+                if(query.IsEmpty)return false;
+            }
+            return true;
+        }
+
+        public bool AllIsEmpty()
+        {
+            foreach (var query in _queries)
+            {
+                if(!query.IsEmpty)return false;
+            }
+            return true;
+        }
+
+        public void AddQuery(EntityQuery query)
+        {
+            _queries.Add(query);
+        }
+
+        public void ClearQueries()
+        {
+            foreach (var query in _queries)
+            {
+                query.Dispose();
+            }
+            _queries.Clear();
+        }
+
+        public void Dispose()
+        {
+            ClearQueries();
+            _queries.Dispose();
+        }
+    }
+    
 }

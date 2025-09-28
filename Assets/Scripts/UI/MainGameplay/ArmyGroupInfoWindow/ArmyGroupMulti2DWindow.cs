@@ -154,7 +154,7 @@ namespace SparFlame.UI.MainGameplay
         private IEnumerator ClickRoutine()
         {
             _ifClickRoutineRunning = true;
-            yield return new WaitForSeconds(GlobalUIConfigger.Instance.doubleClickThreshold);
+            yield return new WaitForSecondsRealtime(GlobalUIConfigger.Instance.doubleClickThreshold);
             if (_clickCount == 1)
             {
                 ArmyGroupDetailWindow.Instance.Show();

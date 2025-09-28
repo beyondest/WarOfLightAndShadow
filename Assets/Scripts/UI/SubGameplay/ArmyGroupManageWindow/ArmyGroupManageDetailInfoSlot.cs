@@ -10,19 +10,24 @@ namespace SparFlame.UI.MainGameplay
 
         protected override void Awake()
         {
-            
         }
 
         protected override void Start()
         {
+            if (_subGamingTag != default) _subGamingTag.Dispose();
             _subGamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
         }
+
         private void Update()
         {
-            if(!IsOpened() || !HasTarget()
-                           || _subGamingTag.IsEmpty)return;
+            if (!IsOpened() || !HasTarget()
+                            || _subGamingTag.IsEmpty) return;
             UpdateDynamicData();
-            
+        }
+
+        private void OnDestroy()
+        {
+            if (_subGamingTag != default) _subGamingTag.Dispose();
         }
     }
 }

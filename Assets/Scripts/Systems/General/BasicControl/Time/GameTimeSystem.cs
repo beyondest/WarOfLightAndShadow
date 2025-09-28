@@ -1,5 +1,7 @@
 ﻿
 using SparFlame.Components.General;
+using SparFlame.Core.Utils;
+using Unity.Burst;
 using Unity.Entities;
 
 namespace SparFlame.Systems.General.BasicControl
@@ -9,6 +11,7 @@ namespace SparFlame.Systems.General.BasicControl
     {
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<CurrentSaveSlot>();
             state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<GameBasicConfig>();
             state.RequireForUpdate<GameTimeScale>();
@@ -34,12 +37,17 @@ namespace SparFlame.Systems.General.BasicControl
             
             if (gameStatus == GameStatus.Init)
             {
+                // Reset game time data and fixedStepGroup
                 gameTimeData.ValueRW.DeltaTime = realDeltaTime;
                 gameTimeData.ValueRW.ElapsedTime = 0f;
                 gameTimeScale.ValueRW.Value = 1f;
                 fixedStepGroup.Timestep = gameBasicConfig.basicFixStep;
-                worldTimeData.ValueRW = gameTimeConfig.initWorldTimeData;
-                worldTimeData.ValueRW.totalHours = TimeUtils.GetTotalHoursFromWorldTimeData(worldTimeData.ValueRO);
+                var saveSlot = SystemAPI.GetSingleton<CurrentSaveSlot>().Value;
+                if (saveSlot == SaveUtilities.NewGameSaveSlot)
+                {
+                    worldTimeData.ValueRW = gameTimeConfig.initWorldTimeData;
+                    worldTimeData.ValueRW.totalHours = TimeUtils.GetTotalHoursFromWorldTimeData(worldTimeData.ValueRO);
+                }
                 return;
             }
 
@@ -90,6 +98,9 @@ namespace SparFlame.Systems.General.BasicControl
                     break;
                 case WaitType.None:
                 case WaitType.UntilBattle:
+                    break;
+                default:
+                    BurstSafe.UnexpectedEnum(waitInfo.WaitType);
                     break;
             }
         }
