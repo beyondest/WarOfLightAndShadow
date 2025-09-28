@@ -136,6 +136,10 @@ namespace SparFlame.UI.SubGameplay
             ornamentPanel.SetActive(false);
             conjurePanel.SetActive(false);
             interactAbilityPanel.SetActive(false);
+            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
+            _gamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
+            _playerFactionQuery = Em.CreateEntityQuery(typeof(PlayerFactionData));
+            _worldTimeQuery = Em.CreateEntityQuery(typeof(WorldTimeData));
         }
 
 
@@ -256,18 +260,9 @@ namespace SparFlame.UI.SubGameplay
                 Destroy(gameObject);
         }
 
-
-        protected override void Start()
-        {
-            base.Start();
-            Em = World.DefaultGameObjectInjectionWorld.EntityManager;
-            _gamingTag = Em.CreateEntityQuery(typeof(SubGamingTag));
-            _playerFactionQuery = Em.CreateEntityQuery(typeof(PlayerFactionData));
-            _worldTimeQuery = Em.CreateEntityQuery(typeof(WorldTimeData));
-        }
-
         protected virtual void Update()
         {
+            if(!IsResourceLoaded())return;
             if (_gamingTag.IsEmpty || _playerFactionQuery.IsEmpty) return;
             _playerFactionData = _playerFactionQuery.GetSingleton<PlayerFactionData>();
             if (!IsOpened()) return;

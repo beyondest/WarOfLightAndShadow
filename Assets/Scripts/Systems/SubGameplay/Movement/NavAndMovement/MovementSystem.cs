@@ -29,7 +29,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var config = SystemAPI.GetSingleton<MovementConfig>();
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
 
-
             if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out MovementDebug debug)))
             {
                 debug = new MovementDebug

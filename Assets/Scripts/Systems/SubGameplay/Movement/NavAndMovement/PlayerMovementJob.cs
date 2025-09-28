@@ -6,9 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
-
 // ReSharper disable UseIndexFromEndExpression
-
 namespace SparFlame.Systems.SubGameplay.Movement
 {
     [BurstCompile]
@@ -35,7 +33,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var interactiveRangeSq = math.square(movableData.InteractRange + bonus.RangeBonus);
             var shouldMove = false;
             DetectSurrounding(ref surroundings, transform, movableData, boxColliderSize);
-
 
             switch (movableData.MovementCommandType)
             {

@@ -32,9 +32,6 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            // 收集所有单位的位置和半径
-            // var positions = new NativeArray<float3>(entityCount, Allocator.TempJob);
-            // var radii = new NativeArray<float>(entityCount, Allocator.TempJob);
 
             _boxColliderSizeLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
@@ -45,15 +42,6 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
             }.ScheduleParallel(state.Dependency);
 
-            // var applyJob = new ApplySeparationJob
-            // {
-            //     DeltaTime = SystemAPI.Time.DeltaTime
-            // }.ScheduleParallel(separationJob);
-
-            // positions.Dispose(applyJob);
-            // radii.Dispose(applyJob);
-
-            // state.Dependency = applyJob;
         }
 
         [BurstCompile]

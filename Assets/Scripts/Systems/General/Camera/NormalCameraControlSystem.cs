@@ -432,6 +432,8 @@ namespace SparFlame.Systems.General.Camera
 
             if (targetSubGameStatusData.SubGameStatus == SubGameStatus.PlayerCity)
             {
+                var buffer = SystemAPI.GetSingletonBuffer<CameraRoamingPosition>();
+                buffer.Clear();
                 if (currentSubGameStatusData.SubGameStatus != SubGameStatus.None)
                     return; // When player stay to city after war, camera should not set to new position
             }

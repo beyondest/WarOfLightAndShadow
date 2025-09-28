@@ -53,10 +53,18 @@ namespace SparFlame.Systems.General.BasicControl
 
             // When in main menu or paused, game time is not updated.
             if (gameStatus != GameStatus.MainGaming && gameStatus != GameStatus.SubGaming ) return;
-            
+            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
+
             gameTimeData.ValueRW.DeltaTime = gameTimeScale.ValueRW.Value * realDeltaTime;
             gameTimeData.ValueRW.ElapsedTime += gameTimeData.ValueRO.DeltaTime;
-            fixedStepGroup.Timestep = gameBasicConfig.basicFixStep/ gameTimeScale.ValueRO.Value;
+            if (waitInfo.WaitType != WaitType.None) // When game is in wait status, physics step not go faster
+            {
+                fixedStepGroup.Timestep = gameBasicConfig.basicFixStep/ gameTimeScale.ValueRO.Value;
+            }
+            else
+            {
+                fixedStepGroup.Timestep = gameBasicConfig.basicFixStep;
+            }
             
             // When in battle, world time is not updated.
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
@@ -84,7 +92,6 @@ namespace SparFlame.Systems.General.BasicControl
                 }
             }
 
-            var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
             switch (waitInfo.WaitType)
             {
                 case WaitType.Personalize:
