@@ -16,6 +16,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<CbrConfig>();
+            state.RequireForUpdate<SubGamingTag>();
         }
 
         [BurstCompile]

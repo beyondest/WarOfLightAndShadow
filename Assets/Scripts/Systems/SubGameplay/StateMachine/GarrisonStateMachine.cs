@@ -5,7 +5,6 @@ using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
@@ -119,7 +118,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<UnitRetreatTag> UnitRetreatTagLookup;
 
             private void Execute([ChunkIndexInQuery] int index, ref InGarrison inGarrison, ref BasicStateData stateData,
-                ref MovableData movableData, ref PhysicsMass physicsMass,
+                ref MovableData movableData, 
                 Entity selfEntity)
             {
                 // Check if building is destroyed, then remove inGarrison buff and exit garrison state
@@ -129,7 +128,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     if (stateData.CurState == InteractState.Garrison)
                     {
                         GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
-                            default, default, ref physicsMass,
+                            default, default, 
                             Config, true);
                         stateData.TargetState = InteractState.Idle;
                         StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
@@ -150,7 +149,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if (stateData.CurState == InteractState.Garrison && !inGarrison.InBuilding)
                 {
                     GarrisonUtils.PosGetIn(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
-                        TransformLookup[inGarrison.BuildingEntity], ref physicsMass, Config);
+                        TransformLookup[inGarrison.BuildingEntity], Config);
                     return;
                 }
 
@@ -161,7 +160,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     // Under attack
                     GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
                         TransformLookup[inGarrison.BuildingEntity], GarrisonAttrLookup[inGarrison.BuildingEntity],
-                        ref physicsMass,
                         Config, false);
                     stateData.TargetState = InteractState.Idle;
                     StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
@@ -231,7 +229,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     {
                         GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
                             TransformLookup[inGarrison.BuildingEntity], GarrisonAttrLookup[inGarrison.BuildingEntity],
-                            ref physicsMass,
                             Config, false);
                         stateData.TargetState = InteractState.Idle;
                         StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
@@ -267,7 +264,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
 
             private void Execute([ChunkIndexInQuery] int index, ref BasicStateData stateData,
-                ref PhysicsMass physicsMass,
                 in PrefabId prefabId,
                 in UnitAttr unitAttr, in GarrisonStateTag tag, Entity selfEntity)
             {
@@ -333,7 +329,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 };
                 ref var selfTransform = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
                 GarrisonUtils.PosGetIn(ref inGarrison, ref selfTransform,
-                    TransformLookup[inGarrison.BuildingEntity], ref physicsMass, Config);
+                    TransformLookup[inGarrison.BuildingEntity],  Config);
 
                 ECB.AddComponent(index, selfEntity, inGarrison);
                 

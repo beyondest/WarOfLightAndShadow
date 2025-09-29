@@ -6,7 +6,6 @@ using SparFlame.Systems.General.Audio;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Interact
@@ -29,7 +28,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<ExpData> _expDataLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<BasicStateData> _basicStateLookup;
-        private ComponentLookup<PhysicsMass> _physicsMassLookup;
         private ComponentLookup<UnitAttr> _unitAttrLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
@@ -61,7 +59,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
             _basicStateLookup = state.GetComponentLookup<BasicStateData>(true);
-            _physicsMassLookup = state.GetComponentLookup<PhysicsMass>(true);
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
@@ -98,7 +95,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _statDataLookup.Update(ref state);
             _buildingAttrLookup.Update(ref state);
             _unitAttrLookup.Update(ref state);
-            _physicsMassLookup.Update(ref state);
             _basicStateLookup.Update(ref state);
             _inGarrisonLookup.Update(ref state);
             _expDataLookup.Update(ref state);
@@ -119,7 +115,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ExpDataLookup = _expDataLookup,
                 InGarrisonLookup = _inGarrisonLookup,
                 BasicStateLookup = _basicStateLookup,
-                PhysicsMassLookup = _physicsMassLookup,
                 UnitAttrLookup = _unitAttrLookup,
                 BuildingAttrLookup = _buildingAttrLookup,
                 StatDataLookup = _statDataLookup,
@@ -165,7 +160,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
             [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
             [ReadOnly] public ComponentLookup<BasicStateData> BasicStateLookup;
-            [ReadOnly] public ComponentLookup<PhysicsMass> PhysicsMassLookup;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<CapacityBuildingAttr> DwellingAttrLookup;
@@ -272,10 +266,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     {
                         if (preInGarrison.InBuilding)
                         {
-                            var physicsMass = PhysicsMassLookup[expStaticConfig.NextTierPrefab];
-                            physicsMass.InverseMass = 0.0f;
-                            preInGarrison.PriorMass = physicsMass.InverseMass;
-                            ECB.SetComponent(index, nextTierEntity, physicsMass);
                         }
                         ECB.AddComponent(index, nextTierEntity, preInGarrison);
                         var preBasicStateData = BasicStateLookup[request.FromEntity];

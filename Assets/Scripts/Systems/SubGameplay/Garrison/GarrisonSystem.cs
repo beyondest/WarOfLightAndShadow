@@ -4,7 +4,6 @@ using SparFlame.Components.VFX;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Garrison
@@ -16,6 +15,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
         private NativeHashSet<Entity> _alreadyTagged;
         private ComponentLookup<GarrisonAttr> _garrisonAttrLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -24,10 +24,10 @@ namespace SparFlame.Systems.SubGameplay.Garrison
             state.RequireForUpdate<GarrisonSystemConfig>();
             _garrisonAttrLookup = state.GetComponentLookup<GarrisonAttr>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
-            _alreadyTagged = new NativeHashSet<Entity>(16,Allocator.Persistent);
+            _alreadyTagged = new NativeHashSet<Entity>(16, Allocator.Persistent);
         }
-        
-        
+
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -35,7 +35,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            
+
             DealGarrisonInBuildingRequest(ref state, ecb, config);
             DealGarrisonMoveOutCommand(ref state, ecb);
             DealGarrisonUnitDieRequest(ref state, ecb);
@@ -55,7 +55,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            if(_alreadyTagged.IsCreated)
+            if (_alreadyTagged.IsCreated)
                 _alreadyTagged.Dispose();
         }
 
@@ -88,6 +88,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     ecb.DestroyEntity(entity);
                     continue;
                 }
+
                 // Id valid, remove died unit
                 var data2 = dataBuffer[i];
                 data2.count--;
@@ -99,6 +100,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                 {
                     dataBuffer[i] = data2;
                 }
+
                 for (var j = entityBuffer.Length - 1; j >= 0; j--)
                 {
                     if (entityBuffer[j].Unit == request.UnitEntity)
@@ -143,6 +145,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                             ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Unit);
                         }
                     }
+
                     // Clear count , buff, buffer, continue
                     entityBuffer.Clear();
                     dataBuffer.Clear();
@@ -167,6 +170,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     ecb.DestroyEntity(entity);
                     continue;
                 }
+
                 var data2 = dataBuffer[i];
                 // Move out all same id
                 if (command.MoveOutAllSameId)
@@ -181,6 +185,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                         {
                             ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Unit);
                         }
+
                         entityBuffer.RemoveAt(j);
                     }
                 }
@@ -201,10 +206,12 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                         {
                             ecb.AddComponent<GarrisonGetOut>(garrisonEntity.Unit);
                         }
+
                         entityBuffer.RemoveAt(j);
                         break;
                     }
                 }
+
                 ecb.DestroyEntity(entity);
                 // if counts lower than trigger count, remove bonus
                 // if (entityBuffer.Length < config.MinCountToTriggerDefenceBuff
@@ -266,7 +273,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     SingleId = SystemAPI.GetComponent<GlobalSingleId>(inRequest.UnitEntity).value
                 });
 
-              
+
                 ecb.DestroyEntity(entity);
             }
         }
@@ -280,7 +287,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
             [ReadOnly] public GarrisonSystemConfig Config;
             public EntityCommandBuffer.ParallelWriter ECB;
 
-            private void Execute([ChunkIndexInQuery] int index, ref PhysicsMass mass,
+            private void Execute([ChunkIndexInQuery] int index,
                 ref InGarrison inGarrison, Entity selfEntity)
             {
                 ref var transform = ref LocalTransformLookup.GetRefRW(selfEntity).ValueRW;
@@ -288,8 +295,9 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                 if (inGarrison.InBuilding)
                 {
                     GarrisonUtils.PosGetOut(ref inGarrison, ref transform, buildingTransform,
-                        GarrisonAttrLookup[inGarrison.BuildingEntity], ref mass, Config, false);
+                        GarrisonAttrLookup[inGarrison.BuildingEntity],  Config, false);
                 }
+
                 ECB.SetComponentEnabled<GarrisonStateTag>(index, selfEntity, false);
                 ECB.SetComponentEnabled<IdleStateTag>(index, selfEntity, true);
                 ECB.RemoveComponent<InGarrison>(index, selfEntity);

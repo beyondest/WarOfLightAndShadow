@@ -240,13 +240,11 @@ namespace SparFlame.Systems.General.Battle
                 armyGroupToPositionsIndex.TryAdd(pair.Key, 0);
             }
 
-            foreach (var (physicsMass, localTransform,
-                         inGarrison, inArmyGroup, unit
-                         ) in SystemAPI.Query<RefRW<PhysicsMass>, RefRW<LocalTransform>,
-                             RefRO<InGarrison>, RefRO<InArmyGroup>>().WithAll<PlayerTag>()
+            foreach (var ( localTransform, inArmyGroup, unit
+                         ) in SystemAPI.Query< RefRW<LocalTransform>,
+                             RefRO<InArmyGroup>>().WithAll<PlayerTag>().WithAll<InGarrison>()
                          .WithAll<UnitRetreatTag>().WithEntityAccess())
             {
-                physicsMass.ValueRW.InverseMass = inGarrison.ValueRO.PriorMass;
                 var index = armyGroupToPositionsIndex[inArmyGroup.ValueRO.BelongsTo];
                 localTransform.ValueRW.Position = armyGroupToSquarePositions[inArmyGroup.ValueRO.BelongsTo][index];
                 armyGroupToPositionsIndex[inArmyGroup.ValueRO.BelongsTo] = index + 1;

@@ -340,13 +340,11 @@ namespace SparFlame.Systems.General.BasicControl
             var unitQueryDesc = new EntityQueryDesc
             {
                 All = new ComponentType[] { typeof(GlobalSingleId), typeof(InGarrison) },
-                None = new ComponentType[] { typeof(AssignGlobalSingleIDRequest) }
             };
             using var cityUnitsQuery = EntityManager.CreateEntityQuery(unitQueryDesc);
             var buildingQueryDesc = new EntityQueryDesc
             {
                 All = new ComponentType[] { typeof(GlobalSingleId), typeof(GarrisonAttr) },
-                None = new ComponentType[] { typeof(AssignGlobalSingleIDRequest) }
             };
             using var cityBuildingsQuery =
                 EntityManager.CreateEntityQuery(buildingQueryDesc);
