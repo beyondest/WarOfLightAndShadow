@@ -17,11 +17,12 @@ namespace SparFlame.Systems.General.BasicControl
         Init,
         MainWorld,
         SubWorld,
-        CityEnv,
-        BattleField,
-        CityInvadeFight,
-        CitySupportFight,
-        CurrentLoadingSubGameplaySceneGroup,
+        CityEnv, // Contains city terrain data
+        BattleField, // Contains battlefield terrain data
+        CityInvadeFight, // Contains enemy buildings and units
+        CitySupportFight, // Contains ally buildings and units
+        CurrentLoadingSubGameplaySceneGroup, 
+        RetreatPortalScene, // Contains functional buildings in battle status, like retreat portal
     }
 
     public class SceneController : MonoBehaviour, IResourceManager
@@ -252,6 +253,9 @@ namespace SparFlame.Systems.General.BasicControl
                         break;
                     case SceneGroupType.CurrentLoadingSubGameplaySceneGroup:
                         sceneGroup.AddSceneGroup(_currentLoadingSubGameplaySceneGroup);
+                        break;
+                    case SceneGroupType.RetreatPortalScene:
+                        sceneGroup.AddSceneGroup(cityItem.retreatPortalSceneGroup);
                         break;
                     default:
                         BurstSafe.UnexpectedEnum(sceneGroupType);

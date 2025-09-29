@@ -11,18 +11,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
     public struct StatUtils
     {
 
-        public static void GenerateRemoveFromTeamRequest(EntityCommandBuffer.ParallelWriter ecb, int index, Entity interacteeEntity, InTeamTag inTeamTag,
-            in UnitAttr unitAttr)
-        {
-            var request = ecb.CreateEntity(index);
-            ecb.AddComponent(index, request, new RemoveFromTeamRequest
-            {
-                UnitAttr =unitAttr,
-                BelongsToTeam = inTeamTag.BelongsToTeam,
-                UnitToRemove = interacteeEntity
-            });
-            ecb.AddComponent<SubGameplayEntityTag>(index, request);
-        }
+    
 
         // public static void GenerateHarvestResourceRequest(in StatChangeRequest request,
         //     in SubGameplayGeneralAttr interactorAttr,

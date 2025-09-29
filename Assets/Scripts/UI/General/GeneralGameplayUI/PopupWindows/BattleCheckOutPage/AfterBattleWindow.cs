@@ -21,6 +21,7 @@ namespace SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage
         [SerializeField] private AfterBattleMultiArmyGroupWindow enemyArmyGroups;
         
         [SerializeField] private TMP_Text battleResultText;
+        [SerializeField] private TMP_Text battleLastRealTime;
         
         [SerializeField] private TMP_Text unitKills;
         [SerializeField] private TMP_Text structureDestroyed;
@@ -42,11 +43,12 @@ namespace SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage
         
 
         public void UpdateInfo(in BattleRecorder recorder,in BattleEndRequest request,
-            in SubGameStatusData currentSubGameStatusData,in BeforeBattleTotalSnapShot totalSnapShot,
+            in SubGameStatusData currentSubGameStatusData,in BeforeBattleArmyGroupTotalSnapshot armyGroupTotalSnapshot,
             int essenceReward,
             NativeArray<Entity> playerSideArmyGroups, NativeArray<Entity> enemySideArmyGroups
             )
         {
+            
             if (currentSubGameStatusData.City != Entity.Null &&
                 request.Result is BattleResult.PlayerWin or BattleResult.EnemyRetreat)
             {
@@ -69,13 +71,15 @@ namespace SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage
                 BattleResult.PlayerRetreat => "Defeat",
                 _ => BurstSafe.UnexpectedEnum(request.Result, "Unknow")
             };
+            battleLastRealTime.text =UIMathMethods.FormatTimeFromSeconds2((int)(recorder.EndTime - recorder.StartTime));
+            
             unitKills.text = recorder.EnemySideDiedCount.ToString();
             structureDestroyed.text = recorder.EnemySideDestroyedBuildingsCount.ToString();
-            survivingUnitsAllies.text = $"{totalSnapShot.PlayerSideUnitCount - recorder.PlayerSideDiedCount}";
+            survivingUnitsAllies.text = $"{armyGroupTotalSnapshot.PlayerSideUnitCount + recorder.StartPlayerSideCityUnitCount - recorder.PlayerSideDiedCount}";
             
             unitLoss.text = recorder.PlayerSideDiedCount.ToString();
             structureLost.text = recorder.PlayerSideDestroyedBuildingsCount.ToString();
-            survivingUnitsEnemies.text = $"{totalSnapShot.EnemySideUnitCount - recorder.EnemySideDiedCount}";
+            survivingUnitsEnemies.text = $"{armyGroupTotalSnapshot.EnemySideUnitCount + recorder.StartEnemySideCityUnitCount - recorder.EnemySideDiedCount}";
             
             unitsUpgraded.text = recorder.PlayerUnitsUpgradeCount.ToString();
             essenceRewardValue.text = essenceReward.ToString();

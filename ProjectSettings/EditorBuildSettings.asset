@@ -47,6 +47,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Resources/Scenes/Cities/DarkCity/SubFaction1/DarkCity1_1_3Invade.unity
     guid: 75a3fdceb7b1c91459ed125efaccff7c
+  - enabled: 1
+    path: Assets/Resources/Scenes/Cities/LightCity/SubFaction1/Level1/LightCity1_1_1RetreatPortal.unity
+    guid: 1a3da5ef7aff43f4fb491826c678c5dc
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 874e5dc9588b4e745b50f53b6b4cedd1, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 1fb6ec391cb5e7943b6cfbaf6c3bb49c, type: 2}

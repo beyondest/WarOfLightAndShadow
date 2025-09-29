@@ -22,7 +22,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<RenewableData> _renewableResourceDataLookup;
         private ComponentLookup<OocTag> _oocTagLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
-        private ComponentLookup<InTeamTag> _inTeamTagLookup;
         private ComponentLookup<Rnd> _rndLookup;
         private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
         private ComponentLookup<ExpData> _expDataLookup;
@@ -78,7 +77,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
             _costListLookup = state.GetBufferLookup<CostList>(true);
-            _inTeamTagLookup = state.GetComponentLookup<InTeamTag>(true);
             _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
@@ -119,7 +117,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _oocTagLookup.Update(ref state);
             _buildingAttrLookup.Update(ref state);
             _costListLookup.Update(ref state);
-            _inTeamTagLookup.Update(ref state);
             _rndLookup.Update(ref state);
             _dwellingAttrLookup.Update(ref state);
             _expDataLookup.Update(ref state);
@@ -223,7 +220,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 OocTagLookup = _oocTagLookup,
                 CostListLookup = _costListLookup,
                 BuildingAttrLookup = _buildingAttrLookup,
-                InTeamTagLookup = _inTeamTagLookup,
                 UnitAttrLookup = _unitAttrLookup,
                 CapacityBuildingAttrLookup = _dwellingAttrLookup,
                 ExpDataLookup = _expDataLookup,

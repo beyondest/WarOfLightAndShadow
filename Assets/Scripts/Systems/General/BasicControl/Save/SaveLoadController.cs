@@ -71,7 +71,9 @@ namespace SparFlame.Systems.General.BasicControl
 
 
         // Save actions
+        // bool : Should save to tmp. Only sub world to main world save should save to tmp
         internal event Action<bool> OnEcsStartSavingCitySubData;
+        // bool : Should save to tmp. Only sub world to main world save should save to tmp
         internal event Action<bool> OnEcsStartSaveArmyGroupSubData;
         internal event Action OnEcsStartSaveGameMainData;
         internal event Action OnEcsStartSaveEnemySpecificArmyGroupSubData;
@@ -179,11 +181,21 @@ namespace SparFlame.Systems.General.BasicControl
                             _stillSaveTaskCount = 1;
                             OnEcsStartSaveGameMainData?.Invoke();
                             break;
-                        // This will never happen
+                        // When battle end auto save
+                        case SubGameStatus.Encounter:
+                            _stillSaveTaskCount = 2;
+                            OnEcsStartSaveArmyGroupSubData?.Invoke(false);
+                            OnEcsStartSaveGameMainData?.Invoke();
+                            break;
+                        // When battle end auto save
                         case SubGameStatus.PlayerDefend:
                         case SubGameStatus.PlayerSiege:
-                        case SubGameStatus.Encounter:
                         case SubGameStatus.Support:
+                            _stillSaveTaskCount = 3;
+                            OnEcsStartSavingCitySubData?.Invoke(false);
+                            OnEcsStartSaveArmyGroupSubData?.Invoke(false);
+                            OnEcsStartSaveGameMainData?.Invoke();
+                            break;
                         default:
                             BurstSafe.UnexpectedEnum(subGameStatusData.SubGameStatus);
                             break;
@@ -223,7 +235,8 @@ namespace SparFlame.Systems.General.BasicControl
                     OnEcsStartSaveEnemySpecificArmyGroupSubData?.Invoke();
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(saveType), saveType, null);
+                    BurstSafe.UnexpectedEnum(saveType);
+                    break;
             }
 
             // If battle not complete, save game is not allowed, player only has the pre-battle saving;

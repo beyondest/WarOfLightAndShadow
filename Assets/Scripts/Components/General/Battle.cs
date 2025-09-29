@@ -74,6 +74,10 @@ namespace SparFlame.Components.General
     public struct BattleRecorder : IComponentData
     {
         public float StartTime;
+        public float EndTime;
+        public int StartPlayerSideCityUnitCount;
+        public int StartEnemySideCityUnitCount;
+        
         public int PlayerSideDiedCount;
         public int EnemySideDiedCount;
         public int PlayerSideDestroyedBuildingsCount;

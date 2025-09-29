@@ -51,8 +51,8 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupUnit : IBufferElementData
     {
         public Entity Unit;
-        public int PrefabId;
         public long SingleId;
+        public int PrefabId;
     }
 
     public struct ArmyGroupUnitTypeData : IBufferElementData, IEquatable<ArmyGroupUnitTypeData>

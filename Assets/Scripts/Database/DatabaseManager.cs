@@ -19,7 +19,6 @@ namespace SparFlame.Database
         private static ResourceDatabaseSo _resourceDatabaseSo;
         private static EnvDatabaseSo _envDatabaseSo;
         private static EnvTypeSpawnDatabaseSo _envTypeSpawnDatabaseSo;
-        private static EnemyAIDatabaseSo _enemyAIDatabaseSo;
         private static VFXDatabaseSo _vfxDatabaseSo;
         private static BuffDatabaseSo _buffDatabaseSo;
         private static HintDatabaseSo _hintDatabaseSo;
@@ -44,9 +43,7 @@ namespace SparFlame.Database
             _envTypeSpawnDatabaseSo ??= LoadAndMergeDatabase<EnvTypeSpawnDatabaseSo, EnvDatabaseItem>("items");
         
 
-        public static EnemyAIDatabaseSo EnemyAIDatabaseSo =>
-            _enemyAIDatabaseSo ??= LoadAndMergeDatabase<EnemyAIDatabaseSo, EnemyAIWaveDataItem>("items");
-
+   
         public static VFXDatabaseSo VFXDatabaseSo =>
             _vfxDatabaseSo ??= LoadAndMergeDatabase<VFXDatabaseSo, VFXDataItem>("items");
         
@@ -184,7 +181,6 @@ namespace SparFlame.Database
             _unitDatabaseSo = null;
             _resourceDatabaseSo = null;
             _envDatabaseSo = null;
-            _enemyAIDatabaseSo = null;
             _envTypeSpawnDatabaseSo = null;
             _vfxDatabaseSo = null;
             _buffDatabaseSo = null;
@@ -196,7 +192,6 @@ namespace SparFlame.Database
             _ = UnitDatabaseSo;
             _ = ResourceDatabaseSo;
             _ = EnvDatabaseSo;
-            _ = EnemyAIDatabaseSo;
             _ = EnvTypeSpawnDatabaseSo;
             _ = VFXDatabaseSo;
             _ = BuffDatabaseSo;

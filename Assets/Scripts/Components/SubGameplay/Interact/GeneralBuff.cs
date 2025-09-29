@@ -56,6 +56,7 @@ namespace SparFlame.Components.SubGameplay
         public BuffType BuffType;
         public BuffFilter Filter;
     }
+    
     public struct TrackedByBuff : IBufferElementData
     {
         public Entity BuffEntity;
@@ -78,6 +79,7 @@ namespace SparFlame.Components.SubGameplay
     public struct CavalryMoveBuff : IComponentData, IEnableableComponent
     {
     }
+    
     public struct BuildingGarrisonBuff : IComponentData, IEnableableComponent
     { 
     }

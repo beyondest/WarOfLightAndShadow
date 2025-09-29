@@ -345,6 +345,7 @@ namespace SparFlame.Systems.General.BasicControl
             var buildingQueryDesc = new EntityQueryDesc
             {
                 All = new ComponentType[] { typeof(GlobalSingleId), typeof(GarrisonAttr) },
+                None = new ComponentType[]{typeof(RetreatPortalTag)}
             };
             using var cityBuildingsQuery =
                 EntityManager.CreateEntityQuery(buildingQueryDesc);

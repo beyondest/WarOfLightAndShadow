@@ -93,7 +93,8 @@ namespace SparFlame.Database
 
         [VerticalGroup("SceneGroup"), HideLabel, LabelText("Env")]
         public SceneGroup envSceneGroup;
-        
+        [VerticalGroup("SceneGroup"), HideLabel, LabelText("RetreatPortal")]
+        public SceneGroup retreatPortalSceneGroup;
         [VerticalGroup("SceneGroup"), HideLabel, FoldoutGroup("SceneGroup/Player light"),LabelText("Invade")]
         public SceneGroup lightInvadeSceneGroup;
 

@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,12 +12,16 @@ namespace SparFlame.Systems.General.Battle
 {
     public partial struct BattleRecorderSystem : ISystem
     {
+        private EntityQuery _playerSideUnitQuery;
+        private EntityQuery _enemySideUnitQuery;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<BattleRecorderConfig>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<SubGameStatusData>();
+            _playerSideUnitQuery = SystemAPI.QueryBuilder().WithAll<PlayerTag>().WithAll<UnitAttr>().WithNone<InArmyGroup>().Build();
+            _enemySideUnitQuery = SystemAPI.QueryBuilder().WithAll<AITag>().WithAll<UnitAttr>().WithNone<InArmyGroup>().Build();
         }
 
         [BurstCompile]
@@ -37,7 +42,10 @@ namespace SparFlame.Systems.General.Battle
             {
                 state.EntityManager.CreateSingleton(new BattleRecorder
                 {
-                    StartTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                    StartTime = (float)SystemAPI.Time.ElapsedTime,
+                    StartPlayerSideCityUnitCount = _playerSideUnitQuery.CalculateEntityCount(),
+                    StartEnemySideCityUnitCount = _enemySideUnitQuery.CalculateEntityCount(),
+                    
                     EnemySideDiedCount = 0,
                     PlayerSideDiedCount = 0,
                     EnemySideDestroyedBuildingsCount = 0,
@@ -46,6 +54,7 @@ namespace SparFlame.Systems.General.Battle
                     PlayerUnitsUpgradeCount = 0,
                     DestroyedRewardValue = 0,
                     KilledRewardValue = 0,
+                    
                 });
             }
 

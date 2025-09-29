@@ -1,17 +1,16 @@
-﻿using SparFlame.GamePlaySystem.Building;
-using SparFlame.GamePlaySystem.CustomParticleSystem;
-using SparFlame.GamePlaySystem.Garrison;
-using SparFlame.GamePlaySystem.General;
+﻿using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Components.VFX;
+using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.GamePlaySystem.Interact
 {
     // [UpdateBefore(typeof(StatSystem))]
-    public partial struct GarrisonBuffSystem : ISystem
+    public partial struct BuildingGarrisonBuffSystem : ISystem
     {
         private ComponentLookup<BuildingGarrisonBuff> _garrisonBuffLookup;
 
@@ -63,10 +62,10 @@ namespace SparFlame.GamePlaySystem.Interact
                     {
                         Filter = new VFXSubFilter
                         {
-                            Faction = subGameplayGeneralAttr.FactionTag,
+                            Faction = subGameplayGeneralAttr.Faction,
                             FactionFilterEnable = true,
                             TierFilterEnable = true,
-                            Tier = expData.CurTier
+                            Tier = expData.curTier
                         },
                         KeepDuration = float.MaxValue,
                         RequestType = VFXRequestType.Spawn,
@@ -88,10 +87,10 @@ namespace SparFlame.GamePlaySystem.Interact
                     {
                         Filter = new VFXSubFilter
                         {
-                            Faction = subGameplayGeneralAttr.FactionTag,
+                            Faction = subGameplayGeneralAttr.Faction,
                             FactionFilterEnable = true,
                             TierFilterEnable = true,
-                            Tier = expData.CurTier
+                            Tier = expData.curTier
                         },
                         KeepDuration = float.MaxValue,
                         RequestType = VFXRequestType.Kill,

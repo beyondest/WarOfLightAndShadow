@@ -1,7 +1,6 @@
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
-using SparFlame.Core.Utils;
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Mathematics;
@@ -15,7 +14,6 @@ namespace SparFlame.Systems.SubGameplay.Conjure
     public partial struct ConjureSystem : ISystem
     {
         private ComponentLookup<UnitAttr> _unitAttrLookup;
-        private ComponentLookup<AIConjureShrineData> _enemyConjuringDataLookUp;
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
         private NativeHashSet<Entity> _alreadyTagged;
 
@@ -28,7 +26,6 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<ConjureSystemConfig>();
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
-            _enemyConjuringDataLookUp = state.GetComponentLookup<AIConjureShrineData>();
             _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>();
             _alreadyTagged = new NativeHashSet<Entity>(16, Allocator.Persistent);
         }
@@ -52,7 +49,6 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
             var ecbp = new EntityCommandBuffer(Allocator.TempJob);
-            _enemyConjuringDataLookUp.Update(ref state);
             _unitAttrLookup.Update(ref state);
             _generalAttrLookup.Update(ref state);
             var job = new ConjureJob
@@ -60,7 +56,6 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 ECB = ecbp.AsParallelWriter(),
                 CurTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours,
                 UnitAttrLookup = _unitAttrLookup,
-                EnemyConjuringLookUp = _enemyConjuringDataLookUp,
                 GeneralAttrLookup = _generalAttrLookup
             }.ScheduleParallel(state.Dependency);
             job.Complete();
@@ -146,7 +141,6 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             public float CurTotalHours;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<AIConjureShrineData> EnemyConjuringLookUp;
 
             private void Execute([ChunkIndexInQuery] int index, in ConjureAttr conjureAttr,
                 ref DynamicBuffer<ConjuringData> conjuringDatas,
@@ -203,14 +197,6 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                             Scale = 1f
                         });
 
-                        // Add Enemy Base Data for AI system
-                        if (EnemyConjuringLookUp.TryGetComponent(selfEntity, out var enemyConjureShrineData))
-                        {
-                            ECB.AddComponent(index, unit, new AIUnitBelongsTo
-                            {
-                                Base = enemyConjureShrineData.Base
-                            });
-                        }
 
                         var vfxRequest = ECB.CreateEntity(index);
                         ECB.AddComponent<SubGameplayEntityTag>(index, vfxRequest);

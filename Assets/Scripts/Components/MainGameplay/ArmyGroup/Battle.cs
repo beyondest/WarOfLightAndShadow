@@ -15,7 +15,7 @@ namespace SparFlame.Components.MainGameplay
         public int StatChangeValue;
     }
 
-    public struct BeforeBattleTotalSnapShot : IComponentData
+    public struct BeforeBattleArmyGroupTotalSnapshot : IComponentData
     {
         public int PlayerSideUnitCount;
         public int EnemySideUnitCount;

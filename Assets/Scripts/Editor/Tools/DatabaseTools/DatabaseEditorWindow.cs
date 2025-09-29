@@ -20,9 +20,7 @@ namespace Editor
         public List<ResourceDatabaseSo> resourceDatabases = new();
 
 
-        [Unity.Collections.ReadOnly, LabelText("EnemyAI Databases"), ShowInInspector]
-        public List<EnemyAIDatabaseSo> enemyAIDatabases = new();
-
+      
         [Unity.Collections.ReadOnly, LabelText("Env Databases"), ShowInInspector]
         public List<EnvDatabaseSo> envDatabases = new();
 
@@ -58,7 +56,6 @@ namespace Editor
             resourceDatabases = FindAllAssets<ResourceDatabaseSo>("Resource Database");
             envDatabases = FindAllAssets<EnvDatabaseSo>("Env Database");
             envTypeSpawnDatabases = FindAllAssets<EnvTypeSpawnDatabaseSo>("Env Type Spawn Database");
-            enemyAIDatabases = FindAllAssets<EnemyAIDatabaseSo>( " EnemyAI Database ");
             vfxDatabases = FindAllAssets<VFXDatabaseSo>("VFX Database");
             buffDatabases = FindAllAssets<BuffDatabaseSo>("Buff Database");
             hintDatabases = FindAllAssets<HintDatabaseSo>("Hint Database");

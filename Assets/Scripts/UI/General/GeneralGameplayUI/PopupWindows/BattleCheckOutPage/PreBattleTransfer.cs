@@ -338,7 +338,7 @@ namespace SparFlame.Systems.General
             MapInfo mapInfo,
             NativeList<float3> playerSideLoadingPositions, NativeList<float3> enemySideLoadingPositions)
         {
-            EntityManager.CreateSingleton(new BeforeBattleTotalSnapShot
+            EntityManager.CreateSingleton(new BeforeBattleArmyGroupTotalSnapshot
             {
                 EnemySideUnitCount = enemySideTotalUnitCount,
                 PlayerSideUnitCount = playerSideTotalUnitCount,

@@ -44,11 +44,14 @@ namespace SparFlame.UI.General
             if (_isInAfterBattleWindow) return;
             _endBattleFrameCount++;
             if (_endBattleFrameCount < 2) return;
-
+            
             var battleEndRequest = SystemAPI.GetSingleton<BattleEndRequest>();
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             var recorder = SystemAPI.GetSingleton<BattleRecorder>();
-            var totalSnapShot = SystemAPI.GetSingleton<BeforeBattleTotalSnapShot>();
+            recorder.EndTime =(float) SystemAPI.Time.ElapsedTime;
+            SystemAPI.SetSingleton(recorder);
+            
+            var totalSnapShot = SystemAPI.GetSingleton<BeforeBattleArmyGroupTotalSnapshot>();
             var essenceReward = (int)(recorder.DestroyedRewardValue + recorder.KilledRewardValue);
 
             var playerSideArmyGroups = SystemAPI.QueryBuilder().WithAll<BeforeBattleArmyGroupSnapShot>()
@@ -69,7 +72,7 @@ namespace SparFlame.UI.General
         private void ReturnToMainWorld()
         {
             AfterBattleCheckOut(false);
-            GameController.Instance.ResumeGame(true);
+            // GameController.Instance.ResumeGame(true);
             _isInAfterBattleWindow = false;
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BattleEndRequest>());
             CustomCoroutineRunner.Instance.StartCoroutine(GameController.Instance.SubWorldToMainWorld());
@@ -104,7 +107,7 @@ namespace SparFlame.UI.General
             var battleRecorder = SystemAPI.GetSingleton<BattleRecorder>();
 
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
-            var enemySideSubFactions = new NativeList<int>();
+            using var enemySideSubFactions = new NativeList<int>(Allocator.Persistent);
             var enemySideArmyGroups = SystemAPI.QueryBuilder().WithAll<BeforeBattleArmyGroupSnapShot>().WithAll<AITag>()
                 .Build()
                 .ToEntityArray(Allocator.Temp);
@@ -213,7 +216,7 @@ namespace SparFlame.UI.General
 
         private void DestroyBattleSpecifiedSingletons(bool ifStayToCity, SubGameStatusData subGameStatusData)
         {
-            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BeforeBattleTotalSnapShot>());
+            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BeforeBattleArmyGroupTotalSnapshot>());
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<CurrentSubMapInfo>());
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);

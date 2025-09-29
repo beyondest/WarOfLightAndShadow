@@ -48,7 +48,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public BufferLookup<CostList> CostListLookup; // For population release
 
         [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
-        [ReadOnly] public ComponentLookup<InTeamTag> InTeamTagLookup;
         [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
 
 
@@ -275,12 +274,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         CurrentCity,
                         ref CostListLookup, ECB);
 
-                    if (InTeamTagLookup.TryGetComponent(request.Interactee, out var inTeamTag))
-                    {
-                        StatUtils.GenerateRemoveFromTeamRequest(ECB, index, request.Interactee, inTeamTag,
-                            UnitAttrLookup[request.Interactee]);
-                    }
-
                     if (InArmyGroupLookup.TryGetComponent(request.Interactee, out var inArmyGroup))
                     {
                         StatUtils.GenerateRemoveFromArmyGroupRequest(request.Interactee, 
@@ -291,7 +284,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     }
                     
                     // Generate battle recorder request
-                    if (relationShip == Relationship.Self)
+                    if (relationShip is Relationship.Self or Relationship.Ally )
                     {
                         ECB.AddComponent<BattleRecorderPlayerSideDied>(index, battleRecorderRequest);
                     }

@@ -22,6 +22,20 @@ namespace SparFlame.UI.General
             return $"{minutes} min : {seconds} s";
         }
 
+        /// <summary>
+        /// Get 00 : x min : y s format of seconds data
+        /// </summary>
+        /// <param name="totalSeconds"></param>
+        /// <returns></returns>
+        public static string FormatTimeFromSeconds2(int totalSeconds)
+        {
+            var minutes = totalSeconds / 60;
+            var seconds = totalSeconds % 60;
+            var mid = minutes < 10 ? "0" + minutes : minutes.ToString();
+            var last = seconds < 10 ? "0" + seconds : seconds.ToString();
+            return $"00 : {mid}  : {last} s";
+        }
+
         public static string FormatTimeFromHours(float totalHours)
         {
             var days = (int) totalHours / 24;

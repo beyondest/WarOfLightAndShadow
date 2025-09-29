@@ -5,7 +5,6 @@ using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Physics;
 using Unity.Transforms;
 
 // ReSharper disable Unity.Entities.SingletonMustBeRequested
@@ -205,8 +204,10 @@ namespace SparFlame.Systems.General.Battle
         private void EndBattle(ref SystemState state,BattleResult result)
         {
             if(SystemAPI.HasSingleton<BattleEndRequest>())return;
-            SetPlayerRetreatedUnits(ref state, result is BattleResult.EnemyRetreat or BattleResult.PlayerWin);
             
+            SetPlayerRetreatedUnits(ref state, result is BattleResult.EnemyRetreat or BattleResult.PlayerWin);
+            ClearRetreatPortals(ref state);
+
             state.EntityManager.CreateSingleton(new BattleEndRequest
             {
                 Result = result
@@ -273,6 +274,24 @@ namespace SparFlame.Systems.General.Battle
             ecb.Dispose();
         }
 
+        private void ClearRetreatPortals(ref SystemState state)
+        {
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            foreach (var (_,entity) in SystemAPI.Query<RefRO<RetreatPortalTag>>().WithEntityAccess())
+            {
+                var removeObstacleRequest = new VolumeObstacleDestroyRequest
+                {
+                    RequestFromFaction = FactionTag.Neutral,
+                    FromEntity = entity,
+                };
+                var request = ecb.CreateEntity();
+                ecb.AddComponent<SubGameplayEntityTag>(request);
+                ecb.AddComponent(request, removeObstacleRequest);
+                ecb.DestroyEntity(entity);
+            }
+            ecb.Playback(state.EntityManager);
+        }
+        
         private void KillUnitsAndBuildingsNotRetreated(ref SystemState state, bool isPlayerLose)
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);

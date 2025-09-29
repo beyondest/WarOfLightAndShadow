@@ -347,6 +347,7 @@ namespace SparFlame.Systems.General.BasicControl
             var loads = new List<SceneGroupType>
             {
                 SceneGroupType.SubWorld,
+                SceneGroupType.RetreatPortalScene,
             };
             switch (targetSubGameStatus)
             {
@@ -361,6 +362,7 @@ namespace SparFlame.Systems.General.BasicControl
                     loads.Add(SceneGroupType.BattleField);
                     break;
                 case SubGameStatus.Support:
+                    loads.Add(SceneGroupType.CityEnv);
                     loads.Add(SceneGroupType.CitySupportFight);
                     break;
                 case SubGameStatus.None:
