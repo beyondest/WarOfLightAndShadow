@@ -82,8 +82,6 @@ namespace SparFlame.Database
                 });
             }
             
-            
-            
             private void BakeMovementAttr(UnitDataItem item,Entity entity, GeneralUnitAttributesAuthoring authoring)
             {
                 AddComponent(entity, new NavAgentComponent
@@ -117,6 +115,9 @@ namespace SparFlame.Database
                     LeftEntity = Entity.Null,
                     RightEntity = Entity.Null,
                 });
+                AddComponent(entity, new Separation());
+                AddComponent(entity, new SeekTarget());
+                AddComponent(entity, new Velocity());
                 AddBuffer<WaypointBuffer>(entity);
                 AddComponent<MovingStateTag>(entity);
                 SetComponentEnabled<MovingStateTag>(entity, false);

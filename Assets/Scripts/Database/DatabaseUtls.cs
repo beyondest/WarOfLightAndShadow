@@ -45,14 +45,14 @@ namespace SparFlame.Database
                 });
                 if (item.baseTag == BaseTag.Units)
                 {
-                    AddComponent(entity, new FakeCollisionTriggerRequest
-                    {
-                        TriggerPrefab = !item.fakeCollisionTriggerPrefab
-                            ? Entity.Null
-                            : GetEntity(item.fakeCollisionTriggerPrefab, TransformUsageFlags.Dynamic),
-                    });
                     AddBuffer<FakeColliderTarget>(entity);
                 }
+                AddComponent(entity, new FakeCollisionTriggerRequest
+                {
+                    TriggerPrefab = !item.fakeCollisionTriggerPrefab
+                        ? Entity.Null
+                        : GetEntity(item.fakeCollisionTriggerPrefab, TransformUsageFlags.Dynamic),
+                });
                
 
                 // Stat 

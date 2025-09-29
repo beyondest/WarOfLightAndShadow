@@ -146,5 +146,6 @@ namespace SparFlame.Components.General
     {
         public bool enabled;
         [ShowIf(nameof(enabled))] public float armyGroupConjureTimeScale;
+        [ShowIf(nameof(enabled))] public int unitCountScale;
     }
 }

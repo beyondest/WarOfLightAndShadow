@@ -19,6 +19,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
         private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<ArmyGroupMovingTag> _armyGroupMovingTagLookup;
         private ComponentLookup<ArmyGroupInGarrison> _armyGroupInGarrisonLookup;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
 
 
         [BurstCompile]
@@ -32,6 +33,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
             _armyGroupMovingTagLookup = state.GetComponentLookup<ArmyGroupMovingTag>(true);
             _armyGroupInGarrisonLookup = state.GetComponentLookup<ArmyGroupInGarrison>(true);
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
         }
 
         [BurstCompile]
@@ -45,6 +47,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             _boxColliderSizeLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _armyGroupInGarrisonLookup.Update(ref state);
+            _singleIdLookup.Update(ref state);
             var ecbP = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             new EnemyArmyGroupCommandJob
@@ -53,6 +56,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
                 ArmyGroupMovingTagLookup = _armyGroupMovingTagLookup,
                 InGarrisonLookup = _armyGroupInGarrisonLookup,
+                SingleIdLookup = _singleIdLookup,
                 ECB = ecbP
             }.ScheduleParallel();
 
@@ -71,7 +75,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
             [ReadOnly] public ComponentLookup<ArmyGroupInGarrison> InGarrisonLookup;
-
+            [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIdLookup;
             private void Execute([ChunkIndexInQuery] int index,
                 in GlobalSingleId singleId,
                 ref ArmyGroupMovableData movableData,
@@ -114,12 +118,13 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                     stateData.TargetState = ArmyGroupState.Idle;
                     stateData.CurState = ArmyGroupState.Idle;
                     stateData.Target = Entity.Null;
+                    stateData.TargetSingleId = 0;
                 }
 
                 stateData.CurState = ArmyGroupState.Idle;
                 stateData.TargetState = ArmyGroupState.Invade;
                 stateData.Target = commandData.TargetCity;
-
+                stateData.TargetSingleId = SingleIdLookup.TryGetComponent(commandData.TargetCity, out var id) ? id.value : 0;
                 ECB.AppendToBuffer(index, stateData.Target, new CityFutureInvaders
                 {
                     ArmyGroup = selfEntity,

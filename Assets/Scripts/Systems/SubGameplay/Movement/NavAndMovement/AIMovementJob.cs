@@ -15,17 +15,17 @@ namespace SparFlame.Systems.SubGameplay.Movement
     public partial struct AIMovementJob : IJobEntity
     {
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
-        [ReadOnly] public float DeltaTime;
         [ReadOnly] public float ElapsedTime;
         [ReadOnly] public MovementConfig Config;
-        [ReadOnly] public MovementDebug Debug;
 
         private void Execute(
-            ref NavAgentComponent navAgent, ref MovableData movableData, ref LocalTransform transform,
+            ref NavAgentComponent navAgent, ref MovableData movableData, in LocalTransform transform,
             ref Surroundings surroundings, in BoxColliderSize boxColliderSize,
-            in DynamicBuffer<WaypointBuffer> waypointBuffer, in InteractAbilityBonus bonus
+            in DynamicBuffer<WaypointBuffer> waypointBuffer, in InteractAbilityBonus bonus,
+            ref SeekTarget seekTarget
         )
         {
+            seekTarget.Direction = float3.zero;
             navAgent.targetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
             var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
             var curPos2D = new float2(transform.Position.x, transform.Position.z);
@@ -200,8 +200,8 @@ namespace SparFlame.Systems.SubGameplay.Movement
             {
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
-                TryMove(ref transform, ref movableData, ref surroundings, navAgent,
-                    idealDirection, curPosY0 ,  bonus
+                TryMove( transform, ref movableData, ref surroundings, navAgent,
+                    idealDirection, curPosY0 ,  bonus, ref seekTarget
                 );
                 // surroundings.IdealDirection = idealDirection;
             }
@@ -219,18 +219,17 @@ namespace SparFlame.Systems.SubGameplay.Movement
             }
         }
 
-        private void TryMove(ref LocalTransform transform,
+        private void TryMove(in LocalTransform transform,
             ref MovableData movableData,
             ref Surroundings surroundings,
             in NavAgentComponent navAgent,
             in float3 idealFront, in float3 curPosY0,
-            in InteractAbilityBonus bonus
+            in InteractAbilityBonus bonus,
+            ref SeekTarget seekTarget
         )
         {
-            
-            var scale = Debug.enabled ? Debug.aiMovementScale : 1f;
-            
-            var moveLength = DeltaTime * (movableData.MoveSpeed + bonus.MoveSpeedBonus )* scale;
+            // var scale = Debug.enabled ? Debug.aiMovementScale : 1f;
+            // var moveLength = DeltaTime * (movableData.MoveSpeed + bonus.MoveSpeedBonus )* scale;
             // Record Pos for checking stuck
             if (ElapsedTime > surroundings.RecordPosTime)
             {
@@ -238,15 +237,9 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 surroundings.RecordPosTime = ElapsedTime + Config.RecordPosInterval;
             }
 
-            surroundings.MoveSuccess =
-                !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
-            var targetRotation = quaternion.LookRotationSafe(-idealFront, math.up());
-            targetRotation =  math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
-            transform.Rotation = math.slerp(transform.Rotation.value, targetRotation, DeltaTime * Config.RotationSpeed);
+            seekTarget.Direction = idealFront;
 
-         
-            
-            transform.Position += moveLength * idealFront;
+            surroundings.MoveSuccess = !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
         }
 
         private void DetectSurrounding(ref Surroundings surroundings, in LocalTransform transform,

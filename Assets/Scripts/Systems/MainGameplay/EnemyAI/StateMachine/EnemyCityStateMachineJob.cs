@@ -7,7 +7,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.MainGameplay.EnemyAI
@@ -407,7 +406,9 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 var totalUnitCount = 0;
                 foreach (var data in compositionDatas)
                 {
-                    totalUnitCount += data.Count;
+                    var count = data.Count;
+                    if (Debug.enabled) count *= Debug.unitCountScale;
+                    totalUnitCount += count;
                 }
 
                 ECB.AddComponent(index, armyGroup, new EnemyArmyGroupShouldSaveTag
@@ -430,24 +431,25 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 // Spawn fake unit, assign datas, calculate total threaten value
                 foreach (var t in compositionDatas)
                 {
-                    var data = t;
-                    var unitAttr = UnitAttrLookup[data.UnitPrefab];
+                    var spawnCount = t.Count;
+                    if (Debug.enabled) spawnCount *= Debug.unitCountScale;
+                    var unitAttr = UnitAttrLookup[t.UnitPrefab];
                     var baseValue = unitAttr.Type == UnitType.Magic
                         ? CalConfig.magicUnitBaseThreatenValue
                         : CalConfig.nonMagicUnitBaseThreatenValue;
-                    var levelAddValue = EnemyAIUtils.EvaluateLevelAddThreatenValue(data.Level,
+                    var levelAddValue = EnemyAIUtils.EvaluateLevelAddThreatenValue(t.Level,
                         CalConfig.levelCoefficientA, CalConfig.levelCoefficientB,
                         CalConfig.levelCoefficientA);
-                    totalThreatenValue += (baseValue + levelAddValue) * data.Count;
-                    if (data.Count > mostUnitCount)
+                    totalThreatenValue += (baseValue + levelAddValue) * spawnCount;
+                    if (spawnCount > mostUnitCount)
                     {
                         mainUnitType = unitAttr.Type;
-                        mostUnitCount = data.Count;
+                        mostUnitCount = spawnCount;
                     }
 
-                    while (data.Count-- > 0)
+                    while (spawnCount-- > 0)
                     {
-                        SpawnFakeUnit(index, data.UnitPrefab, data.Level, armyGroup, positions[positionIndex],
+                        SpawnFakeUnit(index, t.UnitPrefab, t.Level, armyGroup, positions[positionIndex],
                             generalAttr);
                         positionIndex++;
                     }
@@ -546,23 +548,23 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             var statData = new StatData();
             var expData = new ExpData();
             var movableData = new MovableData();
-            var attackAbility = new AttackAbility();
-            var healAbility = new HealAbility();
-            var harvestAbility = new HarvestAbility();
             if (AttackLookup.HasComponent(prefab))
             {
+                var attackAbility = AttackLookup[prefab];
                 upgradeAspect.SetLevelDataWhenThisIsPrefab(level, ExpDatabase, ref statData,
                     ref movableData, ref expData, ref attackAbility);
                 ECB.AddComponent(index, fakeUnit, attackAbility);
             }
             else if (HealLookup.HasComponent(prefab))
             {
+                var healAbility = HealLookup[prefab];
                 upgradeAspect.SetLevelDataWhenThisIsPrefab(level, ExpDatabase, ref statData,
                     ref movableData, ref expData, ref healAbility);
                 ECB.AddComponent(index, fakeUnit, healAbility);
             }
             else if (HarvestLookup.HasComponent(prefab))
             {
+                var harvestAbility = HarvestLookup[prefab];
                 upgradeAspect.SetLevelDataWhenThisIsPrefab(level, ExpDatabase, ref statData,
                     ref movableData, ref expData, ref harvestAbility);
                 ECB.AddComponent(index, fakeUnit, harvestAbility);

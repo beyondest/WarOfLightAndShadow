@@ -24,6 +24,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GeneralRandom>();
             state.RequireForUpdate<PlayerFactionData>();
+            state.RequireForUpdate<GameStatusData>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _linkedEntityGroupLookup = state.GetBufferLookup<LinkedEntityGroup>(true);
             _unitAttrLookup = state.GetComponentLookup<UnitAttr>(true);
@@ -32,6 +33,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatus.Value == GameStatus.NotStarted)return;
             _buildingAttrLookup.Update(ref state);
             _linkedEntityGroupLookup.Update(ref state);
             _unitAttrLookup.Update(ref state);

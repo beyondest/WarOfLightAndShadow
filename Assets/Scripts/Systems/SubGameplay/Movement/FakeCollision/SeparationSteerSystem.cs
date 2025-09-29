@@ -23,7 +23,6 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
         {
             state.RequireForUpdate<SeparationSteerConfig>();
             state.RequireForUpdate<FakeColliderTarget>();
-
             state.RequireForUpdate<SubGamingTag>();
             _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>();
@@ -35,25 +34,56 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
 
             _boxColliderSizeLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
-            state.Dependency = new SeparationJob
+           new SeparationJob
             {
-                Config = SystemAPI.GetSingleton<SeparationSteerConfig>(),
                 LocalTransformLookup = _localTransformLookup,
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
-            }.ScheduleParallel(state.Dependency);
-
+            }.ScheduleParallel();
+            new AttackSeparationJob().ScheduleParallel();
+            new HealSeparationJob().ScheduleParallel();
+            new HarvestSeparationJob().ScheduleParallel();
         }
 
         [BurstCompile]
+        [WithAll(typeof(AttackStateTag))]
+        private partial struct AttackSeparationJob : IJobEntity
+        {
+            private void Execute(ref Separation separation)
+            {
+                separation.Value = float3.zero;
+            }
+        }
+        [BurstCompile]
+        [WithAll(typeof(HealStateTag))]
+        private partial struct HealSeparationJob : IJobEntity
+        {
+            private void Execute(ref Separation separation)
+            {
+                separation.Value = float3.zero;
+            }
+        }
+        [BurstCompile]
+        [WithAll(typeof(HarvestStateTag))]
+        private partial struct HarvestSeparationJob : IJobEntity
+        {
+            private void Execute(ref Separation separation)
+            {
+                separation.Value = float3.zero;
+            }
+        }
+        
+        [BurstCompile]
         [WithNone(typeof(UnitDeadTag))]
         [WithNone(typeof(InGarrison))]
+        [WithNone(typeof(AttackStateTag))]
+        [WithNone(typeof(HealStateTag))]
+        [WithNone(typeof(HarvestStateTag))]
         private partial struct SeparationJob : IJobEntity
         {
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
-            [ReadOnly] public SeparationSteerConfig Config;
-
             private void Execute(ref DynamicBuffer<FakeColliderTarget> targets, 
+                ref Separation separation,
                 ref Rnd rnd,Entity selfEntity)
             {
                 ref var transform = ref LocalTransformLookup.GetRefRW(selfEntity).ValueRW;
@@ -124,15 +154,9 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
                         }
                     }
                 }
-
                 // 应用分离
-                if (bestOverlap > 0)
-                {
-                    pos += bestSeparation * Config.CoefficientOfOverlap;
-                    transform.Position = new float3(pos.x, transform.Position.y, pos.y);
-                }
-
-                targets.Clear();
+                separation.Value = bestOverlap > 0 ? new float3(bestSeparation.x, 0, bestSeparation.y) : float3.zero;
+                // targets.Clear();
             }
         }
 

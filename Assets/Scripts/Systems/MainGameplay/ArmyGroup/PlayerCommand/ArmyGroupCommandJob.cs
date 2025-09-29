@@ -14,10 +14,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetPosition;
-        [ReadOnly] public ComponentLookup<ArmyGroupMovingTag> ArmyGroupMovingTagLookup;
         [ReadOnly] public ArmyGroupState TargetState;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public float2 TargetBoxColliderSizeXz;
+
+        [ReadOnly] public ComponentLookup<ArmyGroupMovingTag> ArmyGroupMovingTagLookup;
+        [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIDLookup;
 
         private void Execute([ChunkIndexInQuery] int index, ref ArmyGroupMovableData movableData,
             ref DynamicBuffer<ArmyGroupMovingTarget> targets,
@@ -38,6 +40,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 stateData.TargetState = ArmyGroupState.Idle;
                 stateData.CurState = ArmyGroupState.Idle;
                 stateData.Target = Entity.Null;
+                stateData.TargetSingleId = 0;
             }
 
             if (stateData.TargetState != ArmyGroupState.Idle)
@@ -50,10 +53,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
                 return;
             }
-            
+
             stateData.TargetState = TargetState;
             stateData.Target = TargetEntity;
-
+            stateData.TargetSingleId = SingleIDLookup.TryGetComponent(TargetEntity, out var id) ? id.value : 0;
 
             targets.Add(new ArmyGroupMovingTarget
             {
@@ -147,12 +150,12 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     City = stateData.Target
                 });
             }
+
             movableData.movementInfo = ArmyGroupMovementInfo.None;
             stateData.CurState = ArmyGroupState.Idle;
             stateData.TargetState = ArmyGroupState.Idle;
             targets.Clear();
             ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, false);
-            
         }
     }
 

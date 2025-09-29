@@ -155,7 +155,8 @@ namespace SparFlame.Systems.General.BasicControl
             [ChunkIndexInQuery] int index, in ArmyGroupAttr armyGroupAttr,
             in DynamicBuffer<LinkedEntityGroup> children,
             in ArmyGroupMovableData movableData,
-            ref LastPassingByCity lastPassingByCity, Entity selfEntity
+            ref LastPassingByCity lastPassingByCity, Entity selfEntity,
+            ref ArmyGroupStateData stateData
         )
         {
             if (ArmyGroupInGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison))
@@ -163,13 +164,15 @@ namespace SparFlame.Systems.General.BasicControl
                 inGarrison.City = Map[inGarrison.SingleId];
                 ECB.SetComponent(index, selfEntity, inGarrison);
             }
-
-            lastPassingByCity.City = Map[lastPassingByCity.SingleId];
+            if(stateData.TargetSingleId != 0)
+                stateData.Target = Map[stateData.TargetSingleId];
+            if(lastPassingByCity.SingleId != 0)
+                lastPassingByCity.City = Map[lastPassingByCity.SingleId];
             if (movableData.movementInfo == ArmyGroupMovementInfo.NotComplete)
             {
                 ECB.SetComponentEnabled<ArmyGroupMovingTag>(index, selfEntity, true);
             }
-
+            
             if (ArmyGroupBelongsToCityLookup.TryGetComponent(selfEntity, out var belongsToCity))
             {
                 belongsToCity.City = Map[belongsToCity.SingleId];

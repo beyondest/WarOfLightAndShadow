@@ -17,6 +17,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     {
         private ComponentLookup<ArmyGroupMovingTag> _armyGroupMovingTagLookup;
         private NativeList<Entity> _flags;
+        private ComponentLookup<GlobalSingleId> _singleIdLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -31,6 +32,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             state.RequireForUpdate<InputArmyGroupControlData>();
             state.RequireForUpdate<MainGamingTag>();
             _armyGroupMovingTagLookup = state.GetComponentLookup<ArmyGroupMovingTag>(true);
+            _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
             _flags = new NativeList<Entity>(Allocator.Persistent);
         }
 
@@ -84,7 +86,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 state.EntityManager.SetComponentData(flag, trans);
                 _flags.Add(flag);
                 _armyGroupMovingTagLookup.Update(ref state);
-                var targetPosition =inputMouseData.HitPosition;;
+                _singleIdLookup.Update(ref state);
+                var targetPosition =inputMouseData.HitPosition;
                 var targetEntity = Entity.Null;
                 var targetState = ArmyGroupState.Idle;
                 var setTargetValid = false;
@@ -134,6 +137,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     new ArmyGroupSetTargetJob
                     {
                         ArmyGroupMovingTagLookup = _armyGroupMovingTagLookup,
+                        SingleIDLookup =  _singleIdLookup,
                         ECB = ecbP,
                         TargetPosition = targetPosition,
                         TargetState = targetState,

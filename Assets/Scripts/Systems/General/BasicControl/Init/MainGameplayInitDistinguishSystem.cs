@@ -21,6 +21,8 @@ namespace GamePlaySystem.Functionality.MainGameplay.General
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var gameStatus = SystemAPI.GetSingleton<GameStatusData>();
+            if(gameStatus.Value == GameStatus.NotStarted)return;
             var ecbP = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             new InitDistinguishJob

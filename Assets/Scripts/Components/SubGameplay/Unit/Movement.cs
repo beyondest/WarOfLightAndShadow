@@ -24,10 +24,6 @@ namespace SparFlame.Components.SubGameplay
         /// </summary>
         public float InteractRange;
         public bool ForceCalculate;
-        /// <summary>
-        /// This is the collider of object itself, used for raycast for obstacle avoidance 
-        /// </summary>
-        // public float2 SelfColliderShapeXz;
     }
 
     public struct Surroundings : IComponentData
@@ -47,6 +43,25 @@ namespace SparFlame.Components.SubGameplay
         public bool ChooseRight;
         public int SlideTimes;*/
     }
+
+    public struct SeekTarget : IComponentData
+    {
+        public float3 Direction;
+    }
+    public struct Separation : IComponentData
+    {
+       public float3 Value;
+    }
+
+    public struct Velocity : IComponentData
+    {
+        public float3 Value; 
+    }
+
+    // public struct Acceleration : IComponentData
+    // {
+    //     public float3 Value;
+    // }
     
     [Serializable]
     public struct NavAgentComponent : IComponentData

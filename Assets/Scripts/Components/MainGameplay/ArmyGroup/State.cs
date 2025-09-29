@@ -15,6 +15,7 @@ namespace SparFlame.Components.MainGameplay
     public struct ArmyGroupStateData : IComponentData
     {
         public Entity Target;
+        public long TargetSingleId;
         public ArmyGroupState CurState;
         public ArmyGroupState TargetState;
     }

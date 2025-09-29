@@ -301,7 +301,7 @@ namespace SparFlame.Systems.General.BasicControl
         private void PostProcessForGameMainData()
         {
             var map = new NativeHashMap<long, Entity>(100, Allocator.Persistent);
-            using var query = EntityManager.CreateEntityQuery(typeof(GlobalSingleId));
+            using var query = EntityManager.CreateEntityQuery(typeof(GlobalSingleId),typeof(MainGameplayGeneralAttr));
             using var entities = query.ToEntityArray(Allocator.Persistent);
             using var ids = query.ToComponentDataArray<GlobalSingleId>(Allocator.Persistent);
             for (var i = 0; i < entities.Length; i++)
@@ -337,10 +337,19 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void PostProcessForCitySubData()
         {
-             var cityUnitsQuery =
-                SystemAPI.QueryBuilder().WithAll<GlobalSingleId>().WithAll<UnitAttr>().WithNone<InArmyGroup>().Build();
+            var unitQueryDesc = new EntityQueryDesc
+            {
+                All = new ComponentType[] { typeof(GlobalSingleId), typeof(InGarrison) },
+                None = new ComponentType[] { typeof(AssignGlobalSingleIDRequest) }
+            };
+            using var cityUnitsQuery = EntityManager.CreateEntityQuery(unitQueryDesc);
+            var buildingQueryDesc = new EntityQueryDesc
+            {
+                All = new ComponentType[] { typeof(GlobalSingleId), typeof(GarrisonAttr) },
+                None = new ComponentType[] { typeof(AssignGlobalSingleIDRequest) }
+            };
             using var cityBuildingsQuery =
-                EntityManager.CreateEntityQuery(typeof(GlobalSingleId), typeof(BuildingAttr));
+                EntityManager.CreateEntityQuery(buildingQueryDesc);
             using var units = cityUnitsQuery.ToEntityArray(Allocator.Persistent);
             using var buildings = cityBuildingsQuery.ToEntityArray(Allocator.Persistent);
             using var unitSingleIds = cityUnitsQuery.ToComponentDataArray<GlobalSingleId>(Allocator.Persistent);

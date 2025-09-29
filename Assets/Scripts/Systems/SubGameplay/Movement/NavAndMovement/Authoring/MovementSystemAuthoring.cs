@@ -35,6 +35,13 @@ namespace SparFlame.Systems.SubGameplay.Movement
         public float detectLengthRatio = 0.1f;
         public float detectFrontBiasRatio = 0.6f;
       
+        [Header("CBR Algorithm")]
+        public float separationWeight = 0.2f;
+        public float cohesionWeight = 0.0f;
+        public float alignmentWeight = 0.0f;
+        public float seekTargetWeight = 0.8f;
+        
+        public float maxAcceleration = 3f;
         
         private class MovementSystemAuthoringBaker : Baker<MovementSystemAuthoring>
         {
@@ -47,12 +54,22 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     PlayerMarchExtent = authoring.playerMarchExtent,
                     AIMarchExtent = authoring.aiMarchExtent,
                     InteractRangeSqBias = authoring.interactRangeSqBias,
-                    RotationSpeed = authoring.rotationSpeed,
                     ObstacleLayerMask = authoring.obstacleLayerMask.Value,
                     DetectRaycastBelongsTo =authoring.movementRayBelongsToLayerMask.Value,
                     RecordPosInterval = authoring.recordPosInterval,
                     DetectLengthRatio = authoring.detectLengthRatio,
-                    DetectFrontBiasRatio = authoring.detectFrontBiasRatio
+                    DetectFrontBiasRatio = authoring.detectFrontBiasRatio,
+                    
+                   
+                });
+                AddComponent(entity,new CbrConfig
+                {
+                    AlignmentWeight = authoring.alignmentWeight,
+                    CohesionWeight = authoring.cohesionWeight,
+                    SeparationWeight = authoring.separationWeight,
+                    SeekTargetWeight = authoring.seekTargetWeight,
+                    RotationSpeed = authoring.rotationSpeed,
+                    MaxAcceleration = authoring.maxAcceleration,
                 });
             }
         }
@@ -64,14 +81,26 @@ namespace SparFlame.Systems.SubGameplay.Movement
         public float3 PlayerMarchExtent;
         public float3 AIMarchExtent;
         public float InteractRangeSqBias;
-        public float RotationSpeed;
         public uint ObstacleLayerMask;
         public uint DetectRaycastBelongsTo;
         public float RecordPosInterval;
         public float DetectLengthRatio;
         public float DetectFrontBiasRatio;
+        
+        // CBR Algorithm
+    
     }
 
+    public struct CbrConfig : IComponentData
+    {
+        public float SeparationWeight;
+        public float CohesionWeight;
+        public float AlignmentWeight;
+        public float SeekTargetWeight;
+        public float RotationSpeed;
+        
+        public float MaxAcceleration;
+    }
 
     
     

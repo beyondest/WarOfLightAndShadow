@@ -182,6 +182,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     stateData.CurState = ArmyGroupState.Idle;
                     stateData.Target = Entity.Null;
                     stateData.TargetState = ArmyGroupState.Idle;
+                    stateData.TargetSingleId = 0;
                     return true;
                 }
 

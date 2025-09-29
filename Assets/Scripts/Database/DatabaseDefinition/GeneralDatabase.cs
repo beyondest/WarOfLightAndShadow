@@ -285,6 +285,7 @@ namespace GamePlaySystem.Database
             sightRange = authoring.GetCylinderRadius();
         }
 
+      
         #endregion
     }
 
@@ -293,7 +294,7 @@ namespace GamePlaySystem.Database
     {
         public int idStart;
         [ReadOnly] public int idEnd;
-
+        [SerializeField,AssetsOnly,BoxGroup("Tools")] private GameObject fakeCollider;
         public abstract List<TDataItem> Items { get; }
 
         public TDataItem GetItemById(int id)
@@ -423,6 +424,29 @@ namespace GamePlaySystem.Database
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
         }
+        
+        
+        
 #endif
+        
+        [ BoxGroup("Tools"),Button("SetAllFakeCollider")]
+        private void ApplyFakeColliders()
+        {
+            if (!fakeCollider)
+            {
+                Debug.LogWarning("Assign a fake collider first");
+                return;
+            }
+
+            foreach (var item in Items)
+            {
+                // 创建一个新列表副本，防止多个引用共享一个列表实例
+                item.fakeCollisionTriggerPrefab = fakeCollider;
+            }
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("All fake collider changed");
+#endif
+        }
     }
 }

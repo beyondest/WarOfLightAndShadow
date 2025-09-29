@@ -2,6 +2,7 @@
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using Unity.Burst;
+using Unity.Mathematics;
 using Unity.Physics;
 
 // ReSharper disable UseIndexFromEndExpression
@@ -39,23 +40,24 @@ namespace SparFlame.Systems.SubGameplay.Movement
             state.Dependency = new PlayerMovementJob
             {
                 PhysicsWorld = physicsWorld,
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = config,
-                Debug = debug
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new AIMovementJob
             {
                 PhysicsWorld = physicsWorld,
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = config,
-                Debug = debug
             }.ScheduleParallel(state.Dependency);
+            new NotMovementStateJob().ScheduleParallel();
         }
     }
-
-
-
-  
+    [WithDisabled(typeof(MovingStateTag))]
+    public partial struct NotMovementStateJob : IJobEntity
+    {
+        private void Execute(ref SeekTarget seekTarget)
+        {
+            seekTarget.Direction = float3.zero;
+        }
+    }
 }

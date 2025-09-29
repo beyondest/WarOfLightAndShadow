@@ -51,7 +51,7 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
             {
                 // This may happen when belongs to entity is dead but the sight not been removed by sight system yet
                 if(!TargetLookup.TryGetBuffer(data.BelongsTo, out var targets))return;
-                
+                targets.Clear();
                 foreach (var triggerEvent in events)
                 {
                     

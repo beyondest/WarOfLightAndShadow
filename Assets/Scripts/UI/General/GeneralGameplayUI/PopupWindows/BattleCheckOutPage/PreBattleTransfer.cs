@@ -379,7 +379,8 @@ namespace SparFlame.Systems.General
                 {
                     CurState = ArmyGroupState.Station,
                     Target = _city,
-                    TargetState = ArmyGroupState.Invade
+                    TargetState = ArmyGroupState.Invade,
+                    TargetSingleId = SystemAPI.HasComponent<GlobalSingleId>(_city) ? SystemAPI.GetComponent<GlobalSingleId>(_city).value : 0
                 });
             }
 
