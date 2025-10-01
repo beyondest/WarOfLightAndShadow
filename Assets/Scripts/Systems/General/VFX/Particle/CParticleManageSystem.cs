@@ -1,6 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
-using SparFlame.Components.SubGameplay;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
 using Unity.Collections;
@@ -228,7 +226,7 @@ namespace SparFlame.Systems.General.VFX
                                 MaxFlightDistance = targetPair.PData.MaxFlightDistance,
                                 StartPos = request.SpawnPosition,
                                 ProjectileType = targetPair.PData.ProjectileType,
-                                InitialHeight = targetPair.PData.InitialHeight,
+                                InitialHeight = targetPair.PData.InitialHeight + request.SpawnPosition.y,
                             });
                         }
                         break;

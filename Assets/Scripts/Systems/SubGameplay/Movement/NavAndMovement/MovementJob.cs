@@ -1,52 +1,49 @@
-﻿using SparFlame.Components.General;
-using SparFlame.Components.SubGameplay;
+﻿using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
+
 // ReSharper disable UseIndexFromEndExpression
 namespace SparFlame.Systems.SubGameplay.Movement
 {
     [BurstCompile]
-    [WithAll(typeof(PlayerTag))]
     [WithAll(typeof(MovingStateTag))]
-    public partial struct PlayerMovementJob : IJobEntity
+    public partial struct MovementJob : IJobEntity
     {
         [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
         [ReadOnly] public float ElapsedTime;
         [ReadOnly] public MovementConfig Config;
 
         private void Execute(
-            ref NavAgentComponent navAgent, ref MovableData movableData, in LocalTransform transform,
+            ref NavAgentComponent navAgent, 
+            ref MovableData movableData, in LocalTransform transform,
             ref Surroundings surroundings, in BoxColliderSize boxColliderSize,
             in DynamicBuffer<WaypointBuffer> waypointBuffer, InteractAbilityBonus bonus,
             ref SeekTarget seekTarget
         )
         {
             seekTarget.Direction = float3.zero;
-            navAgent.targetPosition = new float3(movableData.TargetCenterPos.x, 0f, movableData.TargetCenterPos.z);
-            var targetCenterPos2D = new float2(movableData.TargetCenterPos.x, movableData.TargetCenterPos.z);
-            var curPos2D = new float2(transform.Position.x, transform.Position.z);
-            var curPosY0 = new float3(transform.Position.x, 0f, transform.Position.z);
+            navAgent.targetPosition = new float3(movableData.TargetCenterPos.x, movableData.TargetCenterPos.y,
+                movableData.TargetCenterPos.z);
             var interactiveRangeSq = math.square(movableData.InteractRange + bonus.RangeBonus);
             var shouldMove = false;
+            var curPos2D = new float2(transform.Position.x, transform.Position.z);
+
             DetectSurrounding(ref surroundings, transform, movableData, boxColliderSize);
             switch (movableData.MovementCommandType)
             {
                 // If Interactive movement
                 case MovementCommandType.Interactive:
                 {
-                    navAgent.extents = new float3
-                    {
-                        x = movableData.TargetColliderShapeXZ.x,
-                        y = 1f,
-                        z = movableData.TargetColliderShapeXZ.y
-                    };
+                    navAgent.extents = movableData.TargetColliderShape;
                     var curDisSqPointToRect =
-                        MovementUtils.DistanceSqPointToRect(targetCenterPos2D, movableData.TargetColliderShapeXZ,
-                            curPos2D);
+                        MovementUtils.DistanceSqPointToBox(movableData.TargetCenterPos, movableData.TargetColliderShape,
+                            transform.Position);
+                    // When compare target position with self position use 3D pos, when compare waypoint position with self position use 2D pos
                     // Current pos in Interactive range. This should be checked before the last waypoint , cause interactive movement DO NOT NEED or SHOULD NOT reach the last waypoint
                     if (curDisSqPointToRect < interactiveRangeSq - Config.InteractRangeSqBias)
                     {
@@ -72,14 +69,14 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         if (navAgent.calculationComplete)
                         {
                             // Calculate if target reachable
-                            var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].position.x,
-                                waypointBuffer[waypointBuffer.Length - 1].position.z);
-                            var endDisSqPointToRect = MovementUtils.DistanceSqPointToRect(targetCenterPos2D,
-                                movableData.TargetColliderShapeXZ, endPos2D);
+                            var endPos = waypointBuffer[waypointBuffer.Length - 1].position;
+                            var endDisSqPointToRect = MovementUtils.DistanceSqPointToBox(movableData.TargetCenterPos,
+                                movableData.TargetColliderShape, endPos);
                             movableData.DetailInfo =
                                 endDisSqPointToRect < interactiveRangeSq - Config.InteractRangeSqBias
                                     ? DetailInfo.Reachable
                                     : DetailInfo.NotReachable;
+                            var endPos2D = new float2(endPos.x, endPos.z);
                             // If reach the last waypoint. Not using the index because moving takes time, even if the index is the last one, the object may not reach the last waypoint yet
                             if (math.distancesq(endPos2D, curPos2D) < Config.WayPointDistanceSq)
                             {
@@ -92,8 +89,10 @@ namespace SparFlame.Systems.SubGameplay.Movement
                             // Not reach the last waypoint. Try moving
                             else
                             {
+                                var waypointPos2D = new float2(waypointBuffer[navAgent.currentWaypoint].position.x,
+                                    waypointBuffer[navAgent.currentWaypoint].position.z);
                                 if (navAgent.currentWaypoint + 1 < waypointBuffer.Length &&
-                                    math.distancesq(waypointBuffer[navAgent.currentWaypoint].position, curPosY0) <
+                                    math.distancesq(waypointPos2D, curPos2D) <
                                     Config.WayPointDistanceSq)
                                 {
                                     navAgent.currentWaypoint += 1;
@@ -110,7 +109,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                             movableData.DetailInfo = DetailInfo.CalculationNotComplete;
                         }
                     }
-
                     break;
                 }
                 // If march movement. Target position should be terrain
@@ -118,7 +116,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 {
                     navAgent.extents = Config.PlayerMarchExtent;
                     // March already arrived
-                    if (math.distancesq(targetCenterPos2D, curPos2D) < Config.WayPointDistanceSq)
+                    if (math.distancesq(movableData.TargetCenterPos, transform.Position) < Config.WayPointDistanceSq)
                     {
                         MovementUtils.ResetMovableData(ref movableData);
                         MovementUtils.ResetNavAgent(ref navAgent);
@@ -142,12 +140,14 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         if (navAgent.calculationComplete)
                         {
                             // Calculate if target reachable
-                            var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].position.x,
-                                waypointBuffer[waypointBuffer.Length - 1].position.z);
-                            var endDisToTarget = math.distancesq(targetCenterPos2D, endPos2D);
+                            var endPosition = waypointBuffer[waypointBuffer.Length - 1].position;
+                            var endDisToTarget = math.distancesq(movableData.TargetCenterPos, endPosition);
                             movableData.DetailInfo = endDisToTarget < Config.WayPointDistanceSq
                                 ? DetailInfo.Reachable
                                 : DetailInfo.NotReachable;
+
+                            var endPos2D = new float2(waypointBuffer[waypointBuffer.Length - 1].position.x,
+                                waypointBuffer[waypointBuffer.Length - 1].position.z);
                             // If reach the last waypoint. Not using the index because moving takes time, even if the index is the last one, the object may not reach the last waypoint yet
                             if (math.distancesq(endPos2D, curPos2D) < Config.WayPointDistanceSq)
                             {
@@ -160,8 +160,10 @@ namespace SparFlame.Systems.SubGameplay.Movement
                             // Not reach the last waypoint. Try moving
                             else
                             {
+                                var waypointPos2D = new float2(waypointBuffer[navAgent.currentWaypoint].position.x,
+                                    waypointBuffer[navAgent.currentWaypoint].position.z);
                                 if (navAgent.currentWaypoint + 1 < waypointBuffer.Length &&
-                                    math.distancesq(waypointBuffer[navAgent.currentWaypoint].position, curPosY0) <
+                                    math.distancesq(waypointPos2D, curPos2D) <
                                     Config.WayPointDistanceSq)
                                 {
                                     navAgent.currentWaypoint += 1;
@@ -187,20 +189,22 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     MovementUtils.ResetNavAgent(ref navAgent);
                     return;
                 }
+                default:
+                    BurstSafe.UnexpectedEnum(movableData.MovementCommandType);
+                    break;
             }
 
 
             if (!shouldMove) return;
-            var movePosY0 = waypointBuffer[navAgent.currentWaypoint].position;
-            var idealDirection = movePosY0 - curPosY0;
+            var idealDirection = waypointBuffer[navAgent.currentWaypoint].position - transform.Position;
             surroundings.MoveSuccess = true;
             // If < 0.1f normalize will fail
             if (math.length(idealDirection) > 0.1f)
             {
                 idealDirection = math.normalize(idealDirection);
                 // Try To Move Target towards waypoint. Only success if front is void
-                TryMove( transform, ref movableData, ref surroundings, navAgent,
-                    idealDirection, curPosY0,
+                TryMove(transform, ref movableData, ref surroundings, 
+                    idealDirection, transform.Position,
                     bonus, ref seekTarget
                 );
                 // surroundings.IdealDirection = idealDirection;
@@ -222,7 +226,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
         private void TryMove(in LocalTransform transform,
             ref MovableData movableData,
             ref Surroundings surroundings,
-            in NavAgentComponent navAgent,
             in float3 idealFront, in float3 curPosY0,
             in InteractAbilityBonus bonus,
             ref SeekTarget seekTarget
@@ -237,7 +240,9 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 surroundings.PrePos = transform.Position;
                 surroundings.RecordPosTime = ElapsedTime + Config.RecordPosInterval;
             }
-            surroundings.MoveSuccess = !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
+
+            surroundings.MoveSuccess =
+                !(math.distancesq(surroundings.PrePos, transform.Position) < Config.WayPointDistanceSq);
         }
 
         private void DetectSurrounding(ref Surroundings surroundings, in LocalTransform transform,
@@ -260,13 +265,15 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 Config.DetectRaycastBelongsTo,
                 left,
                 boxColliderSize.Box.x * Config.DetectLengthRatio, out surroundings.LeftEntity);
-            
+
             MovementUtils.ObstacleInDirection(ref PhysicsWorld, boxColliderSize.Box.x,
                 head,
                 Config.ObstacleLayerMask,
                 Config.DetectRaycastBelongsTo,
                 right,
                 boxColliderSize.Box.x * Config.DetectLengthRatio, out surroundings.RightEntity);
+
+       
         }
     }
 }

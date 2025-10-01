@@ -145,8 +145,8 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                 if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation))
                 {
-                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAtQuery;
-                    ECB.SetComponent(Entity, CalculationPathData);
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAtQuery;
+                    ECB.SetComponent(Entity, NavAgent);
                     return;
                 }
 
@@ -158,8 +158,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 // Main Status : InProgress, Success, Failure
                 if (status is not (PathQueryStatus.InProgress or PathQueryStatus.Success))
                 {
-                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAtStartingCalculation;
-                    ECB.SetComponent(Entity, CalculationPathData);
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAtStartingCalculation;
+                    ECB.SetComponent(Entity, NavAgent);
+
                     return;
                 }
 
@@ -167,8 +168,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                 if ((status & PathQueryStatus.Success) == 0)
                 {
-                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAfterCalculation;
-                    ECB.SetComponent(Entity, CalculationPathData);
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAfterCalculation;
+                    ECB.SetComponent(Entity, NavAgent);
+
                     return;
                 }
 
@@ -217,17 +219,16 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
 
                     NavAgent.currentWaypoint = 0;
                     NavAgent.calculationComplete = true;
-                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.Success;
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.Success;
 
                     ECB.SetComponentEnabled<ArmyGroupCalculateEnable>(Entity, false);
-                    ECB.SetComponent(Entity, NavAgent);
                 }
                 else
                 {
-                    CalculationPathData.calculationInfo = ArmyGroupPathCalculationInfo.FailedAfterFindingStraightPath;
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAfterFindingStraightPath;
                 }
 
-                ECB.SetComponent(Entity, CalculationPathData);
+                ECB.SetComponent(Entity, NavAgent);
 
                 result.Dispose();
                 straightPathFlag.Dispose();

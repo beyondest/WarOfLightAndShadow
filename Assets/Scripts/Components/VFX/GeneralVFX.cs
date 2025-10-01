@@ -126,6 +126,7 @@ namespace SparFlame.Components.VFX
         public float BaseRelativeHeight;
         public float HorizontalSpeed;
         public float MaxFlightDistance;
+        // How much height the projectile will start above the sender(archer or tower)
         public float InitialHeight;
         public ProjectileType ProjectileType;
     }

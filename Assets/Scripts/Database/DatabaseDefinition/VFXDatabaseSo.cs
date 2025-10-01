@@ -69,7 +69,7 @@ namespace SparFlame.Database
         public float maxFlightDistance;
 
         [VerticalGroup("Projectile"), HorizontalGroup("Projectile/5")]
-        [ShowIf(nameof(IsProjectile)), ShowIf(nameof(IsGoStraightWithHeightChange))]
+        [ShowIf(nameof(IsProjectile)), ShowIf(nameof(IsHeightChangingOnTheWay)),Tooltip("How much height the projectile will start above the sender")]
         public float initialHeight;
         
         private bool IsProjectile()
@@ -77,9 +77,9 @@ namespace SparFlame.Database
             return type == VFXType.Projectile;
         }
 
-        private bool IsGoStraightWithHeightChange()
+        private bool IsHeightChangingOnTheWay()
         {
-            return projectileType == ProjectileType.GoStraightToTargetWithHeightChange;
+            return projectileType != ProjectileType.NoHeightChangeUntilReachMaxDis;
         }
         private bool IsNotStopUntilReachMaxDis()
         {

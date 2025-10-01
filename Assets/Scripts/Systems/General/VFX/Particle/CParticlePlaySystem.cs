@@ -97,7 +97,7 @@ namespace SparFlame.Systems.General.VFX
                         var targetTransform = SystemAPI.GetComponent<LocalTransform>(data.Tracker);
                         var trans = SystemAPI.GetComponentRW<LocalTransform>(selfEntity);
                         trans.ValueRW.Position = targetTransform.Position;
-                        // trans.ValueRW.Rotation = targetTransform.Rotation;
+                        trans.ValueRW.Rotation = targetTransform.Rotation;
                     }
                 }
 

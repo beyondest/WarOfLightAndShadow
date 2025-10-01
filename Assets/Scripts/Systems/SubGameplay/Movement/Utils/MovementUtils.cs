@@ -4,13 +4,13 @@ using Unity.Physics;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using RaycastHit = Unity.Physics.RaycastHit;
 
 
 namespace SparFlame.Systems.SubGameplay.Movement
 {
     public struct MovementUtils
     {
-
         #region MovableData, Surroundings, NavAgent Interface
 
         public static void ResetMovableData(ref MovableData movableData)
@@ -33,13 +33,13 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             movableData.ForceCalculate = true;
             movableData.TargetCenterPos = targetPos;
-            movableData.TargetColliderShapeXZ = new float2(targetColliderSize.x, targetColliderSize.z);
+            movableData.TargetColliderShape = targetColliderSize;
             movableData.MovementCommandType = commandType;
             movableData.InteractRange = interactRange;
             movableData.MovementState = MovementState.NotMoving;
             movableData.DetailInfo = DetailInfo.None;
         }
-        
+
         public static void ResetNavAgent(ref NavAgentComponent navAgentComponent)
         {
             navAgentComponent.forceCalculate = false;
@@ -59,12 +59,53 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
         #endregion
 
-        
-        
 
         #region Physics detection or math methods
 
-        
+        public static bool RayCastToTerrainToGetNormal(ref PhysicsWorldSingleton physicsWorld,
+            in float3 origin, float detectLength, uint colliderWith, uint belongs, out RaycastHit hit)
+        {
+            float3 direction = math.normalize(new float3(0f, -1f, 0f));
+
+            // Raycast 输入
+            RaycastInput rayInput = new RaycastInput
+            {
+                Start = origin,
+                End = origin + direction * detectLength,
+                Filter = new CollisionFilter
+                {
+                    BelongsTo = belongs,
+                    CollidesWith = colliderWith,
+                    GroupIndex = 0
+                }
+            };
+            if (physicsWorld.CollisionWorld.CastRay(rayInput, out  hit))
+            {
+                return true;
+                /*if (math.lengthsq(normal) > 1e-6f)
+                {
+                    float3 nn = math.normalize(normal);
+                    Debug.DrawLine(origin, origin + nn * length, Color.red);
+
+                    // 箭头
+                    float3 right = math.normalize(math.cross(nn, new float3(0.001f, 1f, 0.001f)));
+                    if (math.lengthsq(right) < 1e-6f) right = new float3(1, 0, 0);
+                    float3 up = math.normalize(math.cross(right, nn));
+
+                    float headLen = 0.2f;
+                    float headWidth = 0.08f;
+
+                    Debug.DrawLine(origin + nn * length,
+                        origin + nn * (length - headLen) + (up + right) * headWidth,
+                        Color.red);
+                    Debug.DrawLine(origin + nn * length,
+                        origin + nn * (length - headLen) + (up - right) * headWidth,
+                        Color.red);
+                }*/
+            }
+            return false;
+        }
+
 
         /// <summary>
         /// Will cast 2 rays in one direction, one is left corner ray, the other is right corner ray.
@@ -86,7 +127,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             var rayOrigin = curPos + direction * colliderDirectionSize * 0.51f + new float3(0, 0.1f, 0);
             var rayEnd = rayOrigin + direction * detectLength;
-            Debug.DrawLine(rayOrigin,rayEnd,Color.red);
+            // Debug.DrawLine(rayOrigin,rayEnd,Color.red);
 
             var raycast = new RaycastInput
             {
@@ -104,19 +145,18 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 hitEntity = physicsWorld.PhysicsWorld.Bodies[raycastHit.RigidBodyIndex].Entity;
                 return true;
             }
-            
 
             hitEntity = Entity.Null;
             return false;
         }
 
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 GetLeftOrRight(float3 direction, bool isLeft)
         {
             return isLeft ? new float3(-direction.z, 0, direction.x) : new float3(direction.z, 0, -direction.x);
         }
-        
+
         /// <summary>
         /// Used for judging if point2 is left or right side of the point1 direction to dirFrom1To2
         /// </summary>
@@ -131,9 +171,8 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var cross = dirFrom1To2.x * toPoint.z - dirFrom1To2.z * toPoint.x;
             return cross > 0;
         }
-        
-        
-        
+
+
         public static float3 GetLeftRight30(float3 forward, bool isLeft)
         {
             if (isLeft)
@@ -141,11 +180,12 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 var leftRotation = quaternion.AxisAngle(math.up(), math.radians(30f));
                 return math.mul(leftRotation, forward);
             }
+
             var rightRotation = quaternion.AxisAngle(math.up(), math.radians(-30f));
             return math.mul(rightRotation, forward);
         }
-        
-        
+
+
         /// <summary>
         /// This method calculates the min distance between pos and a rect with centerPos and size
         /// </summary>
@@ -164,10 +204,19 @@ namespace SparFlame.Systems.SubGameplay.Movement
             var clampedPos = math.clamp(pos, min, max);
             return math.distancesq(pos, clampedPos);
         }
-
- 
         
-        #endregion
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceSqPointToBox(float3 centerPos, float3 size, float3 pos)
+        {
+            float3 halfSize = size * 0.5f;
+            float3 min = centerPos - halfSize;
+            float3 max = centerPos + halfSize;
 
+            float3 clampedPos = math.clamp(pos, min, max);
+
+            return math.distancesq(pos, clampedPos);
+        }
+
+        #endregion
     }
 }

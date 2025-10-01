@@ -90,7 +90,6 @@ namespace SparFlame.Components.MainGameplay
         {
             movableData.curWaypoint = 0;
             pathData.curTargetIndex = -1;
-            pathData.calculationInfo = ArmyGroupPathCalculationInfo.None;
             pathData.boxColliderSizeXz = float2.zero;
             visualizeData.preWaypoint = 0;
             finalWaypoints.Clear();
@@ -109,7 +108,6 @@ namespace SparFlame.Components.MainGameplay
         {
             movableData.curWaypoint = 0;
             pathData.curTargetIndex = -1;
-            pathData.calculationInfo = ArmyGroupPathCalculationInfo.None;
             pathData.boxColliderSizeXz = float2.zero;
             visualizeData.preWaypoint = 0;
             movableData.isTargetReachable = true;

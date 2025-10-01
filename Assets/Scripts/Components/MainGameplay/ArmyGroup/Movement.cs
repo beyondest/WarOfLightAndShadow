@@ -29,15 +29,7 @@ namespace SparFlame.Components.MainGameplay
         NotComplete
     }
 
-    public enum ArmyGroupPathCalculationInfo
-    {
-        None = 0,
-        FailedAtQuery = 1,
-        FailedAtStartingCalculation = 2,
-        FailedAfterCalculation = 3,
-        FailedAfterFindingStraightPath  = 4,
-        Success = 5
-    }
+    
     
     public struct ArmyGroupMovingTag : IComponentData, IEnableableComponent{}
 
@@ -48,7 +40,6 @@ namespace SparFlame.Components.MainGameplay
     {
         public int curTargetIndex;
         public float3 startPosition;
-        public ArmyGroupPathCalculationInfo calculationInfo;
         public float2 boxColliderSizeXz;
     }
     public struct ArmyGroupCalculateEnable : IComponentData, IEnableableComponent{}

@@ -10,6 +10,7 @@ using Unity.Jobs;
 using Unity.Transforms;
 using Unity.Collections;
 using UnityEngine.Experimental.AI;
+
 // ReSharper disable UseIndexFromEndExpression
 
 
@@ -22,12 +23,13 @@ namespace SparFlame.Systems.SubGameplay.Movement
         private NavMeshWorld _navMeshWorld;
         private NativeList<NavMeshQuery> _navMeshQueries;
         private EntityQuery _entityQuery;
-        private NativeHashMap<int,float> _navAgentRadius;
-        
+        private NativeHashMap<int, float> _navAgentRadius;
+
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<NavAgentSystemConfig>();
@@ -35,7 +37,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 .WithAllRW<NavAgentComponent>()
                 .WithAll<MovingStateTag>()
                 .WithAll<LocalTransform>().Build();
-            
         }
 
 
@@ -47,65 +48,73 @@ namespace SparFlame.Systems.SubGameplay.Movement
             {
                 InitNavMeshQueries(ref config);
                 var buffer = SystemAPI.GetSingletonBuffer<AgentIdRadiusPair>();
-                _navAgentRadius = new NativeHashMap<int, float>(buffer.Length + 1,Allocator.Persistent);
+                _navAgentRadius = new NativeHashMap<int, float>(buffer.Length + 1, Allocator.Persistent);
                 foreach (var pair in buffer)
                 {
                     _navAgentRadius[pair.Id] = pair.Radius;
                 }
             }
-            
+
             if (_entityQuery.IsEmpty) return;
             var entities = _entityQuery.ToEntityArray(Allocator.TempJob);
             if (entities.Length > _navMeshQueries.Length)
             {
-                ExtendNavMeshQueries(entities.Length - _navMeshQueries.Length, in config);
+                ExtendNavMeshQueries(entities.Length - _navMeshQueries.Length, config);
             }
-            var ecbs = new NativeArray<EntityCommandBuffer>(entities.Length, Allocator.TempJob);
-            for (var i = 0; i < entities.Length; i++)
-            {
-                ecbs[i] = new EntityCommandBuffer(Allocator.TempJob);
-            }
+
+            // var ecbs = new NativeArray<EntityCommandBuffer>(entities.Length, Allocator.TempJob);
+            // for (var i = 0; i < entities.Length; i++)
+            // {
+            //     // ecbs[i] = new EntityCommandBuffer(Allocator.TempJob);
+            //     ecbs[i] = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+            // }
+
             var jobHandles = new NativeArray<JobHandle>(entities.Length, Allocator.TempJob);
-            var localTransforms =
-                _entityQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
-            var navAgents =
-            _entityQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
-            
+            var localTransforms = _entityQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
+            var navAgents = _entityQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
+
+            var elapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
+            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             for (var i = 0; i < entities.Length; i++)
             {
                 var calculatePathJob = new CalculatePathJob
                 {
+                    ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged),
+
+
                     Entity = entities[i],
                     NavAgent = navAgents[i],
                     NavAgentRadius = _navAgentRadius,
-                    FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
-                    ECB = ecbs[i],
+                    // FromPosition = new float3(localTransforms[i].Position.x, 0f, localTransforms[i].Position.z),
+                    FromPosition = localTransforms[i].Position,
                     Query = _navMeshQueries[i],
-                    ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                    ElapsedTime = elapsedTime,
                     Iterations = config.MaxIterations,
                     MaxPathSize = config.MaxPathSize,
                     ExtentsOffset = config.ExtentsOffset
                 };
                 jobHandles[i] = calculatePathJob.Schedule();
             }
-            
-            JobHandle.CompleteAll(jobHandles);
-            for (var i = 0; i < entities.Length; i++)
-            {
-                ecbs[i].Playback(state.EntityManager);
-                ecbs[i].Dispose();
-            }
-            entities.Dispose();
-            navAgents.Dispose();
-            localTransforms.Dispose();
-            jobHandles.Dispose();
-            ecbs.Dispose();
+
+            // JobHandle.CompleteAll(jobHandles);
+            state.Dependency = JobHandle.CombineDependencies(jobHandles);
+            // for (var i = 0; i < entities.Length; i++)
+            // {
+            //     ecbs[i].Playback(state.EntityManager);
+            //     ecbs[i].Dispose();
+            // }
+
+            entities.Dispose(state.Dependency);
+            navAgents.Dispose(state.Dependency);
+            localTransforms.Dispose(state.Dependency);
+            jobHandles.Dispose(state.Dependency);
+            // ecbs.Dispose(state.Dependency);
         }
 
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-            if(_navMeshQueries.IsCreated)
+            if (_navMeshQueries.IsCreated)
                 DisposeNavMeshQueries();
 
             _navAgentRadius.Dispose();
@@ -119,7 +128,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
             public EntityCommandBuffer ECB;
             public NavMeshQuery Query;
             public NavAgentComponent NavAgent;
-            [ReadOnly] public NativeHashMap<int,float> NavAgentRadius;
+            [ReadOnly] public NativeHashMap<int, float> NavAgentRadius;
             [ReadOnly] public float3 FromPosition;
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public int MaxPathSize;
@@ -133,29 +142,46 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 if (!NavAgent.enableCalculation) return;
                 // Only recalculate the path once in an interval OR the target is updated
                 if (!(NavAgent.forceCalculate || NavAgent.nextPathCalculateTime < ElapsedTime)) return;
-                // TODO : Sometimes will cause bug : Farmer get inverse direction waypoint far away from resource. Don't know why
                 NavAgent.nextPathCalculateTime = ElapsedTime + NavAgent.calculateInterval;
                 NavAgent.calculationComplete = false;
                 NavAgent.forceCalculate = false;
                 ECB.SetComponent(Entity, NavAgent);
-                
+
                 var toPosition = NavAgent.targetPosition;
                 var radius = NavAgentRadius[NavAgent.agentId];
                 var extents = new float3(NavAgent.extents.x + radius, NavAgent.extents.y, NavAgent.extents.z + radius);
                 extents += ExtentsOffset;
                 var fromLocation = Query.MapLocation(FromPosition, extents, NavAgent.agentId);
                 var toLocation = Query.MapLocation(toPosition, extents, NavAgent.agentId);
-                if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation)) return;
+                if (!Query.IsValid(fromLocation) || !Query.IsValid(toLocation))
+                {
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAtQuery;
+                    ECB.SetComponent(Entity, NavAgent);
+                    return;
+                }
 
                 var status = Query.BeginFindPath(fromLocation, toLocation);
 
                 // Notice : If target is not reachable, and extents is also not reachable, it will return Failure this step
                 // The status only return one main status binding with a detailed status
                 // Main Status : InProgress, Success, Failure
-                if (status is not (PathQueryStatus.InProgress or PathQueryStatus.Success)) return;
+                if (status is not (PathQueryStatus.InProgress or PathQueryStatus.Success))
+                {
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAtStartingCalculation;
+                    ECB.SetComponent(Entity, NavAgent);
+
+                    return;
+                }
+
                 status = Query.UpdateFindPath(Iterations, out _);
 
-                if ((status & PathQueryStatus.Success) == 0) return;
+                if ((status & PathQueryStatus.Success) == 0)
+                {
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAfterCalculation;
+                    ECB.SetComponent(Entity, NavAgent);
+
+                    return;
+                }
 
                 Query.EndFindPath(out var pathSize);
 
@@ -183,7 +209,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     ref straightPathCount,
                     MaxPathSize
                 );
-
                 if (returningStatus == PathQueryStatus.Success)
                 {
                     // WaypointLookup.TryGetBuffer(Entity, out var waypointBuffer);
@@ -196,18 +221,23 @@ namespace SparFlame.Systems.SubGameplay.Movement
                         {
                             var newWayPoint = new WaypointBuffer
                             {
-                                position = new float3(location.position.x, 0f, location.position.z),
+                                position = new float3(location.position.x, location.position.y, location.position.z),
                             };
                             // waypointBuffer.Add(newWayPoint);   
-                            ECB.AppendToBuffer(Entity,newWayPoint);
+                            ECB.AppendToBuffer(Entity, newWayPoint);
                         }
                     }
 
                     NavAgent.currentWaypoint = 0;
                     NavAgent.calculationComplete = true;
-                    ECB.SetComponent(Entity, NavAgent);
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.Success;
+                }
+                else
+                {
+                    NavAgent.calculationInfo = NavAgentCalculateInfo.FailedAfterFindingStraightPath;
                 }
 
+                ECB.SetComponent(Entity, NavAgent);
                 result.Dispose();
                 straightPathFlag.Dispose();
                 polygonIds.Dispose();
@@ -235,24 +265,25 @@ namespace SparFlame.Systems.SubGameplay.Movement
             }
         }
 
-  
-        private void DisposeRedundantNavMeshQueries(int redundantSize, in NavAgentSystemConfig config)
-        {
-            var thresh = math.max(config.InitialNavMeshQueriesCapacity, _navMeshQueries.Length - redundantSize);
-            for (var i = _navMeshQueries.Length - 1; i >= thresh; i--)
-            {
-                var query = _navMeshQueries[i];
-                query.Dispose();
-                _navMeshQueries.RemoveAt(i);
-            }
-        }
+
+        // private void DisposeRedundantNavMeshQsueries(int redundantSize, in NavAgentSystemConfig config)
+        // {
+        //     var thresh = math.max(config.InitialNavMeshQueriesCapacity, _navMeshQueries.Length - redundantSize);
+        //     for (var i = _navMeshQueries.Length - 1; i >= thresh; i--)
+        //     {
+        //         var query = _navMeshQueries[i];
+        //         query.Dispose();
+        //         _navMeshQueries.RemoveAt(i);
+        //     }
+        // }
 
         private void DisposeNavMeshQueries()
-        { 
+        {
             foreach (var query in _navMeshQueries)
             {
                 query.Dispose();
             }
+
             _navMeshQueries.Dispose();
         }
 

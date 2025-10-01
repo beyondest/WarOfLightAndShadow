@@ -13,7 +13,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
     [BurstCompile]
     public partial struct MovementSystem : ISystem
     {
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -29,29 +28,16 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
-
-            if (!(SystemAPI.HasSingleton<DebugTag>() && SystemAPI.TryGetSingleton(out MovementDebug debug)))
-            {
-                debug = new MovementDebug
-                {
-                    enabled = false
-                };
-            } 
-            state.Dependency = new PlayerMovementJob
+            new MovementJob
             {
                 PhysicsWorld = physicsWorld,
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = config,
-            }.ScheduleParallel(state.Dependency);
-            state.Dependency = new AIMovementJob
-            {
-                PhysicsWorld = physicsWorld,
-                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
-                Config = config,
-            }.ScheduleParallel(state.Dependency);
+            }.ScheduleParallel();
             new NotMovementStateJob().ScheduleParallel();
         }
     }
+
     [WithDisabled(typeof(MovingStateTag))]
     public partial struct NotMovementStateJob : IJobEntity
     {
@@ -60,4 +46,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
             seekTarget.Direction = float3.zero;
         }
     }
+    
+    
 }

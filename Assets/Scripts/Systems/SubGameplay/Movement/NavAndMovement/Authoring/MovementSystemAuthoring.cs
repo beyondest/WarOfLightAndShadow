@@ -43,6 +43,19 @@ namespace SparFlame.Systems.SubGameplay.Movement
         
         public float maxAcceleration = 3f;
         
+        [Header("Calculate rotation config")]
+        public bool value1;
+        public bool value2;
+        public float3 extentsForNormal = new (2f,2f,2f);
+        public int verticesPreparationCount;
+        public int neighboursPreparationCount;
+        
+        [Header("Raycast to terrain config")]
+        public PhysicsCategoryTags terrainLayerMask;
+        public PhysicsCategoryTags detectTerrainRaycastBelongsToLayerMask;
+        public float downDistance = 2f;
+        public float liftDistance = 1f;
+        
         private class MovementSystemAuthoringBaker : Baker<MovementSystemAuthoring>
         {
             public override void Bake(MovementSystemAuthoring authoring)
@@ -60,7 +73,15 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     DetectLengthRatio = authoring.detectLengthRatio,
                     DetectFrontBiasRatio = authoring.detectFrontBiasRatio,
                     
-                   
+                 
+                });
+                
+                AddComponent(entity, new GetGroundNormalConfig
+                {
+                    DownDistance = authoring.downDistance,
+                    TerrainLayerMask = authoring.terrainLayerMask.Value,
+                    DetectTerrainRaycastBelongsTo = authoring.detectTerrainRaycastBelongsToLayerMask.Value,
+                    LiftDistance = authoring.liftDistance,
                 });
                 AddComponent(entity,new CbrConfig
                 {
@@ -70,6 +91,16 @@ namespace SparFlame.Systems.SubGameplay.Movement
                     SeekTargetWeight = authoring.seekTargetWeight,
                     RotationSpeed = authoring.rotationSpeed,
                     MaxAcceleration = authoring.maxAcceleration,
+                   
+                });
+                AddComponent(entity, new CalculateRotationConfig
+                {
+                    value1 = authoring.value1,
+                    value2 = authoring.value2,
+                    ExtentsForNormal = authoring.extentsForNormal,
+                    NeighborsPreparationCount = authoring.neighboursPreparationCount,
+                    VerticesPreparationCount = authoring.verticesPreparationCount,
+                    
                 });
             }
         }
@@ -86,9 +117,8 @@ namespace SparFlame.Systems.SubGameplay.Movement
         public float RecordPosInterval;
         public float DetectLengthRatio;
         public float DetectFrontBiasRatio;
-        
-        // CBR Algorithm
-    
+
+  
     }
 
     public struct CbrConfig : IComponentData
@@ -102,6 +132,23 @@ namespace SparFlame.Systems.SubGameplay.Movement
         public float MaxAcceleration;
     }
 
-    
-    
+    public struct CalculateRotationConfig : IComponentData
+    {
+        public bool value1;
+        public bool value2;
+        public float3 ExtentsForNormal;
+        public int VerticesPreparationCount;
+        public int NeighborsPreparationCount;
+    }
+
+
+    public struct GetGroundNormalConfig : IComponentData
+    {
+        public uint TerrainLayerMask;
+        public uint DetectTerrainRaycastBelongsTo;
+        public float DownDistance;
+        public float LiftDistance;
+    }
+
+
 }

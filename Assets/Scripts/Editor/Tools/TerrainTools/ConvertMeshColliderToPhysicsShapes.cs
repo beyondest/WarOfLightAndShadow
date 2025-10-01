@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using Unity.Physics;
 using UnityEngine;
 using UnityEditor;
 using Unity.Physics.Authoring;
+using MeshCollider = UnityEngine.MeshCollider;
 
 public class PhysicsShapeConverterWindow : EditorWindow
 {
@@ -15,7 +17,7 @@ public class PhysicsShapeConverterWindow : EditorWindow
     private bool showBelongsTo = true;
     private bool showCollidesWith = true;
 
-    private bool removeRenderers;
+    private bool removeRenderers = true;
     private int maskInitialized;
     private readonly HashSet<string> initBelongsTo = new()
     {
@@ -23,11 +25,7 @@ public class PhysicsShapeConverterWindow : EditorWindow
     };
     private readonly HashSet<string> initCollidesWith = new()
     {
-        "AllyUnit",
-        "EnemyUnit",
-        "AllyBuilding",
-        "EnemyBuilding",
-        "Resource"
+        "TerrainRaycastOnly"
     };
     
     [MenuItem("Tools/TerrainTools/Convert MeshCollider to PhysicsShape (With Category)")]
@@ -190,7 +188,7 @@ public class PhysicsShapeConverterWindow : EditorWindow
                 physicsShape.SetMesh(meshCollider.sharedMesh);
                 physicsShape.BelongsTo = belongsToTags;
                 physicsShape.CollidesWith = collidesWithTags;
-
+                physicsShape.CollisionResponse = CollisionResponsePolicy.RaiseTriggerEvents;
                 Undo.DestroyObjectImmediate(meshCollider);
                 convertedCount++;
             }

@@ -50,6 +50,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Resources/Scenes/Cities/LightCity/SubFaction1/Level1/LightCity1_1_1RetreatPortal.unity
     guid: 1a3da5ef7aff43f4fb491826c678c5dc
+  - enabled: 1
+    path: Assets/Resources/Scenes/Cities/LightCity/SubFaction1/Level1/LightCity1_1_3EnvTestHeightMap.unity
+    guid: c43e4ca9647fe844e80a0156b8999d47
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 874e5dc9588b4e745b50f53b6b4cedd1, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 1fb6ec391cb5e7943b6cfbaf6c3bb49c, type: 2}

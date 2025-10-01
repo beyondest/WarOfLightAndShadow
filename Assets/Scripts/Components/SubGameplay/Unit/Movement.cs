@@ -1,5 +1,6 @@
 ﻿using System;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -15,7 +16,7 @@ namespace SparFlame.Components.SubGameplay
         /// Target collider shape is used for calculating
         /// the extents of nav agent, extra radius for reachable check
         /// </summary>
-        public float2 TargetColliderShapeXZ;
+        public float3 TargetColliderShape;
         public MovementCommandType MovementCommandType;
         public MovementState MovementState;
         public DetailInfo DetailInfo;
@@ -52,10 +53,20 @@ namespace SparFlame.Components.SubGameplay
     {
        public float3 Value;
     }
-
+    public struct GroundInfo : IComponentData
+    {
+        public float3 Normal;
+        public bool Hit;
+        public float3 HitPosition;
+    }
     public struct Velocity : IComponentData
     {
         public float3 Value; 
+    }
+
+    public struct TargetRotation : IComponentData
+    {
+        public quaternion Value;
     }
 
     // public struct Acceleration : IComponentData
@@ -66,6 +77,7 @@ namespace SparFlame.Components.SubGameplay
     [Serializable]
     public struct NavAgentComponent : IComponentData
     {
+        public NavAgentCalculateInfo calculationInfo;
         public bool enableCalculation;
         public float3 targetPosition;
         public bool calculationComplete;
@@ -76,7 +88,15 @@ namespace SparFlame.Components.SubGameplay
         public bool forceCalculate;
         public int agentId;
     }
-
+    public enum NavAgentCalculateInfo
+    {
+        None = 0,
+        FailedAtQuery = 1,
+        FailedAtStartingCalculation = 2,
+        FailedAfterCalculation = 3,
+        FailedAfterFindingStraightPath  = 4,
+        Success = 5
+    }
     [Serializable]
     public struct WaypointBuffer : IBufferElementData
     {

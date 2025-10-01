@@ -7,6 +7,7 @@ namespace SparFlame.Systems.General.VFX
     {
         public float reachDis;
         public float heightIncreasePerUnitDis;
+        public float g = 9.81f;
         private class ParabolaProjectileSystemAuthoringBaker : Baker<ParabolaProjectileSystemAuthoring>
         {
             public override void Bake(ParabolaProjectileSystemAuthoring authoring)
@@ -15,7 +16,8 @@ namespace SparFlame.Systems.General.VFX
                 AddComponent(entity, new ParabolaProjectileConfig
                 {
                     ReachDis = authoring.reachDis,
-                    HeightIncreasePerUnitDis = authoring.heightIncreasePerUnitDis
+                    HeightIncreasePerUnitDis = authoring.heightIncreasePerUnitDis,
+                    G = authoring.g
                 });
             }
         }
@@ -26,5 +28,6 @@ namespace SparFlame.Systems.General.VFX
     {
         public float ReachDis;
         public float HeightIncreasePerUnitDis;
+        public float G;
     }
 }

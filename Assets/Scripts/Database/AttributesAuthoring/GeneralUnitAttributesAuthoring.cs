@@ -100,7 +100,7 @@ namespace SparFlame.Database
                 {
                     MoveSpeed = item.moveSpeed,
                     TargetCenterPos = float3.zero,
-                    TargetColliderShapeXZ = float2.zero,
+                    TargetColliderShape = float3.zero,
                     MovementCommandType = MovementCommandType.None,
                     InteractRange = 0f,
                     DetailInfo = DetailInfo.None,
@@ -116,8 +116,10 @@ namespace SparFlame.Database
                     RightEntity = Entity.Null,
                 });
                 AddComponent(entity, new Separation());
+                AddComponent(entity, new GroundInfo());
                 AddComponent(entity, new SeekTarget());
                 AddComponent(entity, new Velocity());
+                AddComponent(entity, new TargetRotation());
                 AddBuffer<WaypointBuffer>(entity);
                 AddComponent<MovingStateTag>(entity);
                 SetComponentEnabled<MovingStateTag>(entity, false);

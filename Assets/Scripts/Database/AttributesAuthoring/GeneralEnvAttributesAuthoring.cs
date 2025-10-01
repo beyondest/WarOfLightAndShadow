@@ -28,6 +28,10 @@ namespace SparFlame.Database
                         RequestFromFaction = FactionTag.Neutral,
                     });
                     SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
+                    AddComponent(entity, new BoxColliderSize
+                    {
+                        Box = physicsShapeAuthoring.m_PrimitiveSize
+                    });
                 }
                
             }

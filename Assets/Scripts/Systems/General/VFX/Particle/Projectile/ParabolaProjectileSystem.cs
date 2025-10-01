@@ -128,24 +128,30 @@ namespace SparFlame.Systems.General.VFX
                 var curDirection = math.normalize(targetPos - curTransform.Position);
                 var predictReachDuration = curDis / data.HorizontalSpeed;
                 var duration = CurTime - data.StartTime + predictReachDuration;
-                float t = (CurTime - data.StartTime) / duration;
-                t = math.saturate(t);
-                float3 pos = curTransform.Position + curDirection * data.HorizontalSpeed * DeltaTime;
+                var pos = curTransform.Position + curDirection * data.HorizontalSpeed * DeltaTime;
 
                 float height;
                 if (data.ProjectileType == ProjectileType.GoStraightToTargetWithHeightChange)
                 {
+                    var t = (CurTime - data.StartTime) / duration;
+                    t = math.saturate(t);
                     var heightDelta = data.InitialHeight- targetPos.y;
                     height = data.InitialHeight- heightDelta * t;
                     if (height > pos.y) height = pos.y;
                 }
                 else
                 {
-                    // 垂直方向：抛物线 (y = 4h * t * (1 - t))
-                    height = 4f * data.MaxAbsHeight * t * (1 - t);
+                    if (duration == 0) height = targetPos.y;
+                    else
+                    {
+                        var v0 = (targetPos.y - data.InitialHeight + 0.5f * Config.G * duration * duration) / duration;
+                        // height =4 * data.MaxAbsHeight * t * (1 - t);
+                        var t = CurTime - data.StartTime;
+                        height = v0 * t - 0.5f * Config.G * t * t + data.InitialHeight;
+                    }
                 }
 
-                pos.y = height;
+                pos.y = height ;
                 var trulyMoveDirection = math.normalize(pos - curTransform.Position);
                 // 更新位置
                 curTransform.Position = pos;

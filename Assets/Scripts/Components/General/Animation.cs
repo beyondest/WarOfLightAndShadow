@@ -9,6 +9,7 @@ namespace SparFlame.Components.General
         March = 2,
         AlertMarch = 3,
         Die = 4,
+        CastSkill = 5,
     }
 
     public struct AnimationStateData : IComponentData

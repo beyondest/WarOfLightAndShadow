@@ -6,6 +6,7 @@ using System.Collections;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Collections;
+using UnityEngine.AI;
 
 namespace SparFlame.Systems.SubGameplay.Movement
 {

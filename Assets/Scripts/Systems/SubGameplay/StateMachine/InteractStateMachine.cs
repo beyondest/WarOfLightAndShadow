@@ -505,7 +505,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     RequestType = VFXRequestType.Spawn,
                     KeepDuration = 0,
                     VFXTrackTarget = Entity.Null,
-                    ParabolaTargetPosition = targetPos
+                    ParabolaTargetPosition = targetPos,
                 });
 
                 
