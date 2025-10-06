@@ -133,7 +133,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 targets.Add(new ArmyGroupMovingTarget
                 {
                     position = TransformLookup[commandData.TargetCity].Position,
-                    boxColliderSizeXz = BoxColliderSizeLookup[commandData.TargetCity].Box.xz
+                    boxColliderSizeXz = BoxColliderSizeLookup[commandData.TargetCity].SeparationBox.xz
                 });
                 ECB.AddComponent<EnemyArmyGroupCheckShouldMovingTag>(index, selfEntity);
             }

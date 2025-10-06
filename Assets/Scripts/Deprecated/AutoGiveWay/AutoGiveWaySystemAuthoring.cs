@@ -11,8 +11,8 @@
 //         [Tooltip("This duration controls how long it takes to auto give way in one direction")]
 //         public float duration = 1f;
 //         
-//         [Tooltip("This ratio * being squeezed max collider shapeXz is the detect collider radius")]
-//         public float squeezeColliderDetectionRatio = 1.5f;
+//         // [Tooltip("This ratio * being squeezed max collider shapeXz is the detect collider radius")]
+//         // public float squeezeColliderDetectionRatio = 1.5f;
 //
 //         private class Baker : Baker<AutoGiveWaySystemAuthoring>
 //         {
@@ -22,7 +22,7 @@
 //                 AddComponent(entity, new AutoGiveWaySystemConfig
 //                 {
 //                     Duration = authoring.duration,
-//                     SqueezeColliderDetectionRatio = authoring.squeezeColliderDetectionRatio
+//                     // SqueezeColliderDetectionRatio = authoring.squeezeColliderDetectionRatio
 //                 });
 //             }
 //         }
@@ -31,7 +31,7 @@
 //     public struct AutoGiveWaySystemConfig : IComponentData
 //     {
 //         public float Duration;
-//         public float SqueezeColliderDetectionRatio;
+//         // public float SqueezeColliderDetectionRatio;
 //     }
 //
 //
@@ -42,9 +42,9 @@
 //         public bool IfGoBack;
 //     }
 //
-//     public struct SqueezeData : IComponentData
-//     {
-//         public float3 MoveVector;
-//     }
+//     // public struct SqueezeData : IComponentData
+//     // {
+//     //     public float3 MoveVector;
+//     // }
 //     
 // }

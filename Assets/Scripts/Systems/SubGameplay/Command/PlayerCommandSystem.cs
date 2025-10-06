@@ -15,7 +15,7 @@ using Unity.Transforms;
 namespace SparFlame.Systems.SubGameplay.Command
 {
     [BurstCompile]
-    [UpdateBefore(typeof(MovementSystem))]
+    [UpdateBefore(typeof(SeekTargetSystem))]
     public partial struct PlayerCommandSystem : ISystem
     {
         private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
@@ -64,7 +64,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -98,7 +98,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                         InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,
@@ -116,7 +116,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -132,7 +132,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
                     }.ScheduleParallel();
@@ -160,7 +160,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         ECB = ecbP,
                         TargetPos = targetPos,
                         TargetColliderShape =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box,
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = true,
                         InteractiveRangeSq = garrisonConfig.GarrisonRadiusSq,
@@ -356,16 +356,16 @@ namespace SparFlame.Systems.SubGameplay.Command
             ref BasicStateData basicStateData,
             Entity selfEntity)
         {
-            if (InArmyGroupLookup.HasComponent(selfEntity))
-            {
-                var hintRequest = ECB.CreateEntity(index);
-                ECB.AddComponent<SubGameplayEntityTag>(index, hintRequest);
-                ECB.AddComponent(index, hintRequest, new HintRequest
-                {
-                    Name = HintName.UnitInArmyGroupCannotGarrisonInBuilding,
-                });
-                return;
-            }
+            // if (InArmyGroupLookup.HasComponent(selfEntity))
+            // {
+            //     var hintRequest = ECB.CreateEntity(index);
+            //     ECB.AddComponent<SubGameplayEntityTag>(index, hintRequest);
+            //     ECB.AddComponent(index, hintRequest, new HintRequest
+            //     {
+            //         Name = HintName.UnitInArmyGroupCannotGarrisonInBuilding,
+            //     });
+            //     return;
+            // }
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, InteractiveRangeSq);
             basicStateData.TargetState = InteractState.Moving;

@@ -20,6 +20,7 @@ namespace SparFlame.UI.SubGameplay
         [Header("Custom config")] [SerializeField]
         private Tier maxTier;
 
+        [SerializeField] private bool onlyShowTier3ConjuringShrines = true;
         [SerializeField] private GameObject constructWindowPanel;
         [SerializeField] private Image tierFilterIcon;
 
@@ -173,8 +174,15 @@ namespace SparFlame.UI.SubGameplay
         {
             var currentFaction = _factionQuery.GetSingleton<PlayerFactionData>().faction;
             _infos.Clear();
+            var shouldFilterTier = _shouldFilterTier;
+            var filterTier = _currentTier;
+            if (onlyShowTier3ConjuringShrines && _currentGeneralType == BuildingType.ConjuringShrines)
+            {
+                shouldFilterTier = true;
+                filterTier = Tier.Tier3;
+            }
             _infos = BuildingWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, currentFaction,
-                _currentSubType, _currentTier, true, _shouldFilterSubType, _shouldFilterTier);
+                _currentSubType, filterTier, true, _shouldFilterSubType, shouldFilterTier, shouldTierExactlyMatch: true);
             if (_currentGeneralType == BuildingType.Ornaments)
             {
                 for (int i = _infos.Count - 1; i >= 0; i--)

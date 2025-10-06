@@ -1,7 +1,10 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using UnityEngine;
+using Random = Unity.Mathematics.Random;
+using Range = SparFlame.Core.Structs.Range;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
@@ -18,7 +21,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 AddBuffer<AoeTarget>(entity);
                 AddComponent(entity, new AoeTriggerRequest
                 {
-                    
                     Prefab = GetEntity(authoring.aoeTriggerPrefab, TransformUsageFlags.Dynamic)
                 });
                 AddComponent(entity, new AoeInteractData
@@ -32,6 +34,11 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     TrackTarget = Entity.Null,
                     Duration = float.MaxValue
                 });
+                AddComponent(entity, new Rnd
+                {
+                    value = new Random((uint)DateTime.Now.Ticks)
+                });
+                AddComponent<AssignRandomRequest>(entity);
             }
         }
     }
@@ -42,10 +49,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
         public float TriggerTime;
         public FactionTag TargetFaction;
         public StatChangeRequest StatChangeRequest;
+        public bool RandomAbsAmount;
+        public Range AbsAmountRange;
+        public bool AllFactionTarget;
         
         // Internal dynamic data
         public float CurrentTriggerCount;
-
 
         // Init data
         public float TriggerDuration;

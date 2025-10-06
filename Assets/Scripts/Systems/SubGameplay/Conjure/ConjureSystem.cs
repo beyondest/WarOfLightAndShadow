@@ -81,7 +81,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 var buffer = SystemAPI.GetBuffer<ConjuringData>(request.BuildingEntity);
                 if (_alreadyTagged.Add(request.BuildingEntity))
                     ecb.AddComponent<ConjuringTag>(request.BuildingEntity);
-                var hoursPerUnit = SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab).ConjureSpeedHoursPerUnit;
+                var hoursPerUnit = SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab).conjureSpeedHoursPerUnit;
                 var uniqueId = SystemAPI.GetComponent<GlobalSingleId>(request.BuildingEntity).value;
                 
                 // Add task to city buffer
@@ -159,7 +159,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 while (conjuringDatas.Length != 0)
                 {
                     var firstData = conjuringDatas[0];
-                    var hoursPerUnit = UnitAttrLookup[firstData.ConjuringEntity].ConjureSpeedHoursPerUnit;
+                    var hoursPerUnit = UnitAttrLookup[firstData.ConjuringEntity].conjureSpeedHoursPerUnit;
                     var maxCount = firstData.TargetAmount - firstData.ConjuredAmount;
                     firstData.ThisTaskRemainingTime = math.max(0, maxCount * hoursPerUnit - deltaHours);
 

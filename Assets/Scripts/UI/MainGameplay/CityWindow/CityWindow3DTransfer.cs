@@ -76,6 +76,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     window.RemoveGarrison(request.ValueRO.ArmyGroup);
                 }
             }
+
+            if (SystemAPI.HasSingleton<ChangeCityFactionRequest>())
+            {
+                var request = SystemAPI.GetSingleton<ChangeCityFactionRequest>();
+                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<ChangeCityFactionRequest>());
+                var window = _cityToCityWindow[request.CityEntity];
+                window.ResetWhenCityFactionChanged();
+            }
         }
     }
 }

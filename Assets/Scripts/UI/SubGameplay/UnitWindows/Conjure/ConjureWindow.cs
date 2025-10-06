@@ -165,9 +165,9 @@ namespace SparFlame.UI.SubGameplay
             using var query = _em.CreateEntityQuery(typeof(PlayerFactionData));
             _currentFaction = query.GetSingleton<PlayerFactionData>()
                 .faction;
-            
+            var tier = _em.GetComponentData<ExpData>(_targetEntity).curTier;
             _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType,_currentFaction,
-                _currentSubType, _em.GetComponentData<ExpData>(_targetEntity).curTier, true,_shouldFilterSubType,true);
+                _currentSubType,tier , true,_shouldFilterSubType,true);
             var count = _infos.Count;
             for (var i = 0; i < Slots.Count; i++)
             {

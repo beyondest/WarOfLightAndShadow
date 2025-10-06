@@ -52,13 +52,22 @@ namespace SparFlame.Components.General
     }
     
       
+    // [Serializable]
+    // public struct LoadingGridInfo: IBufferElementData
+    // {
+    //     public float3 outerCenter;
+    //     public float outerSize;
+    //     public float3 innerCenter;
+    //     public float innerSize;
+    // }s
+
     [Serializable]
-    public struct LoadingGridInfo: IBufferElementData
+    public struct LoadingPositionInfo : IComponentData
     {
-        public float3 outerCenter;
-        public float outerSize;
-        public float3 innerCenter;
-        public float innerSize;
+        public float3 invaderPosition;
+        public float invaderPositionSquareSize;
+        public float3 defenderPosition;
+        public float defenderPositionSquareSize;
     }
 
 
@@ -77,6 +86,7 @@ namespace SparFlame.Components.General
         public float EndTime;
         public int StartPlayerSideCityUnitCount;
         public int StartEnemySideCityUnitCount;
+        public float3 CrystalPosition;
         
         public int PlayerSideDiedCount;
         public int EnemySideDiedCount;
@@ -106,11 +116,28 @@ namespace SparFlame.Components.General
 
     public struct InvadingSupportCityTag : IComponentData
     {
+        public float LastCheckTime;
     }
 
     public struct InvadeSupportCityConfig : IComponentData
     {
-        public float ReduceHpPerHour;
+        public float ReduceHpRatioPerHour;
+    }
+
+
+    public struct BattleRealStart : IComponentData
+    {
+        public bool Initialized;
     }
     
+    public struct CrystalPrefab : IComponentData
+    {
+        public Entity LightCrystalPrefab;
+        public Entity DarkCrystalPrefab;
+    }
+
+    public struct ChangeCityFactionRequest : IComponentData
+    {
+        public Entity CityEntity;
+    }
 }

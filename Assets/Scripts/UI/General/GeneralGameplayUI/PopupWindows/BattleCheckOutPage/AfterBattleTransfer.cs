@@ -6,6 +6,7 @@ using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl;
 using SparFlame.Systems.General.BasicControl.GlobalMonos;
 using SparFlame.Systems.General.Battle;
+using SparFlame.Systems.General.Camera;
 using SparFlame.UI.General.GeneralGameplayUI.PopupWindows.BattleCheckOutPage;
 using Unity.Collections;
 using Unity.Entities;
@@ -21,6 +22,8 @@ namespace SparFlame.UI.General
         private bool _isInAfterBattleWindow;
         private bool _initialized;
         private int _endBattleFrameCount;
+        private bool _crystalAnimationPlayed;
+        private bool _isWaitingForCrystalSwitchAnimationComplete;
 
         protected override void OnCreate()
         {
@@ -35,6 +38,12 @@ namespace SparFlame.UI.General
             {
                 AfterBattleWindow.Instance.OnEcsReturn += ReturnToMainWorld;
                 AfterBattleWindow.Instance.OnEcsStay += StayToCity;
+                RoamingCameraController.Instance.OnCrystalAnimationEnd +=
+                    () =>
+                    {
+                        _isWaitingForCrystalSwitchAnimationComplete = false;
+                        _crystalAnimationPlayed = true;
+                    };
                 _initialized = true;
             }
         }
@@ -42,15 +51,48 @@ namespace SparFlame.UI.General
         protected override void OnUpdate()
         {
             if (_isInAfterBattleWindow) return;
-            _endBattleFrameCount++;
+            _endBattleFrameCount++; // Wait for units, buildings to be destroyed.
             if (_endBattleFrameCount < 2) return;
-            
+
             var battleEndRequest = SystemAPI.GetSingleton<BattleEndRequest>();
             var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
             var recorder = SystemAPI.GetSingleton<BattleRecorder>();
-            recorder.EndTime =(float) SystemAPI.Time.ElapsedTime;
+            if (!_crystalAnimationPlayed)
+            {
+                if (_isWaitingForCrystalSwitchAnimationComplete) return;
+                if (subGameStatusData.SubGameStatus is SubGameStatus.PlayerDefend or SubGameStatus.PlayerSiege)
+                {
+                    var playerFaction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
+                    var winFaction =
+                        battleEndRequest.Result is BattleResult.PlayerWin or BattleResult.EnemyRetreat
+                            ? playerFaction
+                            : ~playerFaction;
+                    var playerWin = winFaction == playerFaction;
+                    var shouldCreateCrystal =
+                        (playerWin && subGameStatusData.SubGameStatus == SubGameStatus.PlayerSiege)
+                        || (!playerWin && subGameStatusData.SubGameStatus ==
+                            SubGameStatus.PlayerDefend);
+                    if (shouldCreateCrystal)
+                    {
+                        var crystalPrefabs = SystemAPI.GetSingleton<
+                            CrystalPrefab>();
+                        var newCrystal = EntityManager.Instantiate(winFaction == FactionTag.Light
+                            ? crystalPrefabs.LightCrystalPrefab
+                            : crystalPrefabs.DarkCrystalPrefab);
+                        EntityManager.AddComponent<SubGameplayEntityTag>(newCrystal);
+                        RoamingCameraController.Instance.PlayCrystalSwitchAnimation(newCrystal,
+                            recorder.CrystalPosition);
+                        _isWaitingForCrystalSwitchAnimationComplete = true;
+                        return;
+                    }
+                }
+
+                _crystalAnimationPlayed = true;
+            }
+
+            recorder.EndTime = (float)SystemAPI.Time.ElapsedTime;
             SystemAPI.SetSingleton(recorder);
-            
+
             var totalSnapShot = SystemAPI.GetSingleton<BeforeBattleArmyGroupTotalSnapshot>();
             var essenceReward = (int)(recorder.DestroyedRewardValue + recorder.KilledRewardValue);
 
@@ -67,6 +109,8 @@ namespace SparFlame.UI.General
             );
             _isInAfterBattleWindow = true;
             _endBattleFrameCount = 0;
+            _isWaitingForCrystalSwitchAnimationComplete = false;
+            _crystalAnimationPlayed = false;
         }
 
         private void ReturnToMainWorld()
@@ -129,7 +173,8 @@ namespace SparFlame.UI.General
 
             DestroyBattleSpecifiedSingletons(ifStayToCity, subGameStatusData);
 
-            CustomCoroutineRunner.Instance.StartCoroutine(SaveLoadController.Instance.SaveAsync(SaveType.Automatic, -1));
+            CustomCoroutineRunner.Instance.StartCoroutine(
+                SaveLoadController.Instance.SaveAsync(SaveType.Automatic, -1));
         }
 
         private void CheckChangeCityFaction(in SubGameStatusData subGameStatusData,
@@ -141,6 +186,15 @@ namespace SparFlame.UI.General
                 case SubGameStatus.PlayerSiege:
                     if (battleEndRequest.Result is BattleResult.PlayerWin or BattleResult.EnemyRetreat)
                     {
+                        var changeCityFactionRequest = EntityManager.CreateEntity();
+                        EntityManager.AddComponent<MainGameplayEntityTag>(changeCityFactionRequest);
+                        EntityManager.AddComponent<ChangeCityFactionRequest>(changeCityFactionRequest);
+                        EntityManager.SetComponentData(changeCityFactionRequest, new ChangeCityFactionRequest
+                        {
+                            CityEntity = subGameStatusData.City,
+                        });
+                        ClearCityBuffer(subGameStatusData);
+
                         SystemAPI.SetComponent(subGameStatusData.City, new MainGameplayGeneralAttr
                         {
                             subFaction = playerFactionData.subFaction,
@@ -148,7 +202,7 @@ namespace SparFlame.UI.General
                             baseTag = MainGameBaseTag.City
                         });
                         ReplaceCityModel(subGameStatusData.City, playerFactionData.faction);
-                        ChangeCityVolumeObstacleRequestFaction(subGameStatusData.City);
+                        // ChangeCityVolumeObstacleRequestFaction(subGameStatusData.City);
                         EntityManager.RemoveComponent<AITag>(subGameStatusData.City);
                         EntityManager.AddComponent<PlayerTag>(subGameStatusData.City);
 
@@ -176,7 +230,7 @@ namespace SparFlame.UI.General
                             baseTag = MainGameBaseTag.City
                         });
                         ReplaceCityModel(subGameStatusData.City, ~playerFactionData.faction);
-                        ChangeCityVolumeObstacleRequestFaction(subGameStatusData.City);
+                        // ChangeCityVolumeObstacleRequestFaction(subGameStatusData.City);
                         EntityManager.RemoveComponent<PlayerTag>(subGameStatusData.City);
                         EntityManager.AddComponent<AITag>(subGameStatusData.City);
 
@@ -214,11 +268,35 @@ namespace SparFlame.UI.General
             }
         }
 
+        private void ClearCityBuffer(SubGameStatusData subGameStatusData)
+        {
+            var buffer = SystemAPI.GetBuffer<ArmyGroupConjureStack>(subGameStatusData.City);
+            buffer.Clear();
+            var buffer2 = SystemAPI.GetBuffer<ExtraArmyGroup>(subGameStatusData.City);
+            buffer2.Clear();
+            var buffer3 = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
+            for (var index = 0; index < buffer3.Length; index++)
+            {
+                var resourceEntry = buffer3[index];
+                resourceEntry.resourceData.availableAmount = 0;
+                resourceEntry.resourceData.storage = 0;
+                resourceEntry.resourceData.amountPerHour = 0f;
+                buffer3[index] = resourceEntry;
+            }
+
+            var buffer4 = SystemAPI.GetBuffer<AttackArmyGroup>(subGameStatusData.City);
+            buffer4.Clear();
+            var buffer5 = SystemAPI.GetBuffer<DefendArmyGroup>(subGameStatusData.City);
+            buffer5.Clear();
+            var buffer6 = SystemAPI.GetBuffer<InvadingArmyGroup>(subGameStatusData.City);
+            buffer6.Clear();
+        }
+
         private void DestroyBattleSpecifiedSingletons(bool ifStayToCity, SubGameStatusData subGameStatusData)
         {
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BeforeBattleArmyGroupTotalSnapshot>());
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<CurrentSubMapInfo>());
-
+            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BattleRealStart>());
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (_, entity) in SystemAPI.Query<RefRO<BeforeBattleArmyGroupSnapShot>>().WithEntityAccess())
             {
@@ -375,6 +453,16 @@ namespace SparFlame.UI.General
                 }
             }
 
+            if (subGameStatusData.SubGameStatus is SubGameStatus.PlayerDefend or SubGameStatus.PlayerSiege)
+            {
+                var removeCityFutureInvaderRequest = ecb.CreateEntity();
+                ecb.AddComponent<MainGameplayEntityTag>(removeCityFutureInvaderRequest);
+                ecb.AddComponent(removeCityFutureInvaderRequest, new ClearCityFutureInvadersRequest
+                {
+                    City = subGameStatusData.City,
+                });
+            }
+
             ecb.Playback(EntityManager);
             ecb.Dispose();
         }
@@ -404,7 +492,8 @@ namespace SparFlame.UI.General
                     break;
                 }
             }
-            var activeIndex = turnIntoFaction == FactionTag.Dark ? darkIndex :lightIndex;
+
+            var activeIndex = turnIntoFaction == FactionTag.Dark ? darkIndex : lightIndex;
             var inactiveIndex = turnIntoFaction == FactionTag.Dark ? lightIndex : darkIndex;
 
             var inactiveModels = SystemAPI.GetBuffer<Child>(children[inactiveIndex].Value);
@@ -423,10 +512,10 @@ namespace SparFlame.UI.General
             ecb.Dispose();
         }
 
-        private void ChangeCityVolumeObstacleRequestFaction(Entity city)
-        {
-            var request = SystemAPI.GetComponentRW<VolumeObstacleSpawnRequest>(city);
-            request.ValueRW.RequestFromFaction = ~request.ValueRO.RequestFromFaction;
-        }
+        // private void ChangeCityVolumeObstacleRequestFaction(Entity city)
+        // {
+        //     var request = SystemAPI.GetComponentRW<VolumeObstacleSpawnRequest>(city);
+        //     request.ValueRW.RequestFromFaction = ~request.ValueRO.RequestFromFaction;
+        // }
     }
 }

@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
@@ -264,9 +265,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     // If this unit is a garrisoned unit, the upgraded unit still needs to be garrisoned
                     if (InGarrisonLookup.TryGetComponent(request.FromEntity, out var preInGarrison))
                     {
-                        if (preInGarrison.InBuilding)
-                        {
-                        }
                         ECB.AddComponent(index, nextTierEntity, preInGarrison);
                         var preBasicStateData = BasicStateLookup[request.FromEntity];
                         ECB.SetComponent(index, nextTierEntity, preBasicStateData);
@@ -291,6 +289,11 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             case InteractState.Idle:
                                 ECB.SetComponentEnabled<IdleStateTag>(index, nextTierEntity, true);
                                 break;
+                            case InteractState.CastSkill:
+                                ECB.SetComponentEnabled<CastSkillStateTag>(index, nextTierEntity, true);
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
                         }
 
                         var garrisonInBuildingRequest = ECB.CreateEntity(index);
@@ -300,7 +303,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             BuildingEntity = preInGarrison.BuildingEntity,
                             Id = PrefabIdLookup[expStaticConfig.NextTierPrefab].value,
                             UnitEntity = nextTierEntity,
-                            UnitType = UnitAttrLookup[expStaticConfig.NextTierPrefab].Type,
+                            UnitType = UnitAttrLookup[expStaticConfig.NextTierPrefab].type,
                         });
                     }
 

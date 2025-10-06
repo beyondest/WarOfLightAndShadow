@@ -11,6 +11,11 @@ namespace SparFlame.Components.SubGameplay
         public float3 MoveOutPositionBias; // Only useful when building is alive
     }
 
+    public struct GarrisonPositions : IBufferElementData
+    {
+        public float3 PositionBias;
+    }
+
     public struct AllowGarrisonUnit : IBufferElementData
     {
         public UnitType UnitType;
@@ -57,6 +62,7 @@ namespace SparFlame.Components.SubGameplay
         public Entity BuildingEntity;
         public bool InBuilding;
         public long SingleId; // For saving
+        public float3 BeforePos;
     }
 
    
@@ -102,7 +108,7 @@ namespace SparFlame.Components.SubGameplay
             in GarrisonSystemConfig config,
             bool isBuildingDead)
         {
-            // Building is dead, move out by bias
+            /*// Building is dead, move out by bias
             if (isBuildingDead)
             {
                 selfTransform.Position += config.HidePositionBias;
@@ -111,16 +117,20 @@ namespace SparFlame.Components.SubGameplay
             {
                 var buildingTransformCopied = buildingTransform;
                 selfTransform.Position = buildingTransformCopied.TransformPoint(garrisonAttr.MoveOutPositionBias);
-            }
+            }*/
+            selfTransform.Position = inGarrison.BeforePos;
             inGarrison.InBuilding = false;
         }
         
         public static void PosGetIn(
             ref InGarrison inGarrison,ref LocalTransform selfTransform,
             in LocalTransform buildingTransform,
-            in GarrisonSystemConfig config)
+            float3 posBias)
         {
-            var targetPos = buildingTransform.Position + config.HidePositionBias;
+            quaternion buildingRotation = buildingTransform.Rotation;
+            var rotatedBias = math.mul(buildingRotation, posBias);
+            var targetPos = buildingTransform.Position + rotatedBias;
+            inGarrison.BeforePos = selfTransform.Position;
             selfTransform.Position = targetPos;
             inGarrison.InBuilding = true;
         }

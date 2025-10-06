@@ -28,7 +28,6 @@ namespace SparFlame.Systems.General.BasicControl
         public float basicFixStep;
     }
 
-  
 
 
 

@@ -37,10 +37,22 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
                 ArmyGroupSlotWindow.Instance.OnEcsSelectArmyGroupUnits += SelectArmyGroupUnits;
                 ArmyGroupSlotWindow.Instance.OnEcsSprintArmyGroupUnits += SprintArmyGroupUnits;
+                ArmyGroupSlotWindow.Instance.OnEcsCastSkill += CastSkill ;
                 ArmyGroupSlotWindow.Instance.OnEcsHoldSwitchArmyGroup += HoldSwitchArmyGroup;
                 ArmyGroupSlotWindow.Instance.OnEcsUpdateArmyGroupAvgData += UpdateArmyGroupAvgData;
                 _initialized = true;
             }
+        }
+
+        private void CastSkill(Entity armyGroup)
+        {
+            var entity =   EntityManager.CreateEntity();
+            EntityManager.AddComponent<SubGameplayEntityTag>(entity);
+            EntityManager.AddComponent<ArmyGroupCastSkillRequest>(entity);
+            EntityManager.SetComponentData(entity,new ArmyGroupCastSkillRequest
+            {
+                ArmyGroup = armyGroup
+            });
         }
 
         protected override void OnUpdate()
@@ -191,12 +203,12 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (unitAttr, expData, entity) in SystemAPI.Query<RefRO<UnitAttr>, RefRO<ExpData>>()
-                         .WithDisabled<Selected>()
+                         .WithDisabled<Selected>().WithAll<PlayerTag>()
                          .WithNone<InGarrison>()
                          .WithNone<InArmyGroup>().WithEntityAccess())
             {
                 if (tierFilterEnabled && expData.ValueRO.curTier != filterTier) continue;
-                if (!unitTypeFilter.Contains(unitAttr.ValueRO.Type)) continue;
+                if (!unitTypeFilter.Contains(unitAttr.ValueRO.type)) continue;
                 var request = ecb.CreateEntity();
                 ecb.AddComponent<SubGameplayEntityTag>(request);
                 ecb.AddComponent(request, new UnitSelectRequest

@@ -158,6 +158,8 @@ namespace SparFlame.Systems.General.BasicControl
                 {
                     // 调用 AsNativeArray()
                     var toNativeArrayMethod = bufferTypeInterface.GetMethod("AsNativeArray")!;
+                     bufferObj = getBufferMethod.Invoke(em, new object[] { entity, true })!;
+
                     var nativeArrayObj = toNativeArrayMethod.Invoke(bufferObj, null)!;
 
                     var elementSize = UnsafeUtility.SizeOf(bufferType);

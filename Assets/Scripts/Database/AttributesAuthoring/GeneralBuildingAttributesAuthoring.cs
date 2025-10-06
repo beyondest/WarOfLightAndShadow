@@ -27,7 +27,6 @@ namespace SparFlame.Database
                     ConstructTimeHours = item.constructTimeHours
                 });
                 
-
                 var buffer = AddBuffer<CostList>(entity);
                 foreach (var cost in item.costs)
                 {
@@ -37,8 +36,8 @@ namespace SparFlame.Database
                         Type = cost.type
                     });
                 }
-
-                BakeVolumeObstacleAttr(item, entity);
+                if(!item.isPortalWall)
+                    BakeVolumeObstacleAttr(item, entity);
                 BakeGarrisonAttr(item, entity);
                 BakeGenerateAttr(item, entity);
                 BakeConjureAttr(item, entity);
@@ -56,6 +55,11 @@ namespace SparFlame.Database
                         MaxGarrisonCount = item.maxGarrisonCount,
                         MoveOutPositionBias = item.outPositionBias,
                     });
+                    var positionBias = AddBuffer<GarrisonPositions>(entity);
+                    foreach (var posBias in item.positionBias)
+                    {
+                        positionBias.Add(new GarrisonPositions{PositionBias = posBias});
+                    }
                     AddBuffer<GarrisonTypeData>(entity);
                     AddBuffer<GarrisonEntity>(entity);
                     var buffer = AddBuffer<AllowGarrisonUnit>(entity);

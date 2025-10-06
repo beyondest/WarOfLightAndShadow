@@ -40,6 +40,34 @@ namespace SparFlame.Components.General
         
         EnemyIsGoingToInvade = 25,
         DebugEnemyArmyGroupNotReachable = 26,
+        
+        TargetNotReachable = 27,
+        ArcherUnitCountNotEnoughToCastArrowRain = 28,
+        EnemyBeginFocusOnPlayer = 29,
+        EnemyStopFocusOnPlayer = 30,
+        EnemyIsRaisingAGarrison = 31,
+        EnemyIsRaisingAStrikeForce = 32,
+        EnemyShieldArmyGroupCastSkill = 33,
+        EnemyArcherCastSkill = 34,
+        EnemyClericArmyGroupCastSkill = 35,
+        EnemyDualSpearArmyGroupCastSkill = 36,
+        EnemyWorkerArmyGroupCastSkill = 37,
+        EnemySpellSwordArmyGroupCastSkill = 38,
+        EnemyGreatSwordArmyGroupCastSkill = 39,
+        EnemyMageArmyGroupCastSkill = 40,
+        
+        AllyShieldArmyGroupCastSkill = 41,
+        AllyArcherArmyGroupCastSkill = 42,
+        AllyClericArmyGroupCastSkill = 43,
+        AllyDualSpearArmyGroupCastSkill = 44,
+        AllyWorkerArmyGroupCastSkill = 45,
+        AllySpellSwordArmyGroupCastSkill = 46,
+        AllyGreatSwordArmyGroupCastSkill = 47,
+        AllyMageArmyGroupCastSkill = 48,
+        
+        EnemyIsAttackingYourAllies = 49,
+        EnemyArmyGroupIsBeingDestroyedByYourAllies = 50,
+        
     }
 
     public enum HintType

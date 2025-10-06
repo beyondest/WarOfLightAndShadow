@@ -5,6 +5,7 @@ using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
@@ -125,14 +126,14 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if (!BuildingAttrLookup.TryGetComponent(inGarrison.BuildingEntity, out var buildingAttr))
                 {
                     // Garrison units need to get out and turn to idle, others remain
-                    if (stateData.CurState == InteractState.Garrison)
-                    {
+                    // if (stateData.CurState == InteractState.Garrison)
+                    // {
                         GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
                             default, default, 
                             Config, true);
                         stateData.TargetState = InteractState.Idle;
                         StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                    }
+                    // }
 
                     ECB.RemoveComponent<InGarrison>(index, selfEntity);
                     
@@ -144,27 +145,26 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 {
                     return;
                 }
-
-                // Set position to hide these move back garrison units
-                if (stateData.CurState == InteractState.Garrison && !inGarrison.InBuilding)
-                {
-                    GarrisonUtils.PosGetIn(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
-                        TransformLookup[inGarrison.BuildingEntity], Config);
-                    return;
-                }
-
-                //   Generator 
-                if (buildingAttr.Type == BuildingType.Generators )
-                {
-                    if (!OocTagLookup.IsComponentEnabled(inGarrison.BuildingEntity)) return;
-                    // Under attack
-                    GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
-                        TransformLookup[inGarrison.BuildingEntity], GarrisonAttrLookup[inGarrison.BuildingEntity],
-                        Config, false);
-                    stateData.TargetState = InteractState.Idle;
-                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                    return;
-                }
+                // // Set position to hide these move back garrison units
+                // if (stateData.CurState == InteractState.Garrison && !inGarrison.InBuilding)
+                // {
+                //     GarrisonUtils.PosGetIn(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
+                //         TransformLookup[inGarrison.BuildingEntity], Config);
+                //     return;
+                // }
+                //
+                // //   Generator 
+                // if (buildingAttr.Type == BuildingType.Generators )
+                // {
+                //     if (!OocTagLookup.IsComponentEnabled(inGarrison.BuildingEntity)) return;
+                //     // Under attack
+                //     GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
+                //         TransformLookup[inGarrison.BuildingEntity], GarrisonAttrLookup[inGarrison.BuildingEntity],
+                //         Config, false);
+                //     stateData.TargetState = InteractState.Idle;
+                //     StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                //     return;
+                // }
                 // Retreat portal
                 if (buildingAttr is { Type: BuildingType.Ornaments, SubTypeIndex: (int)OrnamentType.RetreatPortal })
                 {
@@ -175,32 +175,46 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     return;
                 }
 
-                // Fortification
-                var selfSights = InsightTargetLookup[selfEntity];
-                var buildingSights = InsightTargetLookup[inGarrison.BuildingEntity];
-                foreach (var buildingTarget in buildingSights)
+                if (stateData.CurState == InteractState.Idle)
                 {
-                    ECB.AppendToBuffer(index, selfEntity,buildingTarget);
-                }
-
-                // No targets
-                if (buildingSights.Length == 0 && selfSights.Length == 0)
-                {
-                    // Garrison into original building
-                    if (stateData.CurState == InteractState.Idle)
-                    {
-                        StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
-                            TransformLookup[inGarrison.BuildingEntity].Position,
-                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Box,
-                            Config.GarrisonRadiusSq,false,
-                            selfEntity,index, ECB);
-                    }
-                    // Already in garrison state, do nothing
-                    
+                    stateData.TargetState = InteractState.Garrison;
+                    ref var trans = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
+                    var buildingTrans = TransformLookup[inGarrison.BuildingEntity];
+                    trans.Rotation = buildingTrans.Rotation;
+                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                     return;
                 }
 
-                var target = InteractUtils.ChooseTarget(selfSights);
+                // Fortification
+                var selfSights = InsightTargetLookup[selfEntity];
+                if(selfSights.Length == 0)return;
+                // if (InsightTargetLookup.TryGetBuffer(inGarrison.BuildingEntity, out var buildingSights))
+                // {
+                //     foreach (var buildingTarget in buildingSights)
+                //     {
+                //         ECB.AppendToBuffer(index, selfEntity,buildingTarget);
+                //     }
+                // }
+                //
+                // No targets
+                // if (buildingSights.Length == 0 && selfSights.Length == 0)
+                // {
+                //     // Garrison into original building
+                //     if (stateData.CurState == InteractState.Idle)
+                //     {
+                //         StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
+                //             TransformLookup[inGarrison.BuildingEntity].Position,
+                //             BoxColliderSizeLookup[inGarrison.BuildingEntity].SeparationBox,
+                //             Config.GarrisonRadiusSq,false,
+                //             selfEntity,index, ECB);
+                //     }
+                //     // Already in garrison state, do nothing
+                //     
+                //     return;
+                // }
+
+                // Old logic, deprecated
+                /*var target = InteractUtils.ChooseTarget(selfSights);
                 var targetGarrison = GarrisonStateTagLookup.HasComponent(target) &&
                                      GarrisonStateTagLookup.IsComponentEnabled(target);
                 var selfGarrison = GarrisonStateTagLookup.IsComponentEnabled(selfEntity);
@@ -220,7 +234,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         // This should happen when self is healer and target is wounded
                         StateUtils.GarrisonMoveBack( inGarrison, ref stateData, ref movableData,
                             TransformLookup[inGarrison.BuildingEntity].Position,
-                            BoxColliderSizeLookup[inGarrison.BuildingEntity].Box,
+                            BoxColliderSizeLookup[inGarrison.BuildingEntity].SeparationBox,
                             Config.GarrisonRadiusSq,false,
                             selfEntity,index, ECB);
                         return;
@@ -239,6 +253,27 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     {
                         return;
                     }
+                }*/
+                var minDisSq = float.MaxValue;
+                var bestTarget = Entity.Null;
+                var selfTrans = TransformLookup[selfEntity];
+                foreach (var sight in selfSights)
+                {
+                    if (TransformLookup.TryGetComponent(sight.Entity, out var targetTrans))
+                    {
+                        var disSq = math.distancesq(targetTrans.Position, selfTrans.Position);
+                        if ( disSq< minDisSq)
+                        {
+                            minDisSq = disSq;
+                            bestTarget = sight.Entity;
+                        }
+                    }
+                }
+                if (bestTarget != Entity.Null)
+                {
+                    stateData.TargetEntity = bestTarget;
+                    stateData.TargetState = InteractState.Attacking;
+                    StateUtils.SwitchState(ref stateData, ECB,selfEntity, index);
                 }
             }
 
@@ -301,10 +336,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 int i;
                 for (i = 0; i < allowGarrisonUnit.Length; i++)
                 {
-                    if (allowGarrisonUnit[i].UnitType == unitAttr.Type)
+                    if (allowGarrisonUnit[i].UnitType == unitAttr.type)
                     {
                         if (allowGarrisonUnit[i].SubTypeIndex == -1 // -1 means all is ok
-                            || allowGarrisonUnit[i].SubTypeIndex == unitAttr.SubTypeIndex)
+                            || allowGarrisonUnit[i].SubTypeIndex == unitAttr.subTypeIndex)
                             break;
                     }
                 }
@@ -321,15 +356,17 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // hide it to specific position
                 // Add InGarrison Bonus and logic
                 // Disable selected tag
+                // ref var selfTransform = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
+
                 var inGarrison = new InGarrison
                 {
                     BuildingEntity = stateData.TargetEntity,
                     InBuilding = true,
-                    SingleId = SingleIdLookup[stateData.TargetEntity].value
+                    SingleId = SingleIdLookup[stateData.TargetEntity].value,
+                    BeforePos = TransformLookup[selfEntity].Position
                 };
-                ref var selfTransform = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
-                GarrisonUtils.PosGetIn(ref inGarrison, ref selfTransform,
-                    TransformLookup[inGarrison.BuildingEntity],  Config);
+                // GarrisonUtils.PosGetIn(ref inGarrison, ref selfTransform,
+                //     TransformLookup[inGarrison.BuildingEntity],  Config);
 
                 ECB.AddComponent(index, selfEntity, inGarrison);
                 
@@ -348,7 +385,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 {
                     BuildingEntity = stateData.TargetEntity,
                     Id = prefabId.value,
-                    UnitType = unitAttr.Type,
+                    UnitType = unitAttr.type,
                     UnitEntity = selfEntity
                 });
                 ECB.AddComponent<SubGameplayEntityTag>(index,request);

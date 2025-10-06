@@ -10,7 +10,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
     public class DarkShieldBuffSystemAuthoring : MonoBehaviour
     {
         public List<DarkShieldBuffConfig> reflectionDamageScalesTier;
-        public float darkShieldReflectDamageDuration = 1f;
+        public float tauntedDuration = 10f;
+        public float selfDuration = 1f;
         private class DarkShieldBuffBaker : Baker<DarkShieldBuffSystemAuthoring>
         {
             public override void Bake(DarkShieldBuffSystemAuthoring systemAuthoring)
@@ -29,7 +30,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 }
                 AddComponent(entity, new DarkShieldBuffGeneralConfig
                 {
-                    DarkShieldReflectDamageDuration = systemAuthoring.darkShieldReflectDamageDuration
+                    TauntedDuration = systemAuthoring.tauntedDuration,
+                    SelfDuration = systemAuthoring.selfDuration,
                 });
             }
         }
@@ -46,7 +48,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
     public struct DarkShieldBuffGeneralConfig : IComponentData
     {
-        public float DarkShieldReflectDamageDuration;
+        public float TauntedDuration;
+        public float SelfDuration;
     }
    
 }

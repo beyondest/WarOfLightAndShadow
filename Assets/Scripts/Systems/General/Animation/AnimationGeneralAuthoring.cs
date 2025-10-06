@@ -33,7 +33,7 @@ namespace SparFlame.Systems.General.Animation
                 baker.AddComponent<ClipBlobData>(entity);
                 if (authoring.pairs.Count != Enum.GetValues(typeof(UnitAnimationState)).Length)
                     throw new ArgumentException(
-                        "Animation general clip authoring wrong, list must contain all types of state clip");
+                        $"{authoring.gameObject.name} : Animation general clip authoring wrong, list must contain all types of state clip");
 
                 var clips = new NativeArray<SkeletonClipConfig>(authoring.pairs.Count, Allocator.Temp);
                 var stateSet = new HashSet<UnitAnimationState>();

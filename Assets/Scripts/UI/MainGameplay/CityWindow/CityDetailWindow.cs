@@ -44,6 +44,7 @@ namespace SparFlame.UI.MainGameplay
                 var cityWindow = _em.GetComponentData<CityWindow3DComponent>(_targetEntity);
                 cityWindow.CityWindow3D.Hide();
             }
+
             _targetEntity = Entity.Null;
         }
 
@@ -64,6 +65,7 @@ namespace SparFlame.UI.MainGameplay
         {
             return _targetEntity != Entity.Null;
         }
+
         public Entity GetTarget() => _targetEntity;
 
         public void ClearCloseUpTarget()
@@ -113,20 +115,18 @@ namespace SparFlame.UI.MainGameplay
             var generalAttr = _em.GetComponentData<MainGameplayGeneralAttr>(_targetEntity);
             var prefabId = _em.GetComponentData<PrefabId>(_targetEntity);
             using var query = _em.CreateEntityQuery(typeof(PlayerFactionData));
-            var playerFactionData =query.GetSingleton<PlayerFactionData>();
+            var playerFactionData = query.GetSingleton<PlayerFactionData>();
             var relationShip =
                 FactionUtils.GetRelationship(playerFactionData.faction,
                     playerFactionData.subFaction, generalAttr.faction, generalAttr.subFaction);
-            controlPanel.SetActive(relationShip == Relationship.Self
-                                   || (relationShip == Relationship.Ally &&
-                                       !_em.HasComponent<SupportFightTag>(_targetEntity)));
+            controlPanel.SetActive(relationShip != Relationship.Hostile && !_em.HasComponent<SupportFightTag>(_targetEntity));
 
             var item = DatabaseManager.CityDatabaseSo.GetItemById(prefabId.value);
             cityNameText.text = item.gameplayName;
             cityDescriptionText.text = item.description;
             generalFactionImage.sprite = BasicUIResourceManager.Instance.GeneralFactionIconSprites[generalAttr.faction];
             subFactionImage.sprite = BasicUIResourceManager.Instance.SubFactionIconSprites[generalAttr.subFaction];
-            
+
             // if (CityGarrisonWindow.Instance.TrySwitchTarget(_targetEntity))
             //     CityGarrisonWindow.Instance.Show();
             // else

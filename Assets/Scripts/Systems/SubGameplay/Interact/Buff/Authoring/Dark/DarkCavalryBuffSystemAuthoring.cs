@@ -8,6 +8,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
     public class DarkCavalryBuffSystemAuthoring : MonoBehaviour
     {
         public List<DarkCavalryBuffConfig> darkCavalryBuffConfigs;
+        public float selfDuration = 15f;
         private class DarkCavalryBuffSystemAuthoringBaker : Baker<DarkCavalryBuffSystemAuthoring>
         {
             public override void Bake(DarkCavalryBuffSystemAuthoring authoring)
@@ -18,6 +19,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 {
                     buffer.Add(config);
                 }
+                AddComponent(entity, new DarkCavalryBuffGeneralConfig {selfDuration = authoring.selfDuration});
             }
         }
     }
@@ -26,6 +28,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
     public struct DarkCavalryBuffConfig : IBufferElementData
     {
         public float attackAmountBonusWhenFullLossHp;
+    }
+
+    [Serializable]
+    public struct DarkCavalryBuffGeneralConfig : IComponentData
+    {
+        public float selfDuration;
     }
 
  

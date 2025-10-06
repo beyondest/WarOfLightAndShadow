@@ -393,14 +393,23 @@ namespace SparFlame.Systems.General.BasicControl
             // Copy city sub data from tmp to true save path and delete tmp path
             foreach (var id in SystemAPI.Query<RefRO<GlobalSingleId>>().WithAll<CityAttr>())
             {
-                var tmpPath = SaveUtilities.GetCitySubDataPath(id.ValueRO.value,
+                var tmpPath= SaveUtilities.GetCityBuildingSubDataPath(id.ValueRO.value,
                     currentSaveSlot.Value, true);
                 if (File.Exists(tmpPath))
                 {
-                    var truePath = SaveUtilities.GetCitySubDataPath(id.ValueRO.value,
+                    var truePath = SaveUtilities.GetCityBuildingSubDataPath(id.ValueRO.value,
                         targetSaveSlot, false);
                     File.Copy(tmpPath, truePath, overwrite: true);
                     File.Delete(tmpPath);
+                }
+                var tmpUnitPath= SaveUtilities.GetCityUnitSubDataPath(id.ValueRO.value,
+                    currentSaveSlot.Value, true);
+                if (File.Exists(tmpUnitPath))
+                {
+                    var truePath = SaveUtilities.GetCityUnitSubDataPath(id.ValueRO.value,
+                        targetSaveSlot, false);
+                    File.Copy(tmpUnitPath, truePath, overwrite: true);
+                    File.Delete(tmpUnitPath);
                 }
             }
             // Copy army group sub data from tmp to true save path and delete tmp path

@@ -7,6 +7,7 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct ArmyGroupSkillConfig : IComponentData
     {
+        public float maxChargeCoolDown;
     }
     public struct ArmyGroupSprintRequest : IComponentData
     {
@@ -34,5 +35,10 @@ namespace SparFlame.Components.MainGameplay
         public float ChargeCoolDown;
         public float MaxChargeCoolDown;
         public float MaxSprintCoolDown;
+    }
+
+    public struct ArmyGroupCastSkillRequest : IComponentData
+    {
+        public Entity ArmyGroup;
     }
 }

@@ -65,7 +65,6 @@ namespace SparFlame.Components.MainGameplay
         {
             return PrefabId == other.PrefabId;
         }
-
      
     }
 

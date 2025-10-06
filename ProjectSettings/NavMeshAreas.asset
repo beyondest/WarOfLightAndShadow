@@ -73,7 +73,7 @@ NavMeshProjectSettings:
   m_Settings:
   - serializedVersion: 3
     agentTypeID: 0
-    agentRadius: 10
+    agentRadius: 5
     agentHeight: 2
     agentSlope: 0
     agentClimb: 0.001
@@ -92,9 +92,9 @@ NavMeshProjectSettings:
   - serializedVersion: 3
     agentTypeID: -1372625422
     agentRadius: 0.75
-    agentHeight: 2
+    agentHeight: 4
     agentSlope: 60
-    agentClimb: 0.8
+    agentClimb: 3.1
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 2
@@ -110,9 +110,9 @@ NavMeshProjectSettings:
   - serializedVersion: 3
     agentTypeID: -334000983
     agentRadius: 0.75
-    agentHeight: 2
+    agentHeight: 4
     agentSlope: 60
-    agentClimb: 0.8
+    agentClimb: 3.1
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 2
@@ -127,10 +127,10 @@ NavMeshProjectSettings:
       m_Flags: 0
   - serializedVersion: 3
     agentTypeID: 1479372276
-    agentRadius: 1
-    agentHeight: 2
-    agentSlope: 0
-    agentClimb: 0.001
+    agentRadius: 5
+    agentHeight: 30
+    agentSlope: 60
+    agentClimb: 28
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 2
@@ -145,10 +145,10 @@ NavMeshProjectSettings:
       m_Flags: 0
   - serializedVersion: 3
     agentTypeID: -1923039037
-    agentRadius: 1
-    agentHeight: 2
-    agentSlope: 0
-    agentClimb: 0.001
+    agentRadius: 5
+    agentHeight: 30
+    agentSlope: 60
+    agentClimb: 28
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 2

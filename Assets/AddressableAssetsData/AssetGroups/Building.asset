@@ -120,6 +120,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 30608d53d826825478dd9b38a317ebcd
+    m_Address: SpellSwordConjuringShrineLightTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 331d363d7326bec49984a5d15040ad26
     m_Address: LightCrystal
     m_ReadOnly: 0
@@ -157,6 +162,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3b66a697ef089ff489a434021d1a2eb1
     m_Address: LightWallTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3dc5edfcbcbe5b644904f9f996789aac
+    m_Address: PortalWallLight
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -350,6 +360,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 903d6a1b3ec67c0458846261b5e9bb87
+    m_Address: GreatSwordConjuringShrineLightTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 91aefc6e0efb22e49b0b145bb4e7da61
     m_Address: DarkBarkTier3
     m_ReadOnly: 0
@@ -435,6 +450,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b4e0bd43079beb842ab4239eea4da833
+    m_Address: SpellSwordConjuringShrineDarkTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b89bc227b638cf546af2dad09b65ba4c
     m_Address: DarkVineTier1
     m_ReadOnly: 0
@@ -455,6 +475,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bc36c1479588d744f8f291e54195c323
+    m_Address: GreatSwordConjuringShrineDarkTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c3f1dcdb30724c942bf0bc75829ed54c
     m_Address: LightPhantomGateTier1
     m_ReadOnly: 0
@@ -467,6 +492,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c90103459b97a5d4394e0f05001b0fc9
     m_Address: LightAssembleFlagGather
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c990ffcfe29e09e4ab3b70dbf2ca35c3
+    m_Address: PortalWallDark
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

@@ -33,11 +33,11 @@ namespace SparFlame.UI.MainGameplay
             _hpInitWidth = hpImageTransformLight.rect.width;
         }
 
-        public void SetTarget(Entity armyGroup)
+        public void SetTarget(Entity armyGroup, FactionTag faction)
         {
             var em = World.DefaultGameObjectInjectionWorld.EntityManager;
             var armyGroupAttr = em.GetComponentData<ArmyGroupAttr>(armyGroup);
-            _currentFaction = em.GetComponentData<MainGameplayGeneralAttr>(armyGroup).faction;
+            _currentFaction = faction;
 
             armyGroupIcon.sprite = ArmyGroupWindowResourceManager.Instance.ArmyGroupIcons[armyGroupAttr.iconType];
             armyGroupIcon.color = _currentFaction == FactionTag.Dark ? darkColor : lightColor;

@@ -175,7 +175,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     targetTransform.Rotation =
                         math.normalizesafe(math.mul(targetTransform.Rotation, rotationDelta));
                     var rotationAbsAngle = ConstructUtils.GetCurrentYDeg(targetTransform.Rotation);
-                    MathUtils.GetSnapGridPosition(customInputData.HitPosition, rotationAbsAngle, boxColliderSize.Box,
+                    MathUtils.GetSnapGridPosition(customInputData.HitPosition, rotationAbsAngle, boxColliderSize.SeparationBox,
                         gridSize, out var snapPosition);
                     // targetTransform.Position = customInputData.HitPosition;
                     targetTransform.Position = snapPosition;
@@ -218,7 +218,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
                     else data.PreviewAttackRangeEntity = Entity.Null;
 
 
-                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Box, gridSize,
+                    GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.SeparationBox, gridSize,
                         out data.PreviewCube);
                     // VisualizeGrid(ref state, gridSize, playerBaseTrans,constructableRadiusSq, prefabs.GridPrefab);
 
@@ -326,7 +326,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
                         // Exchange grid preview
                         _grids.Add(data.PreviewCube);
-                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.Box, gridSize,
+                        GetPreviewCube(ref state, prefabs.PreviewCubePrefab, boxColliderSize.SeparationBox, gridSize,
                             out data.PreviewCube);
 
                         data.CommandType = ConstructCommandType.Drag; // Continue building
@@ -460,7 +460,7 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
             for (var i = 0; i < trans.Length; i++)
             {
-                var boxColliderSize = boxColliderSizes[i].Box;
+                var boxColliderSize = boxColliderSizes[i].SeparationBox;
                 var tran = trans[i];
 
                 // 1. 获取旋转角度（只支持 90° 的倍数）
@@ -494,6 +494,9 @@ namespace SparFlame.Systems.SubGameplay.Construct
             data.GhostModelEntity = Entity.Null;
             data.GhostTriggerEntity = Entity.Null;
             data.CommandType = ConstructCommandType.Drag;
+            if(data.PreviewAttackRangeEntity != Entity.Null)
+                state.EntityManager.DestroyEntity(data.PreviewAttackRangeEntity);
+            data.PreviewAttackRangeEntity = Entity.Null;
         }
 
         private void SwitchBuildingState(ref SystemState state, ref ConstructCommandData data,

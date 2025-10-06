@@ -35,6 +35,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 LightShieldUnderDefendLookup = _defenderData,
                 TransformLookup = _transformLookup,
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = SystemAPI.GetSingleton<LightShieldBuffGeneralConfig>(),
                 LightShieldBuffConfigs = SystemAPI.GetSingletonBuffer<LightShieldBuffConfig>(),
                 ECB = ecbP
@@ -48,25 +49,27 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
 
         [BurstCompile]
-        [WithAll(typeof(LightShieldBuff))]
+        [WithNone(typeof(UnitDeadTag))]
         public partial struct LightShieldBuffJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
 
             [NativeDisableParallelForRestriction]
             public ComponentLookup<LightShieldUnderDefend> LightShieldUnderDefendLookup;
-
+            [ReadOnly] public float ElapsedTime;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public LightShieldBuffGeneralConfig Config;
             [ReadOnly] public DynamicBuffer<LightShieldBuffConfig> LightShieldBuffConfigs;
 
             private void Execute([ChunkIndexInQuery] int index,
-                in DynamicBuffer<AoeTarget> targets, in BasicStateData stateData, Entity selfEntity,
-                in ExpData expData)
+                in DynamicBuffer<AoeTarget> targets, Entity selfEntity,
+                in ExpData expData, in LightShieldBuff buff)
             {
-                if (stateData.CurState != InteractState.Attacking && stateData.TargetState != InteractState.Attacking)
+                if (buff.StopTime <= ElapsedTime)
                 {
-                    return; // General buff system will remove this buff
+                    ECB.RemoveComponent<AoeTarget>(index, selfEntity);
+                    ECB.RemoveComponent<LightShieldBuff>(index, selfEntity);
+                    return;
                 }
                 AddNewShieldData(targets, index, selfEntity,
                     LightShieldBuffConfigs[(int)expData.curTier - 3].maxDefendCount);
@@ -93,7 +96,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             ECB.SetComponent(index, target.Entity, new LightShieldUnderDefend
                             {
                                 DefendBy = selfEntity,
-                                DefendTime = Config.DefendTime
+                                DefendTime = Config.UnderDefendDuration
                             });
                             count++; // Target is already defended by self, then skip and add count, otherwise not add count
                         }
@@ -105,7 +108,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     ECB.SetComponent(index, target.Entity, new LightShieldUnderDefend
                     {
                         DefendBy = selfEntity,
-                        DefendTime = Config.DefendTime
+                        DefendTime = Config.UnderDefendDuration
                     });
                     var shieldVfx = ECB.CreateEntity(index);
                     ECB.AddComponent<SubGameplayEntityTag>(index, shieldVfx);

@@ -15,7 +15,7 @@ namespace SparFlame.UI.MainGameplay
         [SerializeField] private TMP_Text newArmyGroupName;
         [SerializeField] private GameObject selectIconPanel;
 
-        [SerializeField] private ArmyGroupIconType initIconType = ArmyGroupIconType.Horse;
+        [SerializeField] private ArmyGroupIconType initIconType = 0;
         // Interface
         public static ArmyGroupNewWindow Instance;
         public event Action<string, ArmyGroupIconType> OnEcsNewArmyGroup;

@@ -38,4 +38,9 @@ namespace SparFlame.Components.SubGameplay
         public float Value;
 
     }
+
+    public struct NeedTarget : IComponentData, IEnableableComponent
+    {
+        
+    }
 }

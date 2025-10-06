@@ -98,6 +98,11 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 if(!_isRight)
                     SlotMoveRight();
             });
+            armyGroupSkillButton.onClick.RemoveAllListeners();
+            armyGroupSkillButton.onClick.AddListener(() =>
+            {
+                ArmyGroupSlotWindow.Instance.CastSkill(_armyGroup);
+            });
         }
 
         private void Update()

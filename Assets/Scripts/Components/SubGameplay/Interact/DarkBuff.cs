@@ -4,6 +4,7 @@ namespace SparFlame.Components.SubGameplay
 {
     public struct DarkShieldTauntBuff : IComponentData
     {
+        public float StopTime;
     }
 
 
@@ -26,6 +27,7 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct DarkCavalryBuff : IComponentData
     {
+        public float StopTime;
     }
     public struct DarkArcherBuff : IComponentData
     {

@@ -45,7 +45,7 @@ namespace SparFlame.UI.SubGameplay
         [SerializeField] private Image neutralHpFilled;
         [SerializeField] private TMP_Text statValueText;
         [SerializeField] private TMP_Text statLabelText;
-        [SerializeField] private TMP_Text statBonusText;
+        // [SerializeField] private TMP_Text statBonusText;
         
 
         // Interface
@@ -183,20 +183,20 @@ namespace SparFlame.UI.SubGameplay
         {
             // Update Hp
             var statData = _em.GetComponentData<StatData>(_targetEntity);
-            _statFilled.fillAmount = statData.curValue / (statData.maxValue + statData.bonus);
-            if (statData.bonus == 0)
-            {
-                statBonusText.enabled = false;
-            }
-            else
-            {
-                statBonusText.enabled = true;
-                var signal = statData.bonus > 0 ? "+" : "-";
-                statBonusText.text = $"({signal}{statData.bonus})";
-                statBonusText.color = statData.bonus > 0 ? Color.green : Color.red;
-            }
+            _statFilled.fillAmount = statData.curValue / statData.maxValue /*+ statData.bonus*/;
+            // if (statData.bonus == 0)
+            // {
+            //     statBonusText.enabled = false;
+            // }
+            // else
+            // {
+            //     statBonusText.enabled = true;
+            //     var signal = statData.bonus > 0 ? "+" : "-";
+            //     statBonusText.text = $"({signal}{statData.bonus})";
+            //     statBonusText.color = statData.bonus > 0 ? Color.green : Color.red;
+            // }
 
-            statValueText.text = (int)statData.curValue + " / " + (statData.maxValue + statData.bonus);
+            statValueText.text = (int)statData.curValue + " / " + statData.maxValue /*+ statData.bonus*/;
             // Update Exp
             if (_showExpBar)
             {
@@ -241,7 +241,7 @@ namespace SparFlame.UI.SubGameplay
         {
             var attr = _em.GetComponentData<SubGameplayGeneralAttr>(_targetEntity);
             var prefabId = _em.GetComponentData<PrefabId>(_targetEntity);
-            _closeUpTargetColliderSize = _em.GetComponentData<BoxColliderSize>(_targetEntity).Box;
+            _closeUpTargetColliderSize = _em.GetComponentData<BoxColliderSize>(_targetEntity).SeparationBox;
             closeUpTargetName.text = attr.BaseTag switch
             {
                 BaseTag.Units => DatabaseManager.UnitDatabaseSo.GetItemById(prefabId.value).gameplayName,

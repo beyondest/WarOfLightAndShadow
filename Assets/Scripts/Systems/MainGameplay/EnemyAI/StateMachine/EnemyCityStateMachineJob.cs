@@ -64,18 +64,18 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             Entity selfEntity)
         {
             var isFocusOnPlayer = cityAIData.IsFocusOnPlayer;
-
-            // First conjure army group if queue is not empty. If city do conjure this frame, do AI logic next frame
-            if (CheckConjureStackAndSpawnArmyGroup(index, generalAttr, ref cityAIData, ref conjureStack,
-                    in attackPrefabs, in defendPrefabs, selfEntity))
-                return;
-
             // Remove dead invading army groups, assign single id after army group single id is created
             RefreshArmyGroupBuffer(ref attackArmyGroups, selfEntity);
             RefreshArmyGroupBuffer(ref defendArmyGroups, selfEntity);
             RefreshArmyGroupBuffer(ref extraArmyGroups, selfEntity);
             RefreshArmyGroupBuffer(ref invadingArmyGroups, selfEntity);
 
+            // First conjure army group if queue is not empty. If city do conjure this frame, do AI logic next frame
+            if (CheckConjureStackAndSpawnArmyGroup(index, generalAttr, ref cityAIData, ref conjureStack,
+                    in attackPrefabs, in defendPrefabs, selfEntity))
+                return;
+
+          
             // If this city is invading or has no army groups, should conjure army groups
             var shouldConjureArmyGroups =
                 invadingArmyGroups.Length > 0 || attackArmyGroups.IsEmpty && defendArmyGroups.IsEmpty
@@ -129,14 +129,17 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             EnemyCityStrategy strategy
         )
         {
+            
             // If army group buffer is not full, conjure army group first. First push attack army group to conjure defend first
             if (attackArmyGroups.Length < attackPrefabs.Length)
             {
                 shouldConjureArmyGroups = true;
+                var find = false;
                 foreach (var attackPrefab in attackPrefabs)
                 {
                     if (!HasThisArmyGroupPrefabInBuffer(attackPrefab, attackArmyGroups))
                     {
+                        find = true;
                         conjureStack.Add(new ArmyGroupConjureStack
                         {
                             PrefabId = attackPrefab.PrefabId,
@@ -145,15 +148,26 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         });
                     }
                 }
+                if (find)
+                {
+                    var hintRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
+                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    {
+                        Name = HintName.EnemyIsRaisingAStrikeForce
+                    });
+                }
             }
 
             if (defendArmyGroups.Length < defendPrefabs.Length)
             {
                 shouldConjureArmyGroups = true;
+                var find = false;
                 foreach (var defendPrefab in defendPrefabs)
                 {
                     if (!HasThisArmyGroupPrefabInBuffer(defendPrefab, defendArmyGroups))
                     {
+                        find = true;
                         conjureStack.Add(new ArmyGroupConjureStack
                         {
                             PrefabId = defendPrefab.PrefabId,
@@ -161,6 +175,15 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                             NeedHours = defendPrefab.NeedHours
                         });
                     }
+                }
+                if (find)
+                {
+                    var hintRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
+                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    {
+                        Name = HintName.EnemyIsRaisingAGarrison
+                    });
                 }
             }
 
@@ -205,10 +228,12 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             if (attackArmyGroups.Length < attackPrefabs.Length)
             {
                 shouldConjureArmyGroups = true;
+                var find = false;
                 foreach (var attackPrefab in attackPrefabs)
                 {
                     if (!HasThisArmyGroupPrefabInBuffer(attackPrefab, attackArmyGroups))
                     {
+                        find = true;
                         conjureStack.Add(new ArmyGroupConjureStack
                         {
                             PrefabId = attackPrefab.PrefabId,
@@ -216,6 +241,15 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                             NeedHours = attackPrefab.NeedHours
                         });
                     }
+                }
+                if (find)
+                {
+                    var hintRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
+                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    {
+                        Name = HintName.EnemyIsRaisingAStrikeForce
+                    });
                 }
             }
 
@@ -246,10 +280,12 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             {
                 shouldConjureArmyGroups = true;
                 aiData.StartConjuringTotalHours = CurTotalHours;
+                var find = false;
                 foreach (var defendPrefab in defendPrefabs)
                 {
                     if (!HasThisArmyGroupPrefabInBuffer(defendPrefab, defendArmyGroups))
                     {
+                        find = true;
                         conjureStack.Add(new ArmyGroupConjureStack
                         {
                             PrefabId = defendPrefab.PrefabId,
@@ -257,6 +293,15 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                             NeedHours = defendPrefab.NeedHours
                         });
                     }
+                }
+                if (find)
+                {
+                    var hintRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
+                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    {
+                        Name = HintName.EnemyIsRaisingAGarrison
+                    });
                 }
             }
             else
@@ -425,7 +470,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 // formation positions, unit type data
                 var totalThreatenValue = 0f;
                 var positionIndex = 0;
-                var mainUnitType = UnitType.Magic;
+                var mainUnitType = UnitType.Shield;
                 var mostUnitCount = 0;
                 // var totalStatData = new ArmyGroupStatData();
                 // Spawn fake unit, assign datas, calculate total threaten value
@@ -434,16 +479,14 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                     var spawnCount = t.Count;
                     if (Debug.enabled) spawnCount *= Debug.unitCountScale;
                     var unitAttr = UnitAttrLookup[t.UnitPrefab];
-                    var baseValue = unitAttr.Type == UnitType.Magic
-                        ? CalConfig.magicUnitBaseThreatenValue
-                        : CalConfig.nonMagicUnitBaseThreatenValue;
+                    var baseValue = CalConfig.unitBaseThreatenValue;
                     var levelAddValue = EnemyAIUtils.EvaluateLevelAddThreatenValue(t.Level,
                         CalConfig.levelCoefficientA, CalConfig.levelCoefficientB,
                         CalConfig.levelCoefficientA);
                     totalThreatenValue += (baseValue + levelAddValue) * spawnCount;
                     if (spawnCount > mostUnitCount)
                     {
-                        mainUnitType = unitAttr.Type;
+                        mainUnitType = unitAttr.type;
                         mostUnitCount = spawnCount;
                     }
 
@@ -575,6 +618,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             ECB.AddComponent(index, fakeUnit, movableData);
 
             ECB.AddComponent(index, fakeUnit, new FakeUnitNeedAddToArmyGroupAfterAssignSingleId { ArmyGroup = armyGroup });
+            ECB.AddComponent<FakeUnitTag>(index,fakeUnit);
         }
 
         private static bool FindArmyGroupPrefab<T>(int prefabId, DynamicBuffer<T> prefabs, out Entity prefab)

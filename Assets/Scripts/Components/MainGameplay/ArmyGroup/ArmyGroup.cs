@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -8,7 +7,8 @@ namespace SparFlame.Components.MainGameplay
 {
     // Army Group Attr
 
-    public enum ArmyGroupIconType
+    // Deprecated
+    /*public enum ArmyGroupIconType
     {
         Horse = 0,
         Rabbit = 1,
@@ -20,6 +20,17 @@ namespace SparFlame.Components.MainGameplay
         Scorpion = 7,
         Butterfly = 8,
         Dragon = 9
+    }*/
+    public enum ArmyGroupIconType
+    {
+        Shield = 0, 
+        Archer = 1,
+        Cleric = 2, 
+        DualSpear = 3,
+        Worker = 4 ,
+        SpellSword = 5,
+        GreatSword = 6,
+        Mage = 7
     }
 
 

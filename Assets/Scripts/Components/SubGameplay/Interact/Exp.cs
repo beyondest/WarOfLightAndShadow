@@ -121,7 +121,7 @@ namespace SparFlame.Components.SubGameplay
             statData = _statData.ValueRO;
             statData.maxValue += config.StatPerLevel * addLevel;
             statData.curValue = statData.maxValue;
-            statData.bonus = 0;
+            // statData.bonus = 0;
 
             movableData = _movableData.ValueRO;
             movableData.MoveSpeed += config.MoveSpeedPerLevel * addLevel;

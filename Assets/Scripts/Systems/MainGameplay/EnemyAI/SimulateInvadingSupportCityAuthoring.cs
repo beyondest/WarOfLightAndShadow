@@ -6,7 +6,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
 {
     public class SimulateInvadingSupportCityAuthoring : MonoBehaviour
     {
-        public float reduceHpPerHour = 5;
+        public float reduceHpPerHour = 0.2f;
         private class
             SimulateInvadingSupportCityAuthoringBaker : Baker<SimulateInvadingSupportCityAuthoring>
         {
@@ -15,7 +15,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, new InvadeSupportCityConfig
                 {
-                    ReduceHpPerHour = authoring.reduceHpPerHour
+                    ReduceHpRatioPerHour = authoring.reduceHpPerHour
                 });
             }
         }

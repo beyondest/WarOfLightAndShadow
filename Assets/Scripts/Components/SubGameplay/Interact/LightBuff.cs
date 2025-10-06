@@ -14,10 +14,14 @@ namespace SparFlame.Components.SubGameplay
     {
     }
    
-    public struct LightCavalryBuff : IComponentData
+    public struct BlessingBuff : IComponentData
     {
+        public float StopTime;
     }
-    public struct LightCavalryUnderBonus : IComponentData,IEnableableComponent
+
+
+    
+    public struct UnderBlessingBonus : IComponentData,IEnableableComponent
     {
         public Entity Provider;
         public float LastTime;
@@ -30,7 +34,7 @@ namespace SparFlame.Components.SubGameplay
 
     public struct LightShieldBuff : IComponentData
     {
-
+        public float StopTime;
     }
 
 

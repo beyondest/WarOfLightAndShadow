@@ -34,15 +34,8 @@ namespace SparFlame.Components.SubGameplay
         public Entity LeftEntity;
         public Entity RightEntity;
         public int CompromiseTimes;
-        // public float3 IdealDirection;
         public float3 PrePos;
         public float RecordPosTime;
-
-        /*Deprecated
-         public Entity LeftTailEntity;
-        public Entity RightTailEntity;
-        public bool ChooseRight;
-        public int SlideTimes;*/
     }
 
     public struct SeekTarget : IComponentData
@@ -64,11 +57,15 @@ namespace SparFlame.Components.SubGameplay
         public float3 Value; 
     }
 
-    public struct TargetRotation : IComponentData
+    public struct Avoidance : IComponentData
     {
-        public quaternion Value;
+        public float3 Value;
     }
 
+    public struct Alignment : IComponentData
+    {
+        public float3 Value;
+    }
     // public struct Acceleration : IComponentData
     // {
     //     public float3 Value;
@@ -95,7 +92,9 @@ namespace SparFlame.Components.SubGameplay
         FailedAtStartingCalculation = 2,
         FailedAfterCalculation = 3,
         FailedAfterFindingStraightPath  = 4,
-        Success = 5
+        NoWaypointsAfterCalculation = 5,
+        Success = 6,
+        
     }
     [Serializable]
     public struct WaypointBuffer : IBufferElementData
@@ -107,10 +106,13 @@ namespace SparFlame.Components.SubGameplay
 
     public struct MovingStateTag : IComponentData, IEnableableComponent
     {
+    }
+
+    public struct AutoGiveWayTag : IComponentData, IEnableableComponent
+    {
         
     }
     
-
     
     public enum MovementCommandType
     {
@@ -239,4 +241,21 @@ namespace SparFlame.Components.SubGameplay
     {
         public Entity Target;
     }
+    
+    
+    public enum AutoGiveWayState
+    {
+        None,
+        GoTo,
+        GoBack,
+    }
+
+
+    public struct AutoGiveWayData : IComponentData
+    {
+        public float3 OriPosition;
+        public AutoGiveWayState State;
+        public float AccumulatedTime;
+    }
+
 }

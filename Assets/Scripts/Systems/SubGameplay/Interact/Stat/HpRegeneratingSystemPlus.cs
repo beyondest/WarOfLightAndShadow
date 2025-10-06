@@ -41,6 +41,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 timer.ValueRW.lastCheckTotalHours = curTotalHours;
                 foreach (var unit in SystemAPI.GetBuffer<ArmyGroupUnit>(entity))
                 {
+                    if(!SystemAPI.HasComponent<StatData>(unit.Unit))continue;
                     var stat = SystemAPI.GetComponent<StatData>(unit.Unit);
                     var amount = (int)(stat.maxValue * percent);
                     stat.curValue += amount;

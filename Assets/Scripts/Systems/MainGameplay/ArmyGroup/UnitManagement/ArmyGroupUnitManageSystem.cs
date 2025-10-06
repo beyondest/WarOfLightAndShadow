@@ -288,7 +288,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             {
                 datas.Add(new ArmyGroupUnitTypeData
                 {
-                    UnitType = unitAttr.Type,
+                    UnitType = unitAttr.type,
                     PrefabId = generalAttr.value,
                     Count = 1
                 });

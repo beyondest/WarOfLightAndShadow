@@ -29,7 +29,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         [SerializeField] private GameObject accurateSelectionPanel;
 
         [SerializeField] private GameObject enterAccurateSelectionButton;
-
+        [SerializeField] private bool initNoUnitTypeSelected = true;
         public static ArmyGroupSlotWindow Instance;
 
         public event Action OnEcsRemoveSelectedUnitsFromTheirArmyGroup;
@@ -37,6 +37,7 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         public event Action<Entity, bool> OnEcsSelectArmyGroupUnits;
         public event Action<Entity> OnEcsSprintArmyGroupUnits;
         public event Action<Entity> OnEcsHoldSwitchArmyGroup;
+        public event Action<Entity> OnEcsCastSkill; 
 
         public Action<Entity, AddToArmyGroupType> OnEcsAddToArmyGroup;
 
@@ -48,7 +49,6 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         public void SwitchSelectionMode(bool enter)
         {
-            _isInSelectionMode = enter;
             enterAccurateSelectionButton.SetActive(!enter);
             using var query =
                 World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(typeof(UnitSelectionFilter));
@@ -142,6 +142,11 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
                 OnEcsAddToArmyGroup?.Invoke(armyGroup,
                     AddToArmyGroupType.AllSelectedExceptAlreadyIn);
             }
+        }
+
+        public void CastSkill(Entity armyGroup)
+        {
+            OnEcsCastSkill?.Invoke(armyGroup);
         }
 
 
@@ -262,11 +267,19 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
             }
 
             tierFilterButtonImage.color = Color.gray;
-            _currentFilterUnitTypes.Add(UnitType.Cavalry);
-            _currentFilterUnitTypes.Add(UnitType.Ranged);
-            _currentFilterUnitTypes.Add(UnitType.Shield);
-            _currentFilterUnitTypes.Add(UnitType.Magic);
-            _currentFilterUnitTypes.Add(UnitType.Worker);
+
+            if (!initNoUnitTypeSelected)
+            {
+                foreach (UnitType unitType in Enum.GetValues(typeof(UnitType)))
+                {
+                    _currentFilterUnitTypes.Add(unitType);
+                }
+            }
+
+            foreach (var image in unitTypeFilterSelectedImages)
+            {
+                image.enabled = !initNoUnitTypeSelected;
+            }
 
             accurateSelectionPanel.SetActive(false);
         }
@@ -278,7 +291,6 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
         private const Tier MaxTier = Tier.Tier3;
         private Tier _currentFilterTier;
         private readonly List<UnitType> _currentFilterUnitTypes = new();
-        private bool _isInSelectionMode;
 
         private void UpdateSortButtonIcon()
         {

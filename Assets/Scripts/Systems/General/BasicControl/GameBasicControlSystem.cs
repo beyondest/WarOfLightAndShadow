@@ -2,9 +2,9 @@
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Systems.General.BasicControl.Init;
 using SparFlame.Systems.General.Input;
 using Unity.Entities;
-using Unity.Transforms;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
@@ -77,7 +77,14 @@ namespace SparFlame.Systems.General.BasicControl
                 GameController.Instance.OnSwitchGameStatus += EcsSwitchSubGameStatus;
                 GameController.Instance.OnEcsBeginSystemInit += BeginSystemInit;
                 GameController.Instance.OnSetPlayerFactionData += SetPlayerFactionData;
+                GameController.Instance.OnSetNewGame += SetNewGame;
             }
+        }
+
+        private void SetNewGame(bool ifNewGame)
+        {
+            if(ifNewGame)
+                EntityManager.CreateSingleton<OnlyRunOnceForCrystalGeneration>();
         }
 
         private void SetPlayerFactionData(PlayerFactionData data)
@@ -136,6 +143,11 @@ namespace SparFlame.Systems.General.BasicControl
             if (SystemAPI.HasSingleton<MainGamingTag>())
             {
                 EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<MainGamingTag>());
+            }
+
+            if (SystemAPI.HasSingleton<OnlyRunOnceForCrystalGeneration>())
+            {
+                EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<OnlyRunOnceForCrystalGeneration>());
             }
         }
 

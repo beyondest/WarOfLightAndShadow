@@ -210,7 +210,6 @@ namespace SparFlame.Components.MainGameplay
                 RequestType = VFXRequestType.Spawn,
                 SpawnPosition = transform.Position,
                 VFXName = VFXName.ArmyGroupDestroyed,
-                        
             });
             ecb.AddComponent<MainGameplayEntityTag>(vfx);
 
@@ -226,11 +225,15 @@ namespace SparFlame.Components.MainGameplay
                 });
                 ecb.AddComponent<MainGameplayEntityTag>(garrisonRequest);
             }
+          
 
             // if (em.HasComponent<EnemyArmyGroupBelongsToCity>(armyGroup))
             // {
             //     var city = em.GetComponentData<EnemyArmyGroupBelongsToCity>(armyGroup);
             // }
         }
+        
+        
+        
     }
 }

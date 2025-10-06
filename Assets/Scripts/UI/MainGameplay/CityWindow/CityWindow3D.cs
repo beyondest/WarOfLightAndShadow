@@ -60,6 +60,7 @@ namespace SparFlame.UI.MainGameplay
             var playerFaction = query.GetSingleton<PlayerFactionData>();
             _isPlayerCity = FactionUtils.GetRelationship(generalAttr.faction, generalAttr.subFaction,
                 playerFaction.faction, playerFaction.subFaction) is Relationship.Self or Relationship.Ally;
+            _cityFaction = generalAttr.faction;
         }
 
         public void AddGarrison(Entity armyGroup)
@@ -78,7 +79,7 @@ namespace SparFlame.UI.MainGameplay
             }
 
             var cityGarrisonSlot3D = slot.GetComponent<CityGarrisonSlot3D>();
-            cityGarrisonSlot3D.SetTarget(armyGroup);
+            cityGarrisonSlot3D.SetTarget(armyGroup,_cityFaction);
 
 
             _entityToSlot[armyGroup] = slot.GetComponent<CityGarrisonSlot3D>();
@@ -94,6 +95,15 @@ namespace SparFlame.UI.MainGameplay
             // UpdateLayout();
         }
 
+        public void ResetWhenCityFactionChanged()
+        {
+            foreach (var pair in _entityToSlot)
+            {
+                Destroy(pair.Value.gameObject);
+            }
+            _entityToSlot.Clear();
+            SetCity(_city);
+        }
 
         // run-time
 
@@ -101,6 +111,7 @@ namespace SparFlame.UI.MainGameplay
         private EntityManager _em;
         private Entity _city;
         private CityGarrisonAttr _cityGarrisonAttr;
+        private FactionTag _cityFaction;
         private Camera _targetCamera;
         private EntityQuery _worldTimeQuery;
         private EntityQuery _gameStatusDataQuery;
@@ -163,7 +174,11 @@ namespace SparFlame.UI.MainGameplay
 
             garrisonCountText.text = $"{notEmptyArmyGroupsCount}/{_cityGarrisonAttr.maxGarrisonCount}";
 
-            
+            if (_isPlayerCity)
+            {
+                formingPanel.SetActive(false);
+                return;
+            }
             var stack = _em.GetBuffer<ArmyGroupConjureStack>(_city);
             formingPanel.SetActive(!stack.IsEmpty);
             if (!stack.IsEmpty)

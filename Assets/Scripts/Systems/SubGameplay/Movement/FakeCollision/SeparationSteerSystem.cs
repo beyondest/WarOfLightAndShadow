@@ -1,14 +1,14 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
 {
-    using Unity.Burst;
-    using Unity.Collections;
-    using Unity.Entities;
-    using Unity.Mathematics;
-    using Unity.Transforms;
-
     /// <summary>
     /// 用于单位之间简单的分离，避免堆成一坨
     /// </summary>
@@ -17,146 +17,235 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
     {
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
+        private ComponentLookup<Velocity> _velocityLookup;
+        private ComponentLookup<FakeCollisionTriggerData> _triggerDataLookup;
+        private ComponentLookup<AttackStateTag> _attackStateTagLookup;
+        private ComponentLookup<HealStateTag> _healStateTagLookup;
+        private ComponentLookup<AutoGiveWayTag> _autoGiveWayTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<SeparationSteerConfig>();
+            state.RequireForUpdate<SeparationConfig>();
+            state.RequireForUpdate<AvoidanceConfig>();
             state.RequireForUpdate<FakeColliderTarget>();
             state.RequireForUpdate<SubGamingTag>();
             _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
-            _localTransformLookup = state.GetComponentLookup<LocalTransform>();
+            _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
+            _velocityLookup = state.GetComponentLookup<Velocity>(true);
+            _triggerDataLookup = state.GetComponentLookup<FakeCollisionTriggerData>(true);
+            _attackStateTagLookup = state.GetComponentLookup<AttackStateTag>(true);
+            _healStateTagLookup = state.GetComponentLookup<HealStateTag>(true);
+            
+            _autoGiveWayTagLookup = state.GetComponentLookup<AutoGiveWayTag>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-
             _boxColliderSizeLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
-           new SeparationJob
+            _velocityLookup.Update(ref state);
+            _triggerDataLookup.Update(ref state);
+            _attackStateTagLookup.Update(ref state);
+            _healStateTagLookup.Update(ref state);
+            _autoGiveWayTagLookup.Update(ref state);
+            new CheckSurroundingJob
             {
                 LocalTransformLookup = _localTransformLookup,
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
+                VelocityLookup = _velocityLookup,
+                TriggerDataLookup = _triggerDataLookup,
+                AvoidanceConfig = SystemAPI.GetSingleton<AvoidanceConfig>(),
+                AttackStateLookup = _attackStateTagLookup,
+                HealStateLookup = _healStateTagLookup,
+                SeparationConfig = SystemAPI.GetSingleton<SeparationConfig>(),
+                AutoGiveWayLookup = _autoGiveWayTagLookup
             }.ScheduleParallel();
-            new AttackSeparationJob().ScheduleParallel();
-            new HealSeparationJob().ScheduleParallel();
-            new HarvestSeparationJob().ScheduleParallel();
+            new SeparationSetZeroJob().ScheduleParallel();
+            new FormationMovingSeparationSteeringJob().ScheduleParallel();
+        }
+
+
+        [BurstCompile]
+        [WithNone(typeof(MovingStateTag))]
+        [WithNone(typeof(IdleStateTag))]
+        [WithNone(typeof(FormationMovingTag))]
+        private partial struct SeparationSetZeroJob : IJobEntity
+        {
+            private void Execute(ref Separation separation, ref Avoidance avoidance)
+            {
+                separation.Value = float3.zero;
+                avoidance.Value = float3.zero;
+            }
         }
 
         [BurstCompile]
-        [WithAll(typeof(AttackStateTag))]
-        private partial struct AttackSeparationJob : IJobEntity
+        [WithAny(typeof(FormationMovingTag), typeof(AutoGiveWayTag))]
+        public partial struct FormationMovingSeparationSteeringJob : IJobEntity
         {
-            private void Execute(ref Separation separation)
+            private void Execute(ref Separation separation, ref Avoidance avoidance)
             {
                 separation.Value = float3.zero;
+                avoidance.Value = float3.zero;
             }
         }
-        [BurstCompile]
-        [WithAll(typeof(HealStateTag))]
-        private partial struct HealSeparationJob : IJobEntity
-        {
-            private void Execute(ref Separation separation)
-            {
-                separation.Value = float3.zero;
-            }
-        }
-        [BurstCompile]
-        [WithAll(typeof(HarvestStateTag))]
-        private partial struct HarvestSeparationJob : IJobEntity
-        {
-            private void Execute(ref Separation separation)
-            {
-                separation.Value = float3.zero;
-            }
-        }
-        
+
         [BurstCompile]
         [WithNone(typeof(UnitDeadTag))]
         [WithNone(typeof(InGarrison))]
-        [WithNone(typeof(AttackStateTag))]
-        [WithNone(typeof(HealStateTag))]
-        [WithNone(typeof(HarvestStateTag))]
-        private partial struct SeparationJob : IJobEntity
+        [WithAny(typeof(MovingStateTag), typeof(IdleStateTag))]
+        [WithNone(typeof(FormationMovingTag))]
+        [WithNone(typeof(AutoGiveWayTag))]
+        private partial struct CheckSurroundingJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public AvoidanceConfig AvoidanceConfig;
+            [ReadOnly] public SeparationConfig SeparationConfig;
+            [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
-            private void Execute(ref DynamicBuffer<FakeColliderTarget> targets, 
-                ref Separation separation,
-                ref Rnd rnd,Entity selfEntity)
+            [ReadOnly] public ComponentLookup<Velocity> VelocityLookup;
+            [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> TriggerDataLookup;
+            [ReadOnly] public ComponentLookup<AttackStateTag> AttackStateLookup;
+            [ReadOnly] public ComponentLookup<HealStateTag> HealStateLookup;
+            [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayLookup;
+            private void Execute(ref DynamicBuffer<FakeColliderTarget> targets,
+                ref Separation separation, ref Avoidance avoidance,
+                ref Rnd rnd, Entity selfEntity)
             {
-                ref var transform = ref LocalTransformLookup.GetRefRW(selfEntity).ValueRW;
-                var selfBox = BoxColliderSizeLookup[selfEntity].Box;
+                var selfVelocity = VelocityLookup[selfEntity].Value.xz;
+                var transform = LocalTransformLookup[selfEntity];
+                var selfRot = transform.Rotation.value.y; // 若是 quaternion, 则用 math.atan2
+                if (math.abs(transform.Rotation.value.w) < 0.999f)
+                {
+                    // 假设为 quaternion
+                    selfRot = math.atan2(2f * (transform.Rotation.value.w * transform.Rotation.value.y),
+                        1f - 2f * (transform.Rotation.value.y * transform.Rotation.value.y));
+                }
+
+                var selfRotMat = new float2x2(math.cos(selfRot), -math.sin(selfRot),
+                    math.sin(selfRot), math.cos(selfRot));
+                var selfBox = BoxColliderSizeLookup[selfEntity].SeparationBox;
                 var selfHalf = new float2(selfBox.x, selfBox.z) * 0.5f;
-
-                var pos = transform.Position.xz;
-
+                var selfPos = transform.Position.xz;
+                var forward = math.normalizesafe(selfVelocity);
+                var left = MovementUtils.GetLeftOrRight(new float3(forward.x, 0, forward.y), true);
                 var bestSeparation = float2.zero;
                 var bestOverlap = 0f;
-
+                var leftTargetsCount = 0;
+                var rightTargetsCount = 0;
+                var shouldAddAvoidValue = false;
                 for (var i = 0; i < targets.Length; i++)
                 {
-                    var otherPos3 = LocalTransformLookup[targets[i].Target].Position;
+                    if (!LocalTransformLookup.TryGetComponent(targets[i].Target, out var otherTransform)) continue;
+                    if(!TriggerDataLookup.TryGetComponent(targets[i].Target, out var triggerData))continue;
+                    // This unit is auto give way, do not consider it as separation or avoiding
+                    if(AutoGiveWayLookup.HasComponent(triggerData.BelongsTo) && AutoGiveWayLookup.IsComponentEnabled(triggerData.BelongsTo))continue;
+                    var otherPos3 = otherTransform.Position;
                     var otherPos = otherPos3.xz;
+                    var otherRot = otherTransform.Rotation.value.y;
+                    if (math.abs(otherTransform.Rotation.value.w) < 0.999f)
+                    {
+                        otherRot = math.atan2(2f * (otherTransform.Rotation.value.w * otherTransform.Rotation.value.y),
+                            1f - 2f * (otherTransform.Rotation.value.y * otherTransform.Rotation.value.y));
+                    }
 
-                    var otherBox = BoxColliderSizeLookup[targets[i].Target].Box;
+                    var otherBox = BoxColliderSizeLookup[targets[i].Target].SeparationBox;
                     var otherHalf = new float2(otherBox.x, otherBox.z) * 0.5f;
 
-                    var delta = pos - otherPos;
-                    var absDelta = math.abs(delta);
+                    var otherRotMat = new float2x2(math.cos(otherRot), -math.sin(otherRot),
+                        math.sin(otherRot), math.cos(otherRot));
 
-
-                    var overlapX = selfHalf.x + otherHalf.x - absDelta.x;
-                    var overlapZ = selfHalf.y + otherHalf.y - absDelta.y;
-
-                    if (overlapX > 0 && overlapZ > 0)
+                    var delta = otherPos - selfPos;
+                    // float2 localDelta = math.mul(math.transpose(selfRotMat), delta);
+                    if (math.lengthsq(delta) < 0.001f)
                     {
-                        float2 sep;
-                        float overlapAmt;
-                        if (overlapX < overlapZ)
-                        {
-                            if (absDelta is { x: < 1e-4f, y: < 1e-4f })
-                            {
-                                var randDir = rnd.value.NextFloat2();
-                                sep = randDir * math.min(selfHalf.x, selfHalf.y) * 0.5f;
-                                overlapAmt = math.length(sep);
-                            }
-                            else
-                            {
-                                var dir = math.sign(delta.x); // 推向左/右
-                                sep = new float2(overlapX * dir, 0);
-                                overlapAmt = overlapX;
-                            }
-                        }
-                        else
-                        {
-                            if (absDelta is { x: < 1e-4f, y: < 1e-4f })
-                            {
-                                // 中心重叠情况：加一个伪随机微偏移方向
-                                var randDir = rnd.value.NextFloat2();                        
-                                sep = randDir * math.min(selfHalf.x, selfHalf.y) * 0.5f;
-                                overlapAmt = math.length(sep);
-                            }
-                            else
-                            {
-                                var dir = math.sign(delta.y); // 推向前/后
-                                sep = new float2(0, overlapZ * dir);
-                                overlapAmt = overlapZ;
-                            }
-                        }
+                        bestSeparation = MathUtils.Get2D(ref rnd.value) * SeparationConfig.ValueWhenTotallyOverlapped;
+                        bestOverlap = 1f;
+                        break;
+                    }
 
-                        // 选取最大重叠的分离向量
-                        if (overlapAmt > bestOverlap)
+                    var ifFront = math.dot(forward, delta) > 0f;
+                    // calculate the avoidance
+                    if (ifFront)
+                    {
+                        var otherVelocity = float2.zero;
+                        if (VelocityLookup.TryGetComponent(triggerData.BelongsTo, out var velocity))
+                            otherVelocity = new float2(velocity.Value.x, velocity.Value.z);
+                        var shouldWait = math.dot(otherVelocity, selfVelocity) > 0f;
+                        if (!shouldWait)
                         {
-                            bestOverlap = overlapAmt;
-                            bestSeparation = sep;
+                            if (math.dot(left.xz, delta) > 0f) leftTargetsCount++;
+                            else rightTargetsCount++;
+                            if ((AttackStateLookup.HasComponent(triggerData.BelongsTo) &&
+                                 AttackStateLookup.IsComponentEnabled(triggerData.BelongsTo))
+                                ||
+                                (HealStateLookup.HasComponent(triggerData.BelongsTo) &&
+                                 HealStateLookup.IsComponentEnabled(triggerData.BelongsTo)))
+                            {
+                                shouldAddAvoidValue = true;
+                            }
+                        }
+                    }
+
+                    // 旋转矩形投影轴（自己和对方的局部X、Z方向）
+                    var axes = new NativeArray<float2>(4, Allocator.Temp);
+                    axes[0] = selfRotMat.c0; // 自己的局部X
+                    axes[1] = selfRotMat.c1; // 自己的局部Z
+                    axes[2] = otherRotMat.c0; // 对方局部X
+                    axes[3] = otherRotMat.c1; // 对方局部Z
+
+                    var smallestAxis = float2.zero;
+                    var minOverlap = float.MaxValue;
+                    var overlapped = true;
+
+                    for (var a = 0; a < 4; a++)
+                    {
+                        var axis = math.normalize(axes[a]);
+
+                        // 两个盒子在此轴上的投影半径
+                        var projSelf = math.abs(math.dot(axis, selfRotMat.c0)) * selfHalf.x +
+                                       math.abs(math.dot(axis, selfRotMat.c1)) * selfHalf.y;
+
+                        var projOther = math.abs(math.dot(axis, otherRotMat.c0)) * otherHalf.x +
+                                        math.abs(math.dot(axis, otherRotMat.c1)) * otherHalf.y;
+
+                        var centerDist = math.abs(math.dot(axis, delta));
+
+                        var overlap = projSelf + projOther - centerDist;
+
+                        if (overlap < 0f)
+                        {
+                            overlapped = false;
+                            break;
+                        }
+                        if (overlap < minOverlap)
+                        {
+                            minOverlap = overlap;
+                            smallestAxis = axis * math.sign(math.dot(axis, delta));
+                        }
+                    }
+                    // 只有在重叠时才更新分离向量
+                    if (overlapped)
+                    {
+                        if (minOverlap > bestOverlap)
+                        {
+                            bestOverlap = minOverlap;
+                            bestSeparation = -smallestAxis * minOverlap;
                         }
                     }
                 }
-                // 应用分离
+
                 separation.Value = bestOverlap > 0 ? new float3(bestSeparation.x, 0, bestSeparation.y) : float3.zero;
-                // targets.Clear();
+                if (leftTargetsCount == 0 && rightTargetsCount == 0)
+                {
+                    avoidance.Value = float3.zero;
+                }
+                else
+                {
+                    avoidance.Value = leftTargetsCount > rightTargetsCount ? -left : left;
+                    if (shouldAddAvoidValue)
+                        avoidance.Value *= AvoidanceConfig.AddAvoidanceValueForInteractState;
+                }
             }
         }
 

@@ -61,8 +61,8 @@ namespace SparFlame.UI.SubGameplay
                 _unitInfos.Add(new UnitRealTimeInfo
                 {
                     Entity = entity,
-                    HpRatio = statData.ValueRO.curValue / (statData.ValueRO.maxValue + statData.ValueRO.bonus),
-                    UnitType = unitAttr.ValueRO.Type,
+                    HpRatio = statData.ValueRO.curValue / statData.ValueRO.maxValue /*+ statData.ValueRO.bonus*/,
+                    UnitType = unitAttr.ValueRO.type,
                     Tier = expData.ValueRO.curTier,
                     Level = countLevel
                 });

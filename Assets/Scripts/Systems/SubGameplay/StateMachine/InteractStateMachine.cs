@@ -8,7 +8,6 @@ using Unity.Entities;
 using Unity.Collections;
 using Unity.Transforms;
 using SparFlame.Systems.SubGameplay.Interact;
-using SparFlame.Systems.SubGameplay.Movement;
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -37,7 +36,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<ExpData> _expDataLookup;
         private ComponentLookup<InteractAbilityBonus> _abilityBonusLookup;
         private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
-
+        private ComponentLookup<InGarrison> _inGarrisonLookup;
         private EntityQuery _attackEntityQuery;
         private EntityQuery _healEntityQuery;
         private EntityQuery _harvestEntityQuery;
@@ -76,6 +75,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
             _abilityBonusLookup = state.GetComponentLookup<InteractAbilityBonus>(true);
             _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
+            _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
         }
 
         [BurstCompile]
@@ -101,6 +101,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _expDataLookup.Update(ref state);
             _abilityBonusLookup.Update(ref state);
             _darkShieldTauntedBuffLookup.Update(ref state);
+            _inGarrisonLookup.Update(ref state);
             var attackAbilities = _attackEntityQuery.ToComponentDataArray<AttackAbility>(Allocator.TempJob);
             var attackEntities = _attackEntityQuery.ToEntityArray(Allocator.TempJob);
             state.Dependency.Complete();
@@ -128,7 +129,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 Config = sightSystemConfig,
                 ExpDataLookup = _expDataLookup,
                 AbilityBonusLookup = _abilityBonusLookup,
-                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
+                InGarrisonLookup = _inGarrisonLookup
 
             }.Schedule(attackEntities.Length, config.AttackJobBatchCount, state.Dependency);
             state.Dependency = attackJob;
@@ -159,8 +161,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 BuildingAttrLookup = _buildingAttrLookup,
                 ExpDataLookup = _expDataLookup,
                 AbilityBonusLookup = _abilityBonusLookup,
-                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
-
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
+                InGarrisonLookup = _inGarrisonLookup
             }.Schedule(healEntities.Length, config.HealJobBatchCount, state.Dependency);
             state.Dependency = healJob;
 
@@ -190,7 +192,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 BuildingAttrLookup = _buildingAttrLookup,
                 ExpDataLookup = _expDataLookup,
                 AbilityBonusLookup = _abilityBonusLookup,
-                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup
+                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
+                InGarrisonLookup = _inGarrisonLookup
             }.Schedule(harvestEntities.Length, config.HarvestJobBatchCount, state.Dependency);
             state.Dependency = harvestJob;
 
@@ -227,8 +230,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
             [ReadOnly] public ComponentLookup<InteractAbilityBonus> AbilityBonusLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
+            [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
             [ReadOnly] public float InteractTurnSpeed;
-
+            
             // Turn rotation to target
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
 
@@ -324,7 +328,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if (!IsTargetInRange(math.square(ability.Range + AbilityBonusLookup[selfEntity].RangeBonus), in curPos, in targetPos, in targetBoxColliderSize))
                 {
                     // Interacter is movable
-                    if (MovableLookup.HasComponent(selfEntity))
+                    if (MovableLookup.HasComponent(selfEntity) && !InGarrisonLookup.HasComponent(selfEntity))
                     {
                         ref var movableData = ref MovableLookup.GetRefRW(selfEntity).ValueRW;
                         InteractMoveToTarget(ref selfStateData, ref movableData, in ability, selfEntity, index);
@@ -350,7 +354,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // Units Look at target, attack by animation event   
                 if (selfGeneralAttr.BaseTag != BaseTag.Buildings)
                 {
-                    var targetRotation = quaternion.LookRotationSafe(-(targetPos - curPos), math.up());
+                    var targetRotation = quaternion.LookRotationSafe((targetPos - curPos), math.up());
                     transform.Rotation =
                         math.slerp(transform.Rotation.value, targetRotation, DeltaTime * InteractTurnSpeed);
                     return;
@@ -385,7 +389,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 var selfStatData = StatDataLookup[selfEntity];
                 // Heal self first
-                if (heal && selfStatData.curValue < selfStatData.maxValue + selfStatData.bonus)
+                if (heal && selfStatData.curValue < selfStatData.maxValue /*+ selfStatData.bonus*/)
                 {
                     selfStateData.TargetEntity = selfEntity;
                     return originalTarget != selfStateData.TargetEntity;
@@ -406,7 +410,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 in TInteractAbility ability, Entity entity, int index)
             {
                 var tarPos = TransformLookup[stateData.TargetEntity].Position;
-                var tarColliderShape = BoxColliderSizeLookup[stateData.TargetEntity].Box;
+                var tarColliderShape = BoxColliderSizeLookup[stateData.TargetEntity].SeparationBox;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
                     ability.Range
@@ -427,12 +431,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             private static bool IsTargetInRange(float rangeSq, in float3 curPos, in float3 targetPos,
                 in BoxColliderSize targetSubGameplayGeneralAttr)
             {
-                var curPos2 = new float2(curPos.x, curPos.z);
-                var targetPos2 = new float2(targetPos.x, targetPos.z);
-                var targetColliderSizeXz = new float2(targetSubGameplayGeneralAttr.Box.x,
-                    targetSubGameplayGeneralAttr.Box.z);
-                var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
-                return disSqPointToRect < rangeSq;
+                // var curPos2 = new float2(curPos.x, curPos.z);
+                // var targetPos2 = new float2(targetPos.x, targetPos.z);
+                // var targetColliderSizeXz = new float2(targetSubGameplayGeneralAttr.SeparationBox.x,
+                //     targetSubGameplayGeneralAttr.SeparationBox.z);
+                // var disSqPointToRect = MovementUtils.DistanceSqPointToRect(targetPos2, targetColliderSizeXz, curPos2);
+                // return disSqPointToRect < rangeSq;
+                var disSqPointToBox =
+                    MovementUtils.DistanceSqPointToBox(targetPos, targetSubGameplayGeneralAttr.SeparationBox, curPos);
+                return disSqPointToBox < rangeSq;
             }
 
 
@@ -460,7 +467,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 var buildingAttr = BuildingAttrLookup[selfEntity];
                 var vfxName = VFXName.TowerProjectile;
-                var damageDelayTime = math.distance(selfPos, targetPos) / 6f;// Tower Projectile speed
+                var damageDelayTime = math.distance(selfPos, targetPos) / 20f;// Tower Projectile speed
                 
                 
                 // Spawn vfx request

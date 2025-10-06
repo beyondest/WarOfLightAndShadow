@@ -8,7 +8,6 @@ namespace SparFlame.Database
 {
     public class GeneralEnvAttributesAuthoring : MonoBehaviour
     {
-
         private class Baker : Baker<GeneralEnvAttributesAuthoring>
         {
             public override void Bake(GeneralEnvAttributesAuthoring authoring)
@@ -28,9 +27,10 @@ namespace SparFlame.Database
                         RequestFromFaction = FactionTag.Neutral,
                     });
                     SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
+                    var box = physicsShapeAuthoring.m_PrimitiveSize;
                     AddComponent(entity, new BoxColliderSize
                     {
-                        Box = physicsShapeAuthoring.m_PrimitiveSize
+                        SeparationBox = box
                     });
                 }
                

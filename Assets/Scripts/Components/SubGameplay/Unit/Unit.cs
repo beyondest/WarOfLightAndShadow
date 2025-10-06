@@ -1,4 +1,5 @@
-﻿using SparFlame.Core.Interfaces;
+﻿using System;
+using SparFlame.Core.Interfaces;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -6,29 +7,43 @@ namespace SparFlame.Components.SubGameplay
 {
 
 
-    public struct UnitAttr : IComponentData
+    [Serializable]
+    public struct UnitAttr : IComponentData,IEquatable<UnitAttr>
     {
-        public UnitType Type;
-        public int SubTypeIndex;
-        public float ConjureSpeedHoursPerUnit;
+        public UnitType type;
+        public int subTypeIndex;
+        public float conjureSpeedHoursPerUnit;
+
+        public bool Equals(UnitAttr other)
+        {
+            return type == other.type && subTypeIndex == other.subTypeIndex ;
+        }
+        public override int GetHashCode()
+        {
+            var int2 = new int2((int)type, subTypeIndex);
+            return int2.GetHashCode();
+        }
     }
 
     public struct ShieldTag : IComponentData{}
-    public struct RangedTag : IComponentData{}
+    public struct ArcherTag : IComponentData{}
     public struct ClericTag : IComponentData{}
-    public struct CavalryTag : IComponentData{}
+    public struct DualSpearTag : IComponentData{}
     public struct WorkerTag : IComponentData{}
+    public struct SpellSwordTag : IComponentData{}
+    public struct GreatSwordTag : IComponentData{}
     public struct MageTag : IComponentData{}
-        
-
     
     public enum UnitType
     {
-        Shield = 0, // Attack
-        Ranged = 1,// Attack
-        Magic = 2, // Attack, heal
-        Cavalry = 3, // Attack
-        Worker = 4 // Attack, harvest
+        Shield = 0, 
+        Archer = 1,
+        Cleric = 2, 
+        DualSpear = 3, // Attack
+        Worker = 4 ,
+        SpellSword = 5,
+        GreatSword = 6,
+        Mage = 7
     }
 
     public enum ShieldType
@@ -76,7 +91,16 @@ namespace SparFlame.Components.SubGameplay
         Harvester = 0, // gatherer, prospector, harvester
         Attuner = 1, // Cultivator, botanist, druid
     }
-    
+
+    public enum SpellSwordType
+    {
+        Basic = 0,
+    }
+
+    public enum GreatSwordType
+    {
+        Basic = 0
+    }
     
     public struct UnitEntityPrefabData : IEntityPrefabData<UnitType>
     {

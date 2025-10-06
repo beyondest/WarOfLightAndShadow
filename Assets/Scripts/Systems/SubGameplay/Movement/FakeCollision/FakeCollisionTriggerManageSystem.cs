@@ -19,7 +19,6 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<SubGamingTag>();
-            state.RequireForUpdate<SeparationSteerConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _transformLookup = state.GetComponentLookup<LocalTransform>();
         }

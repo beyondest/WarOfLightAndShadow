@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using GamePlaySystem.Database;
-using Sirenix.OdinInspector;
+﻿using GamePlaySystem.Database;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
@@ -21,7 +19,7 @@ namespace SparFlame.Database
     public class GeneralDataItemAuthoring : MonoBehaviour
     {
         [SerializeField] public int globalIdx;
-
+        
         protected abstract class GeneralDataItemBaker<T> : Baker<T> where T : GeneralDataItemAuthoring
         {
             protected void BakeGeneralDataItem(Entity entity, GeneralDataItem item)
@@ -37,10 +35,11 @@ namespace SparFlame.Database
                     SubFaction = SubFactionTag.None,
                 });
                 var box = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize;
-
+               
                 AddComponent(entity, new BoxColliderSize
                 {
-                    Box = box,
+                    // SeparationBox = box,
+                    SeparationBox = box,
                     Radius = math.length(box.xz) / 2f
                 });
                 if (item.baseTag == BaseTag.Units)
@@ -123,7 +122,7 @@ namespace SparFlame.Database
                     SetComponentEnabled<IdleStateTag>(entity, true);
                     AddComponent<InteractAbilityBonus>(entity);
                 }
-
+                
                 // Interact Ability 
                 if (item.IsAttackable())
                 {

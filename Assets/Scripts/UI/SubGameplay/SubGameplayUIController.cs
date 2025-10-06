@@ -15,11 +15,20 @@ namespace SparFlame.UI.SubGameplay
             GameController.Instance.OnSwitchGameStatus += (tar, cur)
                 =>
             {
+                var targetWar = GameStatusUtils.IsInBattle(tar);
                 subGameplayUI.SetActive(tar.SubGameStatus != SubGameStatus.None);
                 InfoWindowController.Instance.Hide();
                 SubGameplayStaticButtonManager.Instance.TogglePlayerCityUI(
                     tar.SubGameStatus == SubGameStatus.PlayerCity);
-                SubGameplayStaticButtonManager.Instance.ToggleBattleUI(GameStatusUtils.IsInBattle(tar));
+                SubGameplayStaticButtonManager.Instance.ToggleBattleUI(targetWar);
+                if (targetWar)
+                {
+                    MiniMapWindow.Instance.ShowMiniMap();
+                }
+                else
+                {
+                    MiniMapWindow.Instance.HideMiniMap();
+                }
             };
         }
     }

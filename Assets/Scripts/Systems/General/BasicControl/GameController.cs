@@ -24,6 +24,9 @@ namespace SparFlame.Systems.General.BasicControl
         }
 
         [SerializeField] private List<ExtraWaitConfig> extraWaitConfigs;
+        [SerializeField] private int waitExtraFrameCountAfterCheckSaving = 5;
+        
+        [SerializeField] private int waitExtraFrameCountBeforeCheckSaving = 5;
         public static GameController Instance;
 
         #region UI
@@ -40,7 +43,7 @@ namespace SparFlame.Systems.General.BasicControl
         #region Init Calls
 
         public event Action<PlayerFactionData> OnSetPlayerFactionData;
-
+        public event Action<bool> OnSetNewGame;
         public event Action OnEcsBeginSystemInit;
 
         #endregion
@@ -80,6 +83,11 @@ namespace SparFlame.Systems.General.BasicControl
 
         public event Action<bool> OnPause;
 
+        public IEnumerator CheckResumeGame(bool isSwitchingGameplay)
+        {
+            yield return CheckSaveComplete();
+            ResumeGame(isSwitchingGameplay);
+        }
         public void ResumeGame(bool isSwitchingGameplay)
         {
             OnResume?.Invoke(isSwitchingGameplay);
@@ -103,6 +111,7 @@ namespace SparFlame.Systems.General.BasicControl
             // Show loading screen
             OnSetPlayerFactionData?.Invoke(new PlayerFactionData
                 { faction = playerFaction, subFaction = SubFactionTag.LightFaction1 });
+            OnSetNewGame?.Invoke(ifNewGame);
             OnShowLoadingScreen?.Invoke();
 
             // Set init data
@@ -252,8 +261,8 @@ namespace SparFlame.Systems.General.BasicControl
         public IEnumerator SubWorldToMainWorld()
         {
             OnShowLoadingScreen?.Invoke();
-            yield return CheckSaveComplete();
             PauseGame(true);
+            yield return CheckSaveComplete();
             InputListener.Instance.DisableAllMaps();
 
             yield return SaveLoadController.Instance.SaveAsync(SaveType.SaveSubGameplayDataToTmp, -1);
@@ -288,8 +297,8 @@ namespace SparFlame.Systems.General.BasicControl
         public IEnumerator EnterPlayerCity(Entity city)
         {
             OnShowLoadingScreen?.Invoke();
-            yield return CheckSaveComplete();
             PauseGame(true);
+            yield return CheckSaveComplete();
             InputListener.Instance.DisableAllMaps();
             // Set status change type
             var targetSubGameStatusData = new SubGameStatusData
@@ -325,6 +334,7 @@ namespace SparFlame.Systems.General.BasicControl
         public IEnumerator EnterBattleScene(Entity city, EcoType ecoType, SubGameStatus targetSubGameStatus)
         {
             OnShowLoadingScreen?.Invoke();
+            PauseGame(true);
             yield return CheckSaveComplete();
             var gameStatusData = _mainGameStatusDataQuery.GetSingleton<GameStatusData>();
             if (gameStatusData.Value == GameStatus.SubGaming)
@@ -528,9 +538,25 @@ namespace SparFlame.Systems.General.BasicControl
                 yield return null;
             }
         }
+        private IEnumerator WaitForExtraFrames(int waitFrameCount)
+        {
+            var c = 0;
+            while (c < waitFrameCount)
+            {
+                c += 1;
+                yield return null;
+            }
+        }
 
         private IEnumerator CheckSaveComplete()
         {
+            yield return WaitForExtraFrames(waitExtraFrameCountBeforeCheckSaving);
+
+            while (SaveLoadController.Instance.IsSaving)
+            {
+                yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);
+            }
+            yield return WaitForExtraFrames(waitExtraFrameCountAfterCheckSaving);
             while (SaveLoadController.Instance.IsSaving)
             {
                 yield return new WaitForSecondsRealtime(CustomCoroutineRunner.Instance.checkInterval);

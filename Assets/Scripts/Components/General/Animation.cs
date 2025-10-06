@@ -1,4 +1,8 @@
-﻿using Latios.Kinemation;
+﻿using System;
+using Latios.Kinemation;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Structs;
+using Unity.Collections;
 using Unity.Entities;
 namespace SparFlame.Components.General
 {
@@ -37,6 +41,19 @@ namespace SparFlame.Components.General
     {
         public int NameHash;
         public int Parameter;
+    }
+
+    [Serializable]
+    public struct AnimationModelIndices : IBufferElementData
+    {
+        public UnitType unitType;
+        public int modelIndex;
+    }
+
+    [Serializable]
+    public struct AnimationEventTriggerModelIndex : IComponentData
+    {
+        public int value;
     }
 
 }

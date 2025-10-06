@@ -106,7 +106,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         targetEntity = inputMouseData.HitEntity;
                         targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                         targetBoxColliderSizeXz =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box.xz;
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox.xz;
                         break;
                     case MainGameplayCursorType.Support:
                         setTargetValid = true;
@@ -114,7 +114,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         targetEntity = inputMouseData.HitEntity;
                         targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                         targetBoxColliderSizeXz =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box.xz;
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox.xz;
                         break;
                     case MainGameplayCursorType.Invade:
                         setTargetValid = true;
@@ -122,7 +122,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         targetEntity = inputMouseData.HitEntity;
                         targetPosition = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                         targetBoxColliderSizeXz =
-                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).Box.xz;
+                            SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox.xz;
                         break;
                     case MainGameplayCursorType.Intercept:
                         setTargetValid = true;

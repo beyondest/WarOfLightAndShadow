@@ -40,7 +40,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<LightClericBuff> _lightClericBuffLookup;
         private ComponentLookup<LightMagicDamageBuff> _lightMagicDamageBuffLookup;
         private ComponentLookup<DarkMagicDamageBuff> _darkMagicDamageBuffLookup;
-        private ComponentLookup<CavalryMoveBuff> _cavalryMoveBuffLookup;
+        private ComponentLookup<DamageReduceShieldBuff> _cavalryMoveBuffLookup;
         private ComponentLookup<BuildingGarrisonBuff> _buildingGarrisonBuffLookup;
         private ComponentLookup<UnitGarrisonBuff> _unitGarrisonBuffLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
@@ -57,7 +57,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         {
             state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<GarrisonBuffConfig>();
-            state.RequireForUpdate<CavalryMoveBuffConfig>();
+            state.RequireForUpdate<DamageReduceShieldBuffConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
@@ -94,7 +94,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _lightClericBuffLookup = state.GetComponentLookup<LightClericBuff>(true);
             _lightMagicDamageBuffLookup = state.GetComponentLookup<LightMagicDamageBuff>(true);
             _darkMagicDamageBuffLookup = state.GetComponentLookup<DarkMagicDamageBuff>(true);
-            _cavalryMoveBuffLookup = state.GetComponentLookup<CavalryMoveBuff>(true);
+            _cavalryMoveBuffLookup = state.GetComponentLookup<DamageReduceShieldBuff>(true);
             _buildingGarrisonBuffLookup = state.GetComponentLookup<BuildingGarrisonBuff>(true);
             _unitGarrisonBuffLookup = state.GetComponentLookup<UnitGarrisonBuff>(true);
             _constructingTimerLookup = state.GetComponentLookup<ConstructingTimer>(true);
@@ -178,7 +178,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 LightClericBuffLookup = _lightClericBuffLookup,
                 LightMagicDamageBuffLookup = _lightMagicDamageBuffLookup,
                 DarkMagicDamageBuffLookup = _darkMagicDamageBuffLookup,
-                CavalryMoveBuffLookup =  _cavalryMoveBuffLookup,
+                DamageReduceShieldBuffLookup =  _cavalryMoveBuffLookup,
                 BuildingGarrisonBuffLookup = _buildingGarrisonBuffLookup,
                 UnitGarrisonBuffLookup = _unitGarrisonBuffLookup,
                 
@@ -189,7 +189,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 LightClericBuffConfigs = SystemAPI.GetSingletonBuffer<LightClericBuffConfig>(),
                 LightMagicDamageBuffConfigs = SystemAPI.GetSingletonBuffer<LightMagicDamageBuffConfig>(),
                 DarkMagicDamageBuffConfigs = SystemAPI.GetSingletonBuffer<DarkMagicDamageBuffConfig>(),
-                CavalryMoveBuffConfig = SystemAPI.GetSingleton<CavalryMoveBuffConfig>(),
+                DamageReduceShieldBuffConfig = SystemAPI.GetSingleton<DamageReduceShieldBuffConfig>(),
                 GarrisonBuffConfig = SystemAPI.GetSingleton<GarrisonBuffConfig>(),
                 
                 

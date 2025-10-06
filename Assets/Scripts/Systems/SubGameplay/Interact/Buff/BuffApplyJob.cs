@@ -26,7 +26,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public DynamicBuffer<DarkClericBuffConfig> DarkClericBuffConfigs;
         [ReadOnly] public DynamicBuffer<LightMagicDamageBuffConfig> LightMagicDamageBuffConfigs;
         [ReadOnly] public DynamicBuffer<DarkMagicDamageBuffConfig> DarkMagicDamageBuffConfigs;
-        [ReadOnly] public CavalryMoveBuffConfig CavalryMoveBuffConfig;
+        [ReadOnly] public DamageReduceShieldBuffConfig DamageReduceShieldBuffConfig;
         [ReadOnly] public GarrisonBuffConfig GarrisonBuffConfig;
 
         [ReadOnly] public ComponentLookup<LightShieldUnderDefend> LightShieldUnderDefendLookup;
@@ -42,7 +42,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public ComponentLookup<LightMagicDamageBuff> LightMagicDamageBuffLookup;
         [ReadOnly] public ComponentLookup<DarkMagicDamageBuff> DarkMagicDamageBuffLookup;
 
-        [ReadOnly] public ComponentLookup<CavalryMoveBuff> CavalryMoveBuffLookup;
+        [ReadOnly] public ComponentLookup<DamageReduceShieldBuff> DamageReduceShieldBuffLookup;
         
         [ReadOnly] public ComponentLookup<BuildingGarrisonBuff> BuildingGarrisonBuffLookup;
         [ReadOnly] public ComponentLookup<UnitGarrisonBuff> UnitGarrisonBuffLookup;
@@ -73,11 +73,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private void ApplyGeneralAttackRelativeBuff(ref StatChangeRequest request)
         {
             // Apply cavalry move reduce damage buff
-            if (CavalryMoveBuffLookup.HasComponent(request.Interactee) &&
-                CavalryMoveBuffLookup.IsComponentEnabled(request.Interactee))
+            if (DamageReduceShieldBuffLookup.HasComponent(request.Interactee))
             {
                 request.AbsAmount = (int)(request.AbsAmount *
-                                          (1 - CavalryMoveBuffConfig.damageReduceScale)); 
+                                          (1 - DamageReduceShieldBuffConfig.damageReduceScale)); 
             }
 
             // Apply building garrison reduce damage buff

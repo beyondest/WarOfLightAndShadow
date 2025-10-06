@@ -53,7 +53,7 @@ namespace SparFlame.UI.General
                     {
                         CustomCoroutineRunner.Instance.StartCoroutine(SaveLoadController.Instance.SaveAsync(SaveType.Manual, _slotValue));
                         SaveLoadMenu.Instance.Hide();
-                        GameController.Instance.ResumeGame(false);
+                        CustomCoroutineRunner.Instance.StartCoroutine(GameController.Instance.CheckResumeGame(false));
                     });
             }
             else
@@ -61,7 +61,7 @@ namespace SparFlame.UI.General
                 SaveUtilities.InitializeSaveSlotFolder(_path, _slotValue);
                 CustomCoroutineRunner.Instance.StartCoroutine(SaveLoadController.Instance.SaveAsync(SaveType.Manual, _slotValue));
                 SaveLoadMenu.Instance.Hide();
-                GameController.Instance.ResumeGame(false);
+                CustomCoroutineRunner.Instance.StartCoroutine(GameController.Instance.CheckResumeGame(false));
             }
         }
 

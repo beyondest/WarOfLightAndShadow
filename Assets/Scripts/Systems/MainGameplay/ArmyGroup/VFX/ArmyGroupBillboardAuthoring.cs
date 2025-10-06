@@ -6,13 +6,12 @@ using UnityEngine;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
-
     public class ArmyGroupBillboardAuthoring : MonoBehaviour
     {
-        [ColorUsage(true, true)]
-        public Color initColor;
+        [ColorUsage(true, true)] public Color initColor;
 
-        public ArmyGroupIconType initIconType = ArmyGroupIconType.Dragon;
+        public ArmyGroupIconType initIconType = 0;
+
         private class ArmyGroupBillboardBaker : Baker<ArmyGroupBillboardAuthoring>
         {
             public override void Bake(ArmyGroupBillboardAuthoring authoring)

@@ -13,19 +13,21 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
     public partial struct AoeTriggerManageSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transformLookup;
-
+        private BufferLookup<AoeTarget> _targetLookup;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
             _transformLookup = state.GetComponentLookup<LocalTransform>();
+            _targetLookup = state.GetBufferLookup<AoeTarget>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _transformLookup.Update(ref state);
+            _targetLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             new GenerateAoeTriggerJob
@@ -36,6 +38,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             new SyncAoeTriggerJob
             {
                 LocalTransformLookup = _transformLookup,
+                AoeTargetLookup = _targetLookup,
                 ECB = ecb,
             }.ScheduleParallel();
         }
@@ -68,12 +71,14 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         public partial struct SyncAoeTriggerJob : IJobEntity
         {
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public BufferLookup<AoeTarget> AoeTargetLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, in AoeTriggerData data, Entity entity)
             {
                 // Buff is dead and should be removed
-                if (!LocalTransformLookup.TryGetComponent(data.BelongsTo, out var localTransform))
+                if (!LocalTransformLookup.TryGetComponent(data.BelongsTo, out var localTransform)
+                    || !AoeTargetLookup.HasBuffer(data.BelongsTo))
                 {
                     ECB.DestroyEntity(index, entity);
                     return;

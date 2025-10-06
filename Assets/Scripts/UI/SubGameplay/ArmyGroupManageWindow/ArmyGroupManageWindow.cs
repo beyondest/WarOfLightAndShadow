@@ -194,11 +194,15 @@ namespace SparFlame.UI.MainGameplay
                 image.enabled = true;
             }
             tierFilterButtonImage.color = Color.gray;
-            _currentFilterUnitTypes.Add(UnitType.Cavalry);
-            _currentFilterUnitTypes.Add(UnitType.Ranged);
+            _currentFilterUnitTypes.Add(UnitType.DualSpear);
+            _currentFilterUnitTypes.Add(UnitType.Archer);
             _currentFilterUnitTypes.Add(UnitType.Shield);
-            _currentFilterUnitTypes.Add(UnitType.Magic);
+            _currentFilterUnitTypes.Add(UnitType.Cleric);
             _currentFilterUnitTypes.Add(UnitType.Worker);
+            
+            _currentFilterUnitTypes.Add(UnitType.Mage);
+            _currentFilterUnitTypes.Add(UnitType.SpellSword);
+            _currentFilterUnitTypes.Add(UnitType.GreatSword);
         }
     }
 

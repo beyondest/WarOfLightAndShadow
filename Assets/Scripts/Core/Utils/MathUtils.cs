@@ -10,6 +10,22 @@ namespace SparFlame.Core.Utils
 {
     public static class MathUtils
     {
+        public static float2 Get2D(ref Random rng)
+        {
+            float angle = rng.NextFloat(0f, math.PI * 2f);
+            return new float2(math.cos(angle), math.sin(angle));
+        }
+        public static float3 Get3D(ref Random rng)
+        {
+            float z = rng.NextFloat(-1f, 1f);         // cosθ
+            float theta = rng.NextFloat(0f, math.PI * 2f); // φ
+
+            float r = math.sqrt(1f - z * z);
+            float x = r * math.cos(theta);
+            float y = r * math.sin(theta);
+
+            return new float3(x, y, z);
+        }
         public static List<Vector2> GenerateCirclePoints(Vector2 center, float radius, int pointCount)
         {
             var points = new List<Vector2>();
@@ -38,21 +54,20 @@ namespace SparFlame.Core.Utils
         public static (float lower, float upper) GenerateRandomBoundsAround(float x, float l,
             Unity.Mathematics.Random rng)
         {
-            
             var t = rng.NextFloat(0f, 1f);
             var lower = x - l * t;
             var upper = lower + l;
 
             return (lower, upper);
         }
-        
-        
+
+
         public static List<TGet> GetChildrenFromMatching<TGet, TItems>(
             List<TItems> sourceList,
             Func<TItems, bool> condition,
             Func<TItems, TGet> childSelector)
         {
-            List<TGet> result = new List<TGet>();
+            var result = new List<TGet>();
 
             foreach (var item in sourceList)
             {
@@ -68,9 +83,7 @@ namespace SparFlame.Core.Utils
 
             return result;
         }
-        
-        
-       
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetSeedByIndexTimeBias(int index, int seedBias, float elapsedTime)
@@ -84,58 +97,65 @@ namespace SparFlame.Core.Utils
         {
             if (onlyXZ)
             {
-                float angle = random.NextFloat(0f, math.PI * 2f);
+                var angle = random.NextFloat(0f, math.PI * 2f);
                 return quaternion.RotateY(angle);
             }
             else
             {
-                float3 axis = math.normalize(random.NextFloat3Direction());
-                float angle = random.NextFloat(0f, math.PI * 2f);
+                var axis = math.normalize(random.NextFloat3Direction());
+                var angle = random.NextFloat(0f, math.PI * 2f);
                 return quaternion.AxisAngle(axis, angle);
             }
         }
-  
+
         public static void GetSnapGridPosition(in float3 hitPosition, float rotationAngle,
             float3 boxColliderSize, float gridSize, out float3 gridPosition)
         {
             // 1. 计算旋转后占用格子数
-            int rawSizeX = (int)math.ceil(boxColliderSize.x / gridSize);
-            int rawSizeZ = (int)math.ceil(boxColliderSize.z / gridSize);
+            var rawSizeX = (int)math.ceil(boxColliderSize.x / gridSize);
+            var rawSizeZ = (int)math.ceil(boxColliderSize.z / gridSize);
 
             // 是否旋转90/270度（调换X和Z）
-            bool rotated90 = math.abs(math.abs(math.round(rotationAngle) % 180) - 90) < 0.001f;
+            var rotated90 = math.abs(math.abs(math.round(rotationAngle) % 180) - 90) < 0.001f;
 
-            
-            int sizeX = rotated90 ? rawSizeZ : rawSizeX;
-            int sizeZ = rotated90 ? rawSizeX : rawSizeZ;
+
+            var sizeX = rotated90 ? rawSizeZ : rawSizeX;
+            var sizeZ = rotated90 ? rawSizeX : rawSizeZ;
             // if (rotated90)
             // {
             //     Debug.Log($"rawx {rawSizeX}, newx {sizeX}, rawz {rawSizeZ}, newz {sizeZ}");
             // }
             // 2. 对齐方式：使得坐标落在合法中心点上
-            float halfGrid = gridSize / 2f;
+            var halfGrid = gridSize / 2f;
 
             // 计算 snappedX（如果是偶数格，就落在偶数 * halfGrid，如果是奇数格，就落在奇数 * halfGrid）
-            float xRaw = math.floor(hitPosition.x / halfGrid) * halfGrid;
-            float zRaw = math.floor(hitPosition.z / halfGrid) * halfGrid;
+            var xRaw = math.floor(hitPosition.x / halfGrid) * halfGrid;
+            var zRaw = math.floor(hitPosition.z / halfGrid) * halfGrid;
 
-            float xSnapped = ((sizeX % 2 == 0) ? 
-                math.round(xRaw / gridSize) * gridSize : 
-                math.round((xRaw - halfGrid) / gridSize) * gridSize + halfGrid);
+            var xSnapped = ((sizeX % 2 == 0)
+                ? math.round(xRaw / gridSize) * gridSize
+                : math.round((xRaw - halfGrid) / gridSize) * gridSize + halfGrid);
 
-            float zSnapped = ((sizeZ % 2 == 0) ? 
-                math.round(zRaw / gridSize) * gridSize : 
-                math.round((zRaw - halfGrid) / gridSize) * gridSize + halfGrid);
+            var zSnapped = ((sizeZ % 2 == 0)
+                ? math.round(zRaw / gridSize) * gridSize
+                : math.round((zRaw - halfGrid) / gridSize) * gridSize + halfGrid);
 
             gridPosition = new float3(xSnapped, hitPosition.y, zSnapped);
         }
-        
+
         public static int Hash(string str)
         {
             FixedString64Bytes string64 = str;
             return string64.GetHashCode();
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 GetRandomPointInRange(float3 origin, float minDistance, float maxDistance, ref Random rnd)
+        {
+            var angle = rnd.NextFloat(0f, math.PI * 2f);
+            var distance = rnd.NextFloat(minDistance, maxDistance);
+            var offset = new float3(math.cos(angle), 0f, math.sin(angle)) * distance;
+            return origin + offset;
+        }
     }
 }

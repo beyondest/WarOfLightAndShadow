@@ -11,7 +11,7 @@ namespace SparFlame.Components.SubGameplay
     {
         public int maxValue;
         public float curValue;
-        public int bonus;
+        // public int bonus;
     }
         
     /// <summary>

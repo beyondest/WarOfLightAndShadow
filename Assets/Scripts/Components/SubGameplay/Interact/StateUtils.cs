@@ -1,0 +1,245 @@
+﻿using System.Runtime.CompilerServices;
+using SparFlame.Components.General;
+using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Utils;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace SparFlame.Systems.SubGameplay
+{
+    public struct StateUtils
+    {
+        public static void SwitchState(ref BasicStateData stateData, EntityCommandBuffer.ParallelWriter ecb,
+            Entity entity, int index)
+        {
+            if (stateData.TargetState == stateData.CurState) return;
+            switch (stateData.TargetState)
+            {
+                case InteractState.Idle:
+                {
+                    stateData.TargetEntity = Entity.Null;
+                    stateData.Focus = false;
+                    ecb.SetComponentEnabled<IdleStateTag>(index, entity, true);
+                    break;
+                }
+                case InteractState.Attacking:
+                {
+                    ecb.SetComponentEnabled<AttackStateTag>(index, entity, true);
+                    break;
+                }
+                case InteractState.Moving:
+                {
+                    ecb.SetComponentEnabled<MovingStateTag>(index, entity, true);
+                    break;
+                }
+                case InteractState.Garrison:
+                {
+                    ecb.SetComponentEnabled<GarrisonStateTag>(index, entity, true);
+                    break;
+                }
+                case InteractState.Harvesting:
+                {
+                    ecb.SetComponentEnabled<HarvestStateTag>(index, entity, true);
+                    break;
+                }
+                case InteractState.Healing:
+                {
+                    ecb.SetComponentEnabled<HealStateTag>(index, entity, true);
+                    break;
+                }
+                case InteractState.CastSkill:
+                {
+                    ecb.SetComponentEnabled<CastSkillStateTag>(index, entity, true);
+                    break;
+                }
+                default:
+                    BurstSafe.UnexpectedEnum(stateData.TargetState);
+                    break;
+            }
+
+            switch (stateData.CurState)
+            {
+                case InteractState.Idle:
+                {
+                    ecb.SetComponentEnabled<IdleStateTag>(index, entity, false);
+                    break;
+                }
+                case InteractState.Attacking:
+                {
+                    ecb.SetComponentEnabled<AttackStateTag>(index, entity, false);
+                    break;
+                }
+                case InteractState.Moving:
+                {
+                    ecb.SetComponentEnabled<MovingStateTag>(index, entity, false);
+                    break;
+                }
+                case InteractState.Garrison:
+                {
+                    ecb.SetComponentEnabled<GarrisonStateTag>(index, entity, false);
+                    break;
+                }
+                case InteractState.Harvesting:
+                {
+                    ecb.SetComponentEnabled<HarvestStateTag>(index, entity, false);
+                    break;
+                }
+                case InteractState.Healing:
+                {
+                    ecb.SetComponentEnabled<HealStateTag>(index, entity, false);
+                    break;
+                }
+                case InteractState.CastSkill:
+                {
+                    ecb.SetComponentEnabled<CastSkillStateTag>(index, entity, false);
+                    break;
+                }
+                default:
+                    BurstSafe.UnexpectedEnum(stateData.CurState);
+                    break;
+            }
+
+            stateData.CurState = stateData.TargetState;
+        }
+
+        public static void SwitchState(ref BasicStateData stateData, EntityCommandBuffer ecb,
+            Entity entity)
+        {
+            if (stateData.TargetState == stateData.CurState) return;
+            switch (stateData.TargetState)
+            {
+                case InteractState.Idle:
+                {
+                    stateData.TargetEntity = Entity.Null;
+                    stateData.Focus = false;
+                    ecb.SetComponentEnabled<IdleStateTag>( entity, true);
+                    break;
+                }
+                case InteractState.Attacking:
+                {
+                    ecb.SetComponentEnabled<AttackStateTag>( entity, true);
+                    break;
+                }
+                case InteractState.Moving:
+                {
+                    ecb.SetComponentEnabled<MovingStateTag>( entity, true);
+                    break;
+                }
+                case InteractState.Garrison:
+                {
+                    ecb.SetComponentEnabled<GarrisonStateTag>( entity, true);
+                    break;
+                }
+                case InteractState.Harvesting:
+                {
+                    ecb.SetComponentEnabled<HarvestStateTag>( entity, true);
+                    break;
+                }
+                case InteractState.Healing:
+                {
+                    ecb.SetComponentEnabled<HealStateTag>( entity, true);
+                    break;
+                }
+                case InteractState.CastSkill:
+                {
+                    ecb.SetComponentEnabled<CastSkillStateTag>( entity, true);
+                    break;
+                }
+                default:
+                    BurstSafe.UnexpectedEnum(stateData.TargetState);
+                    break;
+            }
+
+            switch (stateData.CurState)
+            {
+                case InteractState.Idle:
+                {
+                    ecb.SetComponentEnabled<IdleStateTag>( entity, false);
+                    break;
+                }
+                case InteractState.Attacking:
+                {
+                    ecb.SetComponentEnabled<AttackStateTag>( entity, false);
+                    break;
+                }
+                case InteractState.Moving:
+                {
+                    ecb.SetComponentEnabled<MovingStateTag>( entity, false);
+                    break;
+                }
+                case InteractState.Garrison:
+                {
+                    ecb.SetComponentEnabled<GarrisonStateTag>( entity, false);
+                    break;
+                }
+                case InteractState.Harvesting:
+                {
+                    ecb.SetComponentEnabled<HarvestStateTag>( entity, false);
+                    break;
+                }
+                case InteractState.Healing:
+                {
+                    ecb.SetComponentEnabled<HealStateTag>( entity, false);
+                    break;
+                }
+                case InteractState.CastSkill:
+                {
+                    ecb.SetComponentEnabled<CastSkillStateTag>( entity, false);
+                    break;
+                }
+                default:
+                    BurstSafe.UnexpectedEnum(stateData.CurState);
+                    break;
+            }
+
+            stateData.CurState = stateData.TargetState;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SetTargetStateViaTargetType(in FactionTag selfFactionTag,
+            in SubGameplayGeneralAttr targetgeneralAttr, ref BasicStateData selfStateData)
+        {
+            if (selfFactionTag == targetgeneralAttr.Faction)
+                selfStateData.TargetState = InteractState.Healing;
+            if (targetgeneralAttr.BaseTag == BaseTag.Resources)
+                selfStateData.TargetState = InteractState.Harvesting;
+            if (selfFactionTag == ~targetgeneralAttr.Faction)
+                selfStateData.TargetState = InteractState.Attacking;
+        }
+
+
+        public static void GarrisonMoveBack(in InGarrison garrison,
+            ref BasicStateData stateData,
+            ref MovableData movableData,
+            in float3 buildingPos,
+            in float3 buildingColliderSize,
+            float garrisonRadiusSq,
+            bool focus,
+            Entity entity, int index,
+            EntityCommandBuffer.ParallelWriter ecb)
+        {
+            MovementUtils.SetMoveTarget(ref movableData, buildingPos, buildingColliderSize,
+                MovementCommandType.Interactive, garrisonRadiusSq);
+            stateData.TargetState = InteractState.Moving;
+            SwitchState(ref stateData, ecb, entity, index);
+            stateData.TargetEntity = garrison.BuildingEntity;
+            stateData.TargetState = InteractState.Garrison;
+            stateData.Focus = focus;
+        }
+
+        public static void MarchToPosition(ref BasicStateData stateData, ref MovableData movableData,
+            float3 targetPos,
+            EntityCommandBuffer.ParallelWriter ecb, int index, Entity selfEntity,
+            bool focus)
+        {
+            MovementUtils.SetMoveTarget(ref movableData, targetPos, float3.zero,
+                MovementCommandType.March, 0);
+            stateData.TargetState = InteractState.Moving;
+            SwitchState(ref stateData, ecb, selfEntity, index);
+            stateData.TargetEntity = Entity.Null;
+            stateData.TargetState = InteractState.Idle;
+            stateData.Focus = focus;
+        }
+    }
+}

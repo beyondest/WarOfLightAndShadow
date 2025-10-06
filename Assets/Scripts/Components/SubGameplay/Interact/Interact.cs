@@ -11,6 +11,7 @@ namespace SparFlame.Components.SubGameplay
         Garrison = 3,
         Harvesting =4,
         Healing = 5,
+        CastSkill = 6
     }
     public struct BasicStateData : IComponentData
     {
@@ -104,6 +105,11 @@ namespace SparFlame.Components.SubGameplay
     }
     
     public struct IdleStateTag : IComponentData, IEnableableComponent
+    {
+        
+    }
+
+    public struct CastSkillStateTag : IComponentData, IEnableableComponent
     {
         
     }

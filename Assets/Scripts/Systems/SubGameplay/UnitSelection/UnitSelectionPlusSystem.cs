@@ -9,6 +9,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Burst;
 using Unity.Transforms;
+
 // ReSharper disable Unity.Entities.SingletonMustBeRequested
 
 namespace SparFlame.Systems.SubGameplay.UnitSelection
@@ -56,7 +57,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                 {
                     DeselectAll(ref state, ecb, ref unitSelectionData);
                     var unitAttr = SystemAPI.GetComponent<UnitAttr>(inputMouseData.HitEntity);
-                    switch (unitAttr.Type)
+                    switch (unitAttr.type)
                     {
                         case UnitType.Shield:
                             foreach (var (trans, exp, entity) in SystemAPI
@@ -69,11 +70,11 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                             }
 
                             break;
-                        case UnitType.Ranged:
+                        case UnitType.Archer:
 
                             foreach (var (trans, exp, entity) in SystemAPI
                                          .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
-                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<RangedTag>()
+                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<ArcherTag>()
                                          .WithEntityAccess())
                             {
                                 SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
@@ -81,35 +82,22 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                             }
 
                             break;
-                        case UnitType.Magic:
-                            if (unitAttr.SubTypeIndex == (int)MagicType.Cleric)
-                            {
-                                foreach (var (trans, exp, entity) in SystemAPI
-                                             .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
-                                             .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<ClericTag>()
-                                             .WithEntityAccess())
-                                {
-                                    SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
-                                        trans.ValueRO.Position);
-                                }
-                            }
-                            else if (unitAttr.SubTypeIndex == (int)MagicType.Mage)
-                            {
-                                foreach (var (trans, exp, entity) in SystemAPI
-                                             .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
-                                             .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<MageTag>()
-                                             .WithEntityAccess())
-                                {
-                                    SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
-                                        trans.ValueRO.Position);
-                                }
-                            }
-
-                            break;
-                        case UnitType.Cavalry:
+                        case UnitType.Cleric:
                             foreach (var (trans, exp, entity) in SystemAPI
                                          .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
-                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<CavalryTag>()
+                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<ClericTag>()
+                                         .WithEntityAccess())
+                            {
+                                SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
+                                    trans.ValueRO.Position);
+                            }
+
+
+                            break;
+                        case UnitType.DualSpear:
+                            foreach (var (trans, exp, entity) in SystemAPI
+                                         .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
+                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<DualSpearTag>()
                                          .WithEntityAccess())
                             {
                                 SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
@@ -128,8 +116,38 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                             }
 
                             break;
+                        case UnitType.SpellSword:
+                            foreach (var (trans, exp, entity) in SystemAPI
+                                         .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
+                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<SpellSwordTag>()
+                                         .WithEntityAccess())
+                            {
+                                SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
+                                    trans.ValueRO.Position);
+                            }
+                            break;
+                        case UnitType.GreatSword:
+                            foreach (var (trans, exp, entity) in SystemAPI
+                                         .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
+                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<GreatSwordTag>()
+                                         .WithEntityAccess())
+                            {
+                                SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
+                                    trans.ValueRO.Position);
+                            }
+                            break;
+                        case UnitType.Mage:
+                            foreach (var (trans, exp, entity) in SystemAPI
+                                         .Query<RefRO<LocalTransform>, RefRO<ExpData>>().WithAll<InCameraView>()
+                                         .WithAll<PlayerTag>().WithNone<UnitDeadTag>().WithAll<MageTag>()
+                                         .WithEntityAccess())
+                            {
+                                SelectOne(ref state, ecb, ref unitSelectionData, entity, true, exp.ValueRO,
+                                    trans.ValueRO.Position);
+                            }
+                            break;
                         default:
-                            BurstSafe.UnexpectedEnum(unitAttr.Type);
+                            BurstSafe.UnexpectedEnum(unitAttr.type);
                             break;
                     }
                 }
@@ -192,7 +210,7 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
             entities.Dispose();
-            
+
             DealWithSelectionRequest(ref state);
         }
 
@@ -206,8 +224,9 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                 var singleton = SystemAPI.GetSingletonEntity<DeselectAllRequest>();
                 state.EntityManager.DestroyEntity(singleton);
                 unitSelectionData = SystemAPI.GetSingletonRW<UnitSelectionData>();
-                DeselectAll(ref state, ecb,ref unitSelectionData);
+                DeselectAll(ref state, ecb, ref unitSelectionData);
             }
+
             unitSelectionData = SystemAPI.GetSingletonRW<UnitSelectionData>();
             foreach (var (request, entity) in SystemAPI.Query<RefRO<UnitSelectRequest>>().WithEntityAccess())
             {
@@ -216,13 +235,15 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                 {
                     var expData = SystemAPI.GetComponent<ExpData>(request.ValueRO.Unit);
                     var pos = SystemAPI.GetComponent<LocalTransform>(request.ValueRO.Unit).Position;
-                    SelectOne(ref state,ecb,ref unitSelectionData,request.ValueRO.Unit,
-                        request.ValueRO.IsSelected,expData,pos);
+                    SelectOne(ref state, ecb, ref unitSelectionData, request.ValueRO.Unit,
+                        request.ValueRO.IsSelected, expData, pos);
                 }
             }
+
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
+
         #region SelectMethods
 
         private void SelectOne(ref SystemState state, EntityCommandBuffer ecb,
@@ -286,21 +307,25 @@ namespace SparFlame.Systems.SubGameplay.UnitSelection
                 unitSelectionData.ValueRW.SelectionBoxEndPos, out float2 min, out float2 max);
 
             var selectionFilter = SystemAPI.GetSingleton<UnitSelectionFilter>();
-            
+
             foreach (var (screenPos, trans, expData, unitAttr, entity) in SystemAPI
                          .Query<RefRO<ScreenPos>, RefRO<LocalTransform>,
                              RefRO<ExpData>, RefRO<UnitAttr>>().WithAll<InCameraView>()
                          .WithDisabled<LockSelectedWorkForDrag>().WithEntityAccess().WithNone<InGarrison>()
                          .WithAll<PlayerTag>())
             {
-                
                 // Inside selection box
                 if (IsInsideBox(screenPos.ValueRO.ScreenPosition, min, max))
                 {
-                    if (selectionFilter.UnitTypeFilterEnabled && !NativeContainerUtils.ContainsEq(selectionFilter.FilteredUnitTypes,(int)unitAttr.ValueRO.Type))continue;
-                    if(selectionFilter.TierFilterEnabled && expData.ValueRO.curTier != selectionFilter.FilteredUnitTier)continue;
-                    if(selectionFilter.LevelFilterEnabled && (expData.ValueRO.curLevel < selectionFilter.MinLevel || expData.ValueRO.curLevel > selectionFilter.MaxLevel) )continue;
-                    
+                    if (selectionFilter.UnitTypeFilterEnabled &&
+                        !NativeContainerUtils.ContainsEq(selectionFilter.FilteredUnitTypes, (int)unitAttr.ValueRO.type))
+                        continue;
+                    if (selectionFilter.TierFilterEnabled &&
+                        expData.ValueRO.curTier != selectionFilter.FilteredUnitTier) continue;
+                    if (selectionFilter.LevelFilterEnabled && (expData.ValueRO.curLevel < selectionFilter.MinLevel ||
+                                                               expData.ValueRO.curLevel > selectionFilter.MaxLevel))
+                        continue;
+
                     SelectOne(ref state, ecb, ref unitSelectionData, entity,
                         true, expData.ValueRO, trans.ValueRO.Position);
                 }

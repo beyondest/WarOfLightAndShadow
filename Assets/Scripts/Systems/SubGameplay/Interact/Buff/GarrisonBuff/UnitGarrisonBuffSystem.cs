@@ -40,7 +40,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
         [BurstCompile]
         [WithAll(typeof(UnitAttr))]
-        [WithNone(typeof(CavalryTag))]
+        [WithNone(typeof(DualSpearTag))]
         public partial struct UnitGarrisonBuffJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;

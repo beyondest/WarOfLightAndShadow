@@ -107,6 +107,7 @@ namespace SparFlame.Systems.General.VFX
                         var allStop = true;
                         for (int i = 1; i < groups.Length; i++)
                         {
+                            if(!SystemAPI.ManagedAPI.HasComponent<ParticleSystem>(groups[i].Value))continue;
                             var sys = SystemAPI.ManagedAPI.GetComponent<ParticleSystem>(groups[i].Value);
                             if (sys.IsAlive())
                             {

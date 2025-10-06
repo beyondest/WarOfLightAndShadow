@@ -4,6 +4,10 @@ using Unity.Entities;
 
 namespace SparFlame.Components.SubGameplay
 {
+    public struct TerrainTag : IComponentData
+    {
+        
+    }
     
     [Serializable]
     public struct EnvTileTypeSpecialData : IBufferElementData

@@ -2547,6 +2547,54 @@ namespace SparFlame.Components.Input
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""CastSkill"",
+            ""id"": ""00252aed-1bc4-4586-a045-f67cfe353627"",
+            ""actions"": [
+                {
+                    ""name"": ""Cast"",
+                    ""type"": ""Button"",
+                    ""id"": ""0d6f0035-a5dc-444a-849f-f0e82f851333"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Cancel"",
+                    ""type"": ""Button"",
+                    ""id"": ""c8a33c4c-f629-406a-958a-f068cf330187"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""b63f4056-a06e-4cea-bb02-b6cd0d2cfddb"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Cast"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""340d47b0-76fd-4aad-8f79-439bbbbe75ca"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Cancel"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -2702,6 +2750,10 @@ namespace SparFlame.Components.Input
             m_Conjure = asset.FindActionMap("Conjure", throwIfNotFound: true);
             m_Conjure_FullConjure = m_Conjure.FindAction("FullConjure", throwIfNotFound: true);
             m_Conjure_ConjureHotKey = m_Conjure.FindAction("ConjureHotKey", throwIfNotFound: true);
+            // CastSkill
+            m_CastSkill = asset.FindActionMap("CastSkill", throwIfNotFound: true);
+            m_CastSkill_Cast = m_CastSkill.FindAction("Cast", throwIfNotFound: true);
+            m_CastSkill_Cancel = m_CastSkill.FindAction("Cancel", throwIfNotFound: true);
         }
 
         ~@CustomInputActions()
@@ -2716,6 +2768,7 @@ namespace SparFlame.Components.Input
             UnityEngine.Debug.Assert(!m_ModeSwitch.enabled, "This will cause a leak and performance issues, CustomInputActions.ModeSwitch.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_GeneralShortcut.enabled, "This will cause a leak and performance issues, CustomInputActions.GeneralShortcut.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_Conjure.enabled, "This will cause a leak and performance issues, CustomInputActions.Conjure.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_CastSkill.enabled, "This will cause a leak and performance issues, CustomInputActions.CastSkill.Disable() has not been called.");
         }
 
         /// <summary>
@@ -4407,6 +4460,113 @@ namespace SparFlame.Components.Input
         /// Provides a new <see cref="ConjureActions" /> instance referencing this action map.
         /// </summary>
         public ConjureActions @Conjure => new ConjureActions(this);
+
+        // CastSkill
+        private readonly InputActionMap m_CastSkill;
+        private List<ICastSkillActions> m_CastSkillActionsCallbackInterfaces = new List<ICastSkillActions>();
+        private readonly InputAction m_CastSkill_Cast;
+        private readonly InputAction m_CastSkill_Cancel;
+        /// <summary>
+        /// Provides access to input actions defined in input action map "CastSkill".
+        /// </summary>
+        public struct CastSkillActions
+        {
+            private @CustomInputActions m_Wrapper;
+
+            /// <summary>
+            /// Construct a new instance of the input action map wrapper class.
+            /// </summary>
+            public CastSkillActions(@CustomInputActions wrapper) { m_Wrapper = wrapper; }
+            /// <summary>
+            /// Provides access to the underlying input action "CastSkill/Cast".
+            /// </summary>
+            public InputAction @Cast => m_Wrapper.m_CastSkill_Cast;
+            /// <summary>
+            /// Provides access to the underlying input action "CastSkill/Cancel".
+            /// </summary>
+            public InputAction @Cancel => m_Wrapper.m_CastSkill_Cancel;
+            /// <summary>
+            /// Provides access to the underlying input action map instance.
+            /// </summary>
+            public InputActionMap Get() { return m_Wrapper.m_CastSkill; }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+            public void Enable() { Get().Enable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+            public void Disable() { Get().Disable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+            public bool enabled => Get().enabled;
+            /// <summary>
+            /// Implicitly converts an <see ref="CastSkillActions" /> to an <see ref="InputActionMap" /> instance.
+            /// </summary>
+            public static implicit operator InputActionMap(CastSkillActions set) { return set.Get(); }
+            /// <summary>
+            /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <param name="instance">Callback instance.</param>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+            /// </remarks>
+            /// <seealso cref="CastSkillActions" />
+            public void AddCallbacks(ICastSkillActions instance)
+            {
+                if (instance == null || m_Wrapper.m_CastSkillActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_CastSkillActionsCallbackInterfaces.Add(instance);
+                @Cast.started += instance.OnCast;
+                @Cast.performed += instance.OnCast;
+                @Cast.canceled += instance.OnCast;
+                @Cancel.started += instance.OnCancel;
+                @Cancel.performed += instance.OnCancel;
+                @Cancel.canceled += instance.OnCancel;
+            }
+
+            /// <summary>
+            /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <remarks>
+            /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+            /// </remarks>
+            /// <seealso cref="CastSkillActions" />
+            private void UnregisterCallbacks(ICastSkillActions instance)
+            {
+                @Cast.started -= instance.OnCast;
+                @Cast.performed -= instance.OnCast;
+                @Cast.canceled -= instance.OnCast;
+                @Cancel.started -= instance.OnCancel;
+                @Cancel.performed -= instance.OnCancel;
+                @Cancel.canceled -= instance.OnCancel;
+            }
+
+            /// <summary>
+            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="CastSkillActions.UnregisterCallbacks(ICastSkillActions)" />.
+            /// </summary>
+            /// <seealso cref="CastSkillActions.UnregisterCallbacks(ICastSkillActions)" />
+            public void RemoveCallbacks(ICastSkillActions instance)
+            {
+                if (m_Wrapper.m_CastSkillActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            /// <summary>
+            /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+            /// </summary>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+            /// </remarks>
+            /// <seealso cref="CastSkillActions.AddCallbacks(ICastSkillActions)" />
+            /// <seealso cref="CastSkillActions.RemoveCallbacks(ICastSkillActions)" />
+            /// <seealso cref="CastSkillActions.UnregisterCallbacks(ICastSkillActions)" />
+            public void SetCallbacks(ICastSkillActions instance)
+            {
+                foreach (var item in m_Wrapper.m_CastSkillActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_CastSkillActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        /// <summary>
+        /// Provides a new <see cref="CastSkillActions" /> instance referencing this action map.
+        /// </summary>
+        public CastSkillActions @CastSkill => new CastSkillActions(this);
         private int m_KeyboardMouseSchemeIndex = -1;
         /// <summary>
         /// Provides access to the input control scheme.
@@ -5041,6 +5201,28 @@ namespace SparFlame.Components.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnConjureHotKey(InputAction.CallbackContext context);
+        }
+        /// <summary>
+        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "CastSkill" which allows adding and removing callbacks.
+        /// </summary>
+        /// <seealso cref="CastSkillActions.AddCallbacks(ICastSkillActions)" />
+        /// <seealso cref="CastSkillActions.RemoveCallbacks(ICastSkillActions)" />
+        public interface ICastSkillActions
+        {
+            /// <summary>
+            /// Method invoked when associated input action "Cast" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnCast(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Cancel" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnCancel(InputAction.CallbackContext context);
         }
     }
 }

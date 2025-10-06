@@ -9,21 +9,18 @@ using Unity.Physics.Systems;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-
-
- 
     public struct AoeTriggerData : IComponentData
     {
         public Entity BelongsTo;
     }
-    
-    
+
+
     [UpdateInGroup(typeof(PhysicsSystemGroup))]
     [UpdateAfter(typeof(StatefulTriggerEventBufferSystem))]
     public partial struct AoeTriggerSystem : ISystem
     {
         private BufferLookup<AoeTarget> _targetLookup;
-        
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -38,16 +35,17 @@ namespace SparFlame.Systems.SubGameplay.Interact
         public void OnUpdate(ref SystemState state)
         {
             _targetLookup.Update(ref state);
-            new AoeTriggerJob
+            state.Dependency = new AoeTriggerJob
             {
                 TargetLookup = _targetLookup
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
         public partial struct AoeTriggerJob : IJobEntity
         {
             [NativeDisableParallelForRestriction] public BufferLookup<AoeTarget> TargetLookup;
+
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in AoeTriggerData triggerData,
                 Entity entity)
             {
@@ -60,10 +58,11 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     {
                         case StatefulEventState.Enter:
                             int j;
-                            for ( j= 0; j < targets.Length; j++)
+                            for (j = 0; j < targets.Length; j++)
                             {
-                                if(targets[j].Entity == target)break;
+                                if (targets[j].Entity == target) break;
                             }
+
                             if (j != targets.Length) break;
                             targets.Add(new AoeTarget
                             {
@@ -79,6 +78,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                                     break;
                                 }
                             }
+
                             break;
                         case StatefulEventState.Stay:
                             break;
@@ -90,10 +90,5 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 }
             }
         }
-        
-        
-
-
-
     }
 }

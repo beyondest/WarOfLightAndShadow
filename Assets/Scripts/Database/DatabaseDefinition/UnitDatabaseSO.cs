@@ -118,13 +118,11 @@ namespace SparFlame.Database
                         Debug.Log($"No light unit found for {item.type} {item.GetSubtypeIndex()} {item.curTier}");
                     }
                 }
-                
             }
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(this);
             Debug.Log("Copy light data to dark done");
 #endif
-            
         }
 
         // 要统一设置的目标成本列表（你可以在 Inspector 中直接配置）
@@ -184,7 +182,7 @@ namespace SparFlame.Database
          TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
 
-        [VerticalGroup("Cost"), HorizontalGroup("Cost/2"),Tooltip("Conjure speed hours per unit")]
+        [VerticalGroup("Cost"), HorizontalGroup("Cost/2"), Tooltip("Conjure speed hours per unit")]
         public float conjureSpeedHoursPerUnit = 1.0f;
 
         [ShowIf(nameof(HasLightGroupBuff)), FoldoutGroup("Additional/Buff"),
@@ -207,7 +205,7 @@ namespace SparFlame.Database
 
         public bool HasLightGroupBuff()
         {
-            return factionTag == FactionTag.Light && type is UnitType.Shield or UnitType.Cavalry;
+            return factionTag == FactionTag.Light && type is UnitType.Shield or UnitType.DualSpear;
         }
     }
 
@@ -251,7 +249,7 @@ namespace SparFlame.Database
         {
             base.InitDefaults();
             if (type == default)
-                type = UnitType.Ranged;
+                type = UnitType.Archer;
         }
     }
 
@@ -270,7 +268,26 @@ namespace SparFlame.Database
         {
             base.InitDefaults();
             if (type == default)
-                type = UnitType.Magic;
+                type = UnitType.Cleric;
+        }
+    }
+
+    [Serializable]
+    public class SpellSwordData : UnitDataItem
+    {
+        [VerticalGroup("EnumValues"), HideLabel, Tooltip("spell sword type")]
+        public SpellSwordType spellSwordType;
+
+        public override int GetSubtypeIndex() => (int)spellSwordType;
+        public override bool IsAttackable() => true;
+        public override bool IsHarvestable() => false;
+        public override bool IsHealable() => false;
+
+        protected override void InitDefaults()
+        {
+            base.InitDefaults();
+            if (type == default)
+                type = UnitType.SpellSword;
         }
     }
 
@@ -290,7 +307,7 @@ namespace SparFlame.Database
         {
             base.InitDefaults();
             if (type == default)
-                type = UnitType.Cavalry;
+                type = UnitType.DualSpear;
         }
     }
 
@@ -314,6 +331,25 @@ namespace SparFlame.Database
             base.InitDefaults();
             if (type == default)
                 type = UnitType.Worker;
+        }
+    }
+
+    [Serializable]
+    public class GreatSwordData : UnitDataItem
+    {
+        [VerticalGroup("EnumValues"), HideLabel, Tooltip("great sword type")]
+        public GreatSwordType greatSwordType;
+
+        public override int GetSubtypeIndex() => (int)greatSwordType;
+        public override bool IsAttackable() => true;
+        public override bool IsHarvestable() => false;
+        public override bool IsHealable() => false;
+
+        protected override void InitDefaults()
+        {
+            base.InitDefaults();
+            if (type == default)
+                type = UnitType.GreatSword;
         }
     }
 }

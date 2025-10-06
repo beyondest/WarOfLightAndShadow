@@ -399,7 +399,11 @@ namespace SparFlame.Systems.General.BasicControl
             var ecb = new EntityCommandBuffer(Allocator.Persistent);
             var tmpIdxToInstances = new NativeHashMap<long, Entity>(100, Allocator.Persistent);
 
-            using var loadedUnitQuery = EntityManager.CreateEntityQuery(typeof(InArmyGroup), typeof(GlobalSingleId));
+            using var loadedUnitQuery = EntityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new ComponentType[] { typeof(InArmyGroup), typeof(GlobalSingleId) },
+                None = new ComponentType[] { typeof(FakeUnitTag) }
+            });
             using var loadedUnits = loadedUnitQuery.ToEntityArray(Allocator.Persistent);
             using var unitSingleIds = loadedUnitQuery.ToComponentDataArray<GlobalSingleId>(Allocator.Persistent);
             for (var i = 0; i < loadedUnits.Length; i++)

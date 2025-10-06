@@ -26,7 +26,9 @@ namespace SparFlame.Components.SubGameplay
         DarkCavalry = 8,
         LightArcher = 9,
         DarkArcher = 10,
-        
+        ClericSkillCircle = 11,
+        SpellSwordSkill = 12,
+        ArrowRain = 13,
     }
 
     public struct BuffRequest : IComponentData
@@ -76,8 +78,16 @@ namespace SparFlame.Components.SubGameplay
         public Tier tier;
     }
 
-    public struct CavalryMoveBuff : IComponentData, IEnableableComponent
+    [Serializable]
+    public struct DamageReduceShieldBuffConfig : IComponentData
     {
+        public float damageReduceScale;
+        public float keepDuration;
+    }
+    
+    public struct DamageReduceShieldBuff : IComponentData
+    {
+        public float StopTime;
     }
     
     public struct BuildingGarrisonBuff : IComponentData, IEnableableComponent

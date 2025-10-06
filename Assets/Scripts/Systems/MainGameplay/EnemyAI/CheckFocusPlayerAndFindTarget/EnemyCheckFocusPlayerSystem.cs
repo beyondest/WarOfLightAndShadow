@@ -67,6 +67,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             _singleIdLookup.Update(ref state);
             var job = new EnemyCityCheckShouldFocusOnPlayerJob
             {
+                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Config = SystemAPI.GetSingleton<EnemyCheckFocusPlayerConfig>(),
                 CityIdRelationships = cityIdToPlayerRelations,
                 CityIdToEntities = cityIdToEntities,
@@ -87,6 +88,8 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
         [BurstCompile]
         public partial struct EnemyCityCheckShouldFocusOnPlayerJob : IJobEntity
         {
+            public EntityCommandBuffer.ParallelWriter ECB;
+            
             [ReadOnly] public NativeParallelHashMap<int, Relationship> CityIdRelationships;
             [ReadOnly] public NativeParallelHashMap<int, Entity> CityIdToEntities;
             [ReadOnly] public EnemyCheckFocusPlayerConfig Config;
@@ -94,7 +97,8 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             [ReadOnly] public DynamicBuffer<DirectRoadPointData> DirectRoadPoints;
             [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIdLookup;
 
-            private void Execute(in DynamicBuffer<CheckCity> checkCities,
+            private void Execute([ChunkIndexInQuery] int index,
+                in DynamicBuffer<CheckCity> checkCities,
                 ref DynamicBuffer<InvadeTarget> targets,
                 in PrefabId prefabId,
                 ref CityAIData cityAIData)
@@ -135,6 +139,15 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         });
                     }
 
+                    if (!cityAIData.IsFocusOnPlayer)
+                    {
+                        var hintRequest = ECB.CreateEntity(index);
+                        ECB.AddComponent<MainGameplayEntityTag>(index,hintRequest);
+                        ECB.AddComponent(index, hintRequest, new HintRequest
+                        {
+                            Name = HintName.EnemyBeginFocusOnPlayer
+                        });
+                    }
                     cityAIData.IsFocusOnPlayer = true;
                 }
                 else
@@ -146,6 +159,15 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         CityPrefabId = SupportFightCityId,
                         SingleId = SingleIdLookup[supportCity].value
                     });
+                    if (cityAIData.IsFocusOnPlayer)
+                    {
+                        var hintRequest = ECB.CreateEntity(index);
+                        ECB.AddComponent<MainGameplayEntityTag>(index,hintRequest);
+                        ECB.AddComponent(index, hintRequest, new HintRequest
+                        {
+                            Name = HintName.EnemyStopFocusOnPlayer
+                        });
+                    }
                     cityAIData.IsFocusOnPlayer = false;
                 }
             }

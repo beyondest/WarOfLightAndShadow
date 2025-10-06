@@ -8,7 +8,6 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
     public class EnemyCityStateMachineAuthoring : MonoBehaviour
     {
         public ArmyGroupThreatenCalculationConfig calConfig;
-        public FormationConfig formationConfig;
         public List<VeryRadicalPossibilityConfig> configPossibilities;
         
         private class EnemyCItyStateMachineAuthoringBaker : Baker<EnemyCityStateMachineAuthoring>
@@ -17,7 +16,6 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             {
                 var entity = GetEntity(TransformUsageFlags.None);
                 AddComponent(entity, authoring.calConfig);
-                AddComponent(entity, authoring.formationConfig);
                 var buffer = AddBuffer<VeryRadicalPossibilityConfig>(entity);
                 foreach (var possibility in authoring.configPossibilities)
                 {

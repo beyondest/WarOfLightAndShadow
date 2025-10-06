@@ -5,7 +5,7 @@
 //
 // namespace SparFlame.GamePlaySystem.Interact.GamePlaySystem.Functionality.Interact.Buff.Authoring
 // {
-//     public class LightCavalryBuffAuthoring : MonoBehaviour
+//     public class BlessingBuffAuthoring : MonoBehaviour
 //     {
 //         [Serializable]
 //         public struct Pair
@@ -15,15 +15,15 @@
 //         }
 //         
 //         public List<Pair> reduceCurrentHpRatios; 
-//         private class LightCavalryBuffAuthoringBaker : Baker<LightCavalryBuffAuthoring>
+//         private class BlessingBuffAuthoringBaker : Baker<BlessingBuffAuthoring>
 //         {
-//             public override void Bake(LightCavalryBuffAuthoring authoring)
+//             public override void Bake(BlessingBuffAuthoring authoring)
 //             {
 //                 var entity = GetEntity(TransformUsageFlags.None);
-//                 var buffer = AddBuffer<LightCavalryBuffConfigs>(entity);
+//                 var buffer = AddBuffer<BlessingBuffConfigs>(entity);
 //                 foreach (var duration in authoring.reduceCurrentHpRatios)
 //                 {
-//                     buffer.Add(new LightCavalryBuffConfigs
+//                     buffer.Add(new BlessingBuffConfigs
 //                     {
 //                         LastDuration = duration.lastDuration,
 //                         ReduceCurrentHpRatio = duration.reduceCurrentHpRatio
@@ -33,13 +33,13 @@
 //         }
 //     }
 //
-//     public struct LightCavalryBuffConfigs : IBufferElementData
+//     public struct BlessingBuffConfigs : IBufferElementData
 //     {
 //         public float LastDuration;
 //         public float ReduceCurrentHpRatio;
 //     }
 //
-//     public struct LightCavalryBuffData : IComponentData
+//     public struct BlessingBuffData : IComponentData
 //     {
 //         public float LastDuration;
 //         public float ReduceCurrentHpRatio;

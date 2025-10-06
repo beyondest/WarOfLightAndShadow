@@ -1,11 +1,12 @@
-﻿// using Unity.Entities;
+﻿// using SparFlame.Components.General;
+// using SparFlame.Components.SubGameplay;
+// using SparFlame.Systems.SubGameplay.Movement;
+// using Unity.Entities;
 // using Unity.Burst;
 // using Unity.Transforms;
 // using Unity.Mathematics;
 // using Unity.Collections;
 // using Unity.Physics;
-// using SparFlame.GamePlaySystem.General;
-// using SparFlame.GamePlaySystem.UnitSelection;
 //
 // namespace SparFlame.GamePlaySystem.Movement
 // {
@@ -13,7 +14,7 @@
 //     [UpdateBefore(typeof(TransformSystemGroup))]
 //     public partial struct AutoGiveWaySystem : ISystem
 //     {
-//         private ComponentLookup<InteractableAttr> _generalAttrLookup;
+//         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
 //         private ComponentLookup<Selected> _selectedLookup;
 //
 //         [BurstCompile]
@@ -22,9 +23,9 @@
 //             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
 //             state.RequireForUpdate<MovementConfig>();
 //             state.RequireForUpdate<PhysicsWorldSingleton>();
-//             state.RequireForUpdate<GameBasicStatus>();
+//             state.RequireForUpdate<SubGamingTag>();
 //             state.RequireForUpdate<AutoGiveWaySystemConfig>();
-//             _generalAttrLookup = state.GetComponentLookup<InteractableAttr>(true);
+//             _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
 //             _selectedLookup = state.GetComponentLookup<Selected>(true);
 //         }
 //
@@ -48,7 +49,7 @@
 //                 Duration = config.Duration,
 //                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
 //                 ObstacleLayerMask = movementConfig.ObstacleLayerMask,
-//                 DetectRayBelongsTo = movementConfig.DetectRaycasstBelongsTo,
+//                 // DetectRayBelongsTo = movementConfig.DetectRaycasstBelongsTo,
 //                 RotationSpeed = movementSystemConfig.RotationSpeed
 //             }.ScheduleParallel();
 //         }
@@ -62,13 +63,13 @@
 //         public partial struct AutoGiveWayJob : IJobEntity
 //         {
 //             [ReadOnly] public PhysicsWorldSingleton PhysicsWorld;
-//             [ReadOnly] public ComponentLookup<InteractableAttr> generalAttrLookup;
+//             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> generalAttrLookup;
 //             [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
 //             public EntityCommandBuffer.ParallelWriter ECB;
 //             [ReadOnly] public float Duration;
 //             [ReadOnly] public float DeltaTime;
 //             [ReadOnly] public uint ObstacleLayerMask;
-//             [ReadOnly] public uint DetectRayBelongsTo;
+//             // [ReadOnly] public uint DetectRayBelongsTo;
 //             [ReadOnly] public float RotationSpeed;
 //
 //             private void Execute([ChunkIndexInQuery] int index, ref LocalTransform transform, ref AutoGiveWayData data, ref MovableData movableData,

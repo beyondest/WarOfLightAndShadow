@@ -47,7 +47,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
         // [NativeDisableParallelForRestriction] public BufferLookup<LightShieldUnderDefend> DefenderDataLookup;
         public EntityCommandBuffer ECB;
 
-        private void Execute(ref AoeInteractData data, Entity selEntity, ref DynamicBuffer<AoeTarget> targets)
+        private void Execute(ref AoeInteractData data, Entity selEntity, ref DynamicBuffer<AoeTarget> targets,
+            ref Rnd rnd)
         {
             if (CurTime > data.TriggerTime)
             {
@@ -56,16 +57,23 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     var target = targets[i];
                     // remove dead targets
                     if (!GeneralAttrLookup.TryGetComponent(target.Entity, out var attr)
-                        || attr.Faction != data.TargetFaction)
+                        || (!data.AllFactionTarget && attr.Faction != data.TargetFaction))
                     {
                         targets.RemoveAt(i);
                         continue;
                     }
+
                     var request = ECB.CreateEntity();
                     ECB.AddComponent<SubGameplayEntityTag>(request);
-                    var requestData = data.StatChangeRequest;
-                    requestData.Interactee = target.Entity;
-                    ECB.AddComponent(request, requestData);
+                    var statChangeRequest = data.StatChangeRequest;
+                    statChangeRequest.Interactee = target.Entity;
+                    if (data.RandomAbsAmount)
+                    {
+                        statChangeRequest.AbsAmount = rnd.value.NextInt((int)data.AbsAmountRange.lower,
+                            (int)data.AbsAmountRange.upper);
+                    }
+
+                    ECB.AddComponent(request, statChangeRequest);
                 }
 
                 data.CurrentTriggerCount++;

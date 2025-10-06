@@ -85,6 +85,7 @@ namespace SparFlame.Systems.General
             var playerFactionData = SystemAPI.GetSingleton<PlayerFactionData>();
             _city = data.TargetSubGameStatusData.City;
             var battlePos = SystemAPI.GetComponent<LocalTransform>(entity).Position;
+            // Add sight targets into battlefield
             targets = SystemAPI
                 .GetBuffer<BattleCheckSightTarget>(entity); // Reassign to avoid structural change invalidity
             foreach (var target in targets)
@@ -113,6 +114,22 @@ namespace SparFlame.Systems.General
                 }
             }
 
+            // Add garrison army groups into battlefield
+            if (data.TargetSubGameStatusData.SubGameStatus is SubGameStatus.PlayerDefend or SubGameStatus.PlayerSiege)
+            {
+                var garrisonEntities = SystemAPI.GetBuffer<CityGarrisonEntity>(data.TargetSubGameStatusData.City);
+                foreach (var armyGroup in garrisonEntities)
+                {
+                    if (SystemAPI.HasComponent<AITag>(armyGroup.ArmyGroup))
+                    {
+                        _enemySideArmyGroups.Add(armyGroup.ArmyGroup);
+                    }
+                    else
+                    {
+                        _playerSideArmyGroups.Add(armyGroup.ArmyGroup);
+                    }
+                }
+            }
             var connectTo = SystemAPI.GetComponent<BattleCheckSightData>(entity);
             EntityManager.DestroyEntity(connectTo.Value);
             EntityManager.DestroyEntity(entity);
@@ -124,7 +141,7 @@ namespace SparFlame.Systems.General
 
             if (_targetSubGameStatus == SubGameStatus.PlayerDefend)
             {
-                if (EnemyAICheckShouldStation(_city))return;
+                if (EnemyAICheckShouldStation(_city)) return;
             }
 
 
@@ -188,11 +205,13 @@ namespace SparFlame.Systems.General
                         stateData.TargetState = ArmyGroupState.Invade;
                         SystemAPI.SetComponent(armyGroup, stateData);
                     }
+
                     _isInPreBattleStatus = false;
                     GameController.Instance.ResumeGame(true);
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -203,7 +222,8 @@ namespace SparFlame.Systems.General
             var ecoEntities = SystemAPI.GetSingletonBuffer<EcoEntityData>();
 
             // Get map info 
-            var buffer = SystemAPI.GetBuffer<LoadingGridInfo>(ecoEntities[0].EcoEntity);
+            var buffer = new LoadingPositionInfo();
+
             var mapInfo = new MapInfo();
             if (_targetSubGameStatus is SubGameStatus.Encounter)
             {
@@ -211,7 +231,7 @@ namespace SparFlame.Systems.General
                 {
                     if (ecoEntity.EcoType == _ecoType)
                     {
-                        buffer = SystemAPI.GetBuffer<LoadingGridInfo>(ecoEntity.EcoEntity);
+                        buffer = SystemAPI.GetComponent<LoadingPositionInfo>(ecoEntity.EcoEntity);
                         mapInfo = SystemAPI.GetComponent<MapInfo>(ecoEntity.EcoEntity);
                         break;
                     }
@@ -219,7 +239,7 @@ namespace SparFlame.Systems.General
             }
             else
             {
-                buffer = SystemAPI.GetBuffer<LoadingGridInfo>(_city);
+                buffer = SystemAPI.GetComponent<LoadingPositionInfo>(_city);
                 mapInfo = SystemAPI.GetComponent<MapInfo>(_city);
             }
 
@@ -249,10 +269,26 @@ namespace SparFlame.Systems.General
                 var gridIndex = _playerSideLoadingPositions[i];
                 if (gridIndex != -1) // -1 means same as last time loading position
                 {
-                    var info = buffer[gridIndex];
-                    armyGroupAttr.loadingCenter = info.outerCenter;
-                    var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
-                    armyGroupAttr.loadingScale = maxSide == 0 ? 1 : info.outerSize / maxSide;
+                    // var info = buffer[gridIndex];
+                    armyGroupAttr.loadingCenter = _targetSubGameStatus switch
+                    {
+                        SubGameStatus.Encounter => buffer.invaderPosition,
+                        SubGameStatus.PlayerSiege => buffer.invaderPosition,
+                        SubGameStatus.PlayerDefend => buffer.defenderPosition,
+                        SubGameStatus.Support => buffer.invaderPosition,
+                        _ => BurstSafe.UnexpectedEnum(_targetSubGameStatus, buffer.defenderPosition)
+                    };
+                    var size = _targetSubGameStatus switch
+                    {
+                        SubGameStatus.Encounter => buffer.invaderPositionSquareSize,
+                        SubGameStatus.PlayerSiege => buffer.invaderPositionSquareSize,
+                        SubGameStatus.PlayerDefend => buffer.defenderPositionSquareSize,
+                        SubGameStatus.Support => buffer.invaderPositionSquareSize,
+                        _ => BurstSafe.UnexpectedEnum(_targetSubGameStatus, buffer.defenderPositionSquareSize)
+                    };
+
+                    var maxDeltaSize = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
+                    armyGroupAttr.loadingScale = maxDeltaSize == 0 ? 1 : size / maxDeltaSize;
                     armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
                     SystemAPI.SetComponent(armyGroup, armyGroupAttr);
                 }
@@ -289,21 +325,36 @@ namespace SparFlame.Systems.General
                 });
 
                 var gridIndex = _enemySideLoadingPositions[i];
-                if (gridIndex != -1)
+                // if (gridIndex != -1)
+                // {
+                armyGroupAttr.loadingCenter = _targetSubGameStatus switch
                 {
-                    var info = buffer[gridIndex];
-                    armyGroupAttr.loadingCenter =
-                        _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
-                            ? info.innerCenter
-                            : info.outerCenter;
-                    var loadingSize = _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
-                        ? info.innerSize
-                        : info.outerSize;
-                    var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
-                    armyGroupAttr.loadingScale = maxSide == 0 ? 1 : loadingSize / maxSide;
-                    armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
-                    SystemAPI.SetComponent(armyGroup, armyGroupAttr);
-                }
+                    SubGameStatus.Encounter => buffer.defenderPosition,
+                    SubGameStatus.PlayerSiege => buffer.defenderPosition,
+                    SubGameStatus.PlayerDefend => buffer.invaderPosition,
+                    SubGameStatus.Support => buffer.defenderPosition,
+                    _ => BurstSafe.UnexpectedEnum(_targetSubGameStatus, buffer.defenderPosition)
+                };
+                var size = _targetSubGameStatus switch
+                {
+                    SubGameStatus.Encounter => buffer.defenderPositionSquareSize,
+                    SubGameStatus.PlayerSiege => buffer.defenderPositionSquareSize,
+                    SubGameStatus.PlayerDefend => buffer.invaderPositionSquareSize,
+                    SubGameStatus.Support => buffer.defenderPositionSquareSize,
+                    _ => BurstSafe.UnexpectedEnum(_targetSubGameStatus, buffer.defenderPositionSquareSize)
+                };
+                // armyGroupAttr.loadingCenter =
+                //     _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
+                //         ? info.innerCenter
+                //         : info.outerCenter;
+                // var loadingSize = _targetSubGameStatus is SubGameStatus.PlayerSiege or SubGameStatus.Support
+                //     ? info.innerSize
+                //     : info.outerSize;
+                var maxSide = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
+                armyGroupAttr.loadingScale = maxSide == 0 ? 1 : size / maxSide;
+                armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
+                SystemAPI.SetComponent(armyGroup, armyGroupAttr);
+                // }
 
                 var loadingPosition = armyGroupAttr.loadingCenter;
                 var alreadyHasNear = false;
@@ -318,15 +369,19 @@ namespace SparFlame.Systems.General
 
                 if (!alreadyHasNear) enemySideLoadingPositions.Add(loadingPosition);
             }
-
+            using var entities = _battleCheckSightQuery.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                ecb.DestroyEntity(entity);
+            }
 
             ecb.Playback(EntityManager);
             ecb.Dispose();
-
+           
             // Create battle specified singleton
             CreateBattleSpecifiedSingletons(enemySideTotalUnitCount, playerSideTotalUnitCount, mapInfo,
                 playerSideLoadingPositions, enemySideLoadingPositions);
-
+            
 
             _isInPreBattleStatus = false;
             GameController.Instance.ResumeGame(true);
@@ -380,7 +435,9 @@ namespace SparFlame.Systems.General
                     CurState = ArmyGroupState.Station,
                     Target = _city,
                     TargetState = ArmyGroupState.Invade,
-                    TargetSingleId = SystemAPI.HasComponent<GlobalSingleId>(_city) ? SystemAPI.GetComponent<GlobalSingleId>(_city).value : 0
+                    TargetSingleId = SystemAPI.HasComponent<GlobalSingleId>(_city)
+                        ? SystemAPI.GetComponent<GlobalSingleId>(_city).value
+                        : 0
                 });
             }
 
@@ -425,7 +482,7 @@ namespace SparFlame.Systems.General
                         var gridIndex = BattleUtils.GetClosestGrids(armyGroupPos,
                             cityTrans
                         );
-                        _playerSideLoadingPositions.Add(gridIndex);
+                        _playerSideLoadingPositions.Add(gridIndex == -1 ? 0 : gridIndex);
                     }
 
                     var cyclicCount = 0;
@@ -434,7 +491,7 @@ namespace SparFlame.Systems.General
                         // If player siege/support, enemy army groups auto assign to player side loading positions inner to city
                         if (_targetSubGameStatus == SubGameStatus.PlayerSiege)
                         {
-                            _enemySideLoadingPositions.Add(_playerSideLoadingPositions[cyclicCount]);
+                            _enemySideLoadingPositions.Add( /*_playerSideLoadingPositions[cyclicCount]*/ 0);
                             cyclicCount++;
                             if (cyclicCount == _playerSideArmyGroups.Length)
                                 cyclicCount = 0;
@@ -457,7 +514,7 @@ namespace SparFlame.Systems.General
                         var gridIndex = BattleUtils.GetClosestGrids(armyGroupPos,
                             cityTrans
                         );
-                        _enemySideLoadingPositions.Add(gridIndex);
+                        _enemySideLoadingPositions.Add(gridIndex == -1 ? 0 : gridIndex);
                     }
 
 

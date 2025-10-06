@@ -56,7 +56,7 @@ namespace SparFlame.Systems.General.Camera
         public float translationMaxSpeed;
         public float translationAcceleration;
         public float translationDamping;
-        
+        public float dragMoveDeltaScale;
         [Header("Vertical Translation")] [SerializeField]
         public float zoomHeightStepSize;
         public float zoomDamping;

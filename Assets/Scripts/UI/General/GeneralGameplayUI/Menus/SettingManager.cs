@@ -30,7 +30,6 @@ namespace SparFlame.UI.General
             fullscreenToggle.isOn = Screen.fullScreen;
             fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
 
-            AudioListener.volume = 0f;
             muteToggle.isOn = AudioListener.volume == 0f;
             muteToggle.onValueChanged.AddListener(Mute);
 

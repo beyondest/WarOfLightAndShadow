@@ -161,9 +161,9 @@ namespace SparFlame.UI.SubGameplay
                 subFactionImage.color = color;
             }
             description.text = DatabaseManager.UnitDatabaseSo.GetItemById(prefabId.value).description;
-            generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.Type];
-            generalTypeText.text = unitAttr.Type.ToString();
-            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.Type, prefabId.value).Sprite;
+            generalTypeIcon.sprite = UnitWindowResourceManager.Instance.UnitGeneralTypeSprites[unitAttr.type];
+            generalTypeText.text = unitAttr.type.ToString();
+            idSingleIcon.sprite = UnitWindowResourceManager.Instance.GetInfoByGeneralTypeAndIdx(unitAttr.type, prefabId.value).Sprite;
             UpdateCostSlots();
         }
         

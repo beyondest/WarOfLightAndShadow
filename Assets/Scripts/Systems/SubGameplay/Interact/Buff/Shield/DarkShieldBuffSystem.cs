@@ -39,7 +39,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 DarkShieldReflectDamageLookup = _darkShieldReflectDamagaLookup,
                 TransformLookup = _transformLookup,
                 Configs = SystemAPI.GetSingletonBuffer<DarkShieldBuffConfig>(),
-                Config = SystemAPI.GetSingleton<DarkShieldBuffGeneralConfig>()
+                Config = SystemAPI.GetSingleton<DarkShieldBuffGeneralConfig>(),
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
             }.ScheduleParallel();
 
             new DarkShieldTauntBuffTimerJob
@@ -51,17 +52,24 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
 
         [BurstCompile]
+        [WithNone(typeof(UnitDeadTag))]
         public partial struct DarkShieldTauntBuffApplyJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldReflectDamageLookup;
             [ReadOnly] public DarkShieldBuffGeneralConfig Config;
             [ReadOnly] public DynamicBuffer<DarkShieldBuffConfig> Configs;
+            [ReadOnly] public float ElapsedTime;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in DarkShieldTauntBuff buff,
                 in DynamicBuffer<InsightTarget> targets, in ExpData expData, in BasicStateData stateData)
             {
+                if (buff.StopTime <= ElapsedTime)
+                {
+                    ECB.RemoveComponent<DarkShieldTauntBuff>(index, selfEntity);
+                    return;
+                }
                 if(!(stateData.CurState == InteractState.Attacking || stateData.TargetState == InteractState.Attacking))return;
                 var count = 0;
                 var maxTauntCount = Configs[(int)expData.curTier - 3].maxTauntCount;
@@ -81,7 +89,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             ECB.SetComponent(index, target, new DarkShieldTauntedBuff
                             {
                                 TauntedBy = selfEntity,
-                                TauntTime = Config.DarkShieldReflectDamageDuration
+                                TauntTime = Config.TauntedDuration
                             });
                             count++;
                         }
@@ -93,7 +101,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     ECB.SetComponent(index, target, new DarkShieldTauntedBuff
                     {
                         TauntedBy = selfEntity,
-                        TauntTime = Config.DarkShieldReflectDamageDuration
+                        TauntTime = Config.TauntedDuration
                     });
                     var shieldVfx = ECB.CreateEntity(index);
                     ECB.AddComponent<SubGameplayEntityTag>(index, shieldVfx);

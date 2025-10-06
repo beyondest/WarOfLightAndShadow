@@ -12,6 +12,7 @@ namespace SparFlame.Systems.General.Input
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<IsOverInputText>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<InputCameraNormalData>();
         }

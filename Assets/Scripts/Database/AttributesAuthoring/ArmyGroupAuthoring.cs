@@ -130,10 +130,11 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 // Enemy AI
                 AddComponent(entity, new ArmyGroupThreatenData
                 {
-                    mainUnitType = UnitType.Magic,
+                    mainUnitType = UnitType.Cleric,
                     totalThreatenValue = 0
                 });
-                
+                AddComponent(entity, new ArmyGroupAIData());
+                AddBuffer<SubGameplayArmyGroupWaypointData>(entity);
                 if (item.isEnemyArmyGroup)
                 {
                     var buffer = AddBuffer<EnemyArmyGroupCompositionData>(entity);

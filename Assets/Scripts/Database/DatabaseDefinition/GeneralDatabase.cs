@@ -205,6 +205,7 @@ namespace GamePlaySystem.Database
         public bool enableAdditionalConfig;
         [VerticalGroup("Additional"), HideLabel, LabelText("FakeCollisionTrigger"),AssetsOnly]
         public GameObject fakeCollisionTriggerPrefab;
+        
         #endregion
 
         #region Public Interface

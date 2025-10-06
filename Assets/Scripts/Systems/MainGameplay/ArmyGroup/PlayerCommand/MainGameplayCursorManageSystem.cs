@@ -57,13 +57,13 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                         break;
                 }
             }
-            else if (SystemAPI.HasComponent<ArmyGroupWalkableTag>(inputMouseData.HitEntity))
-            {
-                cursorData.CursorType = MainGameplayCursorType.March;
-            }
+            // else if (SystemAPI.HasComponent<ArmyGroupWalkableTag>(inputMouseData.HitEntity))
+            // {
+            //     cursorData.CursorType = MainGameplayCursorType.March;
+            // }
             else
             {
-                cursorData.CursorType = MainGameplayCursorType.None;
+                cursorData.CursorType = MainGameplayCursorType.March;
             }
         }
     }

@@ -15,6 +15,7 @@ namespace SparFlame.Core.Utils
         /// <param name="index">value index</param>
         /// <param name="value">output value</param>
         /// <returns>if success</returns>
+        /*
         public static bool TryGetValueAt<TKey, TValue>(
             NativeParallelMultiHashMap<TKey, TValue> map,
             TKey key,
@@ -39,8 +40,10 @@ namespace SparFlame.Core.Utils
             value = current;
             return true;
         }
+        */
 
 
+        /*
         public static void GetAllValuesForKey<TKey, TValue>(
             NativeParallelMultiHashMap<TKey, TValue> multiHashMap,
             ref NativeList<TValue> values,
@@ -57,7 +60,6 @@ namespace SparFlame.Core.Utils
                     cutOffCount = int.MaxValue;
                     break;
             }
-
             var count = 0;
             if (multiHashMap.TryGetFirstValue(key, out var value, out var iterator))
             {
@@ -68,6 +70,7 @@ namespace SparFlame.Core.Utils
                 } while (count < cutOffCount && multiHashMap.TryGetNextValue(out value, ref iterator));
             }
         }
+        */
         
         /// <summary>
         /// 通用且安全：需要 T 实现 IEquatable&lt;T&gt;。

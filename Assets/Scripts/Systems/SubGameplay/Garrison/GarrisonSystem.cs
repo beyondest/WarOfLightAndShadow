@@ -272,7 +272,12 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                     Unit = inRequest.UnitEntity,
                     SingleId = SystemAPI.GetComponent<GlobalSingleId>(inRequest.UnitEntity).value
                 });
-
+                ref var inGarrison = ref SystemAPI.GetComponentRW<InGarrison>(inRequest.UnitEntity).ValueRW;
+                ref var transform = ref SystemAPI.GetComponentRW<LocalTransform>(inRequest.UnitEntity).ValueRW;
+                var buildingTransform = SystemAPI.GetComponent<LocalTransform>(inRequest.BuildingEntity);
+                var positionBias = SystemAPI.GetBuffer<GarrisonPositions>(inRequest.BuildingEntity);
+                var posBias = positionBias[garrisonEntities.Length - 1];
+                GarrisonUtils.PosGetIn(ref inGarrison, ref transform, buildingTransform, posBias.PositionBias);
 
                 ecb.DestroyEntity(entity);
             }
@@ -295,7 +300,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
                 if (inGarrison.InBuilding)
                 {
                     GarrisonUtils.PosGetOut(ref inGarrison, ref transform, buildingTransform,
-                        GarrisonAttrLookup[inGarrison.BuildingEntity],  Config, false);
+                        GarrisonAttrLookup[inGarrison.BuildingEntity], Config, false);
                 }
 
                 ECB.SetComponentEnabled<GarrisonStateTag>(index, selfEntity, false);

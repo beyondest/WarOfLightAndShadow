@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
 using Unity.Entities;
 using UnityEngine;
 
@@ -9,7 +8,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
     public class LightShieldBuffSystemAuthoring : MonoBehaviour
     {
         [Tooltip("Affect how soon it will check to add under defend buff, as well as check to remove out of range light shield buff")]
-        public float defendTime = 1f;
+        public float defendTime = 10f;
+        public float selfDuration = 1f;
         public List<LightShieldBuffConfig> buffConfigs;
         private class ShieldBuffAuthoringBaker : Baker<LightShieldBuffSystemAuthoring>
         {
@@ -23,7 +23,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 }
                 AddComponent(entity, new LightShieldBuffGeneralConfig
                 {
-                    DefendTime = systemAuthoring.defendTime,
+                    UnderDefendDuration = systemAuthoring.defendTime,
+                    SelfDuration = systemAuthoring.selfDuration,
                 });
               
                 
@@ -45,7 +46,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
     public struct LightShieldBuffGeneralConfig : IComponentData
     {
-        public float DefendTime;
+        public float UnderDefendDuration;
+        public float SelfDuration;
     }
 
 

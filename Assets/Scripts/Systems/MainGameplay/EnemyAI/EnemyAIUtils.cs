@@ -64,10 +64,7 @@ public static class EnemyAIUtils
             var cur = stack[stack.Length - 1];
             stack.RemoveAtSwapBack(stack.Length - 1);
 
-            var allNeighbors = new NativeList<Neighbor>(Allocator.Temp);
-            NativeContainerUtils.GetAllValuesForKey(adj, ref allNeighbors, cur);
-            // 枚举邻居
-            foreach (var nb in allNeighbors)
+            foreach (var nb in adj.GetValuesForKey(cur))
             {
                 var nid = nb.ID;
                 // 如果已经访问过，则跳过

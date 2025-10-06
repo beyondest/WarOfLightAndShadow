@@ -1,11 +1,6 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
-using SparFlame.Systems.General.Animation;
-using SparFlame.Systems.General;
-using SparFlame.Systems.SubGameplay.Interact;
-using SparFlame.Systems.SubGameplay.Movement;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -21,7 +16,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<GarrisonStateTag> _garrison;
         private ComponentLookup<HealStateTag> _heal;
         private ComponentLookup<HarvestStateTag> _harvest;
-
+        private ComponentLookup<CastSkillStateTag> _castSkill;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -33,6 +28,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _garrison = state.GetComponentLookup<GarrisonStateTag>();
             _heal = state.GetComponentLookup<HealStateTag>();
             _harvest = state.GetComponentLookup<HarvestStateTag>();
+            _castSkill = state.GetComponentLookup<CastSkillStateTag>();
         }
 
         [BurstCompile]
@@ -44,6 +40,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _moving.Update(ref state);
             _attack.Update(ref state);
             _idle.Update(ref state);
+            _castSkill.Update(ref state);
 
             new StateLateCheckJob
             {
@@ -53,6 +50,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 Garrison = _garrison,
                 Heal = _heal,
                 Harvest = _harvest,
+                CastSkill = _castSkill,
             }.ScheduleParallel();
         }
 
@@ -67,7 +65,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [NativeDisableParallelForRestriction] public ComponentLookup<GarrisonStateTag> Garrison;
             [NativeDisableParallelForRestriction] public ComponentLookup<HealStateTag> Heal;
             [NativeDisableParallelForRestriction] public ComponentLookup<HarvestStateTag> Harvest;
-
+            [NativeDisableParallelForRestriction] public ComponentLookup<CastSkillStateTag> CastSkill;
             private void Execute(ref BasicStateData state, Entity selfEntity
             )
             {
@@ -91,6 +89,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         break;
                     case InteractState.Healing:
                         Heal.SetComponentEnabled(selfEntity, true);
+                        break;
+                    case InteractState.CastSkill:
+                        CastSkill.SetComponentEnabled(selfEntity, true);
                         break;
                     default:
                         BurstSafe.UnexpectedEnum(state.CurState);

@@ -98,17 +98,17 @@ namespace SparFlame.Systems.General.BasicControl
             return finalPath;
         }
 
-        public static string GetCitySubDataPath(long cityId, int playerSaveSlot, bool isTmp)
-        {
-            var saveRootFolder = GetSaveSlotFolder(playerSaveSlot);
-            var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
-            if (!Directory.Exists(cityRootFolder))
-                Directory.CreateDirectory(cityRootFolder);
-            var finalPath = isTmp
-                ? Path.Combine(cityRootFolder, $"{cityId}.sav.tmp")
-                : Path.Combine(cityRootFolder, $"{cityId}.sav");
-            return finalPath;
-        }
+        // public static string GetCitySubDataPath(long cityId, int playerSaveSlot, bool isTmp)
+        // {
+        //     var saveRootFolder = GetSaveSlotFolder(playerSaveSlot);
+        //     var cityRootFolder = Path.Combine(saveRootFolder, CitySubDataFolder);
+        //     if (!Directory.Exists(cityRootFolder))
+        //         Directory.CreateDirectory(cityRootFolder);
+        //     var finalPath = isTmp
+        //         ? Path.Combine(cityRootFolder, $"{cityId}.sav.tmp")
+        //         : Path.Combine(cityRootFolder, $"{cityId}.sav");
+        //     return finalPath;
+        // }
 
         public static string GetArmyGroupSubDataFolder(int playerSaveSlot)
         {
@@ -349,7 +349,6 @@ namespace SparFlame.Systems.General.BasicControl
         }
 
         #endregion
-
 
       
         

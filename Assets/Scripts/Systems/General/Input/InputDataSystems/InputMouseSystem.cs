@@ -65,10 +65,11 @@ namespace SparFlame.Systems.General.Input
             if (EventSystem.current.IsPointerOverGameObject())
                 data.IsOverUI = true;
             data.MousePosition = UnityEngine.Input.mousePosition;
-            if (MouseCastOnEntity(out var entity, out var hitPosition))
+            if (MouseCastOnEntity(out var entity, out var hitPosition, out var normal))
             {
                 data.HitEntity = entity;
                 data.HitPosition = hitPosition;
+                data.HitNormal = normal;
             }
 
             if (UnityEngine.Input.GetMouseButtonDown(_mouseKeyMapping.LeftClickIndex))
@@ -160,7 +161,7 @@ namespace SparFlame.Systems.General.Input
 
         #region MathRayCast
 
-        private bool MouseCastOnEntity(out Entity hitEntity, out float3 hitPosition)
+        private bool MouseCastOnEntity(out Entity hitEntity, out float3 hitPosition, out float3 hitNormal)
         {
             var camRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
             float3 rayStart = camRay.origin;
@@ -181,6 +182,7 @@ namespace SparFlame.Systems.General.Input
             {
                 hitEntity = physicsWorld.PhysicsWorld.Bodies[raycastHit.RigidBodyIndex].Entity;
                 hitPosition = raycastHit.Position;
+                hitNormal = raycastHit.SurfaceNormal;
                 if (EntityManager.Exists(hitEntity))
                 {
                     return true;
@@ -189,6 +191,7 @@ namespace SparFlame.Systems.General.Input
 
             hitEntity = Entity.Null;
             hitPosition = float3.zero;
+            hitNormal = float3.zero;
             return false;
         }
 

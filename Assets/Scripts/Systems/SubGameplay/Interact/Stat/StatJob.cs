@@ -67,8 +67,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 case StatChangeType.None:
                     break;
                 case StatChangeType.Heal:
-                    if (statInteractee.curValue >= statInteractee.maxValue + statInteractee.bonus) return;
-                    statInteractee.curValue = math.min(statInteractee.maxValue + statInteractee.bonus,
+                    if (statInteractee.curValue >= statInteractee.maxValue /*+ statInteractee.bonus*/) return;
+                    statInteractee.curValue = math.min(statInteractee.maxValue /* + statInteractee.bonus*/,
                         statInteractee.curValue + absAmount);
                     break;
                 case StatChangeType.Attack:
@@ -84,7 +84,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     break;
             }
 
-            
+
             if (StatDebug.enabled)
             {
                 DebugCheck(request, interacteeAttr, ref statInteractee);
@@ -93,7 +93,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             // Generate army group stat change request if needed
             if (InArmyGroupLookup.TryGetComponent(request.Interactee, out var inArmyGroup))
             {
-                var armyGroupStatChangeAmount = statInteractee.curValue  - preValue;
+                var armyGroupStatChangeAmount = statInteractee.curValue - preValue;
                 var armyGroupStatChangeRequest = ECB.CreateEntity(index);
                 ECB.AddComponent<SubGameplayEntityTag>(index, armyGroupStatChangeRequest);
                 ECB.AddComponent(index, armyGroupStatChangeRequest,
@@ -103,7 +103,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         StatChangeValue = (int)armyGroupStatChangeAmount,
                     });
             }
-            
+
             // Check interact type and do different jobs according to interact type 
             CheckInteractType(in request, in statInteractee, in interacteeAttr, index, absAmount);
 
@@ -128,8 +128,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 {
                     if (request.InteractorSubGameplayGeneralAttr.BaseTag == BaseTag.Units)
                     {
-                      
-
                         var expGainRequest = ECB.CreateEntity(index);
                         ECB.AddComponent<SubGameplayEntityTag>(index, expGainRequest);
                         ECB.AddComponent(index, expGainRequest, new ExpGainRequest
@@ -142,7 +140,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
                     if (interacteeAttr.BaseTag == BaseTag.Units
                         && UnitAttrLookup.TryGetComponent(request.Interactee, out var interacteeUnitAttr)
-                        && interacteeUnitAttr.Type == UnitType.Shield)
+                        && interacteeUnitAttr.type == UnitType.Shield)
                     {
                         var expGainRequest = ECB.CreateEntity(index);
                         ECB.AddComponent<SubGameplayEntityTag>(index, expGainRequest);
@@ -268,7 +266,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
             switch (interacteeAttr.BaseTag)
             {
                 case BaseTag.Units:
-                    StatUtils.GenerateGarrisonUnitDieRequest(request.Interactee, index, PrefabIdLookup[request.Interactee].value,
+                    StatUtils.GenerateGarrisonUnitDieRequest(request.Interactee, index,
+                        PrefabIdLookup[request.Interactee].value,
                         ref InGarrisonLookup, ECB);
                     StatUtils.GenerateReleasePopulationRequest(request.Interactee, index,
                         CurrentCity,
@@ -276,15 +275,15 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
                     if (InArmyGroupLookup.TryGetComponent(request.Interactee, out var inArmyGroup))
                     {
-                        StatUtils.GenerateRemoveFromArmyGroupRequest(request.Interactee, 
+                        StatUtils.GenerateRemoveFromArmyGroupRequest(request.Interactee,
                             PrefabIdLookup[request.Interactee].value,
                             index,
                             statInteractee.maxValue,
                             inArmyGroup, ECB);
                     }
-                    
+
                     // Generate battle recorder request
-                    if (relationShip is Relationship.Self or Relationship.Ally )
+                    if (relationShip is Relationship.Self or Relationship.Ally)
                     {
                         ECB.AddComponent<BattleRecorderPlayerSideDied>(index, battleRecorderRequest);
                     }
@@ -295,6 +294,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             DiedUnitLevel = ExpDataLookup[request.Interactee].curLevel,
                         });
                     }
+
                     KillUnit(request, index, interacteeAttr);
                     break;
                 case BaseTag.Buildings:
@@ -338,15 +338,17 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             StatUtils.GenerateResourceTaskRemoveRequest(index,
                                 uniqueId, CurrentCity, ResourceRequestType.ConjureBuildingDestroyed, ECB);
                         }
+
                         // If constructed and generating building is destroyed, decrease generate speed
                         if (GeneratingTagLookup.HasComponent(request.Interactee))
                         {
                             var generateAttr = GenerateAttrLookup[request.Interactee];
-                            StatUtils.GenerateDecreaseGenerateSpeedRequest(index, CurrentCity, generateAttr.GenerateResourceType,
-                                generateAttr.GenerateSpeedHoursPerUnit,ECB);
+                            StatUtils.GenerateDecreaseGenerateSpeedRequest(index, CurrentCity,
+                                generateAttr.GenerateResourceType,
+                                generateAttr.GenerateSpeedHoursPerUnit, ECB);
                         }
                     }
-                    
+
                     if (relationShip == Relationship.Self)
                     {
                         ECB.AddComponent<BattleRecorderPlayerSideDestroyedBuilding>(index, battleRecorderRequest);
@@ -358,7 +360,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                             : Tier.Tier1;
                         ECB.AddComponent(index, battleRecorderRequest, new BattleRecorderEnemySideDestroyedBuilding
                         {
-                            DestroyedBuildingTier =tier
+                            DestroyedBuildingTier = tier
                         });
                     }
 
@@ -376,7 +378,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         var bias = (resourceAttr.AmountRange.upper - resourceAttr.AmountRange.lower) * RandomValue;
                         statInteractee.maxValue = (int)(resourceAttr.AmountRange.lower + bias);
                         statInteractee.curValue = statInteractee.maxValue;
-                        statInteractee.bonus = 0;
+                        // statInteractee.bonus = 0;
                         ECB.AddComponent<RegeneratingTag>(index, request.Interactee);
                         ECB.SetComponent(index, request.Interactee, renewableData);
                     }
@@ -428,15 +430,15 @@ namespace SparFlame.Systems.SubGameplay.Interact
             ref StatData statInteractee)
         {
             if (request.Type == StatChangeType.SimpleCleanUsedAsUpgrade) return;
-            var relationship = FactionUtils.GetRelationship(PlayerFactionData.faction,
-                PlayerFactionData.subFaction, interacteeAttr.Faction,
-                interacteeAttr.SubFaction);
+            var relationship = FactionUtils.GetRelationshipSimple(PlayerFactionData.faction,
+                interacteeAttr.Faction
+            );
             if (StatDebug.playerStatGeneralInfinite && relationship == Relationship.Self)
-                statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
             if (StatDebug.playerStatGeneralZero && relationship == Relationship.Self)
                 statInteractee.curValue = 0f;
             if (StatDebug.aiStatGeneralInfinite && relationship != Relationship.Self)
-                statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
             if (StatDebug.aiStatGeneralZero && relationship != Relationship.Self)
                 statInteractee.curValue = 0f;
             if (StatDebug.playerCrystalStatInfinite && relationship == Relationship.Self &&
@@ -446,7 +448,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
                     or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
                 {
-                    statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                    statInteractee.curValue = statInteractee.maxValue /* + statInteractee.bonus*/;
                 }
             }
 
@@ -468,7 +470,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
                     or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
                 {
-                    statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                    statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
                 }
             }
 
@@ -486,7 +488,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             if (StatDebug.playerUnitStatInfinite && relationship == Relationship.Self &&
                 interacteeAttr.BaseTag == BaseTag.Units)
             {
-                statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                statInteractee.curValue = statInteractee.maxValue /* + statInteractee.bonus*/;
             }
 
             if (StatDebug.playerUnitStatZero && relationship == Relationship.Self &&
@@ -498,7 +500,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             if (StatDebug.aiUnitStatInfinite && relationship != Relationship.Self &&
                 interacteeAttr.BaseTag == BaseTag.Units)
             {
-                statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
             }
 
             if (StatDebug.aiUnitStatZero && relationship != Relationship.Self &&
@@ -508,7 +510,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             }
 
             if (StatDebug.resourceStatInfinite && interacteeAttr.BaseTag == BaseTag.Resources)
-                statInteractee.curValue = statInteractee.maxValue + statInteractee.bonus;
+                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
             if (StatDebug.resourceStatZero && interacteeAttr.BaseTag == BaseTag.Resources)
                 statInteractee.curValue = 0f;
         }
@@ -527,7 +529,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 TransformLookup[request.Interactee].Position,
                 ECB, index);
             ECB.RemoveComponent<SubGameplayGeneralAttr>(index, request.Interactee);
-            ECB.RemoveComponent<UnitAttr>(index, request.Interactee);
+            // ECB.RemoveComponent<UnitAttr>(index, request.Interactee);
             ECB.RemoveComponent<StatData>(index, request.Interactee);
             ECB.RemoveComponent<MovableData>(index, request.Interactee);
             ECB.RemoveComponent<Selected>(index, request.Interactee);

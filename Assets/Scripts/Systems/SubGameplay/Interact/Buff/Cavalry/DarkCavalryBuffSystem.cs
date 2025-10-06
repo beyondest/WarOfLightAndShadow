@@ -1,6 +1,5 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Components.VFX;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -30,17 +29,24 @@ namespace SparFlame.Systems.SubGameplay.Interact.Cleric
 
 
         [BurstCompile]
-        [WithAll(typeof(DarkCavalryBuff))]
         [WithNone(typeof(UnitDeadTag))]
         public partial struct DarkCavalryBuffJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public DynamicBuffer<DarkCavalryBuffConfig> Configs;
+            [ReadOnly] public float ElapsedTime;
 
             private void Execute([ChunkIndexInQuery] int index, ref InteractAbilityBonus bonus, in StatData stat,
-                in ExpData expData, in AttackAbility attackAbility, in LocalTransform transform, Entity selfEntity)
+                in ExpData expData, in AttackAbility attackAbility, in LocalTransform transform,
+                in DarkCavalryBuff buff,
+                Entity selfEntity)
             {
-                if (stat.curValue >= (stat.maxValue + stat.bonus) * 0.5f)
+                if (buff.StopTime <= ElapsedTime)
+                {
+                    ECB.RemoveComponent<DarkCavalryBuff>(index, selfEntity);
+                    return;
+                }
+                /*if (stat.curValue >= stat.maxValue /*+ stat.bonus#1# * 0.5f)
                 {
                     bonus.AmountBonus = 0;
                     var vfxKillRequest = ECB.CreateEntity(index);
@@ -52,11 +58,11 @@ namespace SparFlame.Systems.SubGameplay.Interact.Cleric
                         VFXTrackTarget = selfEntity
                     });
                     return;
-                }
+                }*/
 
                 var lossPercent = 1f - stat.curValue / stat.maxValue;
                 var bonusScale = Configs[(int)expData.curTier - 3].attackAmountBonusWhenFullLossHp;
-                if (bonus.AmountBonus == 0)
+                /*if (bonus.AmountBonus == 0)
                 {
                     var vfxRequest = ECB.CreateEntity(index);
                     ECB.AddComponent<SubGameplayEntityTag>(index, vfxRequest);
@@ -73,7 +79,7 @@ namespace SparFlame.Systems.SubGameplay.Interact.Cleric
                         SpawnPosition = transform.Position,
                         VFXTrackTarget = selfEntity
                     });
-                }
+                }*/
                 bonus.AmountBonus = (int)(attackAbility.Amount * lossPercent * bonusScale);
                
             }

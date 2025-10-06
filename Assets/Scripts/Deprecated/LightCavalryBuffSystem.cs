@@ -11,7 +11,7 @@
 //
 // namespace SparFlame.GamePlaySystem.Interact
 // {
-//     public partial struct LightCavalryBuffSystem : ISystem
+//     public partial struct BlessingBuffSystem : ISystem
 //     {
 //         [BurstCompile]
 //         public void OnCreate(ref SystemState state)
@@ -46,7 +46,7 @@
 //         {
 //             [ReadOnly] public float CurTime;
 //             public EntityCommandBuffer.ParallelWriter ECB;
-//             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in LightCavalryBuffData data)
+//             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in BlessingBuffData data)
 //             {
 //                 if (CurTime > data.StopTime)
 //                 {
@@ -64,7 +64,7 @@
 //         {
 //             [ReadOnly] public float CurTime;
 //             public EntityCommandBuffer.ParallelWriter ECB;
-//             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, ref StatData statData, ref LightCavalryBuffData data,
+//             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, ref StatData statData, ref BlessingBuffData data,
 //                 in LocalTransform transform)
 //             {
 //                 ECB.SetComponentEnabled<ContributeSightTag>(index, selfEntity,true);

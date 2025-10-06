@@ -5,6 +5,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 // ReSharper disable Unity.Entities.SingletonMustBeRequested
 
@@ -40,12 +41,15 @@ namespace SparFlame.Systems.General.Battle
 
             if (!SystemAPI.HasSingleton<BattleRecorder>())
             {
+                var pos = SystemAPI.HasSingleton<CrystalDef>()? SystemAPI.GetComponent<LocalTransform>(SystemAPI.GetSingletonEntity<CrystalDef>()).Position
+                    : float3.zero;
+                
                 state.EntityManager.CreateSingleton(new BattleRecorder
                 {
                     StartTime = (float)SystemAPI.Time.ElapsedTime,
                     StartPlayerSideCityUnitCount = _playerSideUnitQuery.CalculateEntityCount(),
                     StartEnemySideCityUnitCount = _enemySideUnitQuery.CalculateEntityCount(),
-                    
+                    CrystalPosition =  pos,
                     EnemySideDiedCount = 0,
                     PlayerSideDiedCount = 0,
                     EnemySideDestroyedBuildingsCount = 0,

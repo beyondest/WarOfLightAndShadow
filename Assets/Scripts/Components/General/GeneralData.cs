@@ -31,6 +31,12 @@ namespace SparFlame.Components.General
 
     public struct FactionUtils
     {
+        public static Relationship GetRelationshipSimple(FactionTag selfFaction, FactionTag targetFaction)
+        {
+            if (selfFaction == targetFaction) return Relationship.Self;
+            if(selfFaction == ~targetFaction)return Relationship.Hostile;
+            return Relationship.Neutral;
+        }
         public static Relationship GetRelationship(FactionTag selfFaction, SubFactionTag selfSubFaction,
             FactionTag targetFaction, SubFactionTag targetSubFaction)
         {

@@ -67,7 +67,8 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 }
 
                 ECB.AddComponent<AITag>(index, selfEntity);
-                
+                ECB.AddComponent<AIUnitCommandData>(index, selfEntity);
+                ECB.SetComponentEnabled<AIUnitCommandData>(index, selfEntity, false);
             }
         }
         

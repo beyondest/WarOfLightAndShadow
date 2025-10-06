@@ -37,8 +37,4 @@ namespace SparFlame.Components.General
         
     }
 
-    // public struct ReassignSubGameplayAITagRequest : IComponentData
-    // {
-    //     
-    // }
 }

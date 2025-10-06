@@ -15,6 +15,7 @@ namespace SparFlame.Systems.General.Battle
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<WorldTimeData>();
             state.RequireForUpdate<BattleTriggerConfig>();
             state.RequireForUpdate<PlayerFactionData>();
             state.RequireForUpdate<BattleTriggerRequest>();
@@ -50,12 +51,22 @@ namespace SparFlame.Systems.General.Battle
             {
                 state.EntityManager.DestroyEntity(entities[0]);
             }
-
             // Check if enemy army group attack support city. If so , only simulate the vfx 
             if (SystemAPI.HasComponent<SupportFightTag>(request.Defender)
                 && SystemAPI.HasComponent<AITag>(request.Attacker))
             {
+                var hint = state.EntityManager.CreateEntity();
+                state.EntityManager.AddComponent<HintRequest>(hint);
+                state.EntityManager.AddComponent<MainGameplayEntityTag>(hint);
+                state.EntityManager.SetComponentData(hint, new HintRequest
+                {
+                    Name = HintName.EnemyIsAttackingYourAllies
+                });
                 state.EntityManager.AddComponent<InvadingSupportCityTag>(request.Attacker);
+                state.EntityManager.SetComponentData(request.Attacker, new InvadingSupportCityTag
+                {
+                    LastCheckTime = SystemAPI.GetSingleton<WorldTimeData>().totalHours
+                });
                 return;
             }
             

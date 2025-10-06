@@ -3,18 +3,20 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.SubGameplay.Interact;
 using SparFlame.Systems.SubGameplay.Movement;
+using SparFlame.Systems.SubGameplay.Movement.FakeCollision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 // ReSharper disable ReplaceWithSingleAssignment.False
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
     [BurstCompile]
-    [UpdateAfter(typeof(MovementSystem))]
+    [UpdateAfter(typeof(SeekTargetSystem))]
     [UpdateAfter(typeof(SightUpdateListSystem))]
     [UpdateAfter(typeof(BuffManageSystem))]
     public partial struct MovingStateMachine : ISystem
@@ -34,6 +36,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
         private ComponentLookup<HoldOnPosition> _holdOnPositionLookup;
+        private ComponentLookup<FakeCollisionTriggerData> _fakeCollisionDataLookup;
+        private ComponentLookup<FormationMovingTag> _formationMovingTagLookup;
+        private ComponentLookup<AutoGiveWayTag> _autoGiveWayTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -55,9 +60,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
             _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
             _holdOnPositionLookup = state.GetComponentLookup<HoldOnPosition>(true);
-
-            
-            _localTransformLookup = state.GetComponentLookup<LocalTransform>();
+            _fakeCollisionDataLookup = state.GetComponentLookup<FakeCollisionTriggerData>(true);
+            _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
+            _formationMovingTagLookup = state.GetComponentLookup<FormationMovingTag>(true);
+            _autoGiveWayTagLookup = state.GetComponentLookup<AutoGiveWayTag>(true);
             _movableLookup = state.GetComponentLookup<MovableData>();
             _unitBasicStateLookup = state.GetComponentLookup<BasicStateData>();
         }
@@ -87,6 +93,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _inGarrisonLookup.Update(ref state);
             _darkShieldTauntedBuffLookup.Update(ref state);
             _holdOnPositionLookup.Update(ref state);
+            _fakeCollisionDataLookup.Update(ref state);
+            _formationMovingTagLookup.Update(ref state);
+            _autoGiveWayTagLookup.Update(ref state);
             // _squeezeLookup.Update(ref state);
             // _autoGiveWayLookup.Update(ref state);
             new CheckMovingState
@@ -110,6 +119,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 GarrisonSystemConfig = garrisonSystemConfig,
                 DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
                 HoldOnPositionLookUp = _holdOnPositionLookup,
+                FakeCollisionDataLookup = _fakeCollisionDataLookup,
+                FormationMovingTagLookup = _formationMovingTagLookup,
+                AutoGiveWayTagLookup = _autoGiveWayTagLookup,
             }.ScheduleParallel();
         }
 
@@ -120,6 +132,12 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         public partial struct CheckMovingState : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
+
+            [ReadOnly] public MovingStateMachineConfig Config;
+            [ReadOnly] public GarrisonSystemConfig GarrisonSystemConfig;
+            [ReadOnly] public SightSystemConfig SightSystemConfig;
+
+
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralLookup;
             [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
             [ReadOnly] public ComponentLookup<Selected> Selected;
@@ -132,31 +150,26 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
             [ReadOnly] public ComponentLookup<HoldOnPosition> HoldOnPositionLookUp;
-
-
-            // Resolve self stuck will modify transform and lookup random transform for squeeze direction
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransLookup;
-
+            [ReadOnly] public ComponentLookup<FormationMovingTag> FormationMovingTagLookup;
+            [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> FakeCollisionDataLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> TransLookup;
+            [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayTagLookup;
             // Change self moving state when taunted or complete and lookup random movable data for collider size
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableLookup;
 
             // Change self basic state and lookup random basic state for judging
             [NativeDisableParallelForRestriction] public ComponentLookup<BasicStateData> StateLookup;
 
-            // [ReadOnly] public float DeltaTime;
-
-            [ReadOnly] public MovingStateMachineConfig Config;
-            [ReadOnly] public GarrisonSystemConfig GarrisonSystemConfig;
-            [ReadOnly] public SightSystemConfig SightSystemConfig;
 
             private void Execute([ChunkIndexInQuery] int index, ref Surroundings surroundings,
-                ref DynamicBuffer<InsightTarget> targets,
+                ref NavAgentComponent navAgentComponent,
+                ref DynamicBuffer<InsightTarget> targets, in DynamicBuffer<FakeColliderTarget> colliderTargets,
                 Entity selfEntity)
             {
                 ref var stateData = ref StateLookup.GetRefRW(selfEntity).ValueRW;
                 ref var movableData = ref MovableLookup.GetRefRW(selfEntity).ValueRW;
-                ref var transform = ref TransLookup.GetRefRW(selfEntity).ValueRW;
-                var selfFaction = GeneralLookup[selfEntity].Faction;
+                var selfTrans = TransLookup[selfEntity];
+                var selfGeneralAttr = GeneralLookup[selfEntity];
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
                 if (stateData.CurState != InteractState.Moving) return;
 
@@ -164,19 +177,20 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 //         ref targets, selfEntity, index))
                 //     return;
                 // Check if reached the last waypoint
-                if (CheckIfCompleteMoving(ref surroundings, ref movableData, ref stateData, selfEntity, index))
+                if (CheckIfCompleteMoving(ref surroundings, ref movableData,
+                        ref navAgentComponent,
+                        colliderTargets, selfGeneralAttr.Faction, ref stateData, selfEntity, index))
                     return;
 
                 // Not complete the moving. If stuck, should try resolve stuck first. If not stuck or stuck resolved , return true
-                var ifResolveStuckByChangeState = TryResolveStuck(ref surroundings, ref targets, in movableData,
-                    ref stateData,
-                    ref transform,
-                    selfEntity, index);
-                if (ifResolveStuckByChangeState) return;
+                TryResolveStuck(in selfTrans, ref surroundings, ref targets, colliderTargets,
+                    movableData, selfGeneralAttr, ref stateData,
+                    selfEntity, index, out var ifStuck, out var ifStuckResolvedBySwitchState);
+                if (ifStuck && ifStuckResolvedBySwitchState) return;
 
                 // Not complete the moving. May change target if some other things happen
                 if (CheckShouldChangeAndIfChangeTarget(ref stateData, ref movableData,
-                        ref targets, in selfFaction, transform,
+                        ref targets, in selfGeneralAttr.Faction, selfTrans,
                         selfEntity, index)) return;
 
                 CheckUpdateTargetPos(ref stateData, ref movableData);
@@ -201,20 +215,33 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             )
             {
                 var shouldChangeTarget = false;
-                if(DarkShieldTauntedBuffLookup.TryGetComponent(selfEntity, out var tauntedBuff)
-                   && DarkShieldTauntedBuffLookup.IsComponentEnabled(selfEntity)
-                   && TransLookup.TryGetComponent(tauntedBuff.TauntedBy, out var targetTrans)
-                   && BoxColliderSizeLookup.TryGetComponent(tauntedBuff.TauntedBy, out var boxColliderSize))
+                /*if (InGarrisonLookup.TryGetComponent(stateData.TargetEntity, out var targetInGarrison) &&
+                    stateData.TargetState == InteractState.Attacking &&
+                    BoxColliderSizeLookup.TryGetComponent(targetInGarrison.BuildingEntity, out var tarBox))
                 {
-                    if (stateData.TargetEntity == tauntedBuff.TauntedBy) return false;
-                    // If taunted, should change target to taunted target
-                    stateData.TargetEntity = tauntedBuff.TauntedBy;
+                    stateData.TargetEntity = targetInGarrison.BuildingEntity;
                     stateData.TargetState = InteractState.Attacking;
-                    MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, boxColliderSize.Box,
+                    var tarPos = TransLookup[stateData.TargetEntity].Position;
+                    MovementUtils.SetMoveTarget(ref movableData, tarPos, tarBox.SeparationBox,
                         MovementCommandType.Interactive, AttackLookup[selfEntity].Range);
                     return true;
-                }
-                
+                }*/
+
+                // if (DarkShieldTauntedBuffLookup.TryGetComponent(selfEntity, out var tauntedBuff)
+                //     && DarkShieldTauntedBuffLookup.IsComponentEnabled(selfEntity)
+                //     && TransLookup.TryGetComponent(tauntedBuff.TauntedBy, out var targetTrans)
+                //     && BoxColliderSizeLookup.TryGetComponent(tauntedBuff.TauntedBy, out var boxColliderSize))
+                // {
+                //     if (stateData.TargetEntity == tauntedBuff.TauntedBy) return false;
+                //     // If taunted, should change target to taunted target
+                //     stateData.TargetEntity = tauntedBuff.TauntedBy;
+                //     stateData.TargetState = InteractState.Attacking;
+                //     stateData.Focus = true;
+                //     MovementUtils.SetMoveTarget(ref movableData, targetTrans.Position, boxColliderSize.SeparationBox,
+                //         MovementCommandType.Interactive, AttackLookup[selfEntity].Range);
+                //     return true;
+                // }
+
                 var isAi = AITagLookup.HasComponent(selfEntity);
 
                 SubGameplayGeneralAttr targetSubGameplayGeneralAttr;
@@ -227,7 +254,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 }
 
                 // Interactive move check
-                if (movableData.MovementCommandType == MovementCommandType.Interactive && stateData.TargetState != InteractState.Garrison)
+                if (movableData.MovementCommandType == MovementCommandType.Interactive &&
+                    stateData.TargetState != InteractState.Garrison)
                 {
                     // Check target not destroy
                     if (GeneralLookup.TryGetComponent(stateData.TargetEntity, out targetSubGameplayGeneralAttr))
@@ -248,14 +276,17 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         var holdOnUnitOutOfDefendRange = false;
                         if (HoldOnPositionLookUp.TryGetComponent(selfEntity, out var holdOnPosition))
                         {
-                            holdOnUnitOutOfDefendRange = Config.MaxDisSqUnitToHoldOnPosition < math.distancesq(selfTransform.Position,
+                            holdOnUnitOutOfDefendRange = Config.MaxDisSqUnitToHoldOnPosition < math.distancesq(
+                                selfTransform.Position,
                                 holdOnPosition.Position);
                         }
+
                         var canHeal = HealLookup.HasComponent(selfEntity);
                         var canHarvest = HarvestLookup.HasComponent(selfEntity);
                         var canAttack = AttackLookup.HasComponent(selfEntity);
                         // Normal check
-                        if (InteractUtils.IsTargetValid(in targetSubGameplayGeneralAttr, in selfFactionTag, in targetStat,
+                        if (InteractUtils.IsTargetValid(in targetSubGameplayGeneralAttr, in selfFactionTag,
+                                in targetStat,
                                 canHeal, canHarvest, canAttack
                                 ,
                                 !RegeneratingTagLookup.HasComponent(stateData.TargetEntity)))
@@ -286,13 +317,13 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange && !holdOnUnitOutOfDefendRange)
                                 return false;
                         }
-                  
+
                         // Garrison unit Drop aggro， if Ai, should focus go back and regenerating hp
                         if (garrisonUnitOutOfDefendRange)
                         {
                             StateUtils.GarrisonMoveBack(inGarrison, ref stateData, ref movableData,
                                 TransLookup[inGarrison.BuildingEntity].Position,
-                                BoxColliderSizeLookup[inGarrison.BuildingEntity].Box,
+                                BoxColliderSizeLookup[inGarrison.BuildingEntity].SeparationBox,
                                 GarrisonSystemConfig.GarrisonRadiusSq, isAi,
                                 selfEntity, index, ECB);
                             return true;
@@ -303,11 +334,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         // Hold on unit out of defend range and no target in sight, march back to hold on position
                         if (holdOnUnitOutOfDefendRange && targets.IsEmpty)
                         {
-                           StateUtils.MarchToPosition(ref stateData, ref movableData, holdOnPosition.Position,
-                               ECB, index, selfEntity, false);
-                           return true;
+                            StateUtils.MarchToPosition(ref stateData, ref movableData, holdOnPosition.Position,
+                                ECB, index, selfEntity, false);
+                            return true;
                         }
-                     
                     }
 
                     // Current target invalid, check if turn to idle
@@ -325,10 +355,13 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if (!shouldChangeTarget) return false;
                 // Interact move to target. Because it is in moving state already, so don't need to switch state;
                 // Because moving state machine Update after update target list system, choose target should always be valid
+                ECB.SetComponentEnabled<FormationMovingTag>(index, selfEntity, false);
+                ECB.SetComponentEnabled<AutoGiveWayTag>(index, selfEntity, false);
+
                 stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
                 targetSubGameplayGeneralAttr = GeneralLookup[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
-                var targetColliderSize = BoxColliderSizeLookup[stateData.TargetEntity].Box;
+                var targetColliderSize = BoxColliderSizeLookup[stateData.TargetEntity].SeparationBox;
                 float range;
                 if (targetSubGameplayGeneralAttr.Faction == selfFactionTag)
                 {
@@ -355,85 +388,99 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             /// <summary>
             /// Will return true when stuck is resolved by changing state
             /// </summary>
+            /// <param name="selfTrans"></param>
             /// <param name="surroundings"></param>
             /// <param name="targets"></param>
+            /// <param name="colliderTargets"></param>
             /// <param name="movableData"></param>
+            /// <param name="selfGeneralAttr"></param>
             /// <param name="stateData"></param>
-            /// <param name="transform"></param>
             /// <param name="selfEntity"></param>
             /// <param name="index"></param>
-            /// <returns></returns>
-            private bool TryResolveStuck(ref Surroundings surroundings, ref DynamicBuffer<InsightTarget> targets,
-                in MovableData movableData,
-                ref BasicStateData stateData, ref LocalTransform transform, Entity selfEntity, int index)
+            /// <param name="ifStuck"></param>
+            /// <param name="ifStuckResolvedBySwitchState"></param>
+            /// <returns>If stuck is resolved or not</returns>
+            private void TryResolveStuck(in LocalTransform selfTrans, ref Surroundings surroundings,
+                ref DynamicBuffer<InsightTarget> targets,
+                in DynamicBuffer<FakeColliderTarget> colliderTargets,
+                in MovableData movableData, in SubGameplayGeneralAttr selfGeneralAttr,
+                ref BasicStateData stateData, Entity selfEntity, int index,
+                out bool ifStuck, out bool ifStuckResolvedBySwitchState)
             {
+                ifStuck = false;
+                ifStuckResolvedBySwitchState = false;
                 if (movableData.DetailInfo == DetailInfo.CalculationNotComplete)
                 {
                     // Calculation not complete and not stuck too many times, wait for calculation
                     if (surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck)
-                        return false;
+                        return;
                     // Calculation not complete for too many times, consider wrong target
-                    else
+                    stateData.TargetState = InteractState.Idle;
+                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                    var hintRequest = ECB.CreateEntity(index);
+                    ECB.AddComponent<SubGameplayEntityTag>(index, hintRequest);
+                    ECB.AddComponent(index, hintRequest, new HintRequest
                     {
-                        stateData.TargetState = InteractState.Idle;
-                        StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                        return true;
-                        // Debug.Log("Calculation not complete, stuck for too many times");
-                        // return true;
-                    }
+                        Name = HintName.TargetNotReachable
+                    });
+                    return;
                 }
 
                 // Stuck times too much
                 if (surroundings.MoveSuccess
-                    || surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck) return false;
-
+                    || surroundings.CompromiseTimes <= Config.MaxAllowedCompromiseTimesForStuck) return;
                 var selfCanAttack = AttackLookup.HasComponent(selfEntity);
-                // If stuck by enemy building, remove it
-                if (GeneralLookup.TryGetComponent(surroundings.FrontEntity, out var generalAttr)
-                    && generalAttr is { BaseTag: BaseTag.Buildings, Faction: FactionTag.Dark })
-                {
-                    // No attack ability unit cannot remove enemy building forward, and should turn to idle
-                    if (!selfCanAttack)
-                    {
-                        stateData.TargetState = InteractState.Idle;
-                        StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                        return true;
-                    }
 
-                    InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
-                        SightSystemConfig.MemoryTargetAfterStuckByBuilding);
-                    stateData.TargetEntity = surroundings.FrontEntity;
+                ifStuck = true;
+                if (stateData.Focus || !selfCanAttack)
+                {
+                    ifStuckResolvedBySwitchState = false; // Let avoidance system to handle stuck
+                    return;
+                }
+
+                var closestTarget = Entity.Null;
+                var minDisSq = float.MaxValue;
+
+                foreach (var target in colliderTargets)
+                {
+                    if (!FakeCollisionDataLookup.TryGetComponent(target.Target, out var data)
+                        || !GeneralLookup.TryGetComponent(data.BelongsTo, out var generalAttr))
+                        continue;
+                    var relationShip =
+                        FactionUtils.GetRelationshipSimple(selfGeneralAttr.Faction, generalAttr.Faction);
+                    if (relationShip == Relationship.Hostile)
+                    {
+                        var position = TransLookup[data.BelongsTo].Position;
+                        var disSq = math.distancesq(selfTrans.Position, position);
+                        if (disSq < minDisSq)
+                        {
+                            minDisSq = disSq;
+                            closestTarget = data.BelongsTo;
+                        }
+                    }
+                }
+
+                if (closestTarget != Entity.Null)
+                {
+                    ifStuckResolvedBySwitchState = true;
+                    // InteractUtils.MemoryTarget(ref targets, stateData.TargetEntity,
+                    //     SightSystemConfig.MemoryTargetAfterStuckByBuilding);
+                    stateData.TargetEntity = closestTarget;
                     stateData.TargetState = InteractState.Attacking;
                     stateData.Focus = true;
                     StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                    return true;
+                    MovementUtils.ResetSurroundings(ref surroundings);
+                    return;
                 }
 
-                // Focus unit cannot auto switch target even get stuck, unless it stuck by building
-                if (stateData.Focus || !selfCanAttack) return false;
-
-                // If front is not enemy building and get stuck and left or right is enemy unit, attack it. Front cannot be enemy unit or it will get taunted
-                var leftIsEnemy = surroundings.LeftEntity != Entity.Null
-                                  && GeneralLookup.TryGetComponent(surroundings.LeftEntity, out var iDataLeft)
-                                  && iDataLeft is { BaseTag: BaseTag.Units, Faction: FactionTag.Dark };
-                var rightIsEnemy = surroundings.RightEntity != Entity.Null
-                                   && GeneralLookup.TryGetComponent(surroundings.RightEntity, out var iDataRight)
-                                   && iDataRight is { BaseTag: BaseTag.Units, Faction: FactionTag.Dark };
-                if (leftIsEnemy || rightIsEnemy)
-                {
-                    stateData.TargetEntity = leftIsEnemy
-                        ? surroundings.LeftEntity
-                        : surroundings.RightEntity;
-                    stateData.TargetState = InteractState.Attacking;
-                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                    return true;
-                }
-
-                return false;
+                ifStuckResolvedBySwitchState = false;
             }
 
 
             private bool CheckIfCompleteMoving(ref Surroundings surroundings, ref MovableData movableData,
+                ref NavAgentComponent navAgentComponent,
+                in DynamicBuffer<FakeColliderTarget> colliderTargets,
+                in FactionTag selfFaction,
                 ref BasicStateData stateData, Entity entity, int index)
             {
                 // if (movableData.ForceCalculate)
@@ -442,22 +489,31 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 if (movableData.MovementState is MovementState.MovementComplete
                     or MovementState.MovementPartialComplete)
                 {
+                    ECB.SetComponentEnabled<FormationMovingTag>(index, entity, false);
                     MovementUtils.ResetMovableData(ref movableData);
                     MovementUtils.ResetSurroundings(ref surroundings);
+                    ECB.SetBuffer<WaypointBuffer>(index, entity);
+                    MovementUtils.ResetNavAgent(ref navAgentComponent);
                     if (stateData.TargetState == InteractState.Idle) stateData.TargetEntity = Entity.Null;
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     stateData.TargetState = InteractState.Idle;
                     return true;
                 }
-
+                // Auto give way unit does not check surroundings reach
+                if (AutoGiveWayTagLookup.IsComponentEnabled(entity)) return false;
                 // Check if surrounded ally unit reached. This only work when target state is idle and surrounded unit is in
                 // same selection state of this one
                 var isSelected = Selected.IsComponentEnabled(entity);
                 // if (isSelected) return false;
-                if (CheckIfSurroundReach(ref surroundings, isSelected) && stateData.TargetState == InteractState.Idle)
+                if (AITagLookup.HasComponent(entity)) return false;
+                if (!FormationMovingTagLookup.IsComponentEnabled(entity) &&
+                    CheckIfSurroundReach(ref surroundings, colliderTargets, isSelected, selfFaction) &&
+                    stateData.TargetState == InteractState.Idle)
                 {
                     stateData.TargetState = InteractState.Idle;
                     MovementUtils.ResetMovableData(ref movableData);
+                    ECB.SetBuffer<WaypointBuffer>(index, entity);
+                    MovementUtils.ResetNavAgent(ref navAgentComponent);
                     MovementUtils.ResetSurroundings(ref surroundings);
                     StateUtils.SwitchState(ref stateData, ECB, entity, index);
                     return true;
@@ -466,29 +522,37 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 return false;
             }
 
-            private bool CheckIfSurroundReach(ref Surroundings surroundings, bool selected)
+            private bool CheckIfSurroundReach(ref Surroundings surroundings,
+                in DynamicBuffer<FakeColliderTarget> targets, bool selected,
+                FactionTag selfFaction)
             {
-                if (surroundings.MoveSuccess) return false;
-                var result = IsObstacleSelectedAllyIdle(surroundings.FrontEntity, selected)
-                             || IsObstacleSelectedAllyIdle(surroundings.LeftEntity, selected)
-                             || IsObstacleSelectedAllyIdle(surroundings.RightEntity, selected);
+                // if (surroundings.MoveSuccess) return false;
+                foreach (var target in targets)
+                {
+                    if (!FakeCollisionDataLookup.TryGetComponent(target.Target, out var data)) continue;
+                    var trulyTarget = data.BelongsTo;
+                    if (IsObstacleSelectedAllyIdle(trulyTarget, selected, selfFaction)) return true;
+                }
 
-                return result;
+                return false;
+                // var result = IsObstacleSelectedAllyIdle(surroundings.FrontEntity, selected, selfFaction)
+                //              || IsObstacleSelectedAllyIdle(surroundings.LeftEntity, selected, selfFaction)
+                //              || IsObstacleSelectedAllyIdle(surroundings.RightEntity, selected, selfFaction);
+                //
+                // return result;
             }
 
-            private bool IsObstacleSelectedAllyIdle(Entity entity, bool selected)
+            private bool IsObstacleSelectedAllyIdle(Entity entity, bool selected, FactionTag selfFaction)
             {
                 return
                     entity != Entity.Null
                     && GeneralLookup.TryGetComponent(entity, out var iData)
                     && Selected.HasComponent(entity)
                     && Selected.IsComponentEnabled(entity) == selected
-                    && iData is { BaseTag: BaseTag.Units, Faction: FactionTag.Light }
+                    && iData.BaseTag == BaseTag.Units && iData.Faction == selfFaction
                     && StateLookup.TryGetComponent(entity, out var stateData)
                     && stateData.CurState == InteractState.Idle;
             }
-
-         
 
 
             // // Use surrounding information to try to find another way

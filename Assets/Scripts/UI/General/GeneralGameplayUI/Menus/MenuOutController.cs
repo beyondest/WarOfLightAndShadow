@@ -29,7 +29,7 @@ namespace SparFlame.UI.General
         private Image gameOverImage;
 
         [SerializeField] private TMP_Text gameOverText;
-
+        [SerializeField] private bool ifLockToLight = true;
 
         // Internal Data
 
@@ -97,8 +97,15 @@ namespace SparFlame.UI.General
         public void OnClickNewGame()
         {
             mainMenu.SetActive(false);
-            selectMenu.SetActive(true);
-            selectMenuElements.SetActive(true);
+            if (ifLockToLight)
+            {
+                OnClickFactionButton((int)FactionTag.Light);
+            }
+            else
+            {
+                selectMenu.SetActive(true);
+                selectMenuElements.SetActive(true);
+            }
         }
 
         public void OnClickFactionButton(int faction)

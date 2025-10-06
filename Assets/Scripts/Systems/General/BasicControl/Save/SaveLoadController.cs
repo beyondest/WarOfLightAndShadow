@@ -11,6 +11,8 @@ namespace SparFlame.Systems.General.BasicControl
     public class SaveLoadController : MonoBehaviour
     {
         [SerializeField] private float checkInterval = 0.1f;
+        [SerializeField] private int checkFrameCountBeforeCheckSaveComplete = 5;
+        [SerializeField] private int checkFrameCountAfterCheckSaveComplete = 5;
 
         public class Operation : ResourceOperation
         {
@@ -144,7 +146,15 @@ namespace SparFlame.Systems.General.BasicControl
         }
 
         #endregion
-
+        private IEnumerator WaitForExtraFrames(int waitFrameCount)
+        {
+            var c = 0;
+            while (c < waitFrameCount)
+            {
+                c += 1;
+                yield return null;
+            }
+        }
         #region Start Save/Load Methods
 
         private void StartSaveGame(SaveType saveType, int targetSlot)
@@ -288,7 +298,11 @@ namespace SparFlame.Systems.General.BasicControl
         /// <returns></returns>
         private IEnumerator SelfSaveAsync(SaveType saveType, int targetSlot)
         {
+            yield return WaitForExtraFrames(checkFrameCountBeforeCheckSaveComplete);
             if (IsSaving)
+                yield return CheckSavingComplete();
+            yield return WaitForExtraFrames(checkFrameCountAfterCheckSaveComplete);
+            if(IsSaving)
                 yield return CheckSavingComplete();
             StartSaveGame(saveType, targetSlot);
             yield return CheckSavingComplete();

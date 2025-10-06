@@ -25,11 +25,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 140625e6177e9944aad64a291bfe8566
-    m_Address: Prophet
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 25cc640934fe1694ba3892dec3b0b1c2
     m_Address: DarkClericTier2
     m_ReadOnly: 0
@@ -45,21 +40,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2925c655d587c964d9ed6bbe8679c3b8
-    m_Address: Ranger
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2bedeb036678fdb4ba6612f0c921de1c
-    m_Address: Harvester
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2c419b1518da1ba48a4b0fe9a9870560
-    m_Address: Attuner
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2d5f8cb79ff8c084abac883b4b74995d
     m_Address: DarkFlameTier3
     m_ReadOnly: 0
@@ -70,11 +50,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 34f0f9d153df31c41a38b09569173b2c
-    m_Address: Cleric
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3704a6fa2af2e754d9c7af0524bba30e
     m_Address: DarkMageTier1
     m_ReadOnly: 0
@@ -82,11 +57,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 38a9a35b7b7253947a24fe06515728f9
     m_Address: LightClericTier1
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4ee049a3e17cf6c42a33d4a1c480dd9f
-    m_Address: BalancedCavalry
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -101,7 +71,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5dc5860144c60284dbb4344c546ec641
-    m_Address: Magic
+    m_Address: Mage
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -110,18 +80,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6d6b4aebceb2f594ca9d3731291926d0
-    m_Address: Knight
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6dcdbcb537b3e074983858a3d78d90fe
     m_Address: LightShieldTier3
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6f9b104bc87407f42a892ff9747b8529
-    m_Address: Skirmisher
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -135,18 +95,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7a2addf891adcba44be57728b0c52a0e
-    m_Address: Mage
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7b9dabd7e24f1144b8da91105c3ffc85
     m_Address: LightArcherTier1
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8e893f454d87ad64382d2fe0f65bf479
-    m_Address: Sniper
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -160,8 +110,18 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 956aa843cadac6a4899c634771545b6a
+    m_Address: GreatSwordLightTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 96e0b01d169d6314eaf3562f06dc03fc
     m_Address: DarkArcherTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a29edfc659a85342967ed7d8f7e7bb4
+    m_Address: Cleric
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -176,17 +136,27 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a5b70966df352564d8c4b2f70e664374
-    m_Address: Ranged
+    m_Address: Archer
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a9083df0645439f4ea80321a86b97524
-    m_Address: Paladin
+  - m_GUID: a97d9667efcc1b44d9ba5379f4100c02
+    m_Address: GreatSwordLightTier2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aba5851de2c55b1478593cb86d3dec92
+    m_Address: GreatSword
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: acca21e05e7643d44b2f52eb76b1f7d6
     m_Address: LightArcherTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b36c37437cdd28740b0d2ad7d0c6f327
+    m_Address: SpellSword
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -196,7 +166,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b6a270c0fb226684f98e17693abc726c
-    m_Address: Cavalry
+    m_Address: DualSpear
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -205,8 +175,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b97d537c259245a48b3220d8abc7a93f
-    m_Address: Archer
+  - m_GUID: b91393310627b1a45be8342aeac45290
+    m_Address: GreatSwordDarkTier2
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -215,8 +185,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c16249db3c9fa874086fd66c41a26908
+    m_Address: GreatSwordDarkTier3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c230207529250644c87922e8e7bf7eab
     m_Address: DarkArcherTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c23e7daa0e1c2944a81ad8e32fc98e52
+    m_Address: GreatSwordDarkTier1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cfc2c7bd9eab57c49be01dab567c53dc
+    m_Address: GreatSwordLightTier1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -262,16 +247,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: eb98dc949b4f9c8488818c7511efe195
     m_Address: LightArcherTier2
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: eeb366fbb20e34843b2c82b4950095f8
-    m_Address: Guardian
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f09ea6700a5169c4884987b6f9d3fbd8
-    m_Address: Buffer
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

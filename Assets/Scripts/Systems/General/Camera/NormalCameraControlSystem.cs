@@ -1,13 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.General.BasicControl;
-using SparFlame.Systems.General.BasicControl.GlobalMonos;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -63,7 +60,11 @@ namespace SparFlame.Systems.General.Camera
             {
                 GameController.Instance.OnSwitchGameStatus += SetCameraPositionWhenSwitchSubGameplay;
                 RoamingCameraController.Instance.OnStartRoamingCamera += () => _isRoaming = true;
-                RoamingCameraController.Instance.OnEndRoamingCamera += () => _isRoaming = false;
+                RoamingCameraController.Instance.OnEndRoamingCamera += () =>
+                {
+                    _isRoaming = false;
+                    EntityManager.CreateSingleton(new BattleRealStart());
+                };
             }
         }
 
@@ -293,7 +294,7 @@ namespace SparFlame.Systems.General.Camera
             if (_inputData.DraggingCamera)
             {
                 cameraMovementState.IsDragging = true;
-                _targetRigPosDelta += _startDrag - inputMouseData.HitPosition;
+                _targetRigPosDelta += (_startDrag - inputMouseData.HitPosition) * _config.dragMoveDeltaScale;
             }
             else
             {

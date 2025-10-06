@@ -19,7 +19,7 @@ namespace SparFlame.Components.SubGameplay
 
     public struct BoxColliderSize : IComponentData
     {
-        public float3 Box;
+        public float3 SeparationBox;
         public float Radius;
     }
 }

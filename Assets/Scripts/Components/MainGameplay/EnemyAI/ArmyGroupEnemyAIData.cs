@@ -1,6 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
-using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 
@@ -38,8 +36,7 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct ArmyGroupThreatenCalculationConfig : IComponentData
     {
-        public float nonMagicUnitBaseThreatenValue;
-        public float magicUnitBaseThreatenValue;
+        public float unitBaseThreatenValue;
         public float levelCoefficientA;
         public float levelCoefficientB;
         public float levelCoefficientC;
@@ -57,11 +54,7 @@ namespace SparFlame.Components.MainGameplay
         public float invadeChance;
     }
     
-    [Serializable]
-    public struct FormationConfig : IComponentData
-    {
-        public float squareSpacing;
-    }
+ 
 
 
     public struct EnemyArmyGroupShouldSaveTag : IComponentData
@@ -73,6 +66,11 @@ namespace SparFlame.Components.MainGameplay
     public struct FakeUnitNeedAddToArmyGroupAfterAssignSingleId : IComponentData
     {
         public Entity ArmyGroup;
+    }
+
+    public struct FakeUnitTag : IComponentData
+    {
+        
     }
 
 }

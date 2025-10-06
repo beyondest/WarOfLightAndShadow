@@ -109,11 +109,14 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 case BuffType.AoeInteract:
                     buff = state.EntityManager.Instantiate(pair.Prefab);
                     var aoeInteractData = SystemAPI.GetComponent<AoeInteractData>(pair.Prefab);
-                    var tarData = SystemAPI.GetComponent<AoeInteractData>(requestEntity);
-                    aoeInteractData.TargetFaction = tarData.TargetFaction;
-                    aoeInteractData.StatChangeRequest = tarData.StatChangeRequest;
+                    var requestData = SystemAPI.GetComponent<AoeInteractData>(requestEntity);
+                    aoeInteractData.TargetFaction = requestData.TargetFaction;
+                    aoeInteractData.StatChangeRequest = requestData.StatChangeRequest;
                     aoeInteractData.CurrentTriggerCount = 0;
-                    aoeInteractData.TriggerTime = tarData.TriggerTime;
+                    aoeInteractData.TriggerTime = requestData.TriggerTime;
+                    aoeInteractData.RandomAbsAmount = requestData.RandomAbsAmount;
+                    aoeInteractData.AbsAmountRange = requestData.AbsAmountRange;
+                    aoeInteractData.AllFactionTarget = requestData.AllFactionTarget;
                     ecb.SetComponent(buff, aoeInteractData);
                     break;
                 case BuffType.SingleTargetNotStackable:

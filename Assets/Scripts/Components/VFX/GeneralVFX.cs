@@ -43,7 +43,10 @@ namespace SparFlame.Components.VFX
         UnitGarrisonBuff = 33,
         ArmyGroupSelectionIndicator = 34,
         ControlToRetreat = 35,
-        ArmyGroupDestroyed = 36
+        ArmyGroupDestroyed = 36,
+        BlessingBuff = 37,
+        SpellSwordSkill = 38,
+        ArmyGroupHitSupportCity = 39
     }
 
     public enum VFXType

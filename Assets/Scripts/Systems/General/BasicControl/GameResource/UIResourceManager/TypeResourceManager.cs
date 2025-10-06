@@ -47,7 +47,8 @@ namespace SparFlame.Systems.General.BasicControl
         }
 
         public List<SpriteEntityInfo> GetFilteredInfoList(TEnum type,FactionTag factionTag = default,
-            int subType = 0, Tier tier = Tier.Tier1, bool filterFaction = true, bool filterSubType = false, bool filterTier = false)
+            int subType = 0, Tier filteredTier = Tier.Tier1, bool filterFaction = true, bool filterSubType = false, bool filterTier = false,
+            bool shouldTierExactlyMatch = false)
         {
             var dict = _typeInfos[type];
             var infos = new List<SpriteEntityInfo>();
@@ -56,7 +57,11 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 if(filterFaction && pair.Value.FactionTag != factionTag) continue;
                 if (filterSubType && pair.Value.SubtypeIndex != subType) continue;
-                if (filterTier && pair.Value.Tier != tier) continue;
+                if (filterTier)
+                {
+                    if(shouldTierExactlyMatch && pair.Value.Tier != filteredTier)continue;
+                    if((int)pair.Value.Tier > (int) filteredTier)continue;
+                }
                 infos.Add(pair.Value);
             }
 

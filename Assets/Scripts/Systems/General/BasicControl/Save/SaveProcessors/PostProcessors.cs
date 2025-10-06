@@ -29,6 +29,7 @@ namespace SparFlame.Systems.General.BasicControl
     }
 
     [BurstCompile]
+    [WithNone(typeof(FakeUnitTag))]
     public partial struct ArmyGroupUnitPostProcessJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;

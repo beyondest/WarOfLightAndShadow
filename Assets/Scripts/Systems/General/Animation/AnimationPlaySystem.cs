@@ -6,13 +6,16 @@ using Unity.Collections;
 
 namespace SparFlame.Systems.General.Animation
 {
+    [BurstCompile]
     public partial struct SingleClipPlayerSystem : ISystem
     {
         private BufferLookup<AnimationEventData> _bufferLookup;
         private ComponentLookup<AnimationStateData> _stateLookup;
 
+        [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<GameTimeData>();
             // state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AnimationPlayData>();
@@ -22,20 +25,21 @@ namespace SparFlame.Systems.General.Animation
             _stateLookup = state.GetComponentLookup<AnimationStateData>();
         }
 
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
             var waitInfo = SystemAPI.GetSingleton<WaitInfo>();
-            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
-            if(waitInfo.WaitType != WaitType.None)return;
-            
-            
+            if (gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming) return;
+            if (waitInfo.WaitType != WaitType.None) return;
+
+
             _bufferLookup.Update(ref state);
             _stateLookup.Update(ref state);
             var data = SystemAPI.GetSingletonRW<AnimationPlayData>();
             // var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            var curTime = (float)SystemAPI.Time.ElapsedTime;
+            var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             // new ExposedJob
             //     {
             //         ClipLookup = SystemAPI.GetComponentLookup<ClipBlobData>(true),
@@ -70,24 +74,33 @@ namespace SparFlame.Systems.General.Animation
                 {
                     ref var clip = ref clipBlobData.Blob.Value.clips[stateData.ClipAIndex];
                     var clipTime = clip.LoopToClipTime((Et - stateData.ClipAStartTime) * stateData.PlaySpeed);
-                    var preClipTime = clip.LoopToClipTime((PreClipTime - stateData.ClipAStartTime) * stateData.PlaySpeed);
+                    var preClipTime =
+                        clip.LoopToClipTime((PreClipTime - stateData.ClipAStartTime) * stateData.PlaySpeed);
                     clip.SamplePose(ref skeleton, clipTime, 1f);
 
-                    clip.events.TryGetEventsRange(preClipTime, clipTime, out var firstEventIndex, out var eventCount);
-                    if (eventCount > 0)
+                    // We only assume one event happen in delta time
+                    if (clip.events.TryGetEventsRange(preClipTime, clipTime, out var firstEventIndex,
+                            out var count))
+                    {
+                        if (count > 0)
+                        {
+                            buffer.Add(new AnimationEventData
+                            {
+                                NameHash = clip.events.nameHashes[firstEventIndex],
+                                Parameter = clip.events.parameters[firstEventIndex],
+                            });
+                        }
+                    }
+                    /*if (eventCount > 0)
                     {
                         var eventsIndices = clip.events.GetEventIndicesInRange(preClipTime, true, clipTime, false, 0);
                         foreach (var i in eventsIndices)
                         {
                             if (i < 0 || i >= clip.events.nameHashes.Length)
-                                continue; 
-                            buffer.Add(new AnimationEventData
-                            {
-                                NameHash = clip.events.nameHashes[i],
-                                Parameter = clip.events.parameters[i],
-                            });
+                                continue;
+                           
                         }
-                    }
+                    }*/
                 }
                 else
                 {

@@ -37,14 +37,7 @@ namespace SparFlame.Components.SubGameplay
         Ornaments = 4,
     }
 
-    public enum ConjuringShrineType
-    {
-        AegisShrine = 0, // Stone Sigil（石之符印）, Ward Circle（守护法阵）, Bulwark Core（壁垒核心）
-        StormSpire = 1, // Wind Glyph（风之印记）, Arrow Rift（箭矢裂隙）, Tempest Spire（风暴尖塔）
-        EldritchSeal = 2, // Mana Ring（法力之环）, Arcane Core（奥术核心）, Eldritch Pillar（神秘石柱）
-        PhantomGate = 3, // Wild Rift（野性裂隙）, Charge Beacon（充能灯塔）, Thunder Gate（雷霆之门）
-        TerraNexus = 4 // Rune Pad（符文阵盘）, Soul Anchor（灵魂锚点）, Golem Crucible（魔像熔炉）
-    }
+
 
     public enum CapacityBuildingType
     {

@@ -15,8 +15,8 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
     public class CityAuthoring : MonoBehaviour
     {
         public int globalIdx;
-        public List<LoadingGridInfo> nineGridInfos = new();
-
+        // public List<LoadingGridInfo> nineGridInfos = new();
+        public LoadingPositionInfo armyGroupLoadingPositionInfo;
         private class CityAuthoringBaker : Baker<CityAuthoring>
         {
             public override void Bake(CityAuthoring authoring)
@@ -48,7 +48,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
 
                 AddComponent(entity, new BoxColliderSize
                 {
-                    Box = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize
+                    SeparationBox = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize,
                 });
 
                 // City hp regeneration timer
@@ -62,11 +62,7 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 });
 
                 // City available grid numbers for army group to march in
-                var loadingGridInfos = AddBuffer<LoadingGridInfo>(entity);
-                foreach (var info in authoring.nineGridInfos)
-                {
-                    loadingGridInfos.Add(info);
-                }
+                AddComponent(entity, authoring.armyGroupLoadingPositionInfo);
 
                 // City future attackers
                 AddBuffer<CityFutureInvaders>(entity);
@@ -110,19 +106,19 @@ namespace GamePlaySystem.Functionality.MainGameplay.City
                 // Garrison 
                 AddBuffer<CityGarrisonEntity>(entity);
 
-                // Volume obstacle 
-                const float volumeRadius = 0f;
-                var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();
-                AddComponent<VolumeObstacleTag>(entity);
-                AddComponent(entity, new VolumeObstacleSpawnRequest
-                {
-                    Center = physicsShapeAuthoring.m_PrimitiveCenter,
-                    Size = physicsShapeAuthoring.m_PrimitiveSize,
-                    VolumeRadius = volumeRadius,
-                    VolumeAreaType = AreaType.NotWalkable,
-                    RequestFromFaction = item.faction,
-                });
-                SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
+                // // Volume obstacle 
+                // const float volumeRadius = 0f;
+                // var physicsShapeAuthoring = item.prefab.GetComponent<PhysicsShapeAuthoring>();
+                // AddComponent<VolumeObstacleTag>(entity);
+                // AddComponent(entity, new VolumeObstacleSpawnRequest
+                // {
+                //     Center = physicsShapeAuthoring.m_PrimitiveCenter,
+                //     Size = physicsShapeAuthoring.m_PrimitiveSize,
+                //     VolumeRadius = volumeRadius,
+                //     VolumeAreaType = AreaType.NotWalkable,
+                //     RequestFromFaction = item.faction,
+                // });
+                // SetComponentEnabled<VolumeObstacleSpawnRequest>(entity, true);
 
                 // --------------------------- Enemy AI ------------------------------//
                 // Defend and attack army groups

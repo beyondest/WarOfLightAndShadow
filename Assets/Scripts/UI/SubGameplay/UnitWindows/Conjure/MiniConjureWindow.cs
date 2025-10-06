@@ -105,7 +105,7 @@ namespace SparFlame.UI.SubGameplay
                 .CurrentSelectFaction;
             _infos.Clear();
             _infos = UnitWindowResourceManager.Instance.GetFilteredInfoList(_currentGeneralType, currentSelectFaction,
-                tier: _em.GetComponentData<ExpData>(_targetEntity).curTier, filterTier:true);
+                filteredTier: _em.GetComponentData<ExpData>(_targetEntity).curTier, filterTier:true);
             var count = _infos.Count;
             for (var i = 0; i < Slots.Count; i++)
             {

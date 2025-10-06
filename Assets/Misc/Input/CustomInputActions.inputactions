@@ -2459,6 +2459,54 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "CastSkill",
+            "id": "00252aed-1bc4-4586-a045-f67cfe353627",
+            "actions": [
+                {
+                    "name": "Cast",
+                    "type": "Button",
+                    "id": "0d6f0035-a5dc-444a-849f-f0e82f851333",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Cancel",
+                    "type": "Button",
+                    "id": "c8a33c4c-f629-406a-958a-f068cf330187",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "b63f4056-a06e-4cea-bb02-b6cd0d2cfddb",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Cast",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "340d47b0-76fd-4aad-8f79-439bbbbe75ca",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Cancel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": [

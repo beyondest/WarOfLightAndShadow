@@ -59,8 +59,8 @@ namespace SparFlame.Systems.General.Battle
             }
 
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            if(gameStatusData.Value != GameStatus.SubGaming)return;
-           
+            if (gameStatusData.Value != GameStatus.SubGaming) return;
+
             // Check is all resource loaded
             if (!data.IsAllResourceLoaded)
             {
@@ -96,7 +96,7 @@ namespace SparFlame.Systems.General.Battle
             if (SystemAPI.HasSingleton<PlayerRetreatRequest>())
             {
                 state.EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<PlayerRetreatRequest>());
-                KillUnitsAndBuildingsNotRetreated(ref state, true); 
+                KillUnitsAndBuildingsNotRetreated(ref state, true);
                 EndBattle(ref state, BattleResult.PlayerRetreat);
             }
         }
@@ -108,7 +108,7 @@ namespace SparFlame.Systems.General.Battle
                 case SubGameStatus.PlayerSiege:
                     if (_enemySideCrystalQuery.IsEmpty)
                     {
-                        KillUnitsAndBuildingsNotRetreated(ref state, false); 
+                        KillUnitsAndBuildingsNotRetreated(ref state, false);
                         if (_enemySideRetreatedUnitQuery.IsEmpty)
                         {
                             EndBattle(ref state, BattleResult.PlayerWin);
@@ -117,6 +117,7 @@ namespace SparFlame.Systems.General.Battle
                         {
                             EndBattle(ref state, BattleResult.EnemyRetreat);
                         }
+
                         break;
                     }
 
@@ -201,10 +202,10 @@ namespace SparFlame.Systems.General.Battle
             }
         }
 
-        private void EndBattle(ref SystemState state,BattleResult result)
+        private void EndBattle(ref SystemState state, BattleResult result)
         {
-            if(SystemAPI.HasSingleton<BattleEndRequest>())return;
-            
+            if (SystemAPI.HasSingleton<BattleEndRequest>()) return;
+
             SetPlayerRetreatedUnits(ref state, result is BattleResult.EnemyRetreat or BattleResult.PlayerWin);
             ClearRetreatPortals(ref state);
 
@@ -216,13 +217,15 @@ namespace SparFlame.Systems.General.Battle
 
         private void SetPlayerRetreatedUnits(ref SystemState state, bool ifWin)
         {
+            var retreatPortals = SystemAPI.QueryBuilder().WithAll<RetreatPortalTag>().WithAll<LocalTransform>().Build();
+            if(retreatPortals.IsEmpty)return;
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var query = SystemAPI.QueryBuilder().WithAll<InSubGameTag>().WithAll<PlayerTag>().Build();
             var armyGroups = query.ToEntityArray(Allocator.Temp);
             var armyGroupToUnitCount = new NativeHashMap<Entity, int>(armyGroups.Length, Allocator.Temp);
             var armyGroupToPositionsIndex = new NativeHashMap<Entity, int>(armyGroups.Length, Allocator.Temp);
             var config = SystemAPI.GetSingleton<RetreatSystemConfig>();
-            var retreatPortals = SystemAPI.QueryBuilder().WithAll<RetreatPortalTag>().WithAll<LocalTransform>().Build();
+           
             var portalTransform = retreatPortals.ToComponentDataArray<LocalTransform>(Allocator.Temp)[0];
 
 
@@ -241,8 +244,8 @@ namespace SparFlame.Systems.General.Battle
                 armyGroupToPositionsIndex.TryAdd(pair.Key, 0);
             }
 
-            foreach (var ( localTransform, inArmyGroup, unit
-                         ) in SystemAPI.Query< RefRW<LocalTransform>,
+            foreach (var (localTransform, inArmyGroup, unit
+                         ) in SystemAPI.Query<RefRW<LocalTransform>,
                              RefRO<InArmyGroup>>().WithAll<PlayerTag>().WithAll<InGarrison>()
                          .WithAll<UnitRetreatTag>().WithEntityAccess())
             {
@@ -277,7 +280,7 @@ namespace SparFlame.Systems.General.Battle
         private void ClearRetreatPortals(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var (_,entity) in SystemAPI.Query<RefRO<RetreatPortalTag>>().WithEntityAccess())
+            foreach (var (_, entity) in SystemAPI.Query<RefRO<RetreatPortalTag>>().WithEntityAccess())
             {
                 var removeObstacleRequest = new VolumeObstacleDestroyRequest
                 {
@@ -289,9 +292,10 @@ namespace SparFlame.Systems.General.Battle
                 ecb.AddComponent(request, removeObstacleRequest);
                 ecb.DestroyEntity(entity);
             }
+
             ecb.Playback(state.EntityManager);
         }
-        
+
         private void KillUnitsAndBuildingsNotRetreated(ref SystemState state, bool isPlayerLose)
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);

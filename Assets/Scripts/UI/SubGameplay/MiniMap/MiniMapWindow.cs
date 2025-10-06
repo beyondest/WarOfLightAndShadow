@@ -1,6 +1,4 @@
 ﻿using System;
-using SparFlame.Components.General;
-using SparFlame.Systems.General.BasicControl;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;

@@ -59,7 +59,7 @@ namespace SparFlame.Components.General
             31 // Dec
         };
 
-        private const int HoursPerDay = 24;
+        public const int HoursPerDay = 24;
         private const int DaysPerYear = 365;
         private const int HoursPerYear = DaysPerYear * HoursPerDay;
 

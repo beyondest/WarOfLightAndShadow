@@ -2,7 +2,6 @@
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
-using SparFlame.Systems.General.Battle;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -77,15 +76,15 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     var selfTransform = SystemAPI.GetComponent<LocalTransform>(request.ArmyGroup);
                     var cityTransform = SystemAPI.GetComponent<LocalTransform>(request.City);
                     // Reassign loading center and loading scale
-                    var pos = selfTransform.Position;
-                    var gridIndex =
-                        BattleUtils.GetClosestGrids(pos, SystemAPI.GetComponent<LocalTransform>(request.City));
-                    var loadingInfos = SystemAPI.GetBuffer<LoadingGridInfo>(request.City);
-                    var loadingInfo = loadingInfos[gridIndex];
+                    // var pos = selfTransform.Position;
+                    // var gridIndex =
+                    //     BattleUtils.GetClosestGrids(pos, SystemAPI.GetComponent<LocalTransform>(request.City));
+                    var loadingInfo = SystemAPI.GetComponent<LoadingPositionInfo>(request.City);
+                    // var loadingInfo = loadingInfos[gridIndex];
                     var armyGroupAttr = SystemAPI.GetComponent<ArmyGroupAttr>(request.ArmyGroup);
-                    armyGroupAttr.loadingCenter = loadingInfo.innerCenter;
+                    armyGroupAttr.loadingCenter = loadingInfo.defenderPosition;
                     var maxDelta = math.max(armyGroupAttr.boundingBoxDelta.x, armyGroupAttr.boundingBoxDelta.y);
-                    armyGroupAttr.loadingScale = loadingInfo.innerSize == 0 ? 1 : loadingInfo.innerSize / maxDelta;
+                    armyGroupAttr.loadingScale = loadingInfo.defenderPositionSquareSize == 0 ? 1 : loadingInfo.defenderPositionSquareSize / maxDelta;
                     armyGroupAttr.loadingScale = math.min(1, armyGroupAttr.loadingScale);
                     ecb.SetComponent(request.ArmyGroup, armyGroupAttr);
 

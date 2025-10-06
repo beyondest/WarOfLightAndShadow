@@ -61,6 +61,7 @@ namespace SparFlame.Systems.General.Input
             _customInputActions.Conjure.Disable();
             _customInputActions.CameraFlyMode.Disable();
             _customInputActions.CameraNormalMode.Disable();
+            _customInputActions.CastSkill.Disable();
         }
 
         public void EnableSubGameMaps()
@@ -71,7 +72,7 @@ namespace SparFlame.Systems.General.Input
             _customInputActions.ModeSwitch.Enable();
             _customInputActions.GeneralShortcut.Enable();
             _customInputActions.Conjure.Enable();
-
+            _customInputActions.CastSkill.Enable();
             _customInputActions.ArmyGroupControl.Disable();
             _lastTypeEnabledMap = LastTypeEnabledMap.SubGameplayMap;
         }

@@ -8,6 +8,7 @@ using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Mathematics;
 using UnityEngine;
+
 // ReSharper disable Odin.OdinUnknownGroupingPath
 
 // ReSharper disable RedundantJumpStatement
@@ -186,6 +187,7 @@ namespace SparFlame.Database
         [VerticalGroup("EnumValues"), HideLabel, Tooltip("building type")]
         public BuildingType type;
 
+        public bool isPortalWall;
         [VerticalGroup("Cost"), HorizontalGroup("Cost/0"), ListDrawerSettings(DraggableItems = true),
          TableColumnWidth(250, false), TableList(AlwaysExpanded = true)]
         public List<CostResourceTypeAmountPair> costs;
@@ -204,7 +206,10 @@ namespace SparFlame.Database
         [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/3"),
          ListDrawerSettings(DraggableItems = true)]
         public List<GarrisonUnitData> garrisonUnits;
-
+        
+        [ShowIf(nameof(IsGarrisonEnable)), FoldoutGroup("Gameplay/Garrison"), HorizontalGroup("Gameplay/Garrison/4"),
+         ListDrawerSettings(DraggableItems = true)]
+        public List<float3> positionBias;
         public override int GetGeneralTypeIndex()
         {
             return (int)type;
@@ -221,15 +226,18 @@ namespace SparFlame.Database
 
         public bool IsGarrisonEnable()
         {
-            return type switch
-            {
-                BuildingType.Fortifications => (FortificationType)GetSubtypeIndex() == FortificationType.Tower ||
-                                               (FortificationType)GetSubtypeIndex() == FortificationType.BigTower,
-                BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
-                BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
-                BuildingType.Ornaments when GetSubtypeIndex() == (int) OrnamentType.RetreatPortal => true,
-                _ => false
-            };
+            return type == BuildingType.Fortifications && GetSubSubTypeIndex() == (int)FortificationType.Wall &&
+                   !nextTierPrefab
+                   && curTier == Tier.Tier1;
+
+            // return type switch
+            // {
+            //     BuildingType.Fortifications => true,
+            //     BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.ResourceMine => true,
+            //     BuildingType.Generators when GetSubtypeIndex() == (int)GeneratorType.PlantGenerator => false,
+            //     BuildingType.Ornaments when GetSubtypeIndex() == (int)OrnamentType.RetreatPortal => true,
+            //     _ => false
+            // };
         }
 
         public virtual int GetSubSubTypeIndex()
@@ -305,12 +313,8 @@ namespace SparFlame.Database
     [Serializable]
     public class ConjuringShrineData : BuildingDataItem
     {
-        [VerticalGroup("EnumValues"), HideLabel, Tooltip("conjuring shrine type"),
-         OnValueChanged(nameof(SetConjureUnitType))]
-        public ConjuringShrineType conjuringShrineType = ConjuringShrineType.AegisShrine;
-
         [FoldoutGroup("Gameplay/ConjuringShrine"), HorizontalGroup("Gameplay/ConjuringShrine/1"), HideLabel,
-         ReadOnly, Tooltip("Conjure unit type")]
+         Tooltip("Conjure unit type")]
         public UnitType conjureUnitType = UnitType.Shield;
 
         [FoldoutGroup("Gameplay/ConjuringShrine"), HorizontalGroup("Gameplay/ConjuringShrine/2"), HideLabel,
@@ -318,12 +322,8 @@ namespace SparFlame.Database
         public float3 conjurePositionBias;
 
 
-        public override int GetSubtypeIndex() => (int)conjuringShrineType;
+        public override int GetSubtypeIndex() => (int)conjureUnitType;
 
-        private void SetConjureUnitType()
-        {
-            conjureUnitType = (UnitType)conjuringShrineType;
-        }
 
         protected override void InitDefaults()
         {

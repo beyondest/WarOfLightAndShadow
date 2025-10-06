@@ -39,6 +39,7 @@ namespace SparFlame.Components.Input
         public float3 HitPosition;
         public float3 MousePosition;
         public bool IsOverUI;
+        public float3 HitNormal;
     }
 
 
@@ -57,9 +58,8 @@ namespace SparFlame.Components.Input
         public bool EndMovingAndClearAllTargets;
         public bool ClearAllTargets;
         public bool DeleteLastTarget;
-
-
     }
+    
     
     
     public struct InputCameraFlyData : IComponentData
@@ -128,6 +128,12 @@ namespace SparFlame.Components.Input
         public bool Wait;
         public bool CheckInfo;
         public bool CloseWindow;
+    }
 
+    public struct InputCastSkillData : IComponentData
+    {
+        public bool Enabled;
+        public bool Cast;
+        public bool Cancel;
     }
 }

@@ -4,7 +4,6 @@ using Sirenix.OdinInspector;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Core.Utils;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace SparFlame.Database
@@ -33,14 +32,15 @@ namespace SparFlame.Database
             };
         }
 
-        private class LoadingGridInfoWithIndex
+        /*private class LoadingGridInfoWithIndex
         {
             public int Index;
             public LoadingGridInfo Info;
-        }
+        }*/
 
         public float mapSize = 300f;
 
+        /*
         [Button("生成九宫格中心点", ButtonSizes.Large)]
         public void GenerateGridCenters()
         {
@@ -129,7 +129,7 @@ namespace SparFlame.Database
                     }
                 }
             }
-        }
+        }*/
     }
 
     [Serializable]
@@ -151,18 +151,7 @@ namespace SparFlame.Database
         [VerticalGroup("Gameplay")]
         public float camMinCoordinate;
         
-        [VerticalGroup("Loading Positions")] public List<LoadingGridInfo> loadingGridInfos
-            = new()
-            {
-                new LoadingGridInfo(), //0
-                new LoadingGridInfo(),
-                new LoadingGridInfo(),
-                new LoadingGridInfo(),
-                new LoadingGridInfo(),
-                new LoadingGridInfo(),
-                new LoadingGridInfo(),
-                new LoadingGridInfo(), //7
-            };
+        [VerticalGroup("Loading Positions")] public LoadingPositionInfo loadingPositionInfo;
 
         public SceneGroup ecoEnvSceneGroup;
     }
