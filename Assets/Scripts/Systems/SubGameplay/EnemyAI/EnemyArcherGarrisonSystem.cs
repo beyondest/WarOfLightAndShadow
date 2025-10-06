@@ -19,11 +19,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new EnemyArcherGarrisonJob
+            state.Dependency = new EnemyArcherGarrisonJob
             {
                 ECB = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
     

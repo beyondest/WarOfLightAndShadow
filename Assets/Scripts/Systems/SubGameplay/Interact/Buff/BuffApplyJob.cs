@@ -8,7 +8,6 @@ using Unity.Mathematics;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-    // This job cannot parallel because bonus has to be applied in order
     [BurstCompile]
     public partial struct BuffApplyToInteractAmountJob : IJobEntity
     {
@@ -17,7 +16,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
         [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
         [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
-        [NativeDisableParallelForRestriction] public ComponentLookup<Rnd> UnitAttrLookup;
+        // This is non-parallel job
+        [NativeDisableParallelForRestriction] public ComponentLookup<Rnd> RndLookup;
 
         [ReadOnly] public DynamicBuffer<DarkShieldBuffConfig> DarkShieldBuffConfigs;
         [ReadOnly] public DynamicBuffer<LightShieldBuffConfig> LightShieldBuffConfigs;
@@ -212,7 +212,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             // Apply light archer buff
             if (LightArcherBuffLookup.HasComponent(request.Interactor) && interacteeAttr.Faction == FactionTag.Dark)
             {
-                var unitAttr = UnitAttrLookup.GetRefRW(request.Interactor);
+                var unitAttr = RndLookup.GetRefRW(request.Interactor);
                 var expData = ExpDataLookup[request.Interactor];
                 var buffConfig = LightArcherBuffConfigs[(int)expData.curTier - 3];
                 if (unitAttr.ValueRW.value.NextFloat(0f, 1f) < buffConfig.bonusTriggerChance)

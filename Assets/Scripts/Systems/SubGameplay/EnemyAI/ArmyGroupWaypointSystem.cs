@@ -43,7 +43,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
 
             _basicStateData.Update(ref state);
             _localTransformLookup.Update(ref state);
-            new SubGameplayArmyGroupStateMachine
+            state.Dependency = new SubGameplayArmyGroupStateMachine
             {
                 Config = SystemAPI.GetSingleton<FormationConfig>(),
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
@@ -51,7 +51,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                 TransformLookup = _localTransformLookup,
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         private void InitializeForThisBattleField(ref SystemState state)

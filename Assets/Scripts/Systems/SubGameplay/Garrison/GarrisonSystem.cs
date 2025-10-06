@@ -23,7 +23,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<GarrisonSystemConfig>();
             _garrisonAttrLookup = state.GetComponentLookup<GarrisonAttr>(true);
-            _localTransformLookup = state.GetComponentLookup<LocalTransform>();
+            _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _alreadyTagged = new NativeHashSet<Entity>(16, Allocator.Persistent);
         }
 
@@ -43,13 +43,13 @@ namespace SparFlame.Systems.SubGameplay.Garrison
             ecb.Dispose();
             _garrisonAttrLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
-            new GarrisonGetOutJob
+            state.Dependency = new GarrisonGetOutJob
             {
                 Config = config,
                 ECB = ecbP,
                 GarrisonAttrLookup = _garrisonAttrLookup,
                 LocalTransformLookup = _localTransformLookup,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -287,7 +287,7 @@ namespace SparFlame.Systems.SubGameplay.Garrison
         [WithAll(typeof(GarrisonGetOut))]
         private partial struct GarrisonGetOutJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
             public EntityCommandBuffer.ParallelWriter ECB;
@@ -295,13 +295,15 @@ namespace SparFlame.Systems.SubGameplay.Garrison
             private void Execute([ChunkIndexInQuery] int index,
                 ref InGarrison inGarrison, Entity selfEntity)
             {
-                ref var transform = ref LocalTransformLookup.GetRefRW(selfEntity).ValueRW;
+                var transform = LocalTransformLookup[selfEntity];
                 var buildingTransform = LocalTransformLookup[inGarrison.BuildingEntity];
                 if (inGarrison.InBuilding)
                 {
                     GarrisonUtils.PosGetOut(ref inGarrison, ref transform, buildingTransform,
                         GarrisonAttrLookup[inGarrison.BuildingEntity], Config, false);
                 }
+
+                ECB.SetComponent(index, selfEntity, transform);
 
                 ECB.SetComponentEnabled<GarrisonStateTag>(index, selfEntity, false);
                 ECB.SetComponentEnabled<IdleStateTag>(index, selfEntity, true);

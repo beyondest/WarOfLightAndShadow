@@ -15,7 +15,7 @@ namespace SparFlame.Systems.General.Resource
     {
         [ReadOnly] public float CurrentTotalHours;
         [ReadOnly] public NativeHashMap<int, int> ResourceTypeToGlobalAvailableAmount;
-
+        [ReadOnly] public ResourceDebug ResourceDebug;
         private void Execute(ref DynamicBuffer<CityTask> tasks,
             ref DynamicBuffer<CityResourceEntry> cityResourceEntries
         )
@@ -74,6 +74,8 @@ namespace SparFlame.Systems.General.Resource
                 }
                 var deltaTime = CurrentTotalHours - cityResourceEntry.accumulatedHours;
                 var hoursPerUnit = 1f / cityResourceEntry.resourceData.amountPerHour;
+                if(ResourceDebug is { enabled: true, spawnHoursScale: > 0f })
+                    hoursPerUnit *= ResourceDebug.spawnHoursScale;
                 if (deltaTime >= hoursPerUnit)
                 {
                     var amount = (int)(deltaTime / hoursPerUnit);

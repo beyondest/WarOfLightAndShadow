@@ -422,7 +422,8 @@ namespace SparFlame.UI.General
             foreach (var entity in playerArmyGroups)
             {
                 var hasPlayerRetreated = false;
-                if (SystemAPI.GetBuffer<ArmyGroupUnit>(entity).Length == 0)
+                var buffer = SystemAPI.GetBuffer<ArmyGroupUnit>(entity);
+                if (buffer.Length == 0)
                 {
                     ArmyGroupUtils.DestroyArmyGroup(entity, ecb, EntityManager);
                 }
@@ -439,6 +440,18 @@ namespace SparFlame.UI.General
                             ArmyGroup = entity,
                             IfGarrisonIn = true
                         });
+                    }
+                    else
+                    {
+                        for (int i = buffer.Length - 1; i >=0; i--)
+                        {
+                            var unit = buffer[i];
+                            if (!SystemAPI.HasComponent<SubGameplayGeneralAttr>(unit.Unit))
+                            {
+                                buffer.RemoveAt(i);
+                            }
+                        }
+                        ArmyGroupUtils.UpdateArmyGroupInfoForCompoChanged(EntityManager, entity);
                     }
                 }
 

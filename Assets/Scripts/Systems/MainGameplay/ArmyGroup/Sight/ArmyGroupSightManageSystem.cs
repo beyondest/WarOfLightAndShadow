@@ -8,8 +8,6 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.MainGameplay.ArmyGroup
 {
- 
-
     public struct ArmyGroupSightData : IComponentData
     {
         public Entity BelongsTo;
@@ -25,14 +23,14 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<GameStatusData>();
             state.RequireForUpdate<ArmyGroupSightConfig>();
-            _transformLookup = state.GetComponentLookup<LocalTransform>();
+            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var gameStatusData = SystemAPI.GetSingleton<GameStatusData>();
-            if(gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming)return;
+            if (gameStatusData.Value != GameStatus.MainGaming && gameStatusData.Value != GameStatus.SubGaming) return;
             _transformLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -52,7 +50,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         public partial struct GenerateArmyGroupSightJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in ArmyGroupSightRequest request)
             {
@@ -75,7 +73,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         [BurstCompile]
         public partial struct SyncArmyGroupSightJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, in ArmyGroupSightData data, Entity entity)
@@ -87,9 +85,10 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                     return;
                 }
 
-                ref var transform = ref LocalTransformLookup.GetRefRW(entity).ValueRW;
+                var transform = LocalTransformLookup[entity];
                 transform.Position = localTransform.Position;
                 transform.Rotation = localTransform.Rotation;
+                ECB.SetComponent(index, entity, transform);
             }
         }
     }

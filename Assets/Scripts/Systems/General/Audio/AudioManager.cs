@@ -15,7 +15,7 @@ namespace SparFlame.Systems.General.Audio
 
         [SerializeField] private int initialPoolSize = 10;
         [SerializeField] private int expandStep = 5;
-
+        public AudioSource bgm;
         private Queue<AudioSource> availableSources = new Queue<AudioSource>();
         private List<AudioSource> allSources = new List<AudioSource>();
         [TableList, SerializeField] private List<AudioClipConfig> audioClips;
@@ -42,6 +42,7 @@ namespace SparFlame.Systems.General.Audio
             _listener.enabled = setEnabled;
         }
 
+     
         // Internal Data
         private readonly Dictionary<AudioName, AudioClipConfig> audioClipDict = new();
         private AudioListener _listener;

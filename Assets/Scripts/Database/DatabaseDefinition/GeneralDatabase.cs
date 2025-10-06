@@ -192,14 +192,11 @@ namespace GamePlaySystem.Database
              "the value, the first to be attacked/healed/harvested")]
         public int sightPriority;
 
-        [ShowIf(nameof(HasSight)), FoldoutGroup("Additional/Sight", Expanded = false),
-         OnValueChanged(nameof(OnSightPrefabChanged)), HideLabel]
+        [ShowIf(nameof(HasSight)), FoldoutGroup("Additional/Sight", Expanded = false), HideLabel]
         public GameObject sightPrefab;
-
-        [FoldoutGroup("Additional/Sight", Expanded = false)]
-        [ShowIf(nameof(HasSight))]
-        [LabelText("Range"), ReadOnly, HideLabel]
+        [ShowIf(nameof(HasSight)), FoldoutGroup("Additional/Sight", Expanded = false)]
         public float sightRange;
+
 
         [VerticalGroup("Additional"), HideLabel, LabelText("ExtraConfig"), TableColumnWidth(200, false)]
         public bool enableAdditionalConfig;
@@ -280,12 +277,7 @@ namespace GamePlaySystem.Database
             }
         }
 
-        private void OnSightPrefabChanged()
-        {
-            var authoring = sightPrefab.GetComponent<PhysicsShapeAuthoring>();
-            sightRange = authoring.GetCylinderRadius();
-        }
-
+    
       
         #endregion
     }

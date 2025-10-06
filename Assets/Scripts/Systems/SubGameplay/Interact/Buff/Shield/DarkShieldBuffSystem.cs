@@ -4,11 +4,13 @@ using SparFlame.Components.VFX;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-    [UpdateAfter(typeof(SightUpdateListSystem))]
+    // [UpdateAfter(typeof(SightUpdateListSystem))]
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct DarkShieldBuffSystem : ISystem
     {
@@ -18,6 +20,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<DarkShieldBuffGeneralConfig>();
@@ -33,21 +36,22 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _transformLookup.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new DarkShieldTauntBuffApplyJob
+            state.Dependency = new DarkShieldTauntBuffApplyJob
             {
                 ECB = ecb,
                 DarkShieldReflectDamageLookup = _darkShieldReflectDamagaLookup,
                 TransformLookup = _transformLookup,
                 Configs = SystemAPI.GetSingletonBuffer<DarkShieldBuffConfig>(),
                 Config = SystemAPI.GetSingleton<DarkShieldBuffGeneralConfig>(),
-                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime
-            }.ScheduleParallel();
+                ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
+                SightConfig = SystemAPI.GetSingleton<SightSystemConfig>()
+            }.ScheduleParallel(state.Dependency);
 
-            new DarkShieldTauntBuffTimerJob
+           state.Dependency = new DarkShieldTauntBuffTimerJob
             {
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ECB = ecb,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
 
@@ -60,6 +64,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public DarkShieldBuffGeneralConfig Config;
             [ReadOnly] public DynamicBuffer<DarkShieldBuffConfig> Configs;
             [ReadOnly] public float ElapsedTime;
+            [ReadOnly] public SightSystemConfig SightConfig;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in DarkShieldTauntBuff buff,
@@ -73,7 +78,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 if(!(stateData.CurState == InteractState.Attacking || stateData.TargetState == InteractState.Attacking))return;
                 var count = 0;
                 var maxTauntCount = Configs[(int)expData.curTier - 3].maxTauntCount;
-                for (int i = 0; i < targets.Length; i++)
+                var l = math.min(SightConfig.ValidTargetRemainedCount, targets.Length);
+                for (var i = 0; i < l; i++)
                 {
                     if (count >= maxTauntCount) break;
                     var target = targets[i].Entity;

@@ -49,9 +49,9 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 .WithAll<MainGameplayGeneralAttr>().Build();
             var cityIdToPlayerRelations = new NativeParallelHashMap<int, Relationship>(12, Allocator.TempJob);
             var cityIdToEntities = new NativeParallelHashMap<int, Entity>(12, Allocator.TempJob);
-            var generalAttrs = cityQuery.ToComponentDataArray<MainGameplayGeneralAttr>(Allocator.Temp);
-            var cityAttrs = cityQuery.ToComponentDataArray<PrefabId>(Allocator.Temp);
-            var cityEntities = cityQuery.ToEntityArray(Allocator.Temp);
+            var generalAttrs = cityQuery.ToComponentDataArray<MainGameplayGeneralAttr>(Allocator.TempJob);
+            var cityAttrs = cityQuery.ToComponentDataArray<PrefabId>(Allocator.TempJob);
+            var cityEntities = cityQuery.ToEntityArray(Allocator.TempJob);
             for (var i = 0; i < generalAttrs.Length; i++)
             {
                 var generalAttr = generalAttrs[i];
@@ -65,7 +65,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             }
 
             _singleIdLookup.Update(ref state);
-            var job = new EnemyCityCheckShouldFocusOnPlayerJob
+            state.Dependency = new EnemyCityCheckShouldFocusOnPlayerJob
             {
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Config = SystemAPI.GetSingleton<EnemyCheckFocusPlayerConfig>(),
@@ -78,11 +78,11 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 SingleIdLookup = _singleIdLookup,
             }.ScheduleParallel(state.Dependency);
 
-            job.Complete();
-            cityIdToPlayerRelations.Dispose();
-            cityIdToEntities.Dispose();
-            generalAttrs.Dispose();
-            cityAttrs.Dispose();
+            cityIdToPlayerRelations.Dispose(state.Dependency);
+            cityIdToEntities.Dispose(state.Dependency);
+            generalAttrs.Dispose(state.Dependency);
+            cityAttrs.Dispose(state.Dependency);
+            cityEntities.Dispose(state.Dependency);
         }
 
         [BurstCompile]

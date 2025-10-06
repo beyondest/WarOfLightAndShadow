@@ -39,8 +39,7 @@ namespace SparFlame.Systems.General.Camera
             var cameraData = SystemAPI.GetSingleton<CameraData>();
             // Calculate VP Matrix First
             var vpMatrix = math.mul(cameraData.ProjectionMatrix, cameraData.ViewMatrix);
-            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+       
             var cameraViewExtend = SystemAPI.GetSingleton<CameraViewExtendConfig>();
             var calculateWtsJob = new CalculateWtsJob
             {
@@ -52,7 +51,7 @@ namespace SparFlame.Systems.General.Camera
                 InCameraExtendLookup = _inCameraExtendViewLookup,
                 InCameraViewLookup = _inCameraViewLookup
             };
-            calculateWtsJob.ScheduleParallel();
+            state.Dependency=calculateWtsJob.ScheduleParallel(state.Dependency);
         }
 
 
@@ -65,6 +64,7 @@ namespace SparFlame.Systems.General.Camera
 
             [ReadOnly] public float ScreenWidth;
             [ReadOnly] public float ScreenHeight;
+            // This is conditional component and only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<InCameraView> InCameraViewLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<InCameraExtendView> InCameraExtendLookup;
             // public EntityCommandBuffer.ParallelWriter ECB;

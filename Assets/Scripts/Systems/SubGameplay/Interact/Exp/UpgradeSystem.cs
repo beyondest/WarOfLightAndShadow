@@ -131,7 +131,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 InArmyGroupLookup = _inArmyGroupLookup,
                 PlayerTagLookup = _playerTagLookup,
                 PrefabIdLookup = _prefabIdLookup,
-            }.ScheduleParallel(state.Dependency);
+            }.Schedule(state.Dependency);
             job.Complete();
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -168,6 +168,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<PlayerTag> PlayerTagLookup;
             [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIdLookup;
 
+            // This is none-parallel job
             [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatDataLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableDataLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<AttackAbility> AttackAbilityLookup;

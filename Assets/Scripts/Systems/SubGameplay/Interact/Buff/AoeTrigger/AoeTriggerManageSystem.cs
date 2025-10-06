@@ -4,6 +4,7 @@ using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.EnemyAI
@@ -19,7 +20,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         {
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
-            _transformLookup = state.GetComponentLookup<LocalTransform>();
+            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _targetLookup = state.GetBufferLookup<AoeTarget>(true);
         }
 
@@ -30,24 +31,24 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             _targetLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new GenerateAoeTriggerJob
+            state.Dependency =  new GenerateAoeTriggerJob
             {
                 TransformLookup = _transformLookup,
                 ECB = ecb,
-            }.ScheduleParallel();
-            new SyncAoeTriggerJob
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency= new SyncAoeTriggerJob
             {
                 LocalTransformLookup = _transformLookup,
                 AoeTargetLookup = _targetLookup,
                 ECB = ecb,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
         public partial struct GenerateAoeTriggerJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in AoeTriggerRequest request)
             {
@@ -70,7 +71,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         public partial struct SyncAoeTriggerJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public BufferLookup<AoeTarget> AoeTargetLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
@@ -84,9 +85,10 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
                     return;
                 }
 
-                ref var transform = ref LocalTransformLookup.GetRefRW(entity).ValueRW;
+                var transform = LocalTransformLookup[entity];
                 transform.Position = localTransform.Position;
                 transform.Rotation = localTransform.Rotation;
+                ECB.SetComponent(index, entity, transform);
             }
         }
     }

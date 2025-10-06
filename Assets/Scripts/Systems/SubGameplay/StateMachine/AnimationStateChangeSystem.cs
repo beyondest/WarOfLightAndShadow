@@ -45,7 +45,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _attackLookup.Update(ref state);
             _healLookup.Update(ref state);
             _harvestLookup.Update(ref state);
-            new AnimationStateChangeJob
+            state.Dependency = new AnimationStateChangeJob
             {
                 AnimationDataLookup = _animationStateLookup,
                 CurTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
@@ -55,7 +55,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 HarvestLookup = _harvestLookup,
                 Pairs = _unitTypeToAnimationStateToSpeedScale,
                 ModelIndices = _modelIndices,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -91,6 +91,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         [WithNone(typeof(UnitDeadTag))]
         public partial struct AnimationStateChangeJob : IJobEntity
         {
+            // This component is only written to self children and children not cross
             [NativeDisableParallelForRestriction] public ComponentLookup<AnimationStateData> AnimationDataLookup;
             [ReadOnly] public float CurTime;
             [ReadOnly] public AnimationPlayConfig Config;

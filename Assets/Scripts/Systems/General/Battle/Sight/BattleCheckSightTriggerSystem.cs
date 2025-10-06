@@ -32,15 +32,16 @@ namespace SparFlame.Systems.General.Battle
             
             
             _targetLookup.Update(ref state);
-            new BattleCheckSightTriggerJob
+            state.Dependency = new BattleCheckSightTriggerJob
             {
                 TargetLookup = _targetLookup
-            }.ScheduleParallel();
+            }.Schedule(state.Dependency);
         }
 
         [BurstCompile]
         public partial struct BattleCheckSightTriggerJob : IJobEntity
         {
+            // This is non-parallel job
             [NativeDisableParallelForRestriction] public BufferLookup<BattleCheckSightTarget> TargetLookup;
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in BattleCheckSightTriggerBelongsTo triggerTriggerBelongsTo,
                 Entity entity)

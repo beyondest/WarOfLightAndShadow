@@ -39,6 +39,11 @@ namespace SparFlame.Components.SubGameplay
 
     }
 
+    public struct SightRange : IComponentData
+    {
+        public float DisSq;
+        public float Dis;
+    }
     public struct NeedTarget : IComponentData, IEnableableComponent
     {
         

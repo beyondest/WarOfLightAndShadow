@@ -64,11 +64,12 @@ namespace SparFlame.Components.SubGameplay
 
     public readonly partial struct UnitUpgradeAspect : IAspect
     {
-        private readonly RefRW<MovableData> _movableData;
-        private readonly RefRW<StatData> _statData;
-        private readonly RefRW<ExpData> _expData;
+        private readonly RefRO<MovableData> _movableData;
+        private readonly RefRO<StatData> _statData;
+        private readonly RefRO<ExpData> _expData;
         private readonly RefRO<PrefabId> _prefabId;
 
+        /*
         public void UpGradeWhenThisIsInstance<TAbility>(
             in NativeHashMap<int, ExpStaticConfig> expDatabase,
             ref TAbility ability
@@ -109,6 +110,7 @@ namespace SparFlame.Components.SubGameplay
                     break;
             }
         }
+        */
 
         public void SetLevelDataWhenThisIsPrefab<TAbility>(int level,
             in NativeHashMap<int, ExpStaticConfig> expDatabase,

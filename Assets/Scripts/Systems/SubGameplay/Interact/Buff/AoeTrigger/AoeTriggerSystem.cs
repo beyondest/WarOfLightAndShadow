@@ -27,7 +27,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             state.RequireForUpdate<SimulationSingleton>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<SightSystemConfig>();
-            state.RequireForUpdate<SightData>();
             _targetLookup = state.GetBufferLookup<AoeTarget>();
         }
 
@@ -44,6 +43,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public partial struct AoeTriggerJob : IJobEntity
         {
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public BufferLookup<AoeTarget> TargetLookup;
 
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in AoeTriggerData triggerData,

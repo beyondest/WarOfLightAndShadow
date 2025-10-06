@@ -101,10 +101,18 @@ namespace SparFlame.Database
                 if (item.HasSight())
                 {
                     AddBuffer<InsightTarget>(entity);
-                    AddComponent(entity, new GenerateSightRequest
+                    // AddComponent(entity, new GenerateSightRequest
+                    // {
+                    //     SightPrefab = GetEntity(item.sightPrefab, TransformUsageFlags.Dynamic),
+                    // });
+                    AddComponent(entity, new SightRange
                     {
-                        SightPrefab = GetEntity(item.sightPrefab, TransformUsageFlags.Dynamic),
+                        DisSq = item.sightRange * item.sightRange,
+                        Dis = item.sightRange
                     });
+                    
+                    AddComponent<NeedTarget>(entity);
+                    SetComponentEnabled<NeedTarget>(entity, false);
                 }
 
                 // Interact Basic State

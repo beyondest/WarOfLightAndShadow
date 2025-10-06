@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
 using SparFlame.Core.Utils;
@@ -9,38 +10,28 @@ using Unity.Collections;
 using Unity.Transforms;
 using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
-
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
     [BurstCompile]
-    [UpdateAfter(typeof(BuffManageSystem))]
-    [UpdateAfter(typeof(SightUpdateListSystem))]
+    // [UpdateAfter(typeof(BuffManageSystem))]
+    // [UpdateAfter(typeof(SightUpdateListSystem))]
     public partial struct InteractStateMachine : ISystem
     {
-        private BufferLookup<InsightTarget> _insightTarget;
 
         private ComponentLookup<StatData> _stat;
         private ComponentLookup<LocalTransform> _localTransform;
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
         private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<MovableData> _movable;
-        private ComponentLookup<BasicStateData> _basicState;
-        private ComponentLookup<HealStateTag> _healState;
-        private ComponentLookup<HarvestStateTag> _harvestState;
-        private ComponentLookup<RegeneratingTag> _regeneratingTag;
-        private ComponentLookup<AttackStateTag> _attackTag;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<ExpData> _expDataLookup;
         private ComponentLookup<InteractAbilityBonus> _abilityBonusLookup;
         private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
         private ComponentLookup<InGarrison> _inGarrisonLookup;
-        private EntityQuery _attackEntityQuery;
-        private EntityQuery _healEntityQuery;
-        private EntityQuery _harvestEntityQuery;
-
+        private ComponentLookup<AttackAbility> _attackAbilityLookup;
+        private ComponentLookup<HealAbility> _healAbilityLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -50,37 +41,26 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             state.RequireForUpdate<InteractStateMachineConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
-
-
-            _attackEntityQuery = SystemAPI.QueryBuilder().WithAllRW<AttackAbility>().WithAllRW<BasicStateData>()
-                .WithAll<AttackStateTag>().WithNone<UnitDeadTag>().Build();
-            _healEntityQuery = SystemAPI.QueryBuilder().WithAllRW<HealAbility>().WithAllRW<BasicStateData>()
-                .WithAll<HealStateTag>().WithNone<UnitDeadTag>().Build();
-            _harvestEntityQuery = SystemAPI.QueryBuilder().WithAllRW<HarvestAbility>().WithAllRW<BasicStateData>()
-                .WithAll<HarvestStateTag>().WithNone<UnitDeadTag>().Build();
-
+    
 
             _stat = state.GetComponentLookup<StatData>(true);
             _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
             _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
-            _insightTarget = state.GetBufferLookup<InsightTarget>(true);
-            _healState = state.GetComponentLookup<HealStateTag>(true);
-            _harvestState = state.GetComponentLookup<HarvestStateTag>(true);
-            _attackTag = state.GetComponentLookup<AttackStateTag>(true);
             _localTransform = state.GetComponentLookup<LocalTransform>();
             _movable = state.GetComponentLookup<MovableData>();
-            _basicState = state.GetComponentLookup<BasicStateData>();
-            _regeneratingTag = state.GetComponentLookup<RegeneratingTag>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
             _abilityBonusLookup = state.GetComponentLookup<InteractAbilityBonus>(true);
             _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
+            _attackAbilityLookup = state.GetComponentLookup<AttackAbility>(true);
+            _healAbilityLookup = state.GetComponentLookup<HealAbility>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            
             var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -91,38 +71,23 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _generalAttrLookup.Update(ref state);
             _boxColliderSizeLookup.Update(ref state);
             _movable.Update(ref state);
-            _insightTarget.Update(ref state);
-            _basicState.Update(ref state);
-            _healState.Update(ref state);
-            _regeneratingTag.Update(ref state);
-            _harvestState.Update(ref state);
-            _attackTag.Update(ref state);
             _buildingAttrLookup.Update(ref state);
             _expDataLookup.Update(ref state);
             _abilityBonusLookup.Update(ref state);
             _darkShieldTauntedBuffLookup.Update(ref state);
             _inGarrisonLookup.Update(ref state);
-            var attackAbilities = _attackEntityQuery.ToComponentDataArray<AttackAbility>(Allocator.TempJob);
-            var attackEntities = _attackEntityQuery.ToEntityArray(Allocator.TempJob);
-            state.Dependency.Complete();
+            _healAbilityLookup.Update(ref state);
+            _attackAbilityLookup.Update(ref state);
             var deltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime;
-            var attackJob = new InteractStateJob<AttackAbility>
+            state.Dependency = new InteractStateJob
             {
                 CurTime = curTime,
-                Ability = attackAbilities,
-                Entities = attackEntities,
                 StatDataLookup = _stat,
                 TransformLookup = _localTransform,
                 GeneralAttrLookup = _generalAttrLookup,
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
-                InsightTarget = _insightTarget,
-                RegeneratingTagLookup = _regeneratingTag,
                 ECB = ecb,
                 MovableLookup = _movable,
-                BasicStateData = _basicState,
-                HealLookup = _healState,
-                HarvestLookup = _harvestState,
-                AttackLookup = _attackTag,
                 DeltaTime = deltaTime,
                 InteractTurnSpeed = config.InteractTurnSpeed,
                 BuildingAttrLookup = _buildingAttrLookup,
@@ -130,127 +95,69 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ExpDataLookup = _expDataLookup,
                 AbilityBonusLookup = _abilityBonusLookup,
                 DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
-                InGarrisonLookup = _inGarrisonLookup
+                InGarrisonLookup = _inGarrisonLookup,
+                AttackAbilityLookup = _attackAbilityLookup,
+                HealAbilityLookup = _healAbilityLookup,
+                
+            }.ScheduleParallel(state.Dependency);
 
-            }.Schedule(attackEntities.Length, config.AttackJobBatchCount, state.Dependency);
-            state.Dependency = attackJob;
-
-            var healAbilities = _healEntityQuery.ToComponentDataArray<HealAbility>(Allocator.TempJob);
-            var healEntities = _healEntityQuery.ToEntityArray(Allocator.TempJob);
-            var healJob = new InteractStateJob<HealAbility>
-            {
-                CurTime = curTime,
-
-                Ability = healAbilities,
-                Entities = healEntities,
-                StatDataLookup = _stat,
-                TransformLookup = _localTransform,
-                GeneralAttrLookup = _generalAttrLookup,
-                BoxColliderSizeLookup = _boxColliderSizeLookup,
-                InsightTarget = _insightTarget,
-                RegeneratingTagLookup = _regeneratingTag,
-                ECB = ecb,
-                MovableLookup = _movable,
-                BasicStateData = _basicState,
-                HealLookup = _healState,
-                HarvestLookup = _harvestState,
-                AttackLookup = _attackTag,
-                DeltaTime = deltaTime,
-                InteractTurnSpeed = config.InteractTurnSpeed,
-                Config = sightSystemConfig,
-                BuildingAttrLookup = _buildingAttrLookup,
-                ExpDataLookup = _expDataLookup,
-                AbilityBonusLookup = _abilityBonusLookup,
-                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
-                InGarrisonLookup = _inGarrisonLookup
-            }.Schedule(healEntities.Length, config.HealJobBatchCount, state.Dependency);
-            state.Dependency = healJob;
-
-            var harvestAbilities = _harvestEntityQuery.ToComponentDataArray<HarvestAbility>(Allocator.TempJob);
-            var harvestEntities = _harvestEntityQuery.ToEntityArray(Allocator.TempJob);
-            var harvestJob = new InteractStateJob<HarvestAbility>
-            {
-                CurTime = curTime,
-
-                Ability = harvestAbilities,
-                Entities = harvestEntities,
-                StatDataLookup = _stat,
-                TransformLookup = _localTransform,
-                GeneralAttrLookup = _generalAttrLookup,
-                BoxColliderSizeLookup = _boxColliderSizeLookup,
-                InsightTarget = _insightTarget,
-                RegeneratingTagLookup = _regeneratingTag,
-                ECB = ecb,
-                MovableLookup = _movable,
-                BasicStateData = _basicState,
-                HealLookup = _healState,
-                HarvestLookup = _harvestState,
-                AttackLookup = _attackTag,
-                DeltaTime = deltaTime,
-                InteractTurnSpeed = config.InteractTurnSpeed,
-                Config = sightSystemConfig,
-                BuildingAttrLookup = _buildingAttrLookup,
-                ExpDataLookup = _expDataLookup,
-                AbilityBonusLookup = _abilityBonusLookup,
-                DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
-                InGarrisonLookup = _inGarrisonLookup
-            }.Schedule(harvestEntities.Length, config.HarvestJobBatchCount, state.Dependency);
-            state.Dependency = harvestJob;
-
-            attackJob.Complete();
-            healJob.Complete();
-            harvestJob.Complete();
-
-            attackEntities.Dispose();
-            attackAbilities.Dispose();
-            healEntities.Dispose();
-            healAbilities.Dispose();
-            harvestEntities.Dispose();
-            harvestAbilities.Dispose();
         }
 
 
         [BurstCompile]
-        private struct InteractStateJob<TInteractAbility> : IJobParallelFor
-            where TInteractAbility : struct, IInteractAbility
+        [WithNone(typeof(UnitDeadTag))]
+        [WithNone(typeof(FakeUnitTag))]
+        private partial struct InteractStateJob : IJobEntity
         {
             [ReadOnly] public float CurTime;
-            public NativeArray<TInteractAbility> Ability;
-            public NativeArray<Entity> Entities;
 
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
-            [ReadOnly] public ComponentLookup<HealStateTag> HealLookup;
-            [ReadOnly] public ComponentLookup<HarvestStateTag> HarvestLookup;
-            [ReadOnly] public ComponentLookup<AttackStateTag> AttackLookup;
-            [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
-            [ReadOnly] public BufferLookup<InsightTarget> InsightTarget;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
             [ReadOnly] public ComponentLookup<ExpData> ExpDataLookup;
+            [ReadOnly] public ComponentLookup<AttackAbility> AttackAbilityLookup;
+            [ReadOnly] public ComponentLookup<HealAbility> HealAbilityLookup;
             [ReadOnly] public ComponentLookup<InteractAbilityBonus> AbilityBonusLookup;
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
             [ReadOnly] public ComponentLookup<InGarrison> InGarrisonLookup;
             [ReadOnly] public float InteractTurnSpeed;
-            
-            // Turn rotation to target
+
+            // These components are only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
-
-            // Change self state
             [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableLookup;
-
-            // Change self state
-            [NativeDisableParallelForRestriction] public ComponentLookup<BasicStateData> BasicStateData;
 
             [ReadOnly] public float DeltaTime;
             [ReadOnly] public SightSystemConfig Config;
             public EntityCommandBuffer.ParallelWriter ECB;
 
-            public void Execute(int index)
+            private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<InsightTarget> targetList,
+                Entity selfEntity,
+                ref BasicStateData selfStateData)
             {
-                var selfEntity = Entities[index];
-                var ability = Ability[index];
-                ref var selfStateData = ref BasicStateData.GetRefRW(selfEntity).ValueRW;
+                var range = 0f;
+                var amount = 0;
+                var speed = 0f;
+                var interactType = InteractType.Harvest;
+                var canHeal = false;
+                var canAttack = false;
+                if (AttackAbilityLookup.TryGetComponent(selfEntity, out var attackAbility))
+                {
+                    range = attackAbility.Range;
+                    amount = attackAbility.Amount;
+                    speed = attackAbility.Speed;
+                    interactType = InteractType.Attack;
+                    canAttack = true;
+                }
+                else if (HealAbilityLookup.TryGetComponent(selfEntity, out var healAbility))
+                {
+                    range = healAbility.Range;
+                    amount = healAbility.Amount;
+                    speed = healAbility.Speed;
+                    interactType = InteractType.Heal;
+                    canHeal = true;
+                }
+
                 var selfGeneralAttr = GeneralAttrLookup[selfEntity];
                 var selfFactionTag = selfGeneralAttr.Faction;
 
@@ -260,7 +167,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     && selfStateData.CurState != InteractState.Healing
                     && selfStateData.CurState != InteractState.Harvesting) return;
 
-                if (!InsightTarget.TryGetBuffer(selfEntity, out var targetList)) return; // This should never return
 
                 // Check if target is valid
 
@@ -277,9 +183,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 else
                 {
                     isTargetValid = InteractUtils.IsTargetValid(in targetGeneralAttr, in selfFactionTag,
-                        in targetStat, HealLookup.HasComponent(selfEntity), HarvestLookup.HasComponent(selfEntity),
-                        AttackLookup.HasComponent(selfEntity),
-                        !RegeneratingTagLookup.HasComponent(selfStateData.TargetEntity));
+                        in targetStat, canHeal, false,
+                        canAttack,
+                        false);
                 }
 
                 if (!isTargetValid) // Current target is invalid
@@ -294,7 +200,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     // Target insight, choose the highest value target
                     else
                     {
-                        selfStateData.TargetEntity = InteractUtils.ChooseTarget(in targetList);
+                        selfStateData.TargetEntity =
+                            InteractUtils.ChooseTarget(targetList, Config.MaxCompareTargetCount);
                         StateUtils.SetTargetStateViaTargetType(in selfFactionTag,
                             GeneralAttrLookup[selfStateData.TargetEntity],
                             ref selfStateData);
@@ -305,7 +212,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 }
 
                 // Player can decide whether unit can switch target during interact state
-                if (ShouldChangeTarget(ref selfStateData, HealLookup.HasComponent(selfEntity),
+                if (ShouldChangeTarget(ref selfStateData, canHeal,
                         in targetList, selfEntity))
                 {
                     if (GeneralAttrLookup.TryGetComponent(selfStateData.TargetEntity, out var newTargetGeneralAttr))
@@ -314,6 +221,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             newTargetGeneralAttr, ref selfStateData);
                         StateUtils.SwitchState(ref selfStateData, ECB, selfEntity, index);
                     }
+
                     return;
                 }
 
@@ -325,13 +233,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // Check if target in range
                 /*As long as target is valid, movable unit will never change target in interact state.
                  The target can only be changed while moving*/
-                if (!IsTargetInRange(math.square(ability.Range + AbilityBonusLookup[selfEntity].RangeBonus), in curPos, in targetPos, in targetBoxColliderSize))
+                if (!IsTargetInRange(math.square(range + AbilityBonusLookup[selfEntity].RangeBonus), in curPos,
+                        in targetPos, in targetBoxColliderSize))
                 {
                     // Interacter is movable
                     if (MovableLookup.HasComponent(selfEntity) && !InGarrisonLookup.HasComponent(selfEntity))
                     {
                         ref var movableData = ref MovableLookup.GetRefRW(selfEntity).ValueRW;
-                        InteractMoveToTarget(ref selfStateData, ref movableData, in ability, selfEntity, index);
+                        InteractMoveToTarget(ref selfStateData, ref movableData, range, interactType, selfEntity,
+                            index);
                         return;
                     }
 
@@ -345,7 +255,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     else
                     {
                         // Enemy in sight, choose the highest value target
-                        selfStateData.TargetEntity = InteractUtils.ChooseTarget(in targetList);
+                        selfStateData.TargetEntity =
+                            InteractUtils.ChooseTarget(in targetList, Config.MaxCompareTargetCount);
                     }
 
                     return;
@@ -361,13 +272,13 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 }
 
                 // Only building attack target here
-                var counter = 1 / DeltaTime / ability.Speed;
+                var counter = 1 / DeltaTime / speed;
                 if (++selfStateData.InteractCounter > (int)counter)
                 {
                     selfStateData.InteractCounter = 0;
                     // Calculate True Interact AbsAmount
-                    BuildingAttack(selfStateData.TargetEntity, ability.Amount, index, selfEntity,
-                        ability.InteractType, selfGeneralAttr, transform.Position);
+                    BuildingAttack(selfStateData.TargetEntity, amount, index, selfEntity,
+                        interactType, selfGeneralAttr, transform.Position);
                 }
             }
 
@@ -384,6 +295,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     selfStateData.TargetEntity = taunted.TauntedBy;
                     return originalTarget != selfStateData.TargetEntity;
                 }
+
                 // Focus mode cannot switch target unless this is a healer and healer heal first
                 if (selfStateData.Focus && (!heal || !Config.HealerAlwaysHealFirst)) return false;
 
@@ -398,7 +310,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // If dynamic choose target
                 if (Config.DynamicChooseTargetInInteract && !targets.IsEmpty)
                 {
-                    selfStateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
+                    selfStateData.TargetEntity = InteractUtils.ChooseTarget(in targets, Config.MaxCompareTargetCount);
                     return originalTarget != selfStateData.TargetEntity;
                 }
 
@@ -407,22 +319,22 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
 
             private void InteractMoveToTarget(ref BasicStateData stateData, ref MovableData movableData,
-                in TInteractAbility ability, Entity entity, int index)
+                float range, InteractType interactType, Entity entity, int index)
             {
                 var tarPos = TransformLookup[stateData.TargetEntity].Position;
                 var tarColliderShape = BoxColliderSizeLookup[stateData.TargetEntity].SeparationBox;
                 MovementUtils.SetMoveTarget(ref movableData, tarPos, tarColliderShape,
                     MovementCommandType.Interactive,
-                    ability.Range
+                    range
                 );
                 stateData.TargetState = InteractState.Moving;
                 StateUtils.SwitchState(ref stateData, ECB, entity, index);
-                stateData.TargetState = ability.InteractType switch
+                stateData.TargetState = interactType switch
                 {
                     InteractType.Attack => InteractState.Attacking,
                     InteractType.Heal => InteractState.Healing,
                     InteractType.Harvest => InteractState.Harvesting,
-                    _ => BurstSafe.UnexpectedEnum(ability.InteractType, InteractState.Idle)
+                    _ => BurstSafe.UnexpectedEnum(interactType, InteractState.Idle)
                 };
             }
 
@@ -467,19 +379,19 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 var buildingAttr = BuildingAttrLookup[selfEntity];
                 var vfxName = VFXName.TowerProjectile;
-                var damageDelayTime = math.distance(selfPos, targetPos) / 20f;// Tower Projectile speed
-                
-                
+                var damageDelayTime = math.distance(selfPos, targetPos) / 20f; // Tower Projectile speed
+
+
                 // Spawn vfx request
                 var vfxRequest = ECB.CreateEntity(index);
                 ECB.AddComponent<SubGameplayEntityTag>(index, vfxRequest);
-                
+
                 // Crystal, beacon, tower tier 4 not has expData
                 if (buildingAttr.Type == BuildingType.Ornaments)
                 {
                     // Tower tier 4 is not support, so tier 4 tower is considered as special tower using magic circle attack
                     // Crystal and beacon use projectile tier 1
-                    vfxName  = VFXName.TowerProjectile;
+                    vfxName = VFXName.TowerProjectile;
                 }
                 else
                 {
@@ -487,7 +399,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     {
                         vfxName = VFXName.TowerProjectile;
                     }
-                    else if(buildingAttr.SubTypeIndex == (int) FortificationType.BigTower)
+                    else if (buildingAttr.SubTypeIndex == (int)FortificationType.BigTower)
                     {
                         vfxName = VFXName.TowerCircleAttack;
                     }
@@ -495,14 +407,14 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 if (vfxName == VFXName.TowerCircleAttack)
                     damageDelayTime = 0.2f;
-                
+
                 statChangeRequest.Interactee = Entity.Null;
                 ECB.AddComponent(index, vfxRequest, new VFXRequest
                 {
                     Filter = new VFXSubFilter
                     {
                         TierFilterEnable = true,
-                        Tier =tier,
+                        Tier = tier,
                         FactionFilterEnable = true,
                         Faction = selfSubGameplayGeneralAttr.Faction
                     },
@@ -515,7 +427,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     ParabolaTargetPosition = targetPos,
                 });
 
-                
+
                 // Spawn buff trigger to deal damage
                 statChangeRequest.Interactee = targetEntity;
 
@@ -523,7 +435,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ECB.AddComponent<SubGameplayEntityTag>(index, aoeBuffRequest);
                 ECB.AddComponent(index, aoeBuffRequest, new AoeInteractData
                 {
-                    TriggerTime = CurTime + damageDelayTime, 
+                    TriggerTime = CurTime + damageDelayTime,
                     StatChangeRequest = statChangeRequest,
                     TargetFaction = ~selfSubGameplayGeneralAttr.Faction,
                 });
@@ -538,19 +450,20 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         : BuffName.MagicTowerCircle,
                     Filter = new BuffFilter
                     {
-                    factionFilterEnabled = true,
-                    faction = selfSubGameplayGeneralAttr.Faction,
-                    tier = tier,
-                    tierFilterEnabled = true
-                }
+                        factionFilterEnabled = true,
+                        faction = selfSubGameplayGeneralAttr.Faction,
+                        tier = tier,
+                        tierFilterEnabled = true
+                    }
                 });
-                
+
                 // Spawn audio request
                 var audioName = vfxName == VFXName.TowerProjectile
                     ? AudioName.TowerMagicBallStart
                     : AudioName.TowerMagicCircle;
-                AudioUtils.PlayAudioClip(audioName, selfPos,ECB, index);
+                AudioUtils.PlayAudioClip(audioName, selfPos, ECB, index);
             }
+
             #endregion
         }
     }

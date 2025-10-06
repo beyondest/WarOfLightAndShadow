@@ -39,7 +39,8 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 var supportCity = SystemAPI.GetSingletonEntity<SupportFightTag>();
                 var cityPos = SystemAPI.GetComponent<LocalTransform>(supportCity).Position;
                 foreach (var (statData,tag, entity) in SystemAPI.Query<
-                             RefRW<ArmyGroupStatData>, RefRW<InvadingSupportCityTag>>().WithEntityAccess())
+                             RefRW<ArmyGroupStatData>, RefRW<InvadingSupportCityTag>>().WithNone<EnemyArmyGroupShouldSaveTag>()
+                             .WithNone<EnemyArmyGroupSaveTag>().WithEntityAccess())
                 {
                     if(tag.ValueRO.LastCheckTime + 1 > curHours)continue;
                     
@@ -77,4 +78,6 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             
         }
     }
+    
+    
 }

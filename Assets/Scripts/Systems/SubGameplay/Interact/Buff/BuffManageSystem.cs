@@ -22,7 +22,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             state.RequireForUpdate<BuffSystemConfig>();
             state.RequireForUpdate<BuffPrefabDataPair>();
             state.RequireForUpdate<SubGamingTag>();
-            _transLookup = state.GetComponentLookup<LocalTransform>();
+            _transLookup = state.GetComponentLookup<LocalTransform>(true);
             _unitDeadLookup = state.GetComponentLookup<UnitDeadTag>();
             _buffRequestQuery = SystemAPI.QueryBuilder().WithAll<BuffRequest>().Build();
         }
@@ -87,13 +87,13 @@ namespace SparFlame.Systems.SubGameplay.Interact
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             _transLookup.Update(ref state);
             _unitDeadLookup.Update(ref state);
-            new GeneralBuffManageJob
+            state.Dependency = new GeneralBuffManageJob
             {
                 ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 TransformLookup = _transLookup,
                 CurTime = curTime,
                 UnitDeadTagLookup = _unitDeadLookup
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         private void CheckAndApplySpecifiedBuffData(ref SystemState state, EntityCommandBuffer ecb,
@@ -141,7 +141,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         MaxStackCount = 1
                     });
                     break;
-      
             }
 
             if (buff == Entity.Null) return;
@@ -182,7 +181,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         {
             [ReadOnly] public float CurTime;
             public EntityCommandBuffer.ParallelWriter ECB;
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<UnitDeadTag> UnitDeadTagLookup;
 
             private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in GeneralBuffData data)
@@ -196,9 +195,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         return;
                     }
 
-                    ref var selfTrans = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
+                    var selfTrans = TransformLookup[selfEntity];
                     selfTrans.Position = transform.Position;
                     selfTrans.Rotation = transform.Rotation;
+                    ECB.SetComponent(index, selfEntity, selfTrans);
                 }
 
                 if (CurTime > data.StartTime + data.Duration)

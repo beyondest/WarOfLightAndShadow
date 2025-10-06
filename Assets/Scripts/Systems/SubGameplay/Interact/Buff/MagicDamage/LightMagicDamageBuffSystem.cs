@@ -7,7 +7,6 @@ using Unity.Entities;
 
 namespace SparFlame.Systems.SubGameplay.Interact.MagicDamage
 {
-    [UpdateBefore(typeof(StatSystem))]
     public partial struct LightMagicDamageBuffSystem : ISystem
     {
         [BurstCompile]

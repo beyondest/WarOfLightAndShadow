@@ -1,8 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Systems.SubGameplay.Garrison;
-using SparFlame.Systems.SubGameplay.Ooc;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
@@ -11,7 +9,8 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-    [UpdateBefore(typeof(GarrisonSystem))]
+    // [UpdateBefore(typeof(GarrisonSystem))]
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial struct StatSystem : ISystem
     {
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
@@ -20,7 +19,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<ResourceAttr> _resourceAttrLookup;
         private ComponentLookup<RenewableData> _renewableResourceDataLookup;
-        private ComponentLookup<OocTag> _oocTagLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
         private ComponentLookup<Rnd> _rndLookup;
         private ComponentLookup<CapacityBuildingAttr> _dwellingAttrLookup;
@@ -29,7 +27,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
         private BufferLookup<InsightTarget> _insightTargetLookup;
         private BufferLookup<CostList> _costListLookup;
-
         
         private ComponentLookup<LightShieldUnderDefend> _lightShieldUnderDefendLookup;
         private ComponentLookup<LightShieldBuff> _lightShieldBuffLookup;
@@ -55,6 +52,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<GarrisonBuffConfig>();
             state.RequireForUpdate<DamageReduceShieldBuffConfig>();
@@ -63,19 +61,17 @@ namespace SparFlame.Systems.SubGameplay.Interact
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<HpRegenerationConfig>();
             state.RequireForUpdate<SightSystemConfig>();
-            state.RequireForUpdate<OocSystemConfig>();
 
             _resourceAttrLookup = state.GetComponentLookup<ResourceAttr>();
             _rndLookup = state.GetComponentLookup<Rnd>();
             _statDataLookup = state.GetComponentLookup<StatData>();
-            
+            _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
+
             _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
             _volumeObstacleTagLookup = state.GetComponentLookup<VolumeObstacleTag>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _renewableResourceDataLookup = state.GetComponentLookup<RenewableData>(true);
-            _oocTagLookup = state.GetComponentLookup<OocTag>();
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
-            _insightTargetLookup = state.GetBufferLookup<InsightTarget>();
             _costListLookup = state.GetBufferLookup<CostList>(true);
             _dwellingAttrLookup = state.GetComponentLookup<CapacityBuildingAttr>(true);
             _expDataLookup = state.GetComponentLookup<ExpData>(true);
@@ -114,7 +110,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _resourceAttrLookup.Update(ref state);
             _renewableResourceDataLookup.Update(ref state);
             _insightTargetLookup.Update(ref state);
-            _oocTagLookup.Update(ref state);
             _buildingAttrLookup.Update(ref state);
             _costListLookup.Update(ref state);
             _rndLookup.Update(ref state);
@@ -143,9 +138,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _singleIdLookup.Update(ref state);
             _inArmyGroupLookup.Update(ref state);
             var autoChooseTargetSystemConfig = SystemAPI.GetSingleton<SightSystemConfig>();
-            var oocSystemConfig = SystemAPI.GetSingleton<OocSystemConfig>();
             // var config = SystemAPI.GetSingleton<StatSystemConfig>();
-            var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
+            var ecbSingleton = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>();
 
             var statRnd = SystemAPI.GetSingletonRW<StatRnd>();
             var rndValue = statRnd.ValueRW.Rnd.NextFloat();
@@ -161,13 +155,13 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
-            var job = new BuffApplyToInteractAmountJob
+            state.Dependency = new BuffApplyToInteractAmountJob
             {
                 ECB = ecbP,
                 GeneralAttrLookup = _generalAttrLookup,
                 ExpDataLookup = _expDataLookup,
                 StatDataLookup = _statDataLookup,
-                UnitAttrLookup = _rndLookup,
+                RndLookup = _rndLookup,
 
                 LightShieldUnderDefendLookup = _lightShieldUnderDefendLookup,
                 LightShieldBuffLookup = _lightShieldBuffLookup,
@@ -194,14 +188,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 
                 
             }.Schedule(state.Dependency);
-            job.Complete();
 
-            new CheckStatChangeRequest
+            state.Dependency = new CheckStatChangeRequest
             {
                 ECB = ecbP,
                 RandomValue = rndValue,
                 SightConfig = autoChooseTargetSystemConfig,
-                OocConfig = oocSystemConfig,
                 PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 CurrentCity = SystemAPI.GetSingleton<SubGameStatusData>().City,
                 
@@ -217,7 +209,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 ResourceAttrLookup = _resourceAttrLookup,
                 RenewableResourceDataLookup = _renewableResourceDataLookup,
                 InGarrisonLookup = _inGarrisonLookup,
-                OocTagLookup = _oocTagLookup,
                 CostListLookup = _costListLookup,
                 BuildingAttrLookup = _buildingAttrLookup,
                 UnitAttrLookup = _unitAttrLookup,
@@ -230,7 +221,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 GenerateAttrLookup = _generateAttrLookup,
                 InArmyGroupLookup = _inArmyGroupLookup,
                 PrefabIdLookup = _prefabIdLookup
-            }.Schedule();
+            }.Schedule(state.Dependency);
         }
     }
 }

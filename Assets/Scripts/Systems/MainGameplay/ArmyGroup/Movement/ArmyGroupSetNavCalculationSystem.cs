@@ -46,6 +46,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ArmyGroupMovingSystemConfig Config;
+            // This is conditional component and only written by this job
             [NativeDisableParallelForRestriction] public ComponentLookup<ArmyGroupCalculateEnable> ArmyGroupCalculateEnableLookup;
             private void Execute([ChunkIndexInQuery]int index,
                 ref ArmyGroupCalculatePathData data, ref NavAgentComponent navAgent, ref ArmyGroupMovableData movableData,

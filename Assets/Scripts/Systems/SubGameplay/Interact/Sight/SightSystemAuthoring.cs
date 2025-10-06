@@ -14,10 +14,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
         public float statValueChangeMultiplier = 1.0f;
         
         public float disSqMultiplier = 1f;
-        
-        public float updateSightValueInterval = 1.0f;
-        
-        
+
+        public int validTargetRemainedCountInBuffer = 20;
+        public int maxCompareTargetCount = 5;
         [Header("Player Config")]
         
         [Tooltip("this value will be added to memory target when it begins to attack stuck building")]
@@ -51,6 +50,8 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     MemoryTargetWhenFocus = authoring.memoryTargetWhenFocus,
                     DynamicChooseTargetInInteract = authoring.dynamicChooseTargetInInteract,
                     HealerAlwaysHealFirst = authoring.healerHealSelfFirst,
+                    MaxCompareTargetCount = authoring.maxCompareTargetCount,
+                    ValidTargetRemainedCount = authoring.validTargetRemainedCountInBuffer
                 });
             }
         }
@@ -67,6 +68,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
         public float MemoryTargetAfterStuckByBuilding;
         public bool DynamicChooseTargetInInteract;
         public bool HealerAlwaysHealFirst;
+
+        public int ValidTargetRemainedCount;
+        public int MaxCompareTargetCount;
     }
 
     public struct SightData : IComponentData

@@ -30,6 +30,7 @@ namespace SparFlame.Systems.SubGameplay
         [ReadOnly] public DarkCavalryBuffGeneralConfig DarkCavalryBuffGeneralConfig;
         [ReadOnly] public ComponentLookup<HealAbility> HealAbilityLookup;
         [ReadOnly] public ComponentLookup<AttackAbility> AttackAbilityLookup;
+        // This component is only written to self
         [NativeDisableParallelForRestriction] public BufferLookup<AnimationEventData> EventsLookup;
 
         private void Execute([ChunkIndexInQuery] int index, ref BasicStateData stateData, Entity selfEntity,

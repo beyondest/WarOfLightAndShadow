@@ -25,6 +25,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<InsightTarget>();
@@ -50,8 +51,10 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _priorityLookup.Update(ref state);
             _resourceAttrLookup.Update(ref state);
             _attackLookup.Update(ref state);
-            new UpdateTargetListJob
+            state.Dependency = new UpdateTargetListJob
             {
+                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+                    .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Config = config,
                 GeneralAttrLookUp = _interactableLookup,
                 StatDataLookup = _statDataLookup,
@@ -61,7 +64,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 TransformLookup = _localTransformLookup,
                 PriorityLookup = _priorityLookup,
                 RegeneratingTagLookup = _resourceAttrLookup
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
 
@@ -69,6 +72,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [WithNone(typeof(UnitDeadTag))]
         private partial struct UpdateTargetListJob : IJobEntity
         {
+            public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<SightPriority> PriorityLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookUp;
             [ReadOnly] public ComponentLookup<StatData> StatDataLookup;
@@ -79,15 +83,23 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public ComponentLookup<RegeneratingTag> RegeneratingTagLookup;
             [ReadOnly] public SightSystemConfig Config;
 
-            private void Execute(ref DynamicBuffer<InsightTarget> targets, Entity selfEntity)
+            private void Execute([ChunkIndexInQuery] int index, ref DynamicBuffer<InsightTarget> targets,
+                Entity selfEntity)
             {
+                if (targets.IsEmpty)
+                {
+                    ECB.SetComponentEnabled<NeedTarget>(index, selfEntity, true);
+                    return;
+                }
+
                 var selfFaction = GeneralAttrLookUp[selfEntity].Faction;
                 var selfPos = TransformLookup[selfEntity].Position;
 
-                var tempList = new NativeList<InsightTarget>(Allocator.Temp); // 临时排序列表
-
-                foreach (var t in targets)
+                var tempList = new NativeList<InsightTarget>(Allocator.Temp);
+                var l = math.min(targets.Length, Config.ValidTargetRemainedCount);
+                for (var i = 0; i < l; i++)
                 {
+                    var t = targets[i];
                     var insightTarget = t;
                     var target = insightTarget.Entity;
                     var canHarvest = HarvestLookup.HasComponent(selfEntity);
@@ -124,10 +136,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
                 targets.Clear();
                 targets.AddRange(tempList.AsArray());
-                // for (int i = 0; i < tempList.Length; i++)
-                // {
-                //     targets.Add(tempList[i]);
-                // }
                 tempList.Dispose();
             }
 
@@ -139,7 +147,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     return y.TotalValue.CompareTo(x.TotalValue);
                 }
             }
-            
+
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float CalDisPriority(ref float3 targetPosition, ref float3 selfPos,

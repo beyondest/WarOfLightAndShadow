@@ -54,6 +54,7 @@ namespace SparFlame.Database
                 items.Add(instance);
             }
         }
+        
 
         [Button("Copy Light Data to Dark")]
         private void CopyLightDataToDark()
@@ -149,7 +150,23 @@ namespace SparFlame.Database
 #endif
         }
 
+        [BoxGroup("Tools"), LabelText("Sight Range"), SerializeField]
+        private float sightRange = 60f;
 
+        [BoxGroup("Tools"), Button("Change All Sight Range")]
+        private void ApplySightRange()
+        {
+            foreach (var item in items)
+            {
+                // 创建一个新列表副本，防止多个引用共享一个列表实例
+                item.sightRange = sightRange;
+            }
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            Debug.Log("All unit costs changed");
+#endif
+        }
+        
         public override List<UnitDataItem> Items => items;
     }
 

@@ -4,6 +4,7 @@ using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -50,7 +51,7 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
             _attackStateTagLookup.Update(ref state);
             _healStateTagLookup.Update(ref state);
             _autoGiveWayTagLookup.Update(ref state);
-            new CheckSurroundingJob
+            state.Dependency =  new CheckSurroundingJob
             {
                 LocalTransformLookup = _localTransformLookup,
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
@@ -61,11 +62,10 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
                 HealStateLookup = _healStateTagLookup,
                 SeparationConfig = SystemAPI.GetSingleton<SeparationConfig>(),
                 AutoGiveWayLookup = _autoGiveWayTagLookup
-            }.ScheduleParallel();
-            new SeparationSetZeroJob().ScheduleParallel();
-            new FormationMovingSeparationSteeringJob().ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency = new SeparationSetZeroJob().ScheduleParallel(state.Dependency);
+            state.Dependency= new FormationMovingSeparationSteeringJob().ScheduleParallel(state.Dependency);
         }
-
 
         [BurstCompile]
         [WithNone(typeof(MovingStateTag))]

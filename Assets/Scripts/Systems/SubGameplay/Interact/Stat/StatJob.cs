@@ -4,7 +4,6 @@ using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.Audio;
-using SparFlame.Systems.SubGameplay.Ooc;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -13,7 +12,6 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Interact
 {
-    // This job cannot schedule parallel
     [BurstCompile]
     public partial struct CheckStatChangeRequest : IJobEntity
     {
@@ -21,13 +19,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [ReadOnly] public float RandomValue;
         [ReadOnly] public PlayerFactionData PlayerFactionData;
         [ReadOnly] public SightSystemConfig SightConfig;
-        [ReadOnly] public OocSystemConfig OocConfig;
         [ReadOnly] public StatDebug StatDebug;
         [ReadOnly] public Entity CurrentCity;
 
+        // This is non-parallel job
         [NativeDisableParallelForRestriction] public BufferLookup<InsightTarget> TargetListLookup;
         [NativeDisableParallelForRestriction] public ComponentLookup<StatData> StatLookup;
-        [NativeDisableParallelForRestriction] public ComponentLookup<OocTag> OocTagLookup;
 
         [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
         [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
@@ -62,6 +59,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             var absAmount = request.AbsAmount;
             var preValue = statInteractee.curValue;
+
+            if (StatDebug.enabled)
+            {
+                DebugChangeAmount(ref absAmount, request, interacteeAttr);
+            }
+
             switch (request.Type)
             {
                 case StatChangeType.None:
@@ -84,11 +87,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     break;
             }
 
-
-            if (StatDebug.enabled)
-            {
-                DebugCheck(request, interacteeAttr, ref statInteractee);
-            }
 
             // Generate army group stat change request if needed
             if (InArmyGroupLookup.TryGetComponent(request.Interactee, out var inArmyGroup))
@@ -189,9 +187,9 @@ namespace SparFlame.Systems.SubGameplay.Interact
                         }
                     }
 
-                    // Update Ooc info(attack state or under attack state tag)
-                    if (statInteractee.curValue > 0 && request.Type != StatChangeType.UnNormalKill)
-                        UpdateOocInfo(request, request.InteractorSubGameplayGeneralAttr, interacteeAttr);
+                    // // Update Ooc info(attack state or under attack state tag)
+                    // if (statInteractee.curValue > 0 && request.Type != StatChangeType.UnNormalKill)
+                    //     UpdateOocInfo(request.InteractorSubGameplayGeneralAttr, interacteeAttr);
                     StatUtils.GeneratePopNumberRequest(ref TransformLookup, request,
                         request.InteractorSubGameplayGeneralAttr,
                         index,
@@ -400,119 +398,109 @@ namespace SparFlame.Systems.SubGameplay.Interact
         }
 
 
-        private void UpdateOocInfo(StatChangeRequest request, SubGameplayGeneralAttr interactorAttr,
-            SubGameplayGeneralAttr interacteeAttr)
+        // private void UpdateOocInfo(SubGameplayGeneralAttr interactorAttr,
+        //     SubGameplayGeneralAttr interacteeAttr)
+        // {
+        //     var interacteeSeconds = interacteeAttr.BaseTag == BaseTag.Buildings
+        //         ? OocConfig.BuildingOocSeconds
+        //         : OocConfig.UnitOocSeconds;
+        //     var interactorSeconds = interactorAttr.BaseTag == BaseTag.Buildings
+        //         ? OocConfig.BuildingOocSeconds
+        //         : OocConfig.UnitOocSeconds;
+        //
+        // }
+
+        private void DebugChangeAmount(ref int absAmount, in StatChangeRequest request,
+            in SubGameplayGeneralAttr interacteeAttr)
         {
-            var interacteeSeconds = interacteeAttr.BaseTag == BaseTag.Buildings
-                ? OocConfig.BuildingOocSeconds
-                : OocConfig.UnitOocSeconds;
-            var interactorSeconds = interactorAttr.BaseTag == BaseTag.Buildings
-                ? OocConfig.BuildingOocSeconds
-                : OocConfig.UnitOocSeconds;
-            if (OocTagLookup.TryGetComponent(request.Interactee, out var _))
-            {
-                ref var ooc = ref OocTagLookup.GetRefRW(request.Interactee).ValueRW;
-                ooc.Seconds = interacteeSeconds;
-                OocTagLookup.SetComponentEnabled(request.Interactee, true);
-            }
-
-
-            // Attacker is already dead
-            if (!StatLookup.TryGetComponent(request.Interactor, out var interactorStat)
-                || interactorStat.curValue <= 0
-                || !OocTagLookup.TryGetComponent(request.Interactor, out var _)) return;
-            ref var oocInteractor = ref OocTagLookup.GetRefRW(request.Interactor).ValueRW;
-            oocInteractor.Seconds = interactorSeconds;
-            OocTagLookup.SetComponentEnabled(request.Interactor, true);
-        }
-
-        private void DebugCheck(in StatChangeRequest request, in SubGameplayGeneralAttr interacteeAttr,
-            ref StatData statInteractee)
-        {
-            if (request.Type == StatChangeType.SimpleCleanUsedAsUpgrade) return;
+            if (request.Type is StatChangeType.SimpleCleanUsedAsUpgrade or StatChangeType.Heal) return;
             var relationship = FactionUtils.GetRelationshipSimple(PlayerFactionData.faction,
                 interacteeAttr.Faction
             );
-            if (StatDebug.playerStatGeneralInfinite && relationship == Relationship.Self)
-                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
-            if (StatDebug.playerStatGeneralZero && relationship == Relationship.Self)
-                statInteractee.curValue = 0f;
-            if (StatDebug.aiStatGeneralInfinite && relationship != Relationship.Self)
-                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
-            if (StatDebug.aiStatGeneralZero && relationship != Relationship.Self)
-                statInteractee.curValue = 0f;
-            if (StatDebug.playerCrystalStatInfinite && relationship == Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Buildings)
-            {
-                var buildingAttr = BuildingAttrLookup[request.Interactee];
-                if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
-                    or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
-                {
-                    statInteractee.curValue = statInteractee.maxValue /* + statInteractee.bonus*/;
-                }
-            }
+            var scale = relationship == Relationship.Hostile
+                ? StatDebug.enemySideDamageTakenScale
+                : StatDebug.playerSideDamageTakenScale;
+            absAmount = (int)(absAmount * scale);
+            // if (StatDebug.playerStatGeneralInfinite && relationship == Relationship.Self)
+            //     statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
+            // if (StatDebug.playerStatGeneralZero && relationship == Relationship.Self)
+            //     statInteractee.curValue = 0f;
+            // if (StatDebug.aiStatGeneralInfinite && relationship != Relationship.Self)
+            //     statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
+            // if (StatDebug.aiStatGeneralZero && relationship != Relationship.Self)
+            //     statInteractee.curValue = 0f;
+            // if (StatDebug.playerCrystalStatInfinite && relationship == Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Buildings)
+            // {
+            //     var buildingAttr = BuildingAttrLookup[request.Interactee];
+            //     if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+            //         or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
+            //     {
+            //         statInteractee.curValue = statInteractee.maxValue /* + statInteractee.bonus*/;
+            //     }
+            // }
 
-            if (StatDebug.playerCrystalStatZero && relationship == Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Buildings)
-            {
-                var buildingAttr = BuildingAttrLookup[request.Interactee];
-                if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
-                    or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
-                {
-                    statInteractee.curValue = 0f;
-                }
-            }
-
-            if (StatDebug.aiCrystalStatInfinite && relationship != Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Buildings)
-            {
-                var buildingAttr = BuildingAttrLookup[request.Interactee];
-                if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
-                    or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
-                {
-                    statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
-                }
-            }
-
-            if (StatDebug.aiCrystalStatZero && relationship != Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Buildings)
-            {
-                var buildingAttr = BuildingAttrLookup[request.Interactee];
-                if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
-                    or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
-                {
-                    statInteractee.curValue = 0f;
-                }
-            }
-
-            if (StatDebug.playerUnitStatInfinite && relationship == Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Units)
-            {
-                statInteractee.curValue = statInteractee.maxValue /* + statInteractee.bonus*/;
-            }
-
-            if (StatDebug.playerUnitStatZero && relationship == Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Units)
-            {
-                statInteractee.curValue = 0f;
-            }
-
-            if (StatDebug.aiUnitStatInfinite && relationship != Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Units)
-            {
-                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
-            }
-
-            if (StatDebug.aiUnitStatZero && relationship != Relationship.Self &&
-                interacteeAttr.BaseTag == BaseTag.Units)
-            {
-                statInteractee.curValue = 0f;
-            }
-
-            if (StatDebug.resourceStatInfinite && interacteeAttr.BaseTag == BaseTag.Resources)
-                statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
-            if (StatDebug.resourceStatZero && interacteeAttr.BaseTag == BaseTag.Resources)
-                statInteractee.curValue = 0f;
+            // if (StatDebug.playerCrystalStatZero && relationship == Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Buildings)
+            // {
+            //     var buildingAttr = BuildingAttrLookup[request.Interactee];
+            //     if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+            //         or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
+            //     {
+            //         statInteractee.curValue = 0f;
+            //     }
+            // }
+            //
+            // if (StatDebug.aiCrystalStatInfinite && relationship != Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Buildings)
+            // {
+            //     var buildingAttr = BuildingAttrLookup[request.Interactee];
+            //     if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+            //         or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
+            //     {
+            //         statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
+            //     }
+            // }
+            //
+            // if (StatDebug.aiCrystalStatZero && relationship != Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Buildings)
+            // {
+            //     var buildingAttr = BuildingAttrLookup[request.Interactee];
+            //     if (buildingAttr is { SubTypeIndex: (int)OrnamentType.Crystal, Type: BuildingType.Ornaments }
+            //         or { SubTypeIndex: (int)OrnamentType.Beacon, Type: BuildingType.Ornaments })
+            //     {
+            //         statInteractee.curValue = 0f;
+            //     }
+            // }
+            //
+            // if (StatDebug.playerUnitStatInfinite && relationship == Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Units)
+            // {
+            //     statInteractee.curValue = statInteractee.maxValue /* + statInteractee.bonus*/;
+            // }
+            //
+            // if (StatDebug.playerUnitStatZero && relationship == Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Units)
+            // {
+            //     statInteractee.curValue = 0f;
+            // }
+            //
+            // if (StatDebug.aiUnitStatInfinite && relationship != Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Units)
+            // {
+            //     statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
+            // }
+            //
+            // if (StatDebug.aiUnitStatZero && relationship != Relationship.Self &&
+            //     interacteeAttr.BaseTag == BaseTag.Units)
+            // {
+            //     statInteractee.curValue = 0f;
+            // }
+            //
+            // if (StatDebug.resourceStatInfinite && interacteeAttr.BaseTag == BaseTag.Resources)
+            //     statInteractee.curValue = statInteractee.maxValue /*+ statInteractee.bonus*/;
+            // if (StatDebug.resourceStatZero && interacteeAttr.BaseTag == BaseTag.Resources)
+            //     statInteractee.curValue = 0f;
         }
 
         private void KillUnit(in StatChangeRequest request, int index, SubGameplayGeneralAttr interacteeAttr)
@@ -529,10 +517,15 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 TransformLookup[request.Interactee].Position,
                 ECB, index);
             ECB.RemoveComponent<SubGameplayGeneralAttr>(index, request.Interactee);
-            // ECB.RemoveComponent<UnitAttr>(index, request.Interactee);
+            ECB.RemoveComponent<UnitAttr>(index, request.Interactee);
             ECB.RemoveComponent<StatData>(index, request.Interactee);
             ECB.RemoveComponent<MovableData>(index, request.Interactee);
             ECB.RemoveComponent<Selected>(index, request.Interactee);
+            ECB.RemoveComponent<InsightTarget>(index, request.Interactee);
+            ECB.RemoveComponent<NavAgentComponent>(index, request.Interactee);
+            ECB.RemoveComponent<WaypointBuffer>(index, request.Interactee);
+            ECB.RemoveComponent<Separation>(index, request.Interactee);
+            ECB.RemoveComponent<FakeColliderTarget>(index, request.Interactee);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

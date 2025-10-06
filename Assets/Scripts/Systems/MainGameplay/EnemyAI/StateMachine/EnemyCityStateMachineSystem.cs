@@ -29,6 +29,8 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
         private ComponentLookup<HealAbility> _healLookup;
         private UnitUpgradeAspect.Lookup _unitUpGradeAspectLookup;
         private ComponentLookup<GlobalSingleId> _singleIdLookup;
+        private ComponentLookup<EnemyArmyGroupShouldSaveTag> _shouldSaveTagLookup;
+        private ComponentLookup<EnemyArmyGroupSaveTag> _saveTagLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -54,6 +56,8 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             _healLookup = state.GetComponentLookup<HealAbility>(true);
             _unitUpGradeAspectLookup = new UnitUpgradeAspect.Lookup(ref state);
             _singleIdLookup = state.GetComponentLookup<GlobalSingleId>(true);
+            _saveTagLookup = state.GetComponentLookup<EnemyArmyGroupSaveTag>(true);
+            _shouldSaveTagLookup = state.GetComponentLookup<EnemyArmyGroupShouldSaveTag>(true);
         }
 
         [BurstCompile]
@@ -82,12 +86,14 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             _prefabIdLookup.Update(ref state);
             _unitUpGradeAspectLookup.Update(ref state);
             _singleIdLookup.Update(ref state);
+            _saveTagLookup.Update(ref state);
+            _shouldSaveTagLookup.Update(ref state);
             var debug = new EnemyAIMainGameplayDebug();
             if (SystemAPI.HasSingleton<DebugTag>() && SystemAPI.HasSingleton<EnemyAIMainGameplayDebug>())
                 debug = SystemAPI.GetSingleton<EnemyAIMainGameplayDebug>();
             var ecbP = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new EnemyCityStateMachineJob
+            state.Dependency = new EnemyCityStateMachineJob
             {
                 ECB = ecbP,
                 Debug = debug,
@@ -110,8 +116,11 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 HealLookup = _healLookup,
                 ExpDatabase = _expDatabase,
                 UnitUpgradeAspectLookup = _unitUpGradeAspectLookup,
-                SingleIdLookup = _singleIdLookup
-            }.ScheduleParallel();
+                SingleIdLookup = _singleIdLookup,
+                SaveTagLookup = _saveTagLookup,
+                ShouldSaveTagLookup = _shouldSaveTagLookup,
+                
+            }.ScheduleParallel(state.Dependency);
         }
 
 

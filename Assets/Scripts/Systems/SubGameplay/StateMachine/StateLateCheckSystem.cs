@@ -42,7 +42,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _idle.Update(ref state);
             _castSkill.Update(ref state);
 
-            new StateLateCheckJob
+            state.Dependency = new StateLateCheckJob
             {
                 Idle = _idle,
                 Attack = _attack,
@@ -51,7 +51,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 Heal = _heal,
                 Harvest = _harvest,
                 CastSkill = _castSkill,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
 
@@ -59,6 +59,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         [WithNone(typeof(UnitDeadTag))]
         public partial struct StateLateCheckJob : IJobEntity
         {
+            // These components are only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<IdleStateTag> Idle;
             [NativeDisableParallelForRestriction] public ComponentLookup<AttackStateTag> Attack;
             [NativeDisableParallelForRestriction] public ComponentLookup<MovingStateTag> Moving;

@@ -11,8 +11,8 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
-    [UpdateAfter(typeof(BuffManageSystem))]
-    [UpdateAfter(typeof(SightUpdateListSystem))]
+    // [UpdateAfter(typeof(BuffManageSystem))]
+    // [UpdateAfter(typeof(SightUpdateListSystem))]
     [BurstCompile]
     public partial struct IdleStateMachine : ISystem
     {
@@ -26,6 +26,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<AutoGiveWayConfig>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -49,7 +50,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _movingStateLookup.Update(ref state);
             _autoGiveWayTagLookup.Update(ref state);
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new UnitIdleStateJob
+            var sightConfig = SystemAPI.GetSingleton<SightSystemConfig>();
+            state.Dependency =  new UnitIdleStateJob
             {
                 ECB = ecbP,
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
@@ -59,13 +61,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 SelectedLookup = _selectedLookup,
                 TriggerDataLookup = _triggerLookup,
                 MovingStateTagLookup = _movingStateLookup,
-                AutoGiveWayTagLookup = _autoGiveWayTagLookup
-            }.ScheduleParallel();
-            new BuildingIdleStateJob
+                AutoGiveWayTagLookup = _autoGiveWayTagLookup,
+                SightConfig = sightConfig,
+            }.ScheduleParallel(state.Dependency);
+             state.Dependency= new BuildingIdleStateJob
             {
                 ECB = ecbP,
                 GeneralAttrLookup = _generalAttrLookup,
-            }.ScheduleParallel();
+                SightConfig = sightConfig
+            }.ScheduleParallel(state.Dependency);
         }
 
 
@@ -77,7 +81,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         {
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
-
+            [ReadOnly] public SightSystemConfig SightConfig;
 
             private void Execute([ChunkIndexInQuery] int index, ref BasicStateData stateData,
                 in DynamicBuffer<InsightTarget> targets,
@@ -92,7 +96,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 if (!targets.IsEmpty)
                 {
-                    stateData.TargetEntity = InteractUtils.ChooseTarget(targets);
+                    stateData.TargetEntity = InteractUtils.ChooseTarget(targets, SightConfig.MaxCompareTargetCount);
                     var targetGeneralAttr = GeneralAttrLookup[stateData.TargetEntity];
                     var selfGeneralAttr = GeneralAttrLookup[entity];
 
@@ -121,6 +125,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public AutoGiveWayConfig AutoGiveWayConfig;
             [ReadOnly] public ComponentLookup<MovingStateTag> MovingStateTagLookup;
             [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayTagLookup;
+            [ReadOnly] public SightSystemConfig SightConfig;
 
             private void Execute([ChunkIndexInQuery] int index, ref BasicStateData stateData,
                 in DynamicBuffer<InsightTarget> targets,
@@ -140,7 +145,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     ECB.SetComponentEnabled<AutoGiveWayTag>(index, selfEntity, false);
                     ECB.SetComponentEnabled<FormationMovingTag>(index, selfEntity, false);
 
-                    stateData.TargetEntity = InteractUtils.ChooseTarget(targets);
+                    stateData.TargetEntity = InteractUtils.ChooseTarget(targets, SightConfig.MaxCompareTargetCount);
                     var targetGeneralAttr = GeneralAttrLookup[stateData.TargetEntity];
                     var selfGeneralAttr = GeneralAttrLookup[selfEntity];
 
@@ -175,7 +180,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             var left = MovementUtils.GetLeftOrRight(front, true);
                             foreach (var target in fakeColliderTargets)
                             {
-                                if(!TriggerDataLookup.TryGetComponent(target.Target, out var triggerData))continue;
+                                if (!TriggerDataLookup.TryGetComponent(target.Target, out var triggerData)) continue;
                                 var belongsTo = triggerData.BelongsTo;
                                 // Only when surroundings have unit that is in moving state, not auto give way moving, and selected, will 
                                 // it be considered as a valid target for auto give way
@@ -237,7 +242,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             autoGiveWayData.State = AutoGiveWayState.None;
                             autoGiveWayData.AccumulatedTime = 0f;
                             ECB.SetComponentEnabled<AutoGiveWayTag>(index, selfEntity, false);
-
                         }
                         else
                         {

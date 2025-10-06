@@ -363,7 +363,10 @@ namespace SparFlame.Systems.General.BasicControl
 
             for (var i = 0; i < buildings.Length; i++)
             {
-                singleIdToEntities.Add(buildingSingleIds[i].value, buildings[i]);
+                if (!singleIdToEntities.TryAdd(buildingSingleIds[i].value, buildings[i]))
+                {
+                    Debug.Log($"{buildings[i]}");
+                }
             }
 
             var ecb = new EntityCommandBuffer(Allocator.Persistent);

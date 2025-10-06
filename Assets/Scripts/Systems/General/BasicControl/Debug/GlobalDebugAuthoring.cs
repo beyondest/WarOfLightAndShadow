@@ -36,6 +36,12 @@ namespace SparFlame.Systems.General.BasicControl
         [FoldoutGroup("Enemy AI Main Gameplay Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public EnemyAIMainGameplayDebug enemyAIMainGameplayDebug;
 
+        [FoldoutGroup("Conjure Speed Debug"),HideLabel][ShowIf(nameof(globalDebugEnable))]
+        public ConjureDebug conjureSpeedDebug;
+        
+        [FoldoutGroup("Resource Debug"), HideLabel][ShowIf(nameof(globalDebugEnable))]
+        public ResourceDebug resourceDebug;
+        
         private class GlobalDebugAuthoringBaker : Baker<GlobalDebugAuthoring>
         {
             public override void Bake(GlobalDebugAuthoring authoring)
@@ -60,6 +66,10 @@ namespace SparFlame.Systems.General.BasicControl
                         AddComponent(entity, authoring.cameraDebug);
                     if(authoring.enemyAIMainGameplayDebug.enabled)
                         AddComponent(entity, authoring.enemyAIMainGameplayDebug);
+                    if(authoring.conjureSpeedDebug.enabled)
+                        AddComponent(entity, authoring.conjureSpeedDebug);
+                    if(authoring.resourceDebug.enabled)
+                        AddComponent(entity, authoring.resourceDebug);
                 }
             }
         }

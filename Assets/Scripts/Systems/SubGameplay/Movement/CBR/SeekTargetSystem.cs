@@ -2,6 +2,7 @@
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Physics;
 using UnityEngine;
@@ -29,13 +30,13 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             var config = SystemAPI.GetSingleton<MovementConfig>();
             var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
-            new SeekTargetJob
+            state.Dependency =  new SeekTargetJob
             {
                 PhysicsWorld = physicsWorld,
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
                 Config = config,
-            }.ScheduleParallel();
-            new NotMovementStateJob().ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency =  new NotMovementStateJob().ScheduleParallel(state.Dependency);
         }
     }
 

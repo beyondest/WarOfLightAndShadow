@@ -9,23 +9,21 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 // ReSharper disable ReplaceWithSingleAssignment.False
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
     [BurstCompile]
-    [UpdateAfter(typeof(SeekTargetSystem))]
-    [UpdateAfter(typeof(SightUpdateListSystem))]
-    [UpdateAfter(typeof(BuffManageSystem))]
+    // [UpdateAfter(typeof(SeekTargetSystem))]
+    // [UpdateAfter(typeof(SightUpdateListSystem))]
+    // [UpdateAfter(typeof(BuffManageSystem))]
     public partial struct MovingStateMachine : ISystem
     {
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
         private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<Selected> _selectedLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
-        private ComponentLookup<MovableData> _movableLookup;
         private ComponentLookup<BasicStateData> _unitBasicStateLookup;
         private ComponentLookup<AttackAbility> _attackabilityLookup;
         private ComponentLookup<HealAbility> _healabilityLookup;
@@ -64,7 +62,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _formationMovingTagLookup = state.GetComponentLookup<FormationMovingTag>(true);
             _autoGiveWayTagLookup = state.GetComponentLookup<AutoGiveWayTag>(true);
-            _movableLookup = state.GetComponentLookup<MovableData>();
             _unitBasicStateLookup = state.GetComponentLookup<BasicStateData>();
         }
 
@@ -82,7 +79,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _boxColliderSizeLookup.Update(ref state);
             _selectedLookup.Update(ref state);
             _localTransformLookup.Update(ref state);
-            _movableLookup.Update(ref state);
             _unitBasicStateLookup.Update(ref state);
             _attackabilityLookup.Update(ref state);
             _healabilityLookup.Update(ref state);
@@ -98,14 +94,13 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _autoGiveWayTagLookup.Update(ref state);
             // _squeezeLookup.Update(ref state);
             // _autoGiveWayLookup.Update(ref state);
-            new CheckMovingState
+            state.Dependency = new CheckMovingState
             {
                 ECB = ecb.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 GeneralLookup = _generalAttrLookup,
                 BoxColliderSizeLookup = _boxColliderSizeLookup,
                 Selected = _selectedLookup,
                 TransLookup = _localTransformLookup,
-                MovableLookup = _movableLookup,
                 StateLookup = _unitBasicStateLookup,
                 AttackLookup = _attackabilityLookup,
                 HealLookup = _healabilityLookup,
@@ -122,7 +117,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 FakeCollisionDataLookup = _fakeCollisionDataLookup,
                 FormationMovingTagLookup = _formationMovingTagLookup,
                 AutoGiveWayTagLookup = _autoGiveWayTagLookup,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
 
@@ -153,24 +148,22 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<FormationMovingTag> FormationMovingTagLookup;
             [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> FakeCollisionDataLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransLookup;
-            [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayTagLookup;
-            // Change self moving state when taunted or complete and lookup random movable data for collider size
-            [NativeDisableParallelForRestriction] public ComponentLookup<MovableData> MovableLookup;
 
-            // Change self basic state and lookup random basic state for judging
+            [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayTagLookup;
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<BasicStateData> StateLookup;
 
 
             private void Execute([ChunkIndexInQuery] int index, ref Surroundings surroundings,
                 ref NavAgentComponent navAgentComponent,
                 ref DynamicBuffer<InsightTarget> targets, in DynamicBuffer<FakeColliderTarget> colliderTargets,
+                ref MovableData movableData,
                 Entity selfEntity)
             {
-                ref var stateData = ref StateLookup.GetRefRW(selfEntity).ValueRW;
-                ref var movableData = ref MovableLookup.GetRefRW(selfEntity).ValueRW;
                 var selfTrans = TransLookup[selfEntity];
                 var selfGeneralAttr = GeneralLookup[selfEntity];
                 // This should check in every state machine, because switch state tag only happens in next frame dur to ecb playback
+                ref var stateData = ref StateLookup.GetRefRW(selfEntity).ValueRW;
                 if (stateData.CurState != InteractState.Moving) return;
 
                 // if (CheckTaunted(ref surroundings, ref movableData, ref stateData,
@@ -183,14 +176,14 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     return;
 
                 // Not complete the moving. If stuck, should try resolve stuck first. If not stuck or stuck resolved , return true
-                TryResolveStuck(in selfTrans, ref surroundings, ref targets, colliderTargets,
+                TryResolveStuck(in selfTrans, ref surroundings, colliderTargets,
                     movableData, selfGeneralAttr, ref stateData,
                     selfEntity, index, out var ifStuck, out var ifStuckResolvedBySwitchState);
                 if (ifStuck && ifStuckResolvedBySwitchState) return;
 
                 // Not complete the moving. May change target if some other things happen
                 if (CheckShouldChangeAndIfChangeTarget(ref stateData, ref movableData,
-                        ref targets, in selfGeneralAttr.Faction, selfTrans,
+                        targets, selfGeneralAttr.Faction, selfTrans,
                         selfEntity, index)) return;
 
                 CheckUpdateTargetPos(ref stateData, ref movableData);
@@ -207,7 +200,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
             private bool CheckShouldChangeAndIfChangeTarget(ref BasicStateData stateData,
                 ref MovableData movableData,
-                ref DynamicBuffer<InsightTarget> targets,
+                in DynamicBuffer<InsightTarget> targets,
                 in FactionTag selfFactionTag,
                 in LocalTransform selfTransform,
                 Entity selfEntity,
@@ -266,20 +259,19 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         {
                             return false;
                         }
-
-                        var garrisonUnitOutOfDefendRange =
-                            InGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison)
-                            && TransLookup.TryGetComponent(inGarrison.BuildingEntity,
-                                out var buildingTrans)
-                            && Config.MaxDisSqUnitToBuildingForGarrison <
-                            math.distancesq(selfTransform.Position, buildingTrans.Position);
-                        var holdOnUnitOutOfDefendRange = false;
-                        if (HoldOnPositionLookUp.TryGetComponent(selfEntity, out var holdOnPosition))
-                        {
-                            holdOnUnitOutOfDefendRange = Config.MaxDisSqUnitToHoldOnPosition < math.distancesq(
-                                selfTransform.Position,
-                                holdOnPosition.Position);
-                        }
+                        // var garrisonUnitOutOfDefendRange =
+                        //     InGarrisonLookup.TryGetComponent(selfEntity, out var inGarrison)
+                        //     && TransLookup.TryGetComponent(inGarrison.BuildingEntity,
+                        //         out var buildingTrans)
+                        //     && Config.MaxDisSqUnitToBuildingForGarrison <
+                        //     math.distancesq(selfTransform.Position, buildingTrans.Position);
+                        // var holdOnUnitOutOfDefendRange = false;
+                        // if (HoldOnPositionLookUp.TryGetComponent(selfEntity, out var holdOnPosition))
+                        // {
+                        //     holdOnUnitOutOfDefendRange = Config.MaxDisSqUnitToHoldOnPosition < math.distancesq(
+                        //         selfTransform.Position,
+                        //         holdOnPosition.Position);
+                        // }
 
                         var canHeal = HealLookup.HasComponent(selfEntity);
                         var canHarvest = HarvestLookup.HasComponent(selfEntity);
@@ -291,53 +283,54 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 ,
                                 !RegeneratingTagLookup.HasComponent(stateData.TargetEntity)))
                         {
+                            return false;
                             // Ai follow drop aggro check
-                            var tarPos = TransLookup[stateData.TargetEntity].Position;
-                            var targetFromSelfDisSq = math.distancesq(tarPos, selfTransform.Position);
-                            var aiTagShouldNotFollow = isAi
-                                                       && !stateData
-                                                           .Focus // This is for the time enemy need to attack very far away building and debugging need
-                                                       && Config.MaxDistanceSqFollowForAITag < targetFromSelfDisSq;
+                            // var tarPos = TransLookup[stateData.TargetEntity].Position;
+                            // var targetFromSelfDisSq = math.distancesq(tarPos, selfTransform.Position);
+                            // var aiTagShouldNotFollow = isAi
+                            //                            && !stateData
+                            //                                .Focus // This is for the time enemy need to attack very far away building and debugging need
+                            //                            && Config.MaxDistanceSqFollowForAITag < targetFromSelfDisSq;
                             // AI should not follow so far target or hold on unit should not follow so far target
-                            if (aiTagShouldNotFollow || holdOnUnitOutOfDefendRange)
-                            {
-                                int i;
-                                for (i = 0; i < targets.Length; i++)
-                                {
-                                    var target = targets[i];
-                                    if (target.Entity == stateData.TargetEntity) break;
-                                }
+                            // if (aiTagShouldNotFollow || holdOnUnitOutOfDefendRange)
+                            // {
+                            //     int i;
+                            //     for (i = 0; i < targets.Length; i++)
+                            //     {
+                            //         var target = targets[i];
+                            //         if (target.Entity == stateData.TargetEntity) break;
+                            //     }
+                            //
+                            //     if (i < targets.Length)
+                            //     {
+                            //         targets.RemoveAt(i);
+                            //     }
+                            // }
 
-                                if (i < targets.Length)
-                                {
-                                    targets.RemoveAt(i);
-                                }
-                            }
-
-                            if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange && !holdOnUnitOutOfDefendRange)
-                                return false;
+                            // if (!aiTagShouldNotFollow && !garrisonUnitOutOfDefendRange && !holdOnUnitOutOfDefendRange)
+                            //     return false;
                         }
 
                         // Garrison unit Drop aggro， if Ai, should focus go back and regenerating hp
-                        if (garrisonUnitOutOfDefendRange)
-                        {
-                            StateUtils.GarrisonMoveBack(inGarrison, ref stateData, ref movableData,
-                                TransLookup[inGarrison.BuildingEntity].Position,
-                                BoxColliderSizeLookup[inGarrison.BuildingEntity].SeparationBox,
-                                GarrisonSystemConfig.GarrisonRadiusSq, isAi,
-                                selfEntity, index, ECB);
-                            return true;
-                            // if(isAi)
-                            //     ECB.AddComponent<GarrisonAiHpRegeneratingTag>(index, selfEntity);
-                        }
+                        // if (garrisonUnitOutOfDefendRange)
+                        // {
+                        //     StateUtils.GarrisonMoveBack(inGarrison, ref stateData, ref movableData,
+                        //         TransLookup[inGarrison.BuildingEntity].Position,
+                        //         BoxColliderSizeLookup[inGarrison.BuildingEntity].SeparationBox,
+                        //         GarrisonSystemConfig.GarrisonRadiusSq, isAi,
+                        //         selfEntity, index, ECB);
+                        //     return true;
+                        //     // if(isAi)
+                        //     //     ECB.AddComponent<GarrisonAiHpRegeneratingTag>(index, selfEntity);
+                        // }
 
                         // Hold on unit out of defend range and no target in sight, march back to hold on position
-                        if (holdOnUnitOutOfDefendRange && targets.IsEmpty)
-                        {
-                            StateUtils.MarchToPosition(ref stateData, ref movableData, holdOnPosition.Position,
-                                ECB, index, selfEntity, false);
-                            return true;
-                        }
+                        // if (/*holdOnUnitOutOfDefendRange &&*/ targets.IsEmpty)
+                        // {
+                        //     StateUtils.MarchToPosition(ref stateData, ref movableData, holdOnPosition.Position,
+                        //         ECB, index, selfEntity, false);
+                        //     return true;
+                        // }
                     }
 
                     // Current target invalid, check if turn to idle
@@ -358,7 +351,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 ECB.SetComponentEnabled<FormationMovingTag>(index, selfEntity, false);
                 ECB.SetComponentEnabled<AutoGiveWayTag>(index, selfEntity, false);
 
-                stateData.TargetEntity = InteractUtils.ChooseTarget(in targets);
+                stateData.TargetEntity = InteractUtils.ChooseTarget(in targets, SightSystemConfig.MaxCompareTargetCount);
                 targetSubGameplayGeneralAttr = GeneralLookup[stateData.TargetEntity];
                 var targetPos = TransLookup[stateData.TargetEntity].Position;
                 var targetColliderSize = BoxColliderSizeLookup[stateData.TargetEntity].SeparationBox;
@@ -390,7 +383,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             /// </summary>
             /// <param name="selfTrans"></param>
             /// <param name="surroundings"></param>
-            /// <param name="targets"></param>
             /// <param name="colliderTargets"></param>
             /// <param name="movableData"></param>
             /// <param name="selfGeneralAttr"></param>
@@ -401,7 +393,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             /// <param name="ifStuckResolvedBySwitchState"></param>
             /// <returns>If stuck is resolved or not</returns>
             private void TryResolveStuck(in LocalTransform selfTrans, ref Surroundings surroundings,
-                ref DynamicBuffer<InsightTarget> targets,
                 in DynamicBuffer<FakeColliderTarget> colliderTargets,
                 in MovableData movableData, in SubGameplayGeneralAttr selfGeneralAttr,
                 ref BasicStateData stateData, Entity selfEntity, int index,
@@ -417,12 +408,12 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     // Calculation not complete for too many times, consider wrong target
                     stateData.TargetState = InteractState.Idle;
                     StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
-                    var hintRequest = ECB.CreateEntity(index);
-                    ECB.AddComponent<SubGameplayEntityTag>(index, hintRequest);
-                    ECB.AddComponent(index, hintRequest, new HintRequest
-                    {
-                        Name = HintName.TargetNotReachable
-                    });
+                    // var hintRequest = ECB.CreateEntity(index);
+                    // ECB.AddComponent<SubGameplayEntityTag>(index, hintRequest);
+                    // ECB.AddComponent(index, hintRequest, new HintRequest
+                    // {
+                    //     Name = HintName.TargetNotReachable
+                    // });
                     return;
                 }
 
@@ -499,6 +490,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     stateData.TargetState = InteractState.Idle;
                     return true;
                 }
+
                 // Auto give way unit does not check surroundings reach
                 if (AutoGiveWayTagLookup.IsComponentEnabled(entity)) return false;
                 // Check if surrounded ally unit reached. This only work when target state is idle and surrounded unit is in

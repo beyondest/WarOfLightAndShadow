@@ -49,6 +49,7 @@ namespace SparFlame.UI.SubGameplay
             else
             {
                 var subGameStatusData = SystemAPI.GetSingleton<SubGameStatusData>();
+                if(!SystemAPI.HasBuffer<CityResourceEntry>(subGameStatusData.City))return;
                 var cityEntries = SystemAPI.GetBuffer<CityResourceEntry>(subGameStatusData.City);
                 for (var i = 0; i < cityEntries.Length; i++)
                 {

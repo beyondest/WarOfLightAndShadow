@@ -21,12 +21,12 @@ namespace SparFlame.Systems.General.BasicControl.Init
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new InitRandomJob
+            state.Dependency = new InitRandomJob
             {
                 ElapsedTime = (float)SystemAPI.Time.ElapsedTime,
                 ECB = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
     }
 

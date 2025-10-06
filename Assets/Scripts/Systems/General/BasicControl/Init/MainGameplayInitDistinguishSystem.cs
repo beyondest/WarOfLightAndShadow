@@ -25,20 +25,20 @@ namespace GamePlaySystem.Functionality.MainGameplay.General
             if(gameStatus.Value == GameStatus.NotStarted)return;
             var ecbP = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new InitDistinguishJob
+            state.Dependency = new InitDistinguishJob
             {
                 PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 ECB = ecbP
-            }.ScheduleParallel();
-            if (SystemAPI.HasSingleton<ReassignMainGameplayAITagRequest>())
-            {
-                state.EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<ReassignMainGameplayAITagRequest>());
-                new ReassignTagJob
-                {
-                    ECB = ecbP,
-                    PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>()
-                }.ScheduleParallel();
-            }
+            }.ScheduleParallel(state.Dependency);
+            // if (SystemAPI.HasSingleton<ReassignMainGameplayAITagRequest>())
+            // {
+            //     state.EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<ReassignMainGameplayAITagRequest>());
+            //     new ReassignTagJob
+            //     {
+            //         ECB = ecbP,
+            //         PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>()
+            //     }.ScheduleParallel();
+            // }
         }
 
 

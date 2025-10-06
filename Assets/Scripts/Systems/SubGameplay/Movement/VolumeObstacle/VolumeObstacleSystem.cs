@@ -108,7 +108,10 @@ namespace SparFlame.Systems.SubGameplay.Movement
             foreach (var ( request, entity) in SystemAPI
                          .Query<RefRO<BuildingSyncVolumeRequest>>().WithEntityAccess())
             {
+                ecb.DestroyEntity(entity);
+                if(!_entityMap.ContainsKey(request.ValueRO.FromEntity))continue;
                 var transform = SystemAPI.GetComponent<LocalTransform>(request.ValueRO.FromEntity);
+                
                 var (notWalkableVolume, highCostVolume) = _entityMap[request.ValueRO.FromEntity];
                 notWalkableVolume.transform.position = transform.Position;
                 notWalkableVolume.transform.rotation = transform.Rotation;
@@ -117,7 +120,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 shouldUpdateAllyMesh = true;
                 shouldUpdateEnemyMesh = true;
                 
-                ecb.DestroyEntity(entity);
             }
         }
 

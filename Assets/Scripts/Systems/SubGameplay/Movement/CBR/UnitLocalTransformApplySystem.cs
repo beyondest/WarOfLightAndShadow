@@ -32,13 +32,13 @@ namespace SparFlame.Systems.SubGameplay.Movement
             }
 
             _playerTagLookup.Update(ref state);
-            new UnitTransformApplyJob
+            state.Dependency = new UnitTransformApplyJob
             {
                 Debug = debug,
                 Config = SystemAPI.GetSingleton<CbrConfig>(),
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 PlayerTagLookup = _playerTagLookup
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
     }
 

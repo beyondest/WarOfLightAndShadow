@@ -60,11 +60,11 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 cityTimer.lastCheckTotalHours = curTotalHours;
                 SystemAPI.SetComponent(subGameStatusData.City, cityTimer);
-                new CityUnitHpRegenerateJob
+                state.Dependency = new CityUnitHpRegenerateJob
                 {
                     DeltaHours = deltaHours,
                     Config = config
-                }.ScheduleParallel();
+                }.ScheduleParallel(state.Dependency);
             }
         }
 

@@ -1,7 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
-using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,24 +10,23 @@ using Unity.Transforms;
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
     // This is to make sure only when surround has not targets, will go back to garrison
-    [UpdateAfter(typeof(IdleStateMachine))]
-    [UpdateAfter(typeof(InteractStateMachine))]
-    [UpdateAfter(typeof(MovingStateMachine))]
-    [UpdateBefore(typeof(StatSystem))]
+    // [UpdateAfter(typeof(IdleStateMachine))]
+    // [UpdateAfter(typeof(InteractStateMachine))]
+    // [UpdateAfter(typeof(MovingStateMachine))]
+    // [UpdateBefore(typeof(StatSystem))]
     public partial struct GarrisonStateMachine : ISystem
     {
         private ComponentLookup<GarrisonAttr> _garrisonAttrLookup;
         private ComponentLookup<LocalTransform> _localTransformLookup;
         private ComponentLookup<BuildingAttr> _buildingAttrLookup;
-        private ComponentLookup<BoxColliderSize> _boxColliderSizeLookup;
         private ComponentLookup<Selected> _selectedAttrLookup;
 
         private BufferLookup<AllowGarrisonUnit> _allowGarrisonUnitLookup;
         private BufferLookup<InsightTarget> _insightTargetLookup;
         private BufferLookup<GarrisonEntity> _garrisonEntityLookup;
 
-        private ComponentLookup<GarrisonStateTag> _garrisonStateTagLookup;
-        private ComponentLookup<OocTag> _oocTagLookup;
+        // private ComponentLookup<GarrisonStateTag> _garrisonStateTagLookup;
+        // private ComponentLookup<OocTag> _oocTagLookup;
         private ComponentLookup<ConstructingTimer> _constructingTagLookup;
         private ComponentLookup<UnitRetreatTag> _unitRetreatTagLookup;
         private ComponentLookup<GlobalSingleId> _singleIdLookup;
@@ -45,9 +43,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _buildingAttrLookup = state.GetComponentLookup<BuildingAttr>(true);
             _allowGarrisonUnitLookup = state.GetBufferLookup<AllowGarrisonUnit>(true);
             _insightTargetLookup = state.GetBufferLookup<InsightTarget>(true);
-            _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
-            _garrisonStateTagLookup = state.GetComponentLookup<GarrisonStateTag>(true);
-            _oocTagLookup = state.GetComponentLookup<OocTag>(true);
+            // _boxColliderSizeLookup = state.GetComponentLookup<BoxColliderSize>(true);
+            // _garrisonStateTagLookup = state.GetComponentLookup<GarrisonStateTag>(true);
+            // _oocTagLookup = state.GetComponentLookup<OocTag>(true);
             _constructingTagLookup = state.GetComponentLookup<ConstructingTimer>(true);
             _garrisonEntityLookup = state.GetBufferLookup<GarrisonEntity>(true);
             _selectedAttrLookup = state.GetComponentLookup<Selected>();
@@ -63,9 +61,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _buildingAttrLookup.Update(ref state);
             _allowGarrisonUnitLookup.Update(ref state);
             _insightTargetLookup.Update(ref state);
-            _boxColliderSizeLookup.Update(ref state);
-            _garrisonStateTagLookup.Update(ref state);
-            _oocTagLookup.Update(ref state);
+            // _boxColliderSizeLookup.Update(ref state);
+            // _garrisonStateTagLookup.Update(ref state);
+            // _oocTagLookup.Update(ref state);
             _constructingTagLookup.Update(ref state);
             _garrisonEntityLookup.Update(ref state);
             _selectedAttrLookup.Update(ref state);
@@ -81,26 +79,28 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 GarrisonEntityLookup = _garrisonEntityLookup,
                 AllowGarrisonUnitLookup = _allowGarrisonUnitLookup,
                 TransformLookup = _localTransformLookup,
-                OocTagLookup = _oocTagLookup,
+                // OocTagLookup = _oocTagLookup,
                 ConstructingTagLookup = _constructingTagLookup,
                 SelectedLookup = _selectedAttrLookup,
                 SingleIdLookup = _singleIdLookup,
-                Config = config,
+                // Config = config,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = job;
-            new InGarrisonStateJob
+            state.Dependency = new InGarrisonStateJob
             {
                 ECB = ecb,
                 BuildingAttrLookup = _buildingAttrLookup,
-                GarrisonAttrLookup = _garrisonAttrLookup,
-                GarrisonStateTagLookup = _garrisonStateTagLookup,
-                BoxColliderSizeLookup = _boxColliderSizeLookup,
+                // GarrisonAttrLookup = _garrisonAttrLookup,
+                // GarrisonStateTagLookup = _garrisonStateTagLookup,
+                // BoxColliderSizeLookup = _boxColliderSizeLookup,
                 InsightTargetLookup = _insightTargetLookup,
                 TransformLookup = _localTransformLookup,
-                OocTagLookup = _oocTagLookup,
+                // OocTagLookup = _oocTagLookup,
                 UnitRetreatTagLookup = _unitRetreatTagLookup,
-                Config = config
-            }.ScheduleParallel();
+                
+                Config = config,
+                
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -108,18 +108,19 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private partial struct InGarrisonStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public BufferLookup<InsightTarget> InsightTargetLookup;
-            [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
+            // [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
             [ReadOnly] public GarrisonSystemConfig Config;
             [ReadOnly] public ComponentLookup<BuildingAttr> BuildingAttrLookup;
-            [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
-            [ReadOnly] public ComponentLookup<GarrisonStateTag> GarrisonStateTagLookup;
-            [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
+            // [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
+            // [ReadOnly] public ComponentLookup<GarrisonStateTag> GarrisonStateTagLookup;
+            // [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
             [ReadOnly] public ComponentLookup<UnitRetreatTag> UnitRetreatTagLookup;
 
             private void Execute([ChunkIndexInQuery] int index, ref InGarrison inGarrison, ref BasicStateData stateData,
-                ref MovableData movableData, 
+                ref MovableData movableData,
                 Entity selfEntity)
             {
                 // Check if building is destroyed, then remove inGarrison buff and exit garrison state
@@ -128,15 +129,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     // Garrison units need to get out and turn to idle, others remain
                     // if (stateData.CurState == InteractState.Garrison)
                     // {
-                        GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
-                            default, default, 
-                            Config, true);
-                        stateData.TargetState = InteractState.Idle;
-                        StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
+                    GarrisonUtils.PosGetOut(ref inGarrison, ref TransformLookup.GetRefRW(selfEntity).ValueRW,
+                        default, default,
+                        Config, true);
+                    stateData.TargetState = InteractState.Idle;
+                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                     // }
 
                     ECB.RemoveComponent<InGarrison>(index, selfEntity);
-                    
+
                     return;
                 }
 
@@ -145,6 +146,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 {
                     return;
                 }
+
                 // // Set position to hide these move back garrison units
                 // if (stateData.CurState == InteractState.Garrison && !inGarrison.InBuilding)
                 // {
@@ -170,24 +172,26 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 {
                     if (!UnitRetreatTagLookup.HasComponent(selfEntity))
                     {
-                        ECB.AddComponent<UnitRetreatTag>(index,selfEntity);
+                        ECB.AddComponent<UnitRetreatTag>(index, selfEntity);
                     }
+
                     return;
                 }
 
                 if (stateData.CurState == InteractState.Idle)
                 {
                     stateData.TargetState = InteractState.Garrison;
-                    ref var trans = ref TransformLookup.GetRefRW(selfEntity).ValueRW;
+                    var trans = TransformLookup[selfEntity];
                     var buildingTrans = TransformLookup[inGarrison.BuildingEntity];
                     trans.Rotation = buildingTrans.Rotation;
+                    ECB.SetComponent(index, selfEntity, trans);
                     StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                     return;
                 }
 
                 // Fortification
                 var selfSights = InsightTargetLookup[selfEntity];
-                if(selfSights.Length == 0)return;
+                if (selfSights.Length == 0) return;
                 // if (InsightTargetLookup.TryGetBuffer(inGarrison.BuildingEntity, out var buildingSights))
                 // {
                 //     foreach (var buildingTarget in buildingSights)
@@ -262,22 +266,21 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     if (TransformLookup.TryGetComponent(sight.Entity, out var targetTrans))
                     {
                         var disSq = math.distancesq(targetTrans.Position, selfTrans.Position);
-                        if ( disSq< minDisSq)
+                        if (disSq < minDisSq)
                         {
                             minDisSq = disSq;
                             bestTarget = sight.Entity;
                         }
                     }
                 }
+
                 if (bestTarget != Entity.Null)
                 {
                     stateData.TargetEntity = bestTarget;
                     stateData.TargetState = InteractState.Attacking;
-                    StateUtils.SwitchState(ref stateData, ECB,selfEntity, index);
+                    StateUtils.SwitchState(ref stateData, ECB, selfEntity, index);
                 }
             }
-
-           
         }
 
         [BurstCompile]
@@ -287,15 +290,15 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private partial struct EnterGarrisonStateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public BufferLookup<GarrisonEntity> GarrisonEntityLookup;
             [ReadOnly] public ComponentLookup<GarrisonAttr> GarrisonAttrLookup;
             [ReadOnly] public BufferLookup<AllowGarrisonUnit> AllowGarrisonUnitLookup;
-            [ReadOnly] public ComponentLookup<OocTag> OocTagLookup;
             [ReadOnly] public ComponentLookup<ConstructingTimer> ConstructingTagLookup;
-            [ReadOnly] public ComponentLookup<GlobalSingleId>   SingleIdLookup;
+            [ReadOnly] public ComponentLookup<GlobalSingleId> SingleIdLookup;
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<Selected> SelectedLookup;
-            [ReadOnly] public GarrisonSystemConfig Config;
+            // [ReadOnly] public GarrisonSystemConfig Config;
 
 
             private void Execute([ChunkIndexInQuery] int index, ref BasicStateData stateData,
@@ -313,7 +316,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 // If target building is under attack or constructing, turn to idle
                 if (
-                    OocTagLookup.IsComponentEnabled(stateData.TargetEntity) ||
+                    /*OocTagLookup.IsComponentEnabled(stateData.TargetEntity) ||*/
                     ConstructingTagLookup.HasComponent(stateData.TargetEntity))
                 {
                     stateData.TargetState = InteractState.Idle;
@@ -369,7 +372,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 //     TransformLookup[inGarrison.BuildingEntity],  Config);
 
                 ECB.AddComponent(index, selfEntity, inGarrison);
-                
+
                 SelectedLookup.SetComponentEnabled(selfEntity, false);
                 var killSelectedVfx = ECB.CreateEntity(index);
                 ECB.AddComponent<SubGameplayEntityTag>(index, killSelectedVfx);
@@ -379,7 +382,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     RequestType = VFXRequestType.Kill,
                     VFXTrackTarget = selfEntity,
                 });
-                
+
                 var request = ECB.CreateEntity(index);
                 ECB.AddComponent(index, request, new GarrisonInBuildingRequest
                 {
@@ -388,9 +391,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     UnitType = unitAttr.type,
                     UnitEntity = selfEntity
                 });
-                ECB.AddComponent<SubGameplayEntityTag>(index,request);
-                
-              
+                ECB.AddComponent<SubGameplayEntityTag>(index, request);
+
+
                 stateData.TargetEntity = Entity.Null;
             }
         }

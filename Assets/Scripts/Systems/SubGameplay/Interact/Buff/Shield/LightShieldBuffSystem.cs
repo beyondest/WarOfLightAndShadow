@@ -4,6 +4,7 @@ using SparFlame.Components.VFX;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Interact
@@ -31,7 +32,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             _transformLookup.Update(ref state);
             var ecbP = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new LightShieldBuffJob
+           state.Dependency= new LightShieldBuffJob
             {
                 LightShieldUnderDefendLookup = _defenderData,
                 TransformLookup = _transformLookup,
@@ -39,12 +40,12 @@ namespace SparFlame.Systems.SubGameplay.Interact
                 Config = SystemAPI.GetSingleton<LightShieldBuffGeneralConfig>(),
                 LightShieldBuffConfigs = SystemAPI.GetSingletonBuffer<LightShieldBuffConfig>(),
                 ECB = ecbP
-            }.ScheduleParallel();
-            new LightShieldDefendBuffTimerJob
+            }.ScheduleParallel(state.Dependency);
+           state.Dependency = new LightShieldDefendBuffTimerJob
             {
                 DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
                 ECB = ecbP,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
 
@@ -56,6 +57,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
 
             [NativeDisableParallelForRestriction]
             public ComponentLookup<LightShieldUnderDefend> LightShieldUnderDefendLookup;
+
             [ReadOnly] public float ElapsedTime;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public LightShieldBuffGeneralConfig Config;
@@ -71,6 +73,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
                     ECB.RemoveComponent<LightShieldBuff>(index, selfEntity);
                     return;
                 }
+
                 AddNewShieldData(targets, index, selfEntity,
                     LightShieldBuffConfigs[(int)expData.curTier - 3].maxDefendCount);
             }

@@ -45,6 +45,7 @@ namespace SparFlame.GamePlaySystem.Interact
         {
             [ReadOnly] public GarrisonBuffConfig Config;
             public EntityCommandBuffer.ParallelWriter ECB;
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public ComponentLookup<BuildingGarrisonBuff> GarrisonBuffLookup;
 
             private void Execute([ChunkIndexInQuery] int index, in LocalTransform transform,

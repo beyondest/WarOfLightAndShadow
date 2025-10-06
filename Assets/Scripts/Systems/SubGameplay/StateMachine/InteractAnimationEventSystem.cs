@@ -7,12 +7,13 @@ using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
-    [UpdateAfter(typeof(StatSystem))]
+    // [UpdateAfter(typeof(StatSystem))]
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct InteractAnimationEventSystem : ISystem
     {
@@ -30,6 +31,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SightSystemConfig>();
             state.RequireForUpdate<AnimationEventTriggerModelIndex>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -65,7 +67,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _subGameplayGeneralAttrLookup.Update(ref state);
             var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             var config = SystemAPI.GetSingleton<AnimationEventTriggerModelIndex>();
-            new CheckAnimationEventJob
+            state.Dependency = new CheckAnimationEventJob
             {
                 ECB = ecb,
                 Config = config,
@@ -79,16 +81,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 DarkArcherBuffConfigs = SystemAPI.GetSingletonBuffer<DarkArcherBuffConfig>(),
                 DarkArcherBuffLookup = _darkArcherBuffLookup,
                 StatLookup = _statLookup,
-                SubGameplayGeneralAttrLookup = _subGameplayGeneralAttrLookup
-            }.ScheduleParallel();
-            new UnitDeadJob
-            {
-                ECB = ecb,
-                Config = config,
-                EventsLookup = _eventsLookup,
-                AnimationStateLookup = _animationStateLookup,
-                CurTime = curTime,
-            }.ScheduleParallel();
+                SubGameplayGeneralAttrLookup = _subGameplayGeneralAttrLookup,
+                SightConfig = SystemAPI.GetSingleton<SightSystemConfig>()
+            }.ScheduleParallel(state.Dependency);
+           
         }
 
         [BurstCompile]
@@ -108,48 +104,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             }
         }
 
-        [BurstCompile]
-        [WithAll(typeof(UnitDeadTag))]
-        public partial struct UnitDeadJob : IJobEntity
-        {
-            [ReadOnly] public float CurTime;
-            [ReadOnly] public AnimationEventTriggerModelIndex Config;
-            [NativeDisableParallelForRestriction] public BufferLookup<AnimationEventData> EventsLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<AnimationStateData> AnimationStateLookup;
-            public EntityCommandBuffer.ParallelWriter ECB;
-
-            private void Execute([ChunkIndexInQuery] int index, in UnitAttr unitAttr, Entity selfEntity,
-                in DynamicBuffer<LinkedEntityGroup> children
-            )
-            {
-                var modelIndex = Config.value;
-                var child = children[modelIndex].Value;
-
-                if (EventsLookup.TryGetBuffer(child,
-                        out var buffer)) // When unit with dead tag raise events, it must be dead event
-                {
-                    ref var stateData = ref AnimationStateLookup.GetRefRW(child).ValueRW;
-                    if (stateData.State != UnitAnimationState.Die)
-                    {
-                        stateData.State = UnitAnimationState.Die;
-                        stateData.ClipAIndex = (int)UnitAnimationState.Die;
-                        stateData.ClipBIndex = stateData.ClipAIndex;
-                        stateData.Blending = false;
-                        stateData.ClipAWeight = 1f;
-                        stateData.ClipBWeight = 0f;
-                        stateData.ClipAStartTime = CurTime;
-                        stateData.ClipBStartTime = CurTime;
-                        stateData.PlaySpeed = 1f;
-                        buffer.Clear();
-
-                        return;
-                    }
-
-                    if (buffer.Length == 0) return;
-                    ECB.DestroyEntity(index, selfEntity);
-                }
-            }
-        }
+  
 
 
         [BurstCompile]
@@ -162,6 +117,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         {
             [ReadOnly] public float CurTime;
             [ReadOnly] public AnimationEventTriggerModelIndex Config;
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public BufferLookup<AnimationEventData> EventsLookup;
             [ReadOnly] public NativeParallelMultiHashMap<int, AnimationEventInfo> HashStringToEventInfos;
             [ReadOnly] public ComponentLookup<AttackAbility> AttackLookup;
@@ -172,9 +128,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<DarkArcherBuff> DarkArcherBuffLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> SubGameplayGeneralAttrLookup;
             [ReadOnly] public ComponentLookup<StatData> StatLookup;
-
             public EntityCommandBuffer.ParallelWriter ECB;
-
+            [ReadOnly] public SightSystemConfig SightConfig;
             private void Execute([ChunkIndexInQuery] int index, in DynamicBuffer<LinkedEntityGroup> children,
                 ref Rnd rnd,
                 in BasicStateData stateData, in LocalTransform transform, in UnitAttr unitAttr, in ExpData expData,
@@ -269,7 +224,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     ECB.AddComponent(index, vfxRequest, vfx);
 
                     // Apply dark archer buff
-                    if (DarkArcherBuffLookup.HasComponent(selfEntity))
+                    /*if (DarkArcherBuffLookup.HasComponent(selfEntity))
                     {
                         var config = DarkArcherBuffConfigs[(int)expData.curTier - 3];
                         var count = 0;
@@ -326,7 +281,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                                 ECB.AddComponent(index, extraArrowVfxRequest, extraArrowVfx);
                             }
                         }
-                    }
+                    }*/
                 }
 
                 if (eventInfo.animationInteractType == AnimationInteractType.AoeBuffChangeStat)
@@ -397,11 +352,10 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                     ECB.AddComponent(index, statChangeRequestEntity, statChangeRequest);
                     if (targetCount > 1)
                     {
-                        var count = 0;
-                        foreach (var target in targets)
+                        var l = math.min(math.min(targets.Length, targetCount), SightConfig.ValidTargetRemainedCount);
+                        for (var i = 0; i < l; i++)
                         {
-                            if (count >= targetCount - 1)
-                                break; // Only check targetCount - 1 targets, because main target is already checked
+                            var target = targets[i];
                             // Target is main target, skip
                             if (target.Entity == stateData.TargetEntity) continue;
                             // Target is invalid, skip
@@ -421,7 +375,6 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             if (math.distance(newTargetTransform.Position, selfTransform.Position) >
                                 bonus.RangeBonus + range)
                                 continue;
-                            count++;
                             var newStatChangeRequest = statChangeRequest;
                             newStatChangeRequest.Interactee = target.Entity;
                             var newStatChangeRequestEntity = ECB.CreateEntity(index);

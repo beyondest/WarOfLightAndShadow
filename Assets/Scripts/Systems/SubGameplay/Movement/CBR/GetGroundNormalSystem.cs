@@ -23,11 +23,11 @@ namespace SparFlame.Systems.SubGameplay.Movement
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new GetGroundNormalJob
+            state.Dependency = new GetGroundNormalJob
             {
                 PhysicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>(),
                 Config = SystemAPI.GetSingleton<GetGroundNormalConfig>(),
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
     }

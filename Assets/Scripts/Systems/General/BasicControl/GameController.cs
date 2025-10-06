@@ -336,8 +336,8 @@ namespace SparFlame.Systems.General.BasicControl
             OnShowLoadingScreen?.Invoke();
             PauseGame(true);
             yield return CheckSaveComplete();
-            var gameStatusData = _mainGameStatusDataQuery.GetSingleton<GameStatusData>();
-            if (gameStatusData.Value == GameStatus.SubGaming)
+            var currentSubGameStatus = _subGameStatusDataQuery.GetSingleton<SubGameStatusData>();
+            if (currentSubGameStatus.SubGameStatus == SubGameStatus.PlayerCity)
             {
                 yield return SubWorldToMainWorld(); // Automatically save sub data to tmp
             }

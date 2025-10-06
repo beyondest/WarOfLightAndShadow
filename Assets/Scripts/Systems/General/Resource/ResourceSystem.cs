@@ -7,6 +7,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 // ReSharper disable Unity.Entities.MustBeSurroundedWithRefRwRo
 
@@ -20,7 +21,7 @@ namespace SparFlame.Systems.MainGameplay.City
     {
         private ComponentLookup<GeneratingTag> _generatingTagLookup;
 
-        
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -36,7 +37,6 @@ namespace SparFlame.Systems.MainGameplay.City
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-
             var gameStatus = SystemAPI.GetSingleton<GameStatusData>();
             var worldTimeData = SystemAPI.GetSingleton<WorldTimeData>();
             if (gameStatus.Value == GameStatus.Init)
@@ -47,7 +47,7 @@ namespace SparFlame.Systems.MainGameplay.City
 
             if (gameStatus.Value != GameStatus.MainGaming && gameStatus.Value != GameStatus.SubGaming) return;
 
-            
+
             DealResourceChangeRequest(ref state);
             CheckPopulationResourceTask(ref state);
             CalPlayerGeneralResourceData(ref state);
@@ -61,25 +61,28 @@ namespace SparFlame.Systems.MainGameplay.City
             globalResourceAvailableDatas.Add((int)ResourceType.Aetherium,
                 generalResourceDatas[(int)ResourceType.Aetherium].availableAmount);
 
-           
+
             _generatingTagLookup.Update(ref state);
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            new ResourceMineGenerateJob
+            state.Dependency = new ResourceMineGenerateJob
             {
                 ECB = ecb,
                 GeneratingTagLookup = _generatingTagLookup,
                 City = SystemAPI.GetSingleton<SubGameStatusData>().City
-            }.ScheduleParallel();
-            
-            var job = new CityResourceCheckJob
+            }.ScheduleParallel(state.Dependency);
+            var debug = new ResourceDebug();
+            if (SystemAPI.HasSingleton<DebugTag>())
+            {
+                SystemAPI.TryGetSingleton(out debug);
+            }
+            state.Dependency = new CityResourceCheckJob
             {
                 CurrentTotalHours = worldTimeData.totalHours,
                 ResourceTypeToGlobalAvailableAmount = globalResourceAvailableDatas,
+                ResourceDebug = debug
             }.ScheduleParallel(state.Dependency);
-            job.Complete();
-            globalResourceAvailableDatas.Dispose();
-            
+            globalResourceAvailableDatas.Dispose(state.Dependency);
         }
 
 
@@ -142,7 +145,6 @@ namespace SparFlame.Systems.MainGameplay.City
             var generalResourceDatas = SystemAPI.GetSingletonBuffer<ResourceData>();
             var populationStorageTasks = SystemAPI.GetSingletonBuffer<PopulationStorageAddTask>();
 
-
             foreach (var (requestRO, entity) in SystemAPI.Query<RefRO<ResourceChangeRequest>>().WithEntityAccess())
             {
                 ecb.DestroyEntity(entity);
@@ -188,14 +190,14 @@ namespace SparFlame.Systems.MainGameplay.City
                                 BurstSafe.UnexpectedEnum(request.ResourceType);
                                 break;
                         }
-
+                        
 
                         break;
                     // Generate and population release will add available amount
                     case ResourceRequestType.Generate:
                         switch (request.ResourceType)
                         {
-                            case ResourceType.SoulPact: 
+                            case ResourceType.SoulPact:
                                 // This happens when system give player some special units
                                 populationResourceData.occupiedCount += request.AbsAmount;
                                 break;
@@ -204,7 +206,8 @@ namespace SparFlame.Systems.MainGameplay.City
                                 var maxAddAmount = cityResourceEntry.resourceData.storage -
                                                    cityResourceEntry.resourceData.availableAmount;
                                 maxAddAmount = math.max(0, maxAddAmount);
-                                cityResourceEntry.resourceData.availableAmount += math.min(maxAddAmount, request.AbsAmount);
+                                cityResourceEntry.resourceData.availableAmount +=
+                                    math.min(maxAddAmount, request.AbsAmount);
                                 cityResourceEntries[resourceKey] = cityResourceEntry;
                                 break;
                             case ResourceType.Essence:
@@ -217,6 +220,7 @@ namespace SparFlame.Systems.MainGameplay.City
                                 BurstSafe.UnexpectedEnum(request.ResourceType);
                                 break;
                         }
+
                         break;
                     case ResourceRequestType.PopulationRelease:
                         populationResourceData.occupiedCount -= request.AbsAmount;
@@ -297,7 +301,7 @@ namespace SparFlame.Systems.MainGameplay.City
                         break;
 
                     case ResourceRequestType.DecreaseGenerateSpeed:
-                        if(request.HoursPerUnit == 0)
+                        if (request.HoursPerUnit == 0)
                             break;
                         cityResourceEntry.resourceData.amountPerHour -= 1 / request.HoursPerUnit;
                         cityResourceEntries[resourceKey] = cityResourceEntry;
@@ -383,7 +387,8 @@ namespace SparFlame.Systems.MainGameplay.City
                 var deltaHours = curTotalHours - task.accumulatedHours;
                 if (deltaHours >= task.hoursPerUnit)
                 {
-                    var validAmount = math.min(task.remainingConjuredUnitCount, task.hoursPerUnit == 0 ? 0 : (int)(deltaHours / task.hoursPerUnit));
+                    var validAmount = math.min(task.remainingConjuredUnitCount,
+                        task.hoursPerUnit == 0 ? 0 : (int)(deltaHours / task.hoursPerUnit));
                     populationResourceData.occupiedCount += validAmount;
                     populationResourceData.virtualOccupiedCount -= validAmount;
                     task.accumulatedHours += validAmount * task.hoursPerUnit;
@@ -399,7 +404,4 @@ namespace SparFlame.Systems.MainGameplay.City
             }
         }
     }
-
-
-  
 }

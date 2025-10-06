@@ -39,13 +39,14 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
         [ReadOnly] public ComponentLookup<HealAbility> HealLookup;
         [ReadOnly] public ComponentLookup<HarvestAbility> HarvestLookup;
         [ReadOnly] public ComponentLookup<PrefabId> PrefabIdLookup;
-        [NativeDisableParallelForRestriction] public UnitUpgradeAspect.Lookup UnitUpgradeAspectLookup;
+        [ReadOnly] public UnitUpgradeAspect.Lookup UnitUpgradeAspectLookup;
 
 
         [ReadOnly] public ComponentLookup<ArmyGroupThreatenData> ThreatenDataLookup;
         [ReadOnly] public ComponentLookup<ArmyGroupStatData> ArmyGroupStatDataLookup;
         [ReadOnly] public ComponentLookup<ArmyGroupInGarrison> ArmyGroupInGarrisonLookup;
-
+        [ReadOnly] public ComponentLookup<EnemyArmyGroupShouldSaveTag> ShouldSaveTagLookup;
+        [ReadOnly] public ComponentLookup<EnemyArmyGroupSaveTag> SaveTagLookup;
         [ReadOnly] public NativeParallelHashMap<IntPair, float> CityDistanceMap;
 
         private void Execute([ChunkIndexInQuery] int index,
@@ -75,7 +76,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                     in attackPrefabs, in defendPrefabs, selfEntity))
                 return;
 
-          
+
             // If this city is invading or has no army groups, should conjure army groups
             var shouldConjureArmyGroups =
                 invadingArmyGroups.Length > 0 || attackArmyGroups.IsEmpty && defendArmyGroups.IsEmpty
@@ -89,7 +90,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             {
                 if (VeryRadicalLogic(index, selfPrefabId, invadeTargets, attackArmyGroups,
                         extraArmyGroups,
-                        defendArmyGroups, ref cityAIData,ref rnd,
+                        defendArmyGroups, ref cityAIData, ref rnd,
                         ref invadingArmyGroups)) return;
             }
 
@@ -129,7 +130,6 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             EnemyCityStrategy strategy
         )
         {
-            
             // If army group buffer is not full, conjure army group first. First push attack army group to conjure defend first
             if (attackArmyGroups.Length < attackPrefabs.Length)
             {
@@ -148,11 +148,12 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         });
                     }
                 }
+
                 if (find)
                 {
                     var hintRequest = ECB.CreateEntity(index);
                     ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
-                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    ECB.AddComponent(index, hintRequest, new HintRequest
                     {
                         Name = HintName.EnemyIsRaisingAStrikeForce
                     });
@@ -176,11 +177,12 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         });
                     }
                 }
+
                 if (find)
                 {
                     var hintRequest = ECB.CreateEntity(index);
                     ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
-                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    ECB.AddComponent(index, hintRequest, new HintRequest
                     {
                         Name = HintName.EnemyIsRaisingAGarrison
                     });
@@ -196,7 +198,11 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             foreach (var armyGroup in attackArmyGroups)
             {
                 var statData = ArmyGroupStatDataLookup[armyGroup.ArmyGroup];
-                if (statData.totalCurrentHp < statData.totalMaxHp) return; // Attack army group is attacked before leaving the city, then stay until full hp
+                if (statData.totalCurrentHp < statData.totalMaxHp) return;
+
+                if (ShouldSaveTagLookup.HasComponent(armyGroup.ArmyGroup) ||
+                    SaveTagLookup.HasComponent(armyGroup.ArmyGroup))
+                    return;
             }
 
             var readyToInvadeArmyGroups = new NativeList<Entity>(Allocator.Temp);
@@ -242,11 +248,12 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         });
                     }
                 }
+
                 if (find)
                 {
                     var hintRequest = ECB.CreateEntity(index);
                     ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
-                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    ECB.AddComponent(index, hintRequest, new HintRequest
                     {
                         Name = HintName.EnemyIsRaisingAStrikeForce
                     });
@@ -273,6 +280,13 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                     shouldInvade = false;
                     break;
                 }
+
+                if (ShouldSaveTagLookup.HasComponent(armyGroup.ArmyGroup) ||
+                    SaveTagLookup.HasComponent(armyGroup.ArmyGroup))
+                {
+                    shouldInvade = false;
+                    break;
+                }
             }
 
             // If not should invade, check and conjure defend army groups
@@ -294,11 +308,12 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                         });
                     }
                 }
+
                 if (find)
                 {
                     var hintRequest = ECB.CreateEntity(index);
                     ECB.AddComponent<MainGameplayEntityTag>(index, hintRequest);
-                    ECB.AddComponent(index,hintRequest, new HintRequest
+                    ECB.AddComponent(index, hintRequest, new HintRequest
                     {
                         Name = HintName.EnemyIsRaisingAGarrison
                     });
@@ -564,7 +579,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             ECB.AddComponent<GlobalSingleId>(index, fakeUnit);
             ECB.AddComponent<AssignGlobalSingleIDRequest>(index, fakeUnit);
             ECB.AddComponent<AssignRandomRequest>(index, fakeUnit);
-            ECB.AddComponent(index,fakeUnit, new Rnd{value = new Random()});
+            ECB.AddComponent(index, fakeUnit, new Rnd { value = new Random() });
             ECB.AddComponent<NeedSaveTag>(index, fakeUnit);
             ECB.SetComponentEnabled<NeedSaveTag>(index, fakeUnit, false);
             ECB.AddComponent(index, fakeUnit, prefabId);
@@ -579,7 +594,7 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
                 Rotation = quaternion.identity,
                 Scale = 1f
             };
-            ECB.AddComponent(index, fakeUnit,localTrans);
+            ECB.AddComponent(index, fakeUnit, localTrans);
             ECB.AddComponent(index, fakeUnit, new FormationTransform
             {
                 Transform = localTrans
@@ -617,8 +632,9 @@ namespace SparFlame.Systems.MainGameplay.EnemyAI
             ECB.AddComponent(index, fakeUnit, statData);
             ECB.AddComponent(index, fakeUnit, movableData);
 
-            ECB.AddComponent(index, fakeUnit, new FakeUnitNeedAddToArmyGroupAfterAssignSingleId { ArmyGroup = armyGroup });
-            ECB.AddComponent<FakeUnitTag>(index,fakeUnit);
+            ECB.AddComponent(index, fakeUnit,
+                new FakeUnitNeedAddToArmyGroupAfterAssignSingleId { ArmyGroup = armyGroup });
+            ECB.AddComponent<FakeUnitTag>(index, fakeUnit);
         }
 
         private static bool FindArmyGroupPrefab<T>(int prefabId, DynamicBuffer<T> prefabs, out Entity prefab)

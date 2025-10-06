@@ -20,11 +20,11 @@ namespace SparFlame.Systems.SubGameplay.Interact.Cleric
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new DarkCavalryBuffJob
+            state.Dependency = new DarkCavalryBuffJob
             {
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Configs = SystemAPI.GetSingletonBuffer<DarkCavalryBuffConfig>(),
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
 

@@ -44,6 +44,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public partial struct ArmyGroupSightTriggerJob : IJobEntity
         {
+            // This component is only written on self
             [NativeDisableParallelForRestriction] public BufferLookup<ArmyGroupSightTarget> TargetLookup;
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in ArmyGroupSightData triggerData,
                 Entity entity)

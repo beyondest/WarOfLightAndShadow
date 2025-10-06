@@ -103,7 +103,7 @@ namespace SparFlame.Components.SubGameplay
     }
 
 
-
+    [WriteGroup(typeof(SeekTarget))]
     public struct MovingStateTag : IComponentData, IEnableableComponent
     {
     }

@@ -3,25 +3,26 @@ using System.IO;
 using System.Threading.Tasks;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
+using SparFlame.Components.SubGameplay;
 using SparFlame.Core;
 using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
 {
     public partial class SaveSystemAsync : SystemBase
     {
-        private SavePreProcessorFactory _savePreProcessorFactory;
         private Dictionary<SaveArcheType, SaveArcheTypeInfo> _archeTypeInfos;
         private bool _initialized;
 
         protected override void OnCreate()
         {
             RequireForUpdate<SaveLoadConfig>();
-            _savePreProcessorFactory = new SavePreProcessorFactory();
         }
 
 
@@ -183,15 +184,43 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 var armyGroup = armyGroups[i];
                 using var ecb = new EntityCommandBuffer(Allocator.Persistent);
-                var preProcessor = _savePreProcessorFactory.GetPreProcessor(saveArcheType);
-                var args = new ArmyGroupUnitPreProcessorArgs(armyGroup,
-                    ecb, EntityManager);
-                await preProcessor.Run(args);
+
+
+                if (!EntityManager.HasComponent<ArmyGroupUnit>(armyGroup)) continue;
+                var sum = float3.zero;
+                var armyGroupUnits = EntityManager.GetBuffer<ArmyGroupUnit>(armyGroup);
+
+                for (var j = 0; j < armyGroupUnits.Length; j++)
+                {
+                    var transform = EntityManager.GetComponentData<LocalTransform>(armyGroupUnits[j].Unit);
+                    sum += transform.Position;
+                }
+
+                var center = sum / armyGroupUnits.Length;
+                float2 boundingMin = float2.zero, boundingMax = float2.zero;
+                foreach (var armyGroupUnit in armyGroupUnits)
+                {
+                    var unit = armyGroupUnit.Unit;
+                    var transform = EntityManager.GetComponentData<LocalTransform>(unit);
+                    var relative = transform.Position - center;
+                    boundingMin = math.min(boundingMin, relative.xz);
+                    boundingMax = math.max(boundingMax, relative.xz);
+                    transform.Position = relative;
+                    ecb.SetComponent(unit, new FormationTransform { Transform = transform });
+                    ecb.SetComponentEnabled<NeedSaveTag>(unit, true);
+                }
+
+                var armyGroupAttr = EntityManager.GetComponentData<ArmyGroupAttr>(armyGroup);
+                // Record the bounding box
+                armyGroupAttr.boundingBoxDelta = boundingMax - boundingMin;
+                armyGroupAttr.loadingCenter = center;
+                armyGroupAttr.loadingScale = 1f;
+                ecb.SetComponent(armyGroup, armyGroupAttr);
                 ecb.Playback(EntityManager);
                 var savePath =
                     SaveUtilities.GetArmyGroupSubDataPath(armyGroupSingleIds[i].value, playerSaveSlot, shouldSaveToTmp);
                 await SingleQuerySinglePathSave(_archeTypeInfos[saveArcheType], savePath);
-                DisableNeedSaveTag(true, isSpecificArmyGroup);
+                DisableSaveTagAndDestroyFakeUnits( isSpecificArmyGroup, armyGroup);
             }
         }
 
@@ -236,6 +265,7 @@ namespace SparFlame.Systems.General.BasicControl
                     BurstSafe.UnexpectedEnum(saveArcheType);
                     break;
             }
+
             var archeTypeInfo = _archeTypeInfos[saveArcheType];
             await SingleQuerySinglePathSave(archeTypeInfo, savePath);
         }
@@ -292,31 +322,21 @@ namespace SparFlame.Systems.General.BasicControl
         /// <summary>
         /// This method is only used for army group sub data save
         /// </summary>
-        /// <param name="shouldMakeSureAllJobComplete"></param>
         /// <param name="shouldDestroySavedEntities"></param>
-        private void DisableNeedSaveTag(bool shouldMakeSureAllJobComplete, bool shouldDestroySavedEntities)
+        /// <param name="armyGroup"></param>
+        private void DisableSaveTagAndDestroyFakeUnits(bool shouldDestroySavedEntities, Entity armyGroup)
         {
-            if (shouldMakeSureAllJobComplete)
+            if (EntityManager.HasComponent<EnemyArmyGroupSaveTag>(armyGroup))
+                EntityManager.RemoveComponent<EnemyArmyGroupSaveTag>(armyGroup);
+
+            using var ecb = new EntityCommandBuffer(Allocator.Persistent);
+            var job = new DisableNeedSaveTagJob
             {
-                using var ecb = new EntityCommandBuffer(Allocator.Persistent);
-                var job = new DisableNeedSaveTagJob
-                {
-                    ShouldDestroySelf = shouldDestroySavedEntities,
-                    ECB = ecb.AsParallelWriter(),
-                }.ScheduleParallel(Dependency);
-                job.Complete();
-                ecb.Playback(EntityManager);
-            }
-            else
-            {
-                var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(World.Unmanaged);
-                new DisableNeedSaveTagJob
-                {
-                    ShouldDestroySelf = shouldDestroySavedEntities,
-                    ECB = ecb.AsParallelWriter(),
-                }.ScheduleParallel();
-            }
+                ShouldDestroySelf = shouldDestroySavedEntities,
+                ECB = ecb.AsParallelWriter(),
+            }.ScheduleParallel(Dependency);
+            job.Complete();
+            ecb.Playback(EntityManager);
         }
 
         // Only check sub datas
@@ -393,7 +413,7 @@ namespace SparFlame.Systems.General.BasicControl
             // Copy city sub data from tmp to true save path and delete tmp path
             foreach (var id in SystemAPI.Query<RefRO<GlobalSingleId>>().WithAll<CityAttr>())
             {
-                var tmpPath= SaveUtilities.GetCityBuildingSubDataPath(id.ValueRO.value,
+                var tmpPath = SaveUtilities.GetCityBuildingSubDataPath(id.ValueRO.value,
                     currentSaveSlot.Value, true);
                 if (File.Exists(tmpPath))
                 {
@@ -402,7 +422,8 @@ namespace SparFlame.Systems.General.BasicControl
                     File.Copy(tmpPath, truePath, overwrite: true);
                     File.Delete(tmpPath);
                 }
-                var tmpUnitPath= SaveUtilities.GetCityUnitSubDataPath(id.ValueRO.value,
+
+                var tmpUnitPath = SaveUtilities.GetCityUnitSubDataPath(id.ValueRO.value,
                     currentSaveSlot.Value, true);
                 if (File.Exists(tmpUnitPath))
                 {
@@ -435,55 +456,6 @@ namespace SparFlame.Systems.General.BasicControl
             var targetSlotFolder = SaveUtilities.GetSaveSlotFolder(targetSaveSlot);
             FileUtils.CopyDirectory(currentSlotFolder, targetSlotFolder);
         }
-
-        private void CitySavePreProcess()
-        {
-            var ecb = new EntityCommandBuffer(Allocator.Persistent);
-            Dependency = new MainGameplayCitySetNeedSaveTagJob
-            {
-                ECB = ecb.AsParallelWriter()
-            }.ScheduleParallel(Dependency);
-            Dependency.Complete();
-            ecb.Playback(EntityManager);
-            ecb.Dispose();
-        }
-
-        private void ArmyGroupSavePreProcess()
-        {
-            var ecb = new EntityCommandBuffer(Allocator.Persistent);
-            Dependency = new MainGameplayArmyGroupSetNeedSaveTagJob
-            {
-                ECB = ecb.AsParallelWriter(),
-            }.ScheduleParallel(Dependency);
-            Dependency.Complete();
-            ecb.Playback(EntityManager);
-            ecb.Dispose();
-        }
-
-        private void CityBuildingSavePreProcess()
-        {
-            var ecb = new EntityCommandBuffer(Allocator.Persistent);
-
-            Dependency = new CityBuildingSetNeedSaveTagJob
-            {
-                ECB = ecb.AsParallelWriter(),
-            }.ScheduleParallel(Dependency);
-            Dependency.Complete();
-            ecb.Playback(EntityManager);
-            ecb.Dispose();
-        }
-
-        private void CityUnitSavePreProcess()
-        {
-            var ecb = new EntityCommandBuffer(Allocator.Persistent);
-            Dependency = new CityUnitSetNeedSaveTagJob
-            {
-                ECB = ecb.AsParallelWriter(),
-            }.ScheduleParallel(Dependency);
-            Dependency.Complete();
-            ecb.Playback(EntityManager);
-            ecb.Dispose();
-        }
     }
 
     [BurstCompile]
@@ -495,7 +467,7 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void Execute([ChunkIndexInQuery] int index, Entity selfEntity)
         {
-            ECB.SetComponentEnabled<NeedSaveTag>(index, selfEntity,false);
+            ECB.SetComponentEnabled<NeedSaveTag>(index, selfEntity, false);
             if (ShouldDestroySelf) ECB.DestroyEntity(index, selfEntity);
         }
     }

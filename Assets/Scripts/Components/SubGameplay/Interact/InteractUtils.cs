@@ -2,6 +2,7 @@
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace SparFlame.Systems.SubGameplay
 {
@@ -79,23 +80,23 @@ namespace SparFlame.Systems.SubGameplay
         }
         
                 
-        public static Entity ChooseTarget(in DynamicBuffer<InsightTarget> targets)
+        public static Entity ChooseTarget(in DynamicBuffer<InsightTarget> targets,
+            int compareCount)
         {
             // Because the value might be negative when priority or override settings so
             var maxValue = -1e10f;
             var bestTarget = Entity.Null;
-            var count = 0;
-            foreach (var target in targets)
+            var l = math.min(compareCount, targets.Length);
+            for (var i = 0; i < l; i++)
             {
-                if (target.TotalValue >= maxValue )
+                var target = targets[i];
+                if (target.TotalValue >= maxValue)
                 {
                     maxValue = target.TotalValue;
                     bestTarget = target.Entity;
                 }
-                count++;
-                if(count >= 2)
-                    break;
             }
+
             return bestTarget;            
         }
         

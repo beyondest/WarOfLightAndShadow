@@ -15,10 +15,10 @@ using Unity.Transforms;
 namespace SparFlame.Systems.SubGameplay.Command
 {
     [BurstCompile]
-    [UpdateBefore(typeof(SeekTargetSystem))]
     public partial struct PlayerCommandSystem : ISystem
     {
         private ComponentLookup<InArmyGroup> _inArmyGroupLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -41,10 +41,10 @@ namespace SparFlame.Systems.SubGameplay.Command
             var cursorData = SystemAPI.GetSingleton<SubGameplayCursorData>();
             var inputMouseData = SystemAPI.GetSingleton<InputMouseData>();
             var inputUnitControlData = SystemAPI.GetSingleton<InputUnitControlData>();
-            
+
             var config = SystemAPI.GetSingleton<PlayerCommandConfig>();
             if (config.playerAlwaysFocus) inputUnitControlData.Focus = true;
-            
+
             var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (unitSelectionData.CurrentSelectCount == 0) return;
             if (!inputUnitControlData.Command) return;
@@ -59,7 +59,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                 {
                     targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                     name = VFXName.ControlToAttack;
-                    new MovementAttackJob
+                    state.Dependency = new MovementAttackJob
                     {
                         ECB = ecbP,
                         TargetPos = targetPos,
@@ -67,13 +67,13 @@ namespace SparFlame.Systems.SubGameplay.Command
                             SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
-                    }.ScheduleParallel();
-                    new MovementHealerMarchJob
+                    }.ScheduleParallel(state.Dependency);
+                    state.Dependency = new MovementHealerMarchJob
                     {
                         ECB = ecbP,
                         TargetPos = targetPos,
                         Focus = inputUnitControlData.Focus,
-                    }.ScheduleParallel();
+                    }.ScheduleParallel(state.Dependency);
                     break;
                 }
 
@@ -90,6 +90,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                         });
                         return;
                     }
+
                     targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                     name = VFXName.ControlToGarrison;
                     _inArmyGroupLookup.Update(ref state);
@@ -127,7 +128,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                 {
                     targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                     name = VFXName.ControlToHeal;
-                    new MovementHealJob
+                    state.Dependency = new MovementHealJob
                     {
                         ECB = ecbP,
                         TargetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position,
@@ -135,7 +136,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                             SystemAPI.GetComponent<BoxColliderSize>(inputMouseData.HitEntity).SeparationBox,
                         TargetEntity = inputMouseData.HitEntity,
                         Focus = inputUnitControlData.Focus,
-                    }.ScheduleParallel();
+                    }.ScheduleParallel(state.Dependency);
                     break;
                 }
 
@@ -143,16 +144,16 @@ namespace SparFlame.Systems.SubGameplay.Command
                 {
                     targetPos = inputMouseData.HitPosition;
                     name = VFXName.ControlToMarch;
-                    new MovementMarchJob
+                    state.Dependency = new MovementMarchJob
                     {
                         ECB = ecbP,
                         TargetPos = inputMouseData.HitPosition,
                         Focus = inputUnitControlData.Focus,
-                    }.ScheduleParallel();
+                    }.ScheduleParallel(state.Dependency);
                     break;
                 }
                 case SubGameplayCursorType.Retreat:
-                   
+
                     targetPos = SystemAPI.GetComponent<LocalTransform>(inputMouseData.HitEntity).Position;
                     name = VFXName.ControlToRetreat;
                     new MovementRetreatJob
@@ -186,6 +187,7 @@ namespace SparFlame.Systems.SubGameplay.Command
                 default:
                     return;
             }
+
             GenerateControlVFX(ref state, targetPos, name, unitSelectionData);
         }
 
@@ -202,7 +204,6 @@ namespace SparFlame.Systems.SubGameplay.Command
                 {
                     Faction = unitSelectionData.CurrentSelectFaction,
                     FactionFilterEnable = true,
-                    
                 },
                 KeepDuration = 0,
                 SpawnPosition = spawnPos,
@@ -257,12 +258,12 @@ namespace SparFlame.Systems.SubGameplay.Command
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in HealAbility healingAbility,
             Entity entity)
         {
-
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, healingAbility.Range);
             basicStateData.TargetState = InteractState.Moving;
@@ -280,7 +281,6 @@ namespace SparFlame.Systems.SubGameplay.Command
     [BurstCompile]
     [WithAll(typeof(Selected))]
     [WithNone(typeof(UnitDeadTag))]
-
     public partial struct MovementHarvestJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -288,12 +288,12 @@ namespace SparFlame.Systems.SubGameplay.Command
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             in HarvestAbility harvestAbility,
             Entity entity)
         {
-
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, harvestAbility.Range);
             basicStateData.TargetState = InteractState.Moving;
@@ -311,17 +311,16 @@ namespace SparFlame.Systems.SubGameplay.Command
     [BurstCompile]
     [WithAll(typeof(Selected))]
     [WithNone(typeof(UnitDeadTag))]
-
     public partial struct MovementMarchJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public bool Focus;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
-            
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
                 MovementCommandType.March, 0f);
             basicStateData.TargetState = InteractState.Moving;
@@ -342,7 +341,6 @@ namespace SparFlame.Systems.SubGameplay.Command
     [BurstCompile]
     [WithAll(typeof(Selected))]
     [WithNone(typeof(UnitDeadTag))]
-
     public partial struct MovementGarrisonJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -352,6 +350,7 @@ namespace SparFlame.Systems.SubGameplay.Command
         [ReadOnly] public float InteractiveRangeSq;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData,
             Entity selfEntity)
@@ -381,17 +380,16 @@ namespace SparFlame.Systems.SubGameplay.Command
     [WithAll(typeof(Selected))]
     [WithNone(typeof(AttackAbility))]
     [WithNone(typeof(UnitDeadTag))]
-
     public partial struct MovementHealerMarchJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public float3 TargetPos;
         [ReadOnly] public bool Focus;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
             Entity entity)
         {
-
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, float3.zero,
                 MovementCommandType.March, 0f);
             basicStateData.TargetState = InteractState.Moving;
@@ -407,11 +405,10 @@ namespace SparFlame.Systems.SubGameplay.Command
             basicStateData.Focus = Focus;
         }
     }
-    
+
     [BurstCompile]
     [WithAll(typeof(Selected))]
     [WithNone(typeof(UnitDeadTag))]
-
     public partial struct MovementRetreatJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
@@ -420,11 +417,11 @@ namespace SparFlame.Systems.SubGameplay.Command
         [ReadOnly] public float InteractiveRangeSq;
         [ReadOnly] public Entity TargetEntity;
         [ReadOnly] public bool Focus;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
             ref BasicStateData basicStateData,
-            Entity selfEntity) 
+            Entity selfEntity)
         {
-            
             MovementUtils.SetMoveTarget(ref movableData, TargetPos, TargetColliderShape,
                 MovementCommandType.Interactive, InteractiveRangeSq);
             basicStateData.TargetState = InteractState.Moving;

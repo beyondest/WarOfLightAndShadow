@@ -228,10 +228,15 @@ namespace SparFlame.Systems.General.BasicControl
         private void SetEntityBySingleId<T>(ref DynamicBuffer<T> garrisonEntities)
             where T : unmanaged, ICityArmyGroupElement, IBufferElementData
         {
-            for (var i = 0; i < garrisonEntities.Length; i++)
+            for (var i = garrisonEntities.Length - 1; i >= 0; i--)
             {
                 var cityGarrisonEntity = garrisonEntities[i];
-                cityGarrisonEntity.ArmyGroup = Map[cityGarrisonEntity.SingleId];
+                if (!Map.TryGetValue(cityGarrisonEntity.SingleId, out var armyGroup))
+                {
+                    garrisonEntities.RemoveAt(i);
+                    continue;
+                }
+                cityGarrisonEntity.ArmyGroup =armyGroup;
                 garrisonEntities[i] = cityGarrisonEntity;
             }
         }
@@ -288,14 +293,14 @@ namespace SparFlame.Systems.General.BasicControl
                 InGarrisonLookup = ag.InGarrisonLookup,
                 Map = tmpIdxToInstances,
                 ECB = ecbP
-            }.ScheduleParallel(ag.Dependency);
+            }.Schedule(ag.Dependency);
 
             var job2 = new CityBuildingPostProcessJob
             {
                 Map = tmpIdxToInstances,
                 ECB = ecbP,
                 ConjuringDataLookup = ag.ConjuringDataLookup
-            }.ScheduleParallel(ag.Dependency);
+            }.Schedule(ag.Dependency);
             ag.Dependency = JobHandle.CombineDependencies(job1, job2);
             ag.Dependency.Complete();
             ecb.Playback(ag.Em);
@@ -345,6 +350,7 @@ namespace SparFlame.Systems.General.BasicControl
         [ReadOnly] public NativeHashMap<long, Entity> Map;
         [ReadOnly] public NativeHashMap<int, Entity> PrefabDatabase;
         public EntityCommandBuffer.ParallelWriter ECB;
+        // This is non-parallel job
         [NativeDisableParallelForRestriction] public BufferLookup<ConjuringData> ConjuringDataLookup;
         [NativeDisableParallelForRestriction] public BufferLookup<GarrisonEntity> GarrisonEntitiesLookup;
 

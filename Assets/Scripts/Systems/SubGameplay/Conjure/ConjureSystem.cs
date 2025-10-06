@@ -44,8 +44,10 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             // var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             // var config = SystemAPI.GetSingleton<ConjureSystemConfig>();
-
-            CheckConjureUnitsRequest(ref state, ecb);
+            var debug = new ConjureDebug();
+            if (SystemAPI.HasSingleton<DebugTag>())
+                SystemAPI.TryGetSingleton(out debug);
+            CheckConjureUnitsRequest(ref state, ecb, debug);
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
             var ecbp = new EntityCommandBuffer(Allocator.TempJob);
@@ -56,14 +58,15 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 ECB = ecbp.AsParallelWriter(),
                 CurTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours,
                 UnitAttrLookup = _unitAttrLookup,
-                GeneralAttrLookup = _generalAttrLookup
+                GeneralAttrLookup = _generalAttrLookup,
+                ConjureDebug = debug
             }.ScheduleParallel(state.Dependency);
             job.Complete();
             ecbp.Playback(state.EntityManager);
             ecbp.Dispose();
         }
 
-        private void CheckConjureUnitsRequest(ref SystemState state, EntityCommandBuffer ecb)
+        private void CheckConjureUnitsRequest(ref SystemState state, EntityCommandBuffer ecb, in ConjureDebug debug)
         {
             _alreadyTagged.Clear();
             var curTotalHours = SystemAPI.GetSingleton<WorldTimeData>().totalHours;
@@ -82,8 +85,10 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 if (_alreadyTagged.Add(request.BuildingEntity))
                     ecb.AddComponent<ConjuringTag>(request.BuildingEntity);
                 var hoursPerUnit = SystemAPI.GetComponent<UnitAttr>(request.UnitPrefab).conjureSpeedHoursPerUnit;
+                if (debug is { enabled: true, conjureHoursScale: > 0 })
+                    hoursPerUnit *= debug.conjureHoursScale;
                 var uniqueId = SystemAPI.GetComponent<GlobalSingleId>(request.BuildingEntity).value;
-                
+
                 // Add task to city buffer
                 var resourceChangeRequest = ecb.CreateEntity();
                 ecb.AddComponent(resourceChangeRequest, new ResourceChangeRequest
@@ -96,9 +101,9 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                     FromBuildingSingleId = uniqueId,
                 });
                 ecb.AddComponent<SubGameplayEntityTag>(resourceChangeRequest);
-                
+
                 // Add task to building buffer
-                var timeCost = request.Count * hoursPerUnit ;
+                var timeCost = request.Count * hoursPerUnit;
                 int i;
                 for (i = 0; i < buffer.Length; i++)
                 {
@@ -141,6 +146,7 @@ namespace SparFlame.Systems.SubGameplay.Conjure
             public float CurTotalHours;
             [ReadOnly] public ComponentLookup<UnitAttr> UnitAttrLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
+            [ReadOnly] public ConjureDebug ConjureDebug;
 
             private void Execute([ChunkIndexInQuery] int index, in ConjureAttr conjureAttr,
                 ref DynamicBuffer<ConjuringData> conjuringDatas,
@@ -160,6 +166,8 @@ namespace SparFlame.Systems.SubGameplay.Conjure
                 {
                     var firstData = conjuringDatas[0];
                     var hoursPerUnit = UnitAttrLookup[firstData.ConjuringEntity].conjureSpeedHoursPerUnit;
+                    if (ConjureDebug is { enabled: true, conjureHoursScale: > 0 })
+                        hoursPerUnit *= ConjureDebug.conjureHoursScale;
                     var maxCount = firstData.TargetAmount - firstData.ConjuredAmount;
                     firstData.ThisTaskRemainingTime = math.max(0, maxCount * hoursPerUnit - deltaHours);
 

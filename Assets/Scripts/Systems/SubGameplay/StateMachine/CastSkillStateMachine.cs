@@ -1,13 +1,8 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Components.VFX;
-using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.Interact;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.StateMachine
 {
@@ -49,7 +44,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             var ecbP = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var gameTimeData = SystemAPI.GetSingleton<GameTimeData>();
-            new CastSkillJob
+            state.Dependency = new CastSkillJob
             {
                 EventsLookup = _eventsLookup,
                 ElapsedTime = gameTimeData.ElapsedTime,
@@ -64,9 +59,9 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 DarkShieldBuffGeneralConfig = SystemAPI.GetSingleton<DarkShieldBuffGeneralConfig>(),
                 AttackAbilityLookup = _attackAbilityLookup,
                 HealAbilityLookup = _healAbilityLookup,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
             
-            new CastArcherSkillJob
+            state.Dependency = new CastArcherSkillJob
             {
                 ECB = ecbP,
                 DeltaTime = gameTimeData.DeltaTime,
@@ -75,7 +70,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 PlayerArcherSkill = SystemAPI.GetSingleton<PlayerArcherSkill>(),
                 PlayerFactionData = SystemAPI.GetSingleton<PlayerFactionData>(),
                 
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
     }
 

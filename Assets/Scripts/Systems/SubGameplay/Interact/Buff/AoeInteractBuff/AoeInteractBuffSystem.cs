@@ -24,16 +24,14 @@ namespace SparFlame.Systems.SubGameplay.Interact
         public void OnUpdate(ref SystemState state)
         {
             _generalAttrLookup.Update(ref state);
-            var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            var job = new AoeInteractJob
+            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+                .CreateCommandBuffer(state.WorldUnmanaged);
+            state.Dependency = new AoeInteractJob
             {
                 ECB = ecb,
                 GeneralAttrLookup = _generalAttrLookup,
                 CurTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
             }.Schedule(state.Dependency);
-            job.Complete();
-            ecb.Playback(state.EntityManager);
-            ecb.Dispose();
         }
     }
 

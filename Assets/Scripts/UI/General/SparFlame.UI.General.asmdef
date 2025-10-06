@@ -20,7 +20,8 @@
     "SparFlame.Systems.General.BasicControl",
     "SparFlame.Database",
     "SparFlame.Systems.General.Battle",
-    "SparFlame.Systems.General.Camera"
+    "SparFlame.Systems.General.Camera",
+    "SparFlame.Systems.General.Audio"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

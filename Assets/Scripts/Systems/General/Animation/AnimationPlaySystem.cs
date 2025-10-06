@@ -38,7 +38,7 @@ namespace SparFlame.Systems.General.Animation
             _stateLookup.Update(ref state);
             var data = SystemAPI.GetSingletonRW<AnimationPlayData>();
             // var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
-            var ecb = new EntityCommandBuffer(Allocator.TempJob);
+            // var ecb = new EntityCommandBuffer(Allocator.TempJob);
             var curTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime;
             // new ExposedJob
             //     {
@@ -50,14 +50,14 @@ namespace SparFlame.Systems.General.Animation
             //     }
             //     .ScheduleParallel();
 
-            new OptimizedJob
+            state.Dependency = new OptimizedJob
             {
                 Et = curTime,
                 PreClipTime = data.ValueRW.LastEt
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
             data.ValueRW.LastEt = curTime;
-            ecb.Playback(state.EntityManager);
-            ecb.Dispose();
+            // ecb.Playback(state.EntityManager);
+            // ecb.Dispose();
         }
 
         [BurstCompile]

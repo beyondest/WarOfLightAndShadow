@@ -49,33 +49,12 @@ namespace SparFlame.Components.General
         [InfoBox("Infinite will be override by zero settings")]
         public bool enabled;
 
-
         [Header("Player")] [ShowIf(nameof(enabled))]
-        public bool playerStatGeneralInfinite;
-
-        [ShowIf(nameof(enabled))] public bool playerStatGeneralZero;
-        [ShowIf(nameof(enabled))] public bool playerCrystalStatInfinite;
-        [ShowIf(nameof(enabled))] public bool playerCrystalStatZero;
-
-        [ShowIf(nameof(enabled))] public bool playerUnitStatInfinite;
-        [ShowIf(nameof(enabled))] public bool playerUnitStatZero;
-
-        [ShowIf(nameof(enabled))] public bool playerBuildingStatInfinite;
-        [ShowIf(nameof(enabled))] public bool playerBuildingStatZero;
+        [ShowIf(nameof(enabled))] public float playerSideDamageTakenScale ;
 
         [Header("AI")] [ShowIf(nameof(enabled))]
-        public bool aiStatGeneralInfinite;
 
-        [ShowIf(nameof(enabled))] public bool aiStatGeneralZero;
-
-        [ShowIf(nameof(enabled))] public bool aiCrystalStatInfinite;
-        [ShowIf(nameof(enabled))] public bool aiCrystalStatZero;
-
-        [ShowIf(nameof(enabled))] public bool aiUnitStatInfinite;
-        [ShowIf(nameof(enabled))] public bool aiUnitStatZero;
-
-        [ShowIf(nameof(enabled))] public bool aiBuildingStatInfinite;
-        [ShowIf(nameof(enabled))] public bool aiBuildingStatZero;
+        [ShowIf(nameof(enabled))] public float enemySideDamageTakenScale;
 
 
         [Header("Neutral")] [ShowIf(nameof(enabled))]
@@ -132,7 +111,20 @@ namespace SparFlame.Components.General
         
     }
 
+    [Serializable]
+    public struct ConjureDebug : IComponentData
+    {
+        public bool enabled;
+        [ShowIf(nameof(enabled))] public float conjureHoursScale;
+    }
 
+    [Serializable]
+    public struct ResourceDebug : IComponentData
+    {
+        public bool enabled;
+        [ShowIf(nameof(enabled))] public float spawnHoursScale;
+    }
+    
     [Serializable]
     public struct ExpDebug : IComponentData
     {

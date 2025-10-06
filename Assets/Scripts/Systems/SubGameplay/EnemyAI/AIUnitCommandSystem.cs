@@ -19,42 +19,35 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new AIMovementMarchJob
+            state.Dependency = new AIMovementMarchJob
             {
                 ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
-
-    
     }
-    
+
     [BurstCompile]
     [WithNone(typeof(UnitDeadTag))]
+    [WithNone(typeof(AttackStateTag))]
+    [WithNone(typeof(HealStateTag))]
     public partial struct AIMovementMarchJob : IJobEntity
     {
         public EntityCommandBuffer.ParallelWriter ECB;
+
         private void Execute([ChunkIndexInQuery] int index, ref MovableData movableData,
-            ref BasicStateData basicStateData, ref DynamicBuffer<InsightTarget> targets,
+            ref BasicStateData basicStateData,
             in AIUnitCommandData commandData,
             Entity entity)
         {
-            
             ECB.SetComponentEnabled<AIUnitCommandData>(index, entity, false);
             MovementUtils.SetMoveTarget(ref movableData, commandData.TargetPosition, float3.zero,
                 MovementCommandType.March, 0f);
             basicStateData.TargetState = InteractState.Moving;
             StateUtils.SwitchState(ref basicStateData, ECB, entity, index);
-            // Remove target so that player command it to move than it will move
-            if (basicStateData.TargetEntity != Entity.Null)
-            {
-                InteractUtils.Remove(ref targets, basicStateData.TargetEntity);
-            }
-
             basicStateData.TargetEntity = Entity.Null;
             basicStateData.TargetState = InteractState.Idle;
             basicStateData.Focus = commandData.Focus;
         }
     }
-
 }

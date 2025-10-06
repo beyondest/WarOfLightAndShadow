@@ -30,10 +30,10 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
         public void OnUpdate(ref SystemState state)
         {
             _targetLookup.Update(ref state);
-            new FakeCollisionTriggerJob
+            state.Dependency = new FakeCollisionTriggerJob
             {
                 TargetLookup = _targetLookup,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -45,6 +45,7 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
         [BurstCompile]
         public partial struct FakeCollisionTriggerJob : IJobEntity
         {
+            // This component is only written to self
             [NativeDisableParallelForRestriction] public BufferLookup<FakeColliderTarget> TargetLookup;
             private void Execute(ref DynamicBuffer<StatefulTriggerEvent> events, in FakeCollisionTriggerData data,
                 Entity entity)

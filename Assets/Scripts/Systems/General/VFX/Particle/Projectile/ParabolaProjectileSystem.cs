@@ -74,6 +74,7 @@ namespace SparFlame.Systems.General.VFX
         public partial struct ParaBolaProjectileJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
+            // This job need to read from not writable others and write only to self
             [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public float CurTime;
             [ReadOnly] public ParabolaProjectileConfig Config;

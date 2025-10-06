@@ -3,6 +3,7 @@ using SparFlame.Components.SubGameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
@@ -11,6 +12,7 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
     {
         public Entity BelongsTo;
     }
+
     public partial struct FakeCollisionTriggerManageSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transformLookup;
@@ -20,7 +22,7 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
         {
             state.RequireForUpdate<SubGamingTag>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            _transformLookup = state.GetComponentLookup<LocalTransform>();
+            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
         }
 
         [BurstCompile]
@@ -29,27 +31,29 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
             var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             _transformLookup.Update(ref state);
-            new GenerateFakeColliderTriggerJob
+            state.Dependency =  new GenerateFakeColliderTriggerJob
             {
                 ECB = ecb,
-            }.ScheduleParallel();
-           
-            new SyncFakeCollisionTriggerJob
+            }.ScheduleParallel(state.Dependency);
+
+            state.Dependency = new SyncFakeCollisionTriggerJob
             {
                 ECB = ecb,
                 LocalTransformLookup = _transformLookup,
-            }.ScheduleParallel();
+            }.ScheduleParallel(state.Dependency);
         }
-        
+
         [BurstCompile]
         public partial struct GenerateFakeColliderTriggerJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter ECB;
-            private void Execute([ChunkIndexInQuery] int index, ref FakeCollisionTriggerRequest request, Entity requestEntity,
+
+            private void Execute([ChunkIndexInQuery] int index, ref FakeCollisionTriggerRequest request,
+                Entity requestEntity,
                 in LocalTransform localTransform)
             {
                 var sight = ECB.Instantiate(index, request.TriggerPrefab);
-                ECB.AddComponent<SubGameplayEntityTag>(index,sight);
+                ECB.AddComponent<SubGameplayEntityTag>(index, sight);
 
                 ECB.AddComponent(index, sight, new FakeCollisionTriggerData
                 {
@@ -59,11 +63,11 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
                 ECB.RemoveComponent<FakeCollisionTriggerRequest>(index, requestEntity);
             }
         }
-        
+
         [BurstCompile]
         public partial struct SyncFakeCollisionTriggerJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> LocalTransformLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             public EntityCommandBuffer.ParallelWriter ECB;
 
             private void Execute([ChunkIndexInQuery] int index, in FakeCollisionTriggerData data, Entity entity)
@@ -74,12 +78,12 @@ namespace SparFlame.Systems.SubGameplay.Movement.FakeCollision
                     ECB.DestroyEntity(index, entity);
                     return;
                 }
-                ref var transform = ref LocalTransformLookup.GetRefRW(entity).ValueRW;
+
+                var transform = LocalTransformLookup[entity];
                 transform.Position = localTransform.Position;
                 transform.Rotation = localTransform.Rotation;
+                ECB.SetComponent(index, entity, transform);
             }
         }
     }
-    
-    
 }

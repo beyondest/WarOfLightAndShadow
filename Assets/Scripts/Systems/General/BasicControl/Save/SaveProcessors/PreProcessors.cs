@@ -111,38 +111,7 @@ namespace SparFlame.Systems.General.BasicControl
         public Task Run(object args)
         {
             var ag = (ArmyGroupUnitPreProcessorArgs)args;
-            if (ag.Em.HasComponent<EnemyArmyGroupSaveTag>(ag.ArmyGroup))
-                ag.ECB.RemoveComponent<EnemyArmyGroupSaveTag>(ag.ArmyGroup);
-
-            var sum = float3.zero;
-            var armyGroupUnits = ag.Em.GetBuffer<ArmyGroupUnit>(ag.ArmyGroup);
-
-            for (var j = 0; j < armyGroupUnits.Length; j++)
-            {
-                var transform = ag.Em.GetComponentData<LocalTransform>(armyGroupUnits[j].Unit);
-                sum += transform.Position;
-            }
-
-            var center = sum / armyGroupUnits.Length;
-            float2 boundingMin = float2.zero, boundingMax = float2.zero;
-            foreach (var armyGroupUnit in armyGroupUnits)
-            {
-                var unit = armyGroupUnit.Unit;
-                var transform = ag.Em.GetComponentData<LocalTransform>(unit);
-                var relative = transform.Position - center;
-                boundingMin = math.min(boundingMin, relative.xz);
-                boundingMax = math.max(boundingMax, relative.xz);
-                transform.Position = relative;
-                ag.ECB.SetComponent(unit, new FormationTransform { Transform = transform });
-                ag.ECB.SetComponentEnabled<NeedSaveTag>(unit, true);
-            }
-
-            var armyGroupAttr = ag.Em.GetComponentData<ArmyGroupAttr>(ag.ArmyGroup);
-            // Record the bounding box
-            armyGroupAttr.boundingBoxDelta = boundingMax - boundingMin;
-            armyGroupAttr.loadingCenter = center;
-            armyGroupAttr.loadingScale = 1f;
-            ag.ECB.SetComponent(ag.ArmyGroup, armyGroupAttr);
+            
             return Task.CompletedTask;
         }
     }

@@ -76,6 +76,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
             [ReadOnly] public NativeHashMap<int, int> ExpGainTypeToGainAmount;
             [ReadOnly] public ExpDebug ExpDebug;
             [ReadOnly] public PlayerFactionData PlayerFactionData;
+            // This is none-parallel job
             [NativeDisableParallelForRestriction] public ComponentLookup<ExpData> ExpLookup;
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
 
