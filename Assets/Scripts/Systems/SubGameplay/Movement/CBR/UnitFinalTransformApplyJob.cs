@@ -8,44 +8,9 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Movement
 {
-    [BurstCompile]
-    public partial struct UnitLocalTransformApplySystem : ISystem
-    {
-        private ComponentLookup<PlayerTag> _playerTagLookup;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            state.RequireForUpdate<GameTimeData>();
-            state.RequireForUpdate<CbrConfig>();
-            state.RequireForUpdate<SubGamingTag>();
-            _playerTagLookup = state.GetComponentLookup<PlayerTag>(true);
-        }
-
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state)
-        {
-            var debug = new MovementDebug();
-            if (SystemAPI.HasSingleton<DebugTag>())
-            {
-                SystemAPI.TryGetSingleton(out debug);
-            }
-
-            _playerTagLookup.Update(ref state);
-            state.Dependency = new UnitTransformApplyJob
-            {
-                Debug = debug,
-                Config = SystemAPI.GetSingleton<CbrConfig>(),
-                DeltaTime = SystemAPI.GetSingleton<GameTimeData>().DeltaTime,
-                PlayerTagLookup = _playerTagLookup
-            }.ScheduleParallel(state.Dependency);
-        }
-    }
-
-
-    [BurstCompile]
+   [BurstCompile]
     [WithNone(typeof(InGarrison))]
-    public partial struct UnitTransformApplyJob : IJobEntity
+    public partial struct UnitFinalTransformApplyJob : IJobEntity
     {
         [ReadOnly] public CbrConfig Config;
         [ReadOnly] public float DeltaTime;

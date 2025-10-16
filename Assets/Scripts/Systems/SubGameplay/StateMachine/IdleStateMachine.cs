@@ -2,7 +2,6 @@
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.SubGameplay.Interact;
-using SparFlame.Systems.SubGameplay.Movement.FakeCollision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -19,7 +18,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<SubGameplayGeneralAttr> _generalAttrLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<Selected> _selectedLookup;
-        private ComponentLookup<FakeCollisionTriggerData> _triggerLookup;
+        // private ComponentLookup<FakeCollisionTriggerData> _triggerLookup;
         private ComponentLookup<MovingStateTag> _movingStateLookup;
         private ComponentLookup<AutoGiveWayTag> _autoGiveWayTagLookup;
 
@@ -34,7 +33,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _generalAttrLookup = state.GetComponentLookup<SubGameplayGeneralAttr>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _selectedLookup = state.GetComponentLookup<Selected>(true);
-            _triggerLookup = state.GetComponentLookup<FakeCollisionTriggerData>(true);
+            // _triggerLookup = state.GetComponentLookup<FakeCollisionTriggerData>(true);
             _movingStateLookup = state.GetComponentLookup<MovingStateTag>(true);
             _autoGiveWayTagLookup = state.GetComponentLookup<AutoGiveWayTag>(true);
         }
@@ -46,7 +45,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _generalAttrLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _selectedLookup.Update(ref state);
-            _triggerLookup.Update(ref state);
+            // _triggerLookup.Update(ref state);
             _movingStateLookup.Update(ref state);
             _autoGiveWayTagLookup.Update(ref state);
             var ecbP = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -59,7 +58,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 LocalTransformLookup = _transformLookup,
                 AutoGiveWayConfig = SystemAPI.GetSingleton<AutoGiveWayConfig>(),
                 SelectedLookup = _selectedLookup,
-                TriggerDataLookup = _triggerLookup,
+                // TriggerDataLookup = _triggerLookup,
                 MovingStateTagLookup = _movingStateLookup,
                 AutoGiveWayTagLookup = _autoGiveWayTagLookup,
                 SightConfig = sightConfig,
@@ -121,7 +120,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<SubGameplayGeneralAttr> GeneralAttrLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
-            [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> TriggerDataLookup;
+            // [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> TriggerDataLookup;
             [ReadOnly] public AutoGiveWayConfig AutoGiveWayConfig;
             [ReadOnly] public ComponentLookup<MovingStateTag> MovingStateTagLookup;
             [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayTagLookup;
@@ -180,8 +179,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                             var left = MovementUtils.GetLeftOrRight(front, true);
                             foreach (var target in fakeColliderTargets)
                             {
-                                if (!TriggerDataLookup.TryGetComponent(target.Target, out var triggerData)) continue;
-                                var belongsTo = triggerData.BelongsTo;
+                                // if (!TriggerDataLookup.TryGetComponent(target.Entity, out var triggerData)) continue;
+                                var belongsTo = target.Entity;
                                 // Only when surroundings have unit that is in moving state, not auto give way moving, and selected, will 
                                 // it be considered as a valid target for auto give way
                                 if (SelectedLookup.HasComponent(belongsTo) &&
@@ -228,7 +227,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                         var backHasTarget = false;
                         foreach (var target in fakeColliderTargets)
                         {
-                            if (!LocalTransformLookup.TryGetComponent(target.Target, out var targetTransform)) continue;
+                            if (!LocalTransformLookup.TryGetComponent(target.Entity, out var targetTransform)) continue;
                             var selfToTarget = targetTransform.Position - transform.Position;
                             if (math.dot(selfToTarget, backDirection) > 0)
                             {

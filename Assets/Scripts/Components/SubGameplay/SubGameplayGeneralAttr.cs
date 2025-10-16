@@ -21,5 +21,6 @@ namespace SparFlame.Components.SubGameplay
     {
         public float3 SeparationBox;
         public float Radius;
+        public float RadiusSq;
     }
 }

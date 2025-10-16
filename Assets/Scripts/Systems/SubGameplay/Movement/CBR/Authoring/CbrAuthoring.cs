@@ -63,7 +63,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 AddComponent(entity, new MovementConfig
                 {
                     WayPointDistanceSq = authoring.waypointDistanceThreshold * authoring.waypointDistanceThreshold,
-                    PlayerMarchExtent = authoring.playerMarchExtent,
+                    MarchExtent = authoring.playerMarchExtent,
                     InteractRangeSqBias = authoring.interactRangeSqBias,
                     ObstacleLayerMask = authoring.obstacleLayerMask.Value,
                     DetectRaycastBelongsTo =authoring.movementRayBelongsToLayerMask.Value,
@@ -106,7 +106,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
     public struct MovementConfig : IComponentData
     {
         public float WayPointDistanceSq;
-        public float3 PlayerMarchExtent;
+        public float3 MarchExtent;
         public float InteractRangeSqBias;
         public uint ObstacleLayerMask;
         public uint DetectRaycastBelongsTo;

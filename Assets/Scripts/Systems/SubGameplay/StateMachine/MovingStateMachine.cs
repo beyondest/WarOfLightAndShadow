@@ -2,8 +2,6 @@
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Systems.SubGameplay.Interact;
-using SparFlame.Systems.SubGameplay.Movement;
-using SparFlame.Systems.SubGameplay.Movement.FakeCollision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -34,7 +32,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
         private ComponentLookup<InGarrison> _inGarrisonLookup;
         private ComponentLookup<DarkShieldTauntedBuff> _darkShieldTauntedBuffLookup;
         private ComponentLookup<HoldOnPosition> _holdOnPositionLookup;
-        private ComponentLookup<FakeCollisionTriggerData> _fakeCollisionDataLookup;
+        // private ComponentLookup<FakeCollisionTriggerData> _fakeCollisionDataLookup;
         private ComponentLookup<FormationMovingTag> _formationMovingTagLookup;
         private ComponentLookup<AutoGiveWayTag> _autoGiveWayTagLookup;
 
@@ -58,7 +56,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _inGarrisonLookup = state.GetComponentLookup<InGarrison>(true);
             _darkShieldTauntedBuffLookup = state.GetComponentLookup<DarkShieldTauntedBuff>(true);
             _holdOnPositionLookup = state.GetComponentLookup<HoldOnPosition>(true);
-            _fakeCollisionDataLookup = state.GetComponentLookup<FakeCollisionTriggerData>(true);
+            // _fakeCollisionDataLookup = state.GetComponentLookup<FakeCollisionTriggerData>(true);
             _localTransformLookup = state.GetComponentLookup<LocalTransform>(true);
             _formationMovingTagLookup = state.GetComponentLookup<FormationMovingTag>(true);
             _autoGiveWayTagLookup = state.GetComponentLookup<AutoGiveWayTag>(true);
@@ -89,7 +87,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             _inGarrisonLookup.Update(ref state);
             _darkShieldTauntedBuffLookup.Update(ref state);
             _holdOnPositionLookup.Update(ref state);
-            _fakeCollisionDataLookup.Update(ref state);
+            // _fakeCollisionDataLookup.Update(ref state);
             _formationMovingTagLookup.Update(ref state);
             _autoGiveWayTagLookup.Update(ref state);
             // _squeezeLookup.Update(ref state);
@@ -114,7 +112,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 GarrisonSystemConfig = garrisonSystemConfig,
                 DarkShieldTauntedBuffLookup = _darkShieldTauntedBuffLookup,
                 HoldOnPositionLookUp = _holdOnPositionLookup,
-                FakeCollisionDataLookup = _fakeCollisionDataLookup,
+                // FakeCollisionDataLookup = _fakeCollisionDataLookup,
                 FormationMovingTagLookup = _formationMovingTagLookup,
                 AutoGiveWayTagLookup = _autoGiveWayTagLookup,
             }.ScheduleParallel(state.Dependency);
@@ -146,7 +144,7 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
             [ReadOnly] public ComponentLookup<DarkShieldTauntedBuff> DarkShieldTauntedBuffLookup;
             [ReadOnly] public ComponentLookup<HoldOnPosition> HoldOnPositionLookUp;
             [ReadOnly] public ComponentLookup<FormationMovingTag> FormationMovingTagLookup;
-            [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> FakeCollisionDataLookup;
+            // [ReadOnly] public ComponentLookup<FakeCollisionTriggerData> FakeCollisionDataLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransLookup;
 
             [ReadOnly] public ComponentLookup<AutoGiveWayTag> AutoGiveWayTagLookup;
@@ -434,19 +432,19 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
 
                 foreach (var target in colliderTargets)
                 {
-                    if (!FakeCollisionDataLookup.TryGetComponent(target.Target, out var data)
-                        || !GeneralLookup.TryGetComponent(data.BelongsTo, out var generalAttr))
+                    if (/*!FakeCollisionDataLookup.TryGetComponent(target.Entity, out var data)*/
+                         !GeneralLookup.TryGetComponent(target.Entity, out var generalAttr))
                         continue;
                     var relationShip =
                         FactionUtils.GetRelationshipSimple(selfGeneralAttr.Faction, generalAttr.Faction);
                     if (relationShip == Relationship.Hostile)
                     {
-                        var position = TransLookup[data.BelongsTo].Position;
+                        var position = TransLookup[target.Entity].Position;
                         var disSq = math.distancesq(selfTrans.Position, position);
                         if (disSq < minDisSq)
                         {
                             minDisSq = disSq;
-                            closestTarget = data.BelongsTo;
+                            closestTarget = target.Entity;
                         }
                     }
                 }
@@ -521,8 +519,8 @@ namespace SparFlame.Systems.SubGameplay.StateMachine
                 // if (surroundings.MoveSuccess) return false;
                 foreach (var target in targets)
                 {
-                    if (!FakeCollisionDataLookup.TryGetComponent(target.Target, out var data)) continue;
-                    var trulyTarget = data.BelongsTo;
+                    // if (!FakeCollisionDataLookup.TryGetComponent(target.Entity, out var data)) continue;
+                    var trulyTarget = target.Entity;
                     if (IsObstacleSelectedAllyIdle(trulyTarget, selected, selfFaction)) return true;
                 }
 

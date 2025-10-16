@@ -10,6 +10,7 @@ using SparFlame.Components.MainGameplay;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Entities.Serialization;
 using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
@@ -228,11 +229,39 @@ namespace SparFlame.Systems.General.BasicControl
                     {
                         handle.Free();
                     }
-
                     await fs.WriteAsync(buffer, 0, size);
                 }
             }
         }
+        /*
+        public static async Task WriteConditionalComponentsOfSingleEntityAsync2(
+            FileStream fs,
+            SaveArcheTypeInfo info,
+            EntityManager em,
+            Entity entity)
+        {
+            foreach (var compType in info.ConditionalComponentTypes)
+            {
+                var hasComp = em.HasComponent(entity, compType);
+                fs.WriteByte((byte)(hasComp ? 1 : 0));
+
+                if (hasComp)
+                {
+                    var componentData = em.GetComponentData<IComponentData>(entity, compType);
+
+                    unsafe
+                    {
+                        var size = UnsafeUtility.SizeOf(compType);
+                        var ptr = UnsafeUtility.As<IComponentData, byte>(ref componentData);
+                        var buffer = new byte[size];
+                        // Copy from the component data's memory directly into the byte array
+                        UnsafeUtility.CopyPtrToByteArray(ptr, buffer, 0, size);
+                        await fs.WriteAsync(buffer, 0, size);
+                    }
+                }
+            }
+        }
+        */
 
         public static async Task WriteConditionalBuffersOfSingleEntityAsync(FileStream fs, SaveArcheTypeInfo info,
             EntityManager em,

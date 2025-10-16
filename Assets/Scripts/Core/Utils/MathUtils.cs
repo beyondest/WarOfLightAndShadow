@@ -157,5 +157,59 @@ namespace SparFlame.Core.Utils
             var offset = new float3(math.cos(angle), 0f, math.sin(angle)) * distance;
             return origin + offset;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2x2 GetRotationMatrix(in quaternion rotation)
+        {
+            var selfTransformForward = math.forward(rotation);
+            var angleInRadians = math.atan2(selfTransformForward.x, selfTransformForward.z);
+            var selfRotMat = new float2x2(math.cos(angleInRadians), -math.sin(angleInRadians),
+                math.sin(angleInRadians), math.cos(angleInRadians));
+            return selfRotMat;
+        }
+        
+        public static void ObbDetect(in float2x2 selfRotMat, in float2x2 otherRotMat, float2 selfHalf,
+            float2 otherHalf,
+            float2 delta, out float minOverlap, out bool overlapped, out float2 smallestAxis)
+        {
+            var axes = new NativeArray<float2>(4, Allocator.Temp);
+            axes[0] = selfRotMat.c0; // self local x
+            axes[1] = selfRotMat.c1; // self local z
+            axes[2] = otherRotMat.c0; // other local x
+            axes[3] = otherRotMat.c1; // other local z
+
+            smallestAxis = float2.zero;
+            minOverlap = float.MaxValue;
+            overlapped = true;
+
+            for (var a = 0; a < 4; a++)
+            {
+                var axis = math.normalize(axes[a]);
+
+                // 2 boxes project onto this axis
+                var projSelf = math.abs(math.dot(axis, selfRotMat.c0)) * selfHalf.x +
+                               math.abs(math.dot(axis, selfRotMat.c1)) * selfHalf.y;
+                    
+                var projOther = math.abs(math.dot(axis, otherRotMat.c0)) * otherHalf.x +
+                                math.abs(math.dot(axis, otherRotMat.c1)) * otherHalf.y;
+
+                var centerDist = math.abs(math.dot(axis, delta));
+
+                var overlap = projSelf + projOther - centerDist;
+
+                if (overlap < 0f)
+                {
+                    overlapped = false;
+                    break;
+                }
+
+                if (overlap < minOverlap)
+                {
+                    minOverlap = overlap;
+                    // A direction parallel to axis and point to other pos from self pos
+                    smallestAxis = axis * math.sign(math.dot(axis, delta));
+                }
+            }
+        }
     }
 }

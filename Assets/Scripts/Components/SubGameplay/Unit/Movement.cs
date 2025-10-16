@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using Unity.Entities;
@@ -7,23 +8,22 @@ using Unity.Mathematics;
 namespace SparFlame.Components.SubGameplay
 {
     
-    
       public struct MovableData : IComponentData
     {
-        public float MoveSpeed;
-        public float3 TargetCenterPos;
-        /// <summary>
-        /// Target collider shape is used for calculating
-        /// the extents of nav agent, extra radius for reachable check
-        /// </summary>
         public float3 TargetColliderShape;
-        public MovementCommandType MovementCommandType;
-        public MovementState MovementState;
-        public DetailInfo DetailInfo;
+        public float3 TargetCenterPos;
+        public float MoveSpeed;
         /// <summary>
         /// This range is attack range for attack movement, garrison range for garrison movement...
         /// </summary>
         public float InteractRange;
+        /// <summary>
+        /// Target collider shape is used for calculating
+        /// the extents of nav agent, extra radius for reachable check
+        /// </summary>
+        public MovementCommandType MovementCommandType;
+        public MovementState MovementState;
+        public DetailInfo DetailInfo;
         public bool ForceCalculate;
     }
 
@@ -239,7 +239,7 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct FakeColliderTarget : IBufferElementData
     {
-        public Entity Target;
+        public Entity Entity;
     }
     
     
@@ -258,4 +258,8 @@ namespace SparFlame.Components.SubGameplay
         public float AccumulatedTime;
     }
 
+    public struct GridColliderTarget : IBufferElementData
+    {
+        public Entity Entity;
+    }
 }

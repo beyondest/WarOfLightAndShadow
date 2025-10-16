@@ -19,7 +19,7 @@ namespace SparFlame.Components.SubGameplay
         }
 
         /// <summary>
-        /// Warning : interactRangeSq must be set in job if attack/heal/harvest move
+        /// Set the move target by set the movableData component
         /// </summary>
         /// <param name="movableData"></param>
         /// <param name="targetPos"></param>

@@ -35,12 +35,13 @@ namespace SparFlame.Database
                     SubFaction = SubFactionTag.None,
                 });
                 var box = item.prefab.GetComponent<PhysicsShapeAuthoring>().m_PrimitiveSize;
-               
+                var r = math.length(box.xz) / 2f;
                 AddComponent(entity, new BoxColliderSize
                 {
                     // SeparationBox = box,
                     SeparationBox = box,
-                    Radius = math.length(box.xz) / 2f
+                    Radius = r ,
+                    RadiusSq = (r + 2) * (r + 2)
                 });
                 if (item.baseTag == BaseTag.Units)
                 {

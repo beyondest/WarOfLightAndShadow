@@ -62,13 +62,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 ExtendNavMeshQueries(entities.Length - _navMeshQueries.Length, config);
             }
 
-            // var ecbs = new NativeArray<EntityCommandBuffer>(entities.Length, Allocator.TempJob);
-            // for (var i = 0; i < entities.Length; i++)
-            // {
-            //     // ecbs[i] = new EntityCommandBuffer(Allocator.TempJob);
-            //     ecbs[i] = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
-            // }
-
             var jobHandles = new NativeArray<JobHandle>(entities.Length, Allocator.TempJob);
             var localTransforms = _entityQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
             var navAgents = _entityQuery.ToComponentDataArray<NavAgentComponent>(Allocator.TempJob);
@@ -80,8 +73,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 var calculatePathJob = new CalculatePathJob
                 {
                     ECB = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged),
-
-
                     Entity = entities[i],
                     NavAgent = navAgents[i],
                     NavAgentRadius = _navAgentRadius,
@@ -96,19 +87,13 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 jobHandles[i] = calculatePathJob.Schedule();
             }
 
-            // JobHandle.CompleteAll(jobHandles);
             state.Dependency = JobHandle.CombineDependencies(jobHandles);
-            // for (var i = 0; i < entities.Length; i++)
-            // {
-            //     ecbs[i].Playback(state.EntityManager);
-            //     ecbs[i].Dispose();
-            // }
+    
 
             entities.Dispose(state.Dependency);
             navAgents.Dispose(state.Dependency);
             localTransforms.Dispose(state.Dependency);
             jobHandles.Dispose(state.Dependency);
-            // ecbs.Dispose(state.Dependency);
         }
 
         [BurstCompile]
@@ -116,7 +101,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
         {
             if (_navMeshQueries.IsCreated)
                 DisposeNavMeshQueries();
-
             _navAgentRadius.Dispose();
         }
 
@@ -137,7 +121,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
             public void Execute()
             {
-                // ref var navAgent = ref NavAgentLookup.GetRefRW(Entity).ValueRW;
                 // Only calculate for the enable calculation agents
                 if (!NavAgent.enableCalculation) return;
                 // Only recalculate the path once in an interval OR the target is updated
@@ -211,10 +194,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 );
                 if (returningStatus == PathQueryStatus.Success)
                 {
-                    // WaypointLookup.TryGetBuffer(Entity, out var waypointBuffer);
-                    // waypointBuffer.Clear();
                     ECB.SetBuffer<WaypointBuffer>(Entity);
-
                     foreach (var location in result)
                     {
                         if (location.position != Vector3.zero)
@@ -223,7 +203,6 @@ namespace SparFlame.Systems.SubGameplay.Movement
                             {
                                 position = new float3(location.position.x, location.position.y, location.position.z),
                             };
-                            // waypointBuffer.Add(newWayPoint);   
                             ECB.AppendToBuffer(Entity, newWayPoint);
                         }
                     }
