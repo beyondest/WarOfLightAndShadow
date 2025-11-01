@@ -125,8 +125,15 @@ namespace SparFlame.Systems.General.Input
 
         private void OnDestroy()
         {
-            if(_overInputText != default)
-                _overInputText.Dispose();
+            try
+            {
+                if(_overInputText != default)
+                    _overInputText.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         #endregion

@@ -6,7 +6,6 @@ namespace SparFlame.UI.MainGameplay.CityWindow
 {
     public class CityWindow3DTransferAuthoring : MonoBehaviour
     {
-
         [AssetsOnly] public GameObject cityWindow3DPrefab;
         public Vector3 offset;
         private class

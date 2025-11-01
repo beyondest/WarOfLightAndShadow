@@ -11,11 +11,11 @@ namespace SparFlame.Core.Utils
         }
     }
 
-    public static class ThreadUtils
-    {
-        public static void CheckThreadInfo()
-        {
-            Debug.Log("Thread: " + System.Threading.Thread.CurrentThread.ManagedThreadId);
-        }
-    }
+    // public static class ThreadUtils
+    // {
+    //     public static void CheckThreadInfo()
+    //     {
+    //         Debug.Log("Thread: " + System.Threading.Thread.CurrentThread.ManagedThreadId);
+    //     }
+    // }
 }

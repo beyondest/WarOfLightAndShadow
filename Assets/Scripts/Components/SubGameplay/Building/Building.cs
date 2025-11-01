@@ -1,6 +1,5 @@
 ﻿using System;
 using SparFlame.Components.General;
-using SparFlame.Core.Interfaces;
 using Unity.Entities;
 
 namespace SparFlame.Components.SubGameplay
@@ -11,7 +10,6 @@ namespace SparFlame.Components.SubGameplay
         Constructing = 1,
         Working = 2,
         UnderAttack = 3,
-        // Worked = 4, // Obsolete
     }
 
 
@@ -23,9 +21,9 @@ namespace SparFlame.Components.SubGameplay
 
     public struct BuildingAttr : IComponentData
     {
-        public BuildingType Type;
-        public int SubTypeIndex;
         public float ConstructTimeHours;
+        public int SubTypeIndex;
+        public BuildingType Type;
     }
 
     public enum BuildingType
@@ -94,8 +92,8 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct CapacityBuildingAttr : IComponentData
     {
-        public ResourceType ResourceType;
         public int StorageAmount;
+        public ResourceType ResourceType;
     }
 
     public struct RetreatPortalTag : IComponentData

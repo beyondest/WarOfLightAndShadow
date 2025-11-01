@@ -21,10 +21,9 @@ namespace SparFlame.Components.VFX
     
     public struct PopNumberRequest : IComponentData
     {
+        public float3 Position;
         public int Value;
         public int ColorId;
-        public float3 Position;
-        public float Scale;
     }
 
    

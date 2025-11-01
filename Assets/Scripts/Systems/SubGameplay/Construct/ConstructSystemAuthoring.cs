@@ -65,7 +65,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
                 AddComponent(entity, new ConstructCommandData
                 {
                     CommandType = ConstructCommandType.None,
-                    Faction =  FactionTag.Neutral,
                     GhostModelEntity = Entity.Null,
                     GhostTriggerEntity = Entity.Null,
                     IsMovementShow = false,

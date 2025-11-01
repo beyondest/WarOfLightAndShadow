@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using SparFlame.Components.General;
@@ -100,10 +101,17 @@ namespace SparFlame.UI.SubGameplay
 
         private void OnDestroy()
         {
-            if(_hintsInfo!= default)
-                _hintsInfo.Dispose();
-            if(_timeData!= default)
-                _timeData.Dispose();
+            try
+            {
+                if (_hintsInfo != default)
+                    _hintsInfo.Dispose();
+                if (_timeData != default)
+                    _timeData.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         #endregion
@@ -115,7 +123,6 @@ namespace SparFlame.UI.SubGameplay
             _hintWindowRect.anchoredPosition = ConstructWindow.Instance.IsOpened()
                 ? new Vector2(hintXWhenConstructWindowOpen, _hintWindowRect.anchoredPosition.y)
                 : new Vector2(_hintOriginalX, _hintWindowRect.anchoredPosition.y);
-
             var infos = _hintsInfo.GetSingletonBuffer<HintsInfo>();
             var curTime = _timeData.GetSingleton<GameTimeData>().ElapsedTime;
             foreach (var info in infos)
@@ -125,8 +132,8 @@ namespace SparFlame.UI.SubGameplay
                     AddHint(info.Content.ToString(), info.UpdateTime, info.HintType);
                 }
             }
+            infos.Clear();
 
-            // 每帧更新所有 hint 的目标位置
             for (var i = 0; i < _hintEntries.Count; i++)
             {
                 var entry = _hintEntries[i];
@@ -134,12 +141,10 @@ namespace SparFlame.UI.SubGameplay
                 {
                     Vector2 desiredPos = topAnchor.anchoredPosition - new Vector2(0, i * topAnchor.rect.height);
                     entry.TargetPos = desiredPos;
-                    // 平滑移动（Lerp 或 SmoothDamp 都行）
                     entry.HintRect.anchoredPosition = Vector2.Lerp(entry.HintRect.anchoredPosition, desiredPos,
                         Time.deltaTime * 15f);
                 }
 
-                // 超时后淡出
                 if (!entry.IsFading && curTime - entry.UpdateTime > maxDuration)
                 {
                     StartCoroutine(FadeAndRemove(entry));
@@ -149,7 +154,6 @@ namespace SparFlame.UI.SubGameplay
 
         private void AddHint(string content, float updateTime, HintType type)
         {
-            // 如果内容与最后一条相同且时间没变，就跳过
             if (_hintEntries.Count > 0)
             {
                 var last = _hintEntries[0];
@@ -157,7 +161,6 @@ namespace SparFlame.UI.SubGameplay
                     return;
             }
 
-            // 创建新提示条
             var go = Instantiate(hintPrefab, _hintWindowRect);
             go.GetComponent<RectTransform>().anchoredPosition = topAnchor.anchoredPosition;
             var tmp = go.GetComponent<TextMeshProUGUI>();
@@ -176,7 +179,6 @@ namespace SparFlame.UI.SubGameplay
             };
             _hintEntries.Insert(0, entry);
 
-            // 移除超过最大数量的提示
             if (_hintEntries.Count > maxHints)
             {
                 var oldEntry = _hintEntries[_hintEntries.Count - 1];
@@ -185,7 +187,7 @@ namespace SparFlame.UI.SubGameplay
             }
         }
 
-        private System.Collections.IEnumerator FadeAndRemove(HintEntry entry)
+        private IEnumerator FadeAndRemove(HintEntry entry)
         {
             entry.IsFading = true;
             float elapsed = 0f;

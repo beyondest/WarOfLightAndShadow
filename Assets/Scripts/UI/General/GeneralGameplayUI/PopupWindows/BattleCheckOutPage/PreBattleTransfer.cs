@@ -219,7 +219,7 @@ namespace SparFlame.Systems.General
         private void AssaultAndFight()
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var ecoEntities = SystemAPI.GetSingletonBuffer<EcoEntityData>();
+            var ecoEntities = SystemAPI.GetSingletonBuffer<EcoTypeToEcoConfig>();
 
             // Get map info 
             var buffer = new LoadingPositionInfo();

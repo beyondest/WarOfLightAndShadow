@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Core.Interfaces;
 using SparFlame.UI.General;
 using Unity.Entities;
 using UnityEngine;

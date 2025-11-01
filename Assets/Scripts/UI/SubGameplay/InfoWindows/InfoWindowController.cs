@@ -2,7 +2,6 @@ using System;
 using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Systems.General.BasicControl;
 using Unity.Entities;
 using UnityEngine;
 
@@ -245,16 +244,23 @@ namespace SparFlame.UI.SubGameplay
 
         private void OnDestroy()
         {
-            if(_gamingTag != default)
-                _gamingTag.Dispose();
-            if(_customMouseDataQuery != default)
-                _customMouseDataQuery.Dispose();
-            if(_cursorData != default)
-                _cursorData.Dispose();
-            if(_selectedData != default)
-                _selectedData.Dispose();
-            if(_generalShortcutData != default)
-                _generalShortcutData.Dispose();
+            try
+            {
+                if (_gamingTag != default)
+                    _gamingTag.Dispose();
+                if (_customMouseDataQuery != default)
+                    _customMouseDataQuery.Dispose();
+                if (_cursorData != default)
+                    _cursorData.Dispose();
+                if (_selectedData != default)
+                    _selectedData.Dispose();
+                if (_generalShortcutData != default)
+                    _generalShortcutData.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         public void Show()

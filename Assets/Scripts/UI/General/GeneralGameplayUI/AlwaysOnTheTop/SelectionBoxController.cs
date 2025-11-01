@@ -1,4 +1,5 @@
-﻿using SparFlame.Components.General;
+﻿using System;
+using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
 using SparFlame.Components.SubGameplay;
 using UnityEngine;
@@ -67,14 +68,21 @@ namespace SparFlame.UI.General
 
         private void OnDestroy()
         {
-            if(_subGamingTag != default)
-                _subGamingTag.Dispose();
-            if(_mainGamingTag != default)
-                _mainGamingTag.Dispose();
-            if(_unitSelectionDataQuery != default)
-                _unitSelectionDataQuery.Dispose();
-            if(_armyGroupSelectionDataQuery != default)
-                _armyGroupSelectionDataQuery.Dispose();
+            try
+            {
+                if (_subGamingTag != default)
+                    _subGamingTag.Dispose();
+                if (_mainGamingTag != default)
+                    _mainGamingTag.Dispose();
+                if (_unitSelectionDataQuery != default)
+                    _unitSelectionDataQuery.Dispose();
+                if (_armyGroupSelectionDataQuery != default)
+                    _armyGroupSelectionDataQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
     }
 }

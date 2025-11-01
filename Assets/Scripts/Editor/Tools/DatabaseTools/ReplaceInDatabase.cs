@@ -1,7 +1,5 @@
-﻿using PlasticGui;
-using SparFlame.Components.SubGameplay;
+﻿using SparFlame.Components.SubGameplay;
 using SparFlame.Database;
-using SparFlame.Systems.SubGameplay.RandomSpawn;
 
 namespace Editor
 {
@@ -38,7 +36,7 @@ public class ItemDatabaseEditor : EditorWindow
 
     private void ReplaceItems()
     {
-        if (database == null)
+        if (!database)
         {
             Debug.LogError("Database is null.");
             return;
@@ -48,7 +46,7 @@ public class ItemDatabaseEditor : EditorWindow
 
         foreach (var item in database.items)
         {
-            if ((int)item.type != fromType || item.prefab == null) continue;
+            if ((int)item.type != fromType || !item.prefab) continue;
 
             string oldName = item.prefab.name;
 
@@ -66,7 +64,7 @@ public class ItemDatabaseEditor : EditorWindow
             string path = AssetDatabase.GUIDToAssetPath(guids[0]);
             GameObject newPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
 
-            if (newPrefab != null)
+            if (newPrefab)
             {
                 item.prefab = newPrefab;
                 item.type = (EnvType)toType;

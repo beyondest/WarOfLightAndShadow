@@ -23,8 +23,8 @@ namespace SparFlame.Components.MainGameplay
     public struct AddToArmyGroupRequest : IComponentData
     {
         public Entity Unit;
-        public AddToArmyGroupType Type;
         public Entity ArmyGroup;
+        public AddToArmyGroupType Type;
     }
 
  
@@ -42,8 +42,8 @@ namespace SparFlame.Components.MainGameplay
         public Entity Unit;
         public Entity ArmyGroup;
         public int MoveOutId;
-        public RemoveFromArmyGroupType RemoveType;
         public int StatMaxValue;
+        public RemoveFromArmyGroupType RemoveType;
     }
 
     
@@ -57,15 +57,13 @@ namespace SparFlame.Components.MainGameplay
 
     public struct ArmyGroupUnitTypeData : IBufferElementData, IEquatable<ArmyGroupUnitTypeData>
     {
-        public UnitType UnitType;
         public int PrefabId;
         public int Count;
-
+        public UnitType UnitType;
         public bool Equals(ArmyGroupUnitTypeData other)
         {
             return PrefabId == other.PrefabId;
         }
-     
     }
 
     

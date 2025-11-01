@@ -37,24 +37,13 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct ArmyGroupAttr : IComponentData
     {
-        // Static data
-        public ArmyGroupIconType iconType;
         public FixedString32Bytes gameplayName;
-        public float createTimeInTotalHours;
-
-        // Unit data
-        public int avgLevel;
-        // public int tier1UnitCount;
-        // public int tier2UnitCount;
-        // public int tier3UnitCount;
-
-        // This is used to record units formation info
+        public float3 loadingCenter; 
         public float2 boundingBoxDelta;
-
-        public float3
-            loadingCenter; // This value should be set when an army group garrisons a city or leaves a garrisoned city
-
+        public float createTimeInTotalHours;
         public float loadingScale;
+        public int avgLevel;
+        public ArmyGroupIconType iconType;
     }
 
     [Serializable]
@@ -63,7 +52,6 @@ namespace SparFlame.Components.MainGameplay
         public float totalMaxHp;
         public float totalCurrentHp;
     }
-
 
     public struct LastPassingByCity : IComponentData
     {

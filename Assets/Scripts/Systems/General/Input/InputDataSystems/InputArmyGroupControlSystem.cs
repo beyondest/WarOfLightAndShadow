@@ -34,7 +34,6 @@ namespace SparFlame.Systems.General.Input
                 SystemAPI.SetSingleton(new InputArmyGroupControlData());
                 return;
             }
-            
             var isOverUi = SystemAPI.GetSingleton<InputMouseData>().IsOverUI;
             SystemAPI.SetSingleton(new InputArmyGroupControlData
             {

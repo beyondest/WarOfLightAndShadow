@@ -32,7 +32,7 @@ namespace Editor
                     UnityEventBase sourceEvent = entry.callback;
                     var targetEvent = cursorTrigger.onCursorInLeftSide;
 
-                    // 利用反射复制所有 persistent calls
+                   
                     var count = sourceEvent.GetPersistentEventCount();
                     for (var i = 0; i < count; i++)
                     {
@@ -55,12 +55,11 @@ namespace Editor
                     }
                 }
 
-                // 可以选择移除旧的 EventTrigger
                 // DestroyImmediate(trigger, true);
             }
 
             Debug.Log(
-                $"✅ Migrated {migratedCount} event(s) from EventTrigger.OnPointerEnter to CursorScreenSideTrigger.onCursorLeftSide.");
+                $"Migrated {migratedCount} event(s) from EventTrigger.OnPointerEnter to CursorScreenSideTrigger.onCursorLeftSide.");
         }
     }
 }

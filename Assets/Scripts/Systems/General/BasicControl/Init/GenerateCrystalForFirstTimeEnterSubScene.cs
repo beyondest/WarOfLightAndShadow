@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
@@ -20,9 +19,9 @@ namespace SparFlame.Systems.General.BasicControl.Init
             state.RequireForUpdate<CrystalPrefab>();
             state.RequireForUpdate<GenerateCrystalRequest>();
             state.RequireForUpdate<OnlyRunOnceForCrystalGeneration>();
+            state.RequireForUpdate<EnableDebugInitSceneGroup>();
         }
 
-        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var request = SystemAPI.GetSingleton<GenerateCrystalRequest>();
@@ -37,6 +36,9 @@ namespace SparFlame.Systems.General.BasicControl.Init
             SystemAPI.SetComponent(crystalEntity, trans);
             state.EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<GenerateCrystalRequest>());
             state.EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<OnlyRunOnceForCrystalGeneration>());
+            var enableDebugInitSceneGroup = SystemAPI.GetSingleton<EnableDebugInitSceneGroup>();
+            if (enableDebugInitSceneGroup.value)
+                SceneController.Instance.LoadDebugInitSubscene();
         }
 
         [BurstCompile]

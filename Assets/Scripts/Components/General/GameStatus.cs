@@ -25,11 +25,10 @@ namespace SparFlame.Components.General
     {
         public GameStatus Value;
     }
-
     public struct SubGameStatusData : IComponentData
     {
-        public SubGameStatus SubGameStatus;
         public Entity City;
+        public SubGameStatus SubGameStatus;
     }
     
     public struct InSubGameTag : IComponentData{}

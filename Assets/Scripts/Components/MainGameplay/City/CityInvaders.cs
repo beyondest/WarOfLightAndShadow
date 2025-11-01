@@ -7,7 +7,6 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
         public Entity City;
     }
-
     public struct ClearCityFutureInvadersRequest : IComponentData
     {
         public Entity City;

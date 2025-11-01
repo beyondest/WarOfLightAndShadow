@@ -58,7 +58,7 @@ namespace Editor
 
                     string savePath = $"{outputFolder}/{meshGO.name}.prefab";
                     PrefabUtility.SaveAsPrefabAsset(meshGO, savePath);
-                    Debug.Log($"✅ 创建 Detail Mesh Prefab: {savePath}");
+                    Debug.Log($"创建 Detail Mesh Prefab: {savePath}");
 
                     DestroyImmediate(meshGO);
                 }

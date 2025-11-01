@@ -15,15 +15,15 @@ namespace SparFlame.UI.SubGameplay
         // Config
         [Header("Custom Config")] [SerializeField]
         private GameObject pageUpButton;
-
         [SerializeField] private Tier maxTier;
         [SerializeField] private GameObject pageDownButton;
+
+        #region Interface
         
 
-        // Interface
         public static UnitMulti2DWindow Instance;
-        public Action<int> GetTargetEntityByIndex;
-        public Action<Entity> DeselectAllExceptOne;
+        public event Action<int> OnGetTargetEntityByIndex;
+        public event Action<Entity> OnDeselectAllExceptOne;
 
         public void DisableClickRoutine()
         {
@@ -36,21 +36,6 @@ namespace SparFlame.UI.SubGameplay
             _clickCount = 0;
         }
 
-        public override void OnClickSlot(int slotIndex)
-        {
-            _clickCount++;
-            if(_ifClickRoutineRunning)return;
-            
-            var trueIndex = _currentPage * _slotsMaxCountPerPage + slotIndex;
-            if (_currentSelectIndex == trueIndex) return;
-            // Set close up target 
-            GetTargetEntityByIndex?.Invoke(trueIndex);
-            if (_currentSelectCounts <= trueIndex) return;
-            InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
-            UnitDetailWindow.Instance.TrySwitchTarget(_targetEntity);
-            StartCoroutine(ClickRoutine());
-        }
-        
 
         public bool HasTarget()
         {
@@ -69,7 +54,6 @@ namespace SparFlame.UI.SubGameplay
             _targetEntity = target;
             
         }
-
         public void UpdateSelectedUnitView(NativeList<UnitRealTimeInfo> unitInfos, FactionTag faction)
         {
             _currentSelectFaction = faction;
@@ -104,6 +88,15 @@ namespace SparFlame.UI.SubGameplay
             _currentSelectCounts = unitInfos.Length;
         }
 
+        public override void LoadResources()
+        {
+            base.LoadResources();
+            _slotsMaxCountPerPage = config.rows * config.cols;
+            _currentSelectIndex = -1;
+            _maxTierF = (int)maxTier - 2;
+        }
+        
+        #endregion
 
         #region ButtonMethods
         public void OnPageRightClicked()
@@ -114,6 +107,20 @@ namespace SparFlame.UI.SubGameplay
         public void OnPageLeftClicked()
         {
             _currentPage--;
+        }
+        public override void OnClickSlot(int slotIndex)
+        {
+            _clickCount++;
+            if(_ifClickRoutineRunning)return;
+            
+            var trueIndex = _currentPage * _slotsMaxCountPerPage + slotIndex;
+            if (_currentSelectIndex == trueIndex) return;
+            // Set close up target 
+            OnGetTargetEntityByIndex?.Invoke(trueIndex);
+            if (_currentSelectCounts <= trueIndex) return;
+            InfoWindowController.Instance.UpdateCloseUpTarget(_targetEntity);
+            UnitDetailWindow.Instance.TrySwitchTarget(_targetEntity);
+            StartCoroutine(ClickRoutine());
         }
 
         #endregion
@@ -140,12 +147,11 @@ namespace SparFlame.UI.SubGameplay
                 Destroy(gameObject);
         }
 
-        public override void LoadResources()
+        protected override void Start()
         {
-            base.LoadResources();
-            _slotsMaxCountPerPage = config.rows * config.cols;
-            _currentSelectIndex = -1;
-             _maxTierF = (int)maxTier - 2;
+            base.Start();
+            World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<UnitMulti2DWindowSystem>()
+                .Init(this);
         }
 
         #endregion
@@ -166,7 +172,7 @@ namespace SparFlame.UI.SubGameplay
                 UnitDetailWindow.Instance.Show();
                 InteractAbilityWindow.Instance.Show();
                 Hide();
-                DeselectAllExceptOne?.Invoke(_targetEntity);
+                OnDeselectAllExceptOne?.Invoke(_targetEntity);
             }
             _ifClickRoutineRunning = false;
             _clickCount = 0;

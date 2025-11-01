@@ -20,13 +20,13 @@ namespace SparFlame.UI.MainGameplay
     {
         [SerializeField] private GameObject iconPrefab; // 指向 GarrisonIconPrefab (UI Button+Image)
 
-        [Header("Layout tuning")] [SerializeField]
-        private int maxColumns = 6; // 最多列数
-
+        // [SerializeField]
+        // private int maxColumns = 6; // 最多列数
+        [Header("Layout tuning")]
         [SerializeField] private Vector2 spacing = new(8, 8); // Grid spacing (pixels)
-        [SerializeField] private float minCellSize = 24f; // 最小 icon 尺寸（像素）
-        [SerializeField] private float maxCellSize = 80f; // 最大 icon 尺寸（像素）
-        [SerializeField] private float initCellSize = 50f;
+        // [SerializeField] private float minCellSize = 24f; // 最小 icon 尺寸（像素）
+        // [SerializeField] private float maxCellSize = 80f; // 最大 icon 尺寸（像素）
+        // [SerializeField] private float initCellSize = 50f;
         [SerializeField] private bool faceCameraOnlyY; // 只绕 Y 轴面对摄像机（可避免俯仰）
         [SerializeField] private bool followCamera = true;
         [Header("References")] [SerializeField]
@@ -80,8 +80,6 @@ namespace SparFlame.UI.MainGameplay
 
             var cityGarrisonSlot3D = slot.GetComponent<CityGarrisonSlot3D>();
             cityGarrisonSlot3D.SetTarget(armyGroup,_cityFaction);
-
-
             _entityToSlot[armyGroup] = slot.GetComponent<CityGarrisonSlot3D>();
             // UpdateLayout();
         }
@@ -227,10 +225,17 @@ namespace SparFlame.UI.MainGameplay
 
         private void OnDestroy()
         {
-            if(_worldTimeQuery != default)
-                _worldTimeQuery.Dispose();
-            if(_gameStatusDataQuery != default)
-                _gameStatusDataQuery.Dispose();
+            try
+            {
+                if(_worldTimeQuery != default)
+                    _worldTimeQuery.Dispose();
+                if(_gameStatusDataQuery != default)
+                    _gameStatusDataQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private void OnIconClicked(Entity armyGroup)
@@ -246,8 +251,7 @@ namespace SparFlame.UI.MainGameplay
             _em.AddComponent<MainGameplayEntityTag>(request);
         }
 
-        // 核心：根据当前 icon 数量计算列数与 cellSize，然后强制刷新布局
-        private void UpdateLayout()
+        /*private void UpdateLayout()
         {
             if (!contentRect || !grid) return;
             var count = contentRect.childCount;
@@ -287,6 +291,6 @@ namespace SparFlame.UI.MainGameplay
 
             // 4) 强制刷新布局
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
-        }
+        }*/
     }
 }

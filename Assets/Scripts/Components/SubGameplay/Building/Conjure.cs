@@ -5,8 +5,8 @@ namespace SparFlame.Components.SubGameplay
 {
     public struct ConjureAttr : IComponentData
     {
-        public UnitType ConjuringType;
         public float3 ConjurePositionBias;
+        public UnitType ConjuringType;
     }
     public struct ConjureRequest : IComponentData
     {
@@ -24,11 +24,11 @@ namespace SparFlame.Components.SubGameplay
     public struct ConjuringData : IBufferElementData
     {
         public Entity ConjuringEntity;
+        public float ThisTaskRemainingTime;
+        public float LastCheckTotalHours;
         public int PrefabId;
         public int TargetAmount;
         public int ConjuredAmount;
-        public float ThisTaskRemainingTime;
-        public float LastCheckTotalHours;
     }
 
 }

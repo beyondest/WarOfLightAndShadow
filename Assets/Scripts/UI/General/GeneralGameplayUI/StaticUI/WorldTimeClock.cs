@@ -57,8 +57,15 @@ namespace SparFlame.UI.General
 
         private void OnDestroy()
         {
-            if(_worldTime != default)
-                _worldTime.Dispose();
+            try
+            {
+                if (_worldTime != default)
+                    _worldTime.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private void UpdateClock(WorldTimeData data)

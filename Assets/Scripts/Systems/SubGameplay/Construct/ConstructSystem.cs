@@ -68,7 +68,6 @@ namespace SparFlame.Systems.SubGameplay.Construct
 
             if (gameStatusData == GameStatus.Init)
             {
-                data.Faction = SystemAPI.GetSingleton<PlayerFactionData>().faction;
                 data.CommandType = ConstructCommandType.None;
                 return;
             }

@@ -23,23 +23,19 @@ namespace SparFlame.Components.SubGameplay
     public struct ConstructCommandData : IComponentData
     {
         // Command side
-        public ConstructCommandType CommandType;
-        public float RotationAngle;
-        public Entity TargetBuilding;
-        public bool IsMovementShow;
-        public bool EnterConstruct;
-
-        // Feedback
-        public PlacementStateType State;
-        
-        // Internal data
-        public FactionTag Faction;
         public LocalTransform OriTransform;
+        public Entity TargetBuilding;
         public Entity GhostModelEntity; // Only the model of target building
         public Entity GhostTriggerEntity;
         public Entity PreviewAttackRangeEntity;
         public Entity PreviewCube;
 
+        public float RotationAngle;
+        public ConstructCommandType CommandType;
+        public PlacementStateType State;
+
+        public bool IsMovementShow;
+        public bool EnterConstruct;
     }
 
     public struct ConstructableTag : IComponentData,IEnableableComponent

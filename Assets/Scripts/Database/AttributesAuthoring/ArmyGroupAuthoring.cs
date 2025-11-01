@@ -13,7 +13,6 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
     [RequireComponent(typeof(NavMeshAgent))]
     public class ArmyGroupAuthoring : MonoBehaviour
     {
-    
         public int globalIdx;
         
         private class ArmyGroupAuthoringBaker : Baker<ArmyGroupAuthoring>
@@ -87,7 +86,7 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
                 
                 // Sight
                 AddBuffer<ArmyGroupSightTarget>(entity);
-                AddComponent(entity, new ArmyGroupSightRequest
+                AddComponent(entity, new ArmyGroupGenerateSightRequest
                 {
                     Prefab = GetEntity(item.sightPrefab,TransformUsageFlags.Dynamic)
                 });

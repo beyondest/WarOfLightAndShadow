@@ -1,7 +1,5 @@
 ﻿using System;
-using SparFlame.Components.SubGameplay;
 using Unity.Entities;
-using UnityEngine;
 
 namespace SparFlame.Components.SubGameplay
 {
@@ -9,9 +7,8 @@ namespace SparFlame.Components.SubGameplay
     [Serializable]
     public struct StatData : IComponentData
     {
-        public int maxValue;
         public float curValue;
-        // public int bonus;
+        public int maxValue;
     }
         
     /// <summary>

@@ -1,4 +1,4 @@
-﻿using SparFlame.Core.Interfaces;
+﻿/*using SparFlame.Core.Interfaces;
 using Unity.Entities;
 
 namespace SparFlame.Components.SubGameplay
@@ -17,9 +17,9 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct GameWaveData : IComponentData
     {
-        public int CurWaveIndex;
         public float NextWaveRemainingTime;
         public float CurWaveInterval;
+        public int CurWaveIndex;
         public bool IfWaveUpdateThisFrame;
     }
-}
+}*/

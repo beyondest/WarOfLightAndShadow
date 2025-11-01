@@ -14,31 +14,32 @@ namespace SparFlame.Components.SubGameplay
 
     public struct ArmyGroupAIData : IComponentData
     {
-        public int WaypointIndex;
         public float StartWaitSeconds;
-        public bool IsWaiting;
-        public SubGameplayArmyGroupState State;
-        public bool IsContacted;
+        public int WaypointIndex;
         public int LastFormationWaypointIndex;
+        public SubGameplayArmyGroupState State;
+        public bool IsWaiting;
+        public bool IsContacted;
         public bool SkillCasted;
     }
     [Serializable]
     public struct SubGameplayArmyGroupWaypointData : IBufferElementData, IComparable<SubGameplayArmyGroupWaypointData>
     {
-        public int index;
-        public ArmyGroupIconType iconType;
-        [Tooltip("Wait time on pre waypoint")]
-        public float waitBeforeMovingToThisWaypoint;
-        [Tooltip("What formation direction will be")]
-        public float2 direction;
-        [Tooltip("Only valid when formation skill > 0.You can only force cast skill one time for all the waypoints for an army group")]
-        public bool forceCastSkillBeforeReachThisWaypoint;
-        [Tooltip("Only valid when formation is enabled")]
-        public FormationShape shape;
-        [Tooltip("Only valid when waitBeforeMovingToThisWaypoint is not 0")]
-        public bool formationBeforeReachThisWaypoint;
         [NonSerialized]
         public float3 SelfPosition;
+        [Tooltip("What formation direction will be")]
+        public float2 direction;
+        [Tooltip("Wait time on pre waypoint")]
+        public float waitBeforeMovingToThisWaypoint;
+        public int index;
+        public ArmyGroupIconType iconType;
+        [Tooltip("Only valid when formation is enabled")]
+        public FormationShape shape;
+        [Tooltip("Only valid when formation skill > 0.You can only force cast skill one time for all the waypoints for an army group")]
+        public bool forceCastSkillBeforeReachThisWaypoint;
+        [Tooltip("Only valid when waitBeforeMovingToThisWaypoint is not 0")]
+        public bool formationBeforeReachThisWaypoint;
+   
 
         public int CompareTo(SubGameplayArmyGroupWaypointData other)
         {

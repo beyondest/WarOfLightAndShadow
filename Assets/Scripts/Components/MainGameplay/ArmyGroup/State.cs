@@ -20,8 +20,5 @@ namespace SparFlame.Components.MainGameplay
         public ArmyGroupState TargetState;
     }
     
-    public struct ArmyGroupSightTarget : IBufferElementData
-    {
-        public Entity Entity;
-    }
+
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using SparFlame.Core.Interfaces;
+using SparFlame.Components.General;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -10,9 +10,9 @@ namespace SparFlame.Components.SubGameplay
     [Serializable]
     public struct UnitAttr : IComponentData,IEquatable<UnitAttr>
     {
-        public UnitType type;
-        public int subTypeIndex;
         public float conjureSpeedHoursPerUnit;
+        public int subTypeIndex;
+        public UnitType type;
 
         public bool Equals(UnitAttr other)
         {

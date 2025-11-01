@@ -1,6 +1,5 @@
 ﻿using System;
 using Unity.Entities;
-
 namespace SparFlame.Components.SubGameplay
 {
     public enum InteractState
@@ -15,11 +14,11 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct BasicStateData : IComponentData
     {
-        public InteractState CurState;
-        public bool Focus;
         public Entity TargetEntity;
-        public InteractState TargetState;
         public int InteractCounter;
+        public InteractState CurState;
+        public InteractState TargetState;
+        public bool Focus;
     }
     
      public enum InteractType
@@ -113,4 +112,8 @@ namespace SparFlame.Components.SubGameplay
     {
         
     }
+
+
+
+
 }

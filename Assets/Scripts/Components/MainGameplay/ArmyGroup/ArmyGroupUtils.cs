@@ -23,16 +23,11 @@ namespace SparFlame.Components.MainGameplay
             var armyGroupUnits = em.GetBuffer<ArmyGroupUnit>(armyGroup);
             var armyGroupStatData = em.GetComponentData<ArmyGroupStatData>(armyGroup);
 
-
             var unitCount = armyGroupUnits.Length;
             var totalLevel = 0;
-            // var totalTier1Count = 0;
-            // var totalTier2Count = 0;
-            // var totalTier3Count = 0;
             var minSpeed = float.MaxValue;
             var currentHp = 0f;
             var maxHp = 0f;
-
 
             for (var i = 0; i < unitCount; i++)
             {
@@ -44,34 +39,11 @@ namespace SparFlame.Components.MainGameplay
                 totalLevel += expData.curLevel;
                 currentHp += statData.curValue;
                 maxHp += statData.maxValue;
-
-
-                // switch (expData.curTier)
-                // {
-                //     case Tier.Tier1:
-                //         totalTier1Count++;
-                //         break;
-                //     case Tier.Tier2:
-                //         totalTier2Count++;
-                //         break;
-                //     case Tier.Tier3:
-                //         totalTier3Count++;
-                //         break;
-                //     default:
-                //         BurstSafe.UnexpectedEnum(expData.curTier);
-                //         break;
-                // }
             }
 
             armyGroupAttr.avgLevel = unitCount == 0 ? 0 : totalLevel / unitCount;
             armyGroupMovableData.minUnitMoveSpeed = unitCount == 0 ? 0 : minSpeed;
 
-            //
-            // armyGroupAttr.tier1UnitCount = totalTier1Count;
-            // armyGroupAttr.tier2UnitCount = totalTier2Count;
-            // armyGroupAttr.tier3UnitCount = totalTier3Count;
-            //
-            //
             armyGroupStatData.totalCurrentHp = currentHp;
             armyGroupStatData.totalMaxHp = maxHp;
 
@@ -163,11 +135,8 @@ namespace SparFlame.Components.MainGameplay
             foreach (var army in keys)
             {
                 var unitCount = armyGroupToUnitCount[army];
-
-                // 决定方阵边长
                 var positions = new NativeList<float3>(Allocator.Temp);
                 GetSquareFormationPositions(spacing, firstPointPosition, unitCount, positions);
-
                 armyGroupToSquarePositions.TryAdd(army, positions);
             }
 
@@ -189,10 +158,8 @@ namespace SparFlame.Components.MainGameplay
                 }
             }
         }
-
         public static void DestroyArmyGroup(Entity armyGroup, EntityCommandBuffer ecb, EntityManager em)
         {
-            
             ecb.DestroyEntity(armyGroup);
 
             var generalAttr = em.GetComponentData<MainGameplayGeneralAttr>(armyGroup);
@@ -225,12 +192,6 @@ namespace SparFlame.Components.MainGameplay
                 });
                 ecb.AddComponent<MainGameplayEntityTag>(garrisonRequest);
             }
-          
-
-            // if (em.HasComponent<EnemyArmyGroupBelongsToCity>(armyGroup))
-            // {
-            //     var city = em.GetComponentData<EnemyArmyGroupBelongsToCity>(armyGroup);
-            // }
         }
         
         

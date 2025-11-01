@@ -365,7 +365,6 @@ namespace SparFlame.Systems.General.BasicControl
             {
                 if (!singleIdToEntities.TryAdd(buildingSingleIds[i].value, buildings[i]))
                 {
-                    Debug.Log($"{buildings[i]}");
                 }
             }
 

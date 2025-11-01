@@ -92,9 +92,8 @@ namespace SparFlame.Components.General
 
     public struct HintConfigs : IBufferElementData
     {
+        public FixedString128Bytes Content;
         public HintName Name;
         public HintType Type;
-        public FixedString128Bytes Content;
     }
-
 }

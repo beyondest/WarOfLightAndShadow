@@ -1,5 +1,4 @@
-﻿using System;
-using SparFlame.Components.General;
+﻿using SparFlame.Components.General;
 using SparFlame.Components.Input;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Core.Utils;
@@ -15,7 +14,6 @@ namespace SparFlame.Systems.Construction
     public partial class ConstructSystemTransfer : SystemBase
     {
         // Internal Data
-        private FactionTag _playerCurrentFaction = FactionTag.Light; // Only work for player command
         private bool _inGhostShow;
         private ConstructSystemConfig _config;
 
@@ -66,7 +64,6 @@ namespace SparFlame.Systems.Construction
             // Update data
             var selectData = SystemAPI.GetSingleton<UnitSelectionData>();
             _inputData = SystemAPI.GetSingleton<InputConstructData>();
-            _playerCurrentFaction = selectData.CurrentSelectFaction;
             // Check should enter construct mode by button
             CheckEnterByButton();
             // Not in construct mode, do nothing
@@ -191,7 +188,6 @@ namespace SparFlame.Systems.Construction
             {
                 data.TargetBuilding = target;
                 data.CommandType = ConstructCommandType.Start;
-                data.Faction = _playerCurrentFaction;
                 data.GhostModelEntity = Entity.Null;
                 data.GhostTriggerEntity = Entity.Null;
                 data.RotationAngle = 0;

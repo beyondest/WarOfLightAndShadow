@@ -1,6 +1,7 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using SparFlame.Components.VFX;
+using SparFlame.Core.Interfaces;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -14,10 +15,27 @@ namespace SparFlame.UI.SubGameplay
         public Tier Tier;
         public int Level;
     }
-    public partial class UnitMulti2DWindowSystem : SystemBase
+
+    public partial class UnitMulti2DWindowSystem : SystemBase, IEcsTransferSystem<UnitMulti2DWindow>
     {
         private NativeList<UnitRealTimeInfo> _unitInfos;
         private bool _initEvents;
+        private UnitMulti2DWindow _mono;
+
+        public void Init(UnitMulti2DWindow mono)
+        {
+            _initEvents = true;
+            _mono = mono;
+            _mono.OnGetTargetEntityByIndex += index =>
+            {
+                var data = SystemAPI.GetSingleton<UnitSelectionData>();
+                UpdateSelectedUnitInfos(data);
+                var targetEntity = index < _unitInfos.Length ? _unitInfos[index].Entity : Entity.Null;
+                _mono.GetUnitData(_unitInfos.Length, targetEntity
+                );
+                _mono.OnDeselectAllExceptOne += DeselectAllExceptOne;
+            };
+        }
 
         protected override void OnCreate()
         {
@@ -25,35 +43,18 @@ namespace SparFlame.UI.SubGameplay
             _unitInfos = new NativeList<UnitRealTimeInfo>(Allocator.Persistent);
         }
 
-        protected override void OnStartRunning()
-        {
-            if (!_initEvents)
-            {
-                _initEvents = true;
-                UnitMulti2DWindow.Instance.GetTargetEntityByIndex += index =>
-                {
-                    var data = SystemAPI.GetSingleton<UnitSelectionData>();
-                    UpdateSelectedUnitInfos(data);
-                    var targetEntity = index < _unitInfos.Length ? _unitInfos[index].Entity : Entity.Null;
-                    UnitMulti2DWindow.Instance.GetUnitData(_unitInfos.Length, targetEntity
-                    );
-                    UnitMulti2DWindow.Instance.DeselectAllExceptOne += DeselectAllExceptOne;
-                };
-            }
-        }
-
         protected override void OnUpdate()
         {
-            var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             if (!_initEvents) return;
-            if (!UnitMulti2DWindow.Instance.IsOpened()) return;
+            if (!_mono.IsOpened()) return;
+            var unitSelectionData = SystemAPI.GetSingleton<UnitSelectionData>();
             UpdateSelectedUnitInfos(unitSelectionData);
         }
 
         private void UpdateSelectedUnitInfos(UnitSelectionData unitSelectionData)
         {
             _unitInfos.Clear();
-            foreach (var (unitAttr, statData,expData, entity) in SystemAPI
+            foreach (var (unitAttr, statData, expData, entity) in SystemAPI
                          .Query<RefRO<UnitAttr>, RefRO<StatData>, RefRO<ExpData>>()
                          .WithEntityAccess().WithAll<Selected>())
             {
@@ -67,24 +68,26 @@ namespace SparFlame.UI.SubGameplay
                     Level = countLevel
                 });
             }
-            UnitMulti2DWindow.Instance.UpdateSelectedUnitView(_unitInfos, unitSelectionData.CurrentSelectFaction);
+            _mono.UpdateSelectedUnitView(_unitInfos, unitSelectionData.CurrentSelectFaction);
         }
+
         private void DeselectAllExceptOne(Entity targetEntity)
         {
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            foreach (var (_,entity) in SystemAPI.Query<RefRO<Selected>>().WithEntityAccess())
+            foreach (var (_, entity) in SystemAPI.Query<RefRO<Selected>>().WithEntityAccess())
             {
-                if(entity == targetEntity)continue;
-                ecb.SetComponentEnabled<Selected>(entity,false);
+                if (entity == targetEntity) continue;
+                ecb.SetComponentEnabled<Selected>(entity, false);
                 var vfxRequest = ecb.CreateEntity();
                 ecb.AddComponent<SubGameplayEntityTag>(vfxRequest);
-                ecb.AddComponent(vfxRequest,new VFXRequest
+                ecb.AddComponent(vfxRequest, new VFXRequest
                 {
                     VFXName = VFXName.UnitSelectionIndicator,
                     RequestType = VFXRequestType.Kill,
                     VFXTrackTarget = entity
                 });
             }
+
             ecb.Playback(EntityManager);
             ecb.Dispose();
         }
@@ -96,6 +99,4 @@ namespace SparFlame.UI.SubGameplay
                 _unitInfos.Dispose();
         }
     }
-
-
 }

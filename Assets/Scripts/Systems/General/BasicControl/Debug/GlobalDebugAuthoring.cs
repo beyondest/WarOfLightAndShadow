@@ -11,7 +11,7 @@ namespace SparFlame.Systems.General.BasicControl
         [Title("General Debug Switch")] [GUIColor(1, 0.7f, 0.2f)]
         public bool globalDebugEnable;
 
-
+        public EnableDebugInitSceneGroup enableEnableDebugInitSceneGroup;
         [FoldoutGroup("Movement Debug"), HideLabel] [ShowIf(nameof(globalDebugEnable))]
         public MovementDebug movement;
 
@@ -70,6 +70,7 @@ namespace SparFlame.Systems.General.BasicControl
                         AddComponent(entity, authoring.conjureSpeedDebug);
                     if(authoring.resourceDebug.enabled)
                         AddComponent(entity, authoring.resourceDebug);
+                    AddComponent(entity, authoring.enableEnableDebugInitSceneGroup);
                 }
             }
         }

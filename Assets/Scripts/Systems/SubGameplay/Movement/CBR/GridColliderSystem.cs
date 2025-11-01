@@ -48,8 +48,6 @@ namespace SparFlame.Systems.SubGameplay.Movement.CBR
             state.Dependency = new AddGridColliderTargetJob
             {
                 Map = _entities,
-                ECB = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 Config = config,
             }.ScheduleParallel(job1);
             _entities.Dispose(state.Dependency);
@@ -85,11 +83,10 @@ namespace SparFlame.Systems.SubGameplay.Movement.CBR
     [BurstCompile]
     public partial struct AddGridColliderTargetJob : IJobEntity
     {
-        public EntityCommandBuffer.ParallelWriter ECB;
         [ReadOnly] public NativeParallelMultiHashMap<int3, GridColliderSystem.EntityPos> Map;
         [ReadOnly] public GridColliderConfig Config;
 
-        private void Execute([ChunkIndexInQuery] int index, Entity selfEntity,
+        private void Execute(Entity selfEntity,
             in BoxColliderSize boxColliderSize, in LocalTransform transform, ref DynamicBuffer<FakeColliderTarget> targets)
         {
             targets.Clear();

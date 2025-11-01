@@ -593,13 +593,19 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void OnDestroy()
         {
-            if (_subGameStatusDataQuery != default)
-                _subGameStatusDataQuery.Dispose();
-
-            if (_mainGameStatusDataQuery != default)
-                _mainGameStatusDataQuery.Dispose();
-            if (_waitInfoQuery != default)
-                _waitInfoQuery.Dispose();
+            try
+            {
+                if (_subGameStatusDataQuery != default)
+                    _subGameStatusDataQuery.Dispose();
+                if (_mainGameStatusDataQuery != default)
+                    _mainGameStatusDataQuery.Dispose();
+                if (_waitInfoQuery != default)
+                    _waitInfoQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         #endregion

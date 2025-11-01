@@ -9,60 +9,52 @@ namespace SparFlame.Components.General
      public struct DebugTag : IComponentData
     {
     }
-
-
     [Serializable]
     public struct RandomSpawnDebug : IComponentData
     {
-        public bool enabled;
-
         [ShowIf(nameof(enabled))] public float envSpawnAmountScale;
         [ShowIf(nameof(enabled))] public float resourceSpawnAmountScale;
-        public bool fixPlayerFirstPawnPosition;
         [ShowIf(nameof(fixPlayerFirstPawnPosition))]
         [ShowIf(nameof(enabled))] public float3 playerFirstSpawnPosition;
+        public bool fixPlayerFirstPawnPosition;
+        public bool enabled;
+
     }
 
     [Serializable]
     public struct MovementDebug : IComponentData
     {
-        public bool enabled;
-
         [ShowIf(nameof(enabled))] public float playerMovementScale;
         [ShowIf(nameof(enabled))] public float aiMovementScale;
         [ShowIf(nameof(enabled))] public float playerArmyGroupMovementScale;
         [ShowIf(nameof(enabled))] public float nonPlayerArmyGroupMovementScale;
+        public bool enabled;
     }
 
     [Serializable]
     public struct CameraDebug : IComponentData
     {
-        public bool enabled;
-        [ShowIf(nameof(enabled))] public bool enterPlayerCityNoCrystalAllowed;
         [ShowIf(nameof(enabled))] public float3 roamingStartPos;
+        [ShowIf(nameof(enabled))] public bool enterPlayerCityNoCrystalAllowed;
+        public bool enabled;
+
     }
 
 
     [Serializable]
     public struct StatDebug : IComponentData
     {
+   
+        [ShowIf(nameof(enabled))] public float playerSideDamageTakenScale ;
+        [ShowIf(nameof(enabled))] public float enemySideDamageTakenScale;
+
+        [ShowIf(nameof(enabled))]
+        public bool resourceStatInfinite;
+        [ShowIf(nameof(enabled))] public bool resourceStatZero;
         [InfoBox("Infinite will be override by zero settings")]
         public bool enabled;
 
-        [Header("Player")] [ShowIf(nameof(enabled))]
-        [ShowIf(nameof(enabled))] public float playerSideDamageTakenScale ;
-
-        [Header("AI")] [ShowIf(nameof(enabled))]
-
-        [ShowIf(nameof(enabled))] public float enemySideDamageTakenScale;
-
-
-        [Header("Neutral")] [ShowIf(nameof(enabled))]
-        public bool resourceStatInfinite;
-
-        [ShowIf(nameof(enabled))] public bool resourceStatZero;
     }
-
     [Serializable]
     public struct InteractAbilityDebug : IComponentData
     {
@@ -90,16 +82,49 @@ namespace SparFlame.Components.General
         [ShowIf(nameof(enabled))] public bool aiHarvestAmountZero;
     }
 
+ 
+
+    [Serializable]
+    public struct ConjureDebug : IComponentData
+    {
+        [ShowIf(nameof(enabled))] public float conjureHoursScale;
+        public bool enabled;
+    }
+
+    [Serializable]
+    public struct ResourceDebug : IComponentData
+    {
+        [ShowIf(nameof(enabled))] public float spawnHoursScale;
+        public bool enabled;
+    }
+    
+    [Serializable]
+    public struct ExpDebug : IComponentData
+    {
+        [ShowIf(nameof(enabled))] public float playerExpGainScale;
+        [ShowIf(nameof(enabled))] public float aiExpGainScale;
+        public bool enabled;
+    }
+
+    [Serializable]
+    public struct EnemyAIMainGameplayDebug : IComponentData
+    {
+        [ShowIf(nameof(enabled))] public float armyGroupConjureTimeScale;
+        [ShowIf(nameof(enabled))] public int unitCountScale;
+        public bool enabled;
+    }
+    
+    
+    #region Deprecated
     [Serializable]
     public struct OldEnemyAIDebug : IComponentData
     {
         public bool enabled;
+        [ShowIf(nameof(enabled)), ShowIf(nameof(enableFixBuildingSpawnPos))]
+        public float3 buildingFixSpawnPos;
         [ShowIf(nameof(enabled))] public float unitSpawnSpeedScale;
         [ShowIf(nameof(enabled))] public float buildingSpawnSpeedScale;
         [ShowIf(nameof(enabled))] public bool enableFixBuildingSpawnPos;
-
-        [ShowIf(nameof(enabled)), ShowIf(nameof(enableFixBuildingSpawnPos))]
-        public float3 buildingFixSpawnPos;
     }
 
     [Serializable]
@@ -110,34 +135,5 @@ namespace SparFlame.Components.General
         
         
     }
-
-    [Serializable]
-    public struct ConjureDebug : IComponentData
-    {
-        public bool enabled;
-        [ShowIf(nameof(enabled))] public float conjureHoursScale;
-    }
-
-    [Serializable]
-    public struct ResourceDebug : IComponentData
-    {
-        public bool enabled;
-        [ShowIf(nameof(enabled))] public float spawnHoursScale;
-    }
-    
-    [Serializable]
-    public struct ExpDebug : IComponentData
-    {
-        public bool enabled;
-        [ShowIf(nameof(enabled))] public float playerExpGainScale;
-        [ShowIf(nameof(enabled))] public float aiExpGainScale;
-    }
-
-    [Serializable]
-    public struct EnemyAIMainGameplayDebug : IComponentData
-    {
-        public bool enabled;
-        [ShowIf(nameof(enabled))] public float armyGroupConjureTimeScale;
-        [ShowIf(nameof(enabled))] public int unitCountScale;
-    }
+    #endregion
 }

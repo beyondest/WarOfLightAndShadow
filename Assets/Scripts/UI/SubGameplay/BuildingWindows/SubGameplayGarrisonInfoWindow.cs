@@ -99,7 +99,14 @@ namespace SparFlame.UI.SubGameplay
 
         private void OnDestroy()
         {
-            if(_gamingTag != default)_gamingTag.Dispose();
+            try
+            {
+                if(_gamingTag != default)_gamingTag.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private void UpdateDynamicData()

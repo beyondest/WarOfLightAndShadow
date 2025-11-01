@@ -52,9 +52,9 @@ namespace SparFlame.Systems.MainGameplay.ArmyGroup
             public EntityCommandBuffer.ParallelWriter ECB;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
 
-            private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in ArmyGroupSightRequest request)
+            private void Execute([ChunkIndexInQuery] int index, Entity selfEntity, in ArmyGroupGenerateSightRequest request)
             {
-                ECB.RemoveComponent<ArmyGroupSightRequest>(index, selfEntity);
+                ECB.RemoveComponent<ArmyGroupGenerateSightRequest>(index, selfEntity);
                 // Safety check
                 if (!TransformLookup.TryGetComponent(selfEntity, out var transform)) return;
                 // This should not happen, only for safety

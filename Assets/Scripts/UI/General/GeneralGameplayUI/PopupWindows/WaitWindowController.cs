@@ -110,8 +110,15 @@ namespace SparFlame.UI.General
 
         private void OnDestroy()
         {
-            if(_inputQuery != default)
-                _inputQuery.Dispose();
+            try
+            {
+                if (_inputQuery != default)
+                    _inputQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
     }
 }

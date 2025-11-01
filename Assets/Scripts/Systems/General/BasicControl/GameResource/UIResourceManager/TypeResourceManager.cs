@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using GamePlaySystem.Database;
 using SparFlame.Components.General;
-using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using SparFlame.Database;
 using SparFlame.Systems.General.BasicControl.GlobalMonos;
@@ -120,7 +119,7 @@ namespace SparFlame.Systems.General.BasicControl
         {
             while (World.DefaultGameObjectInjectionWorld == null)
             {
-                _elapsedTime += UnityEngine.Time.deltaTime;
+                _elapsedTime += Time.deltaTime;
                 if (_elapsedTime >= loadResourceTimeOutSeconds)
                     throw new ArgumentException(
                         $"Resource Manager : {nameof(TData)} wait for entity world time out of {loadResourceTimeOutSeconds} seconds.)");

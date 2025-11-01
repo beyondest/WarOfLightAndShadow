@@ -33,10 +33,11 @@ namespace SparFlame.Components.SubGameplay
 
     public struct BuffRequest : IComponentData
     {
-        public BuffName Name;
-        public Entity TrackTarget;
-        public float3 SpawnPosition;
         public quaternion SpawnRotation;
+        public float3 SpawnPosition;
+        public Entity TrackTarget;
+
+        public BuffName Name;
         public BuffFilter Filter;
     }
     
@@ -62,9 +63,9 @@ namespace SparFlame.Components.SubGameplay
     public struct TrackedByBuff : IBufferElementData
     {
         public Entity BuffEntity;
-        public BuffName Name;
         public int Count;
         public int MaxStackCount;
+        public BuffName Name;
     }
 
     [Serializable]

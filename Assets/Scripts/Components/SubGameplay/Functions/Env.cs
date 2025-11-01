@@ -12,8 +12,8 @@ namespace SparFlame.Components.SubGameplay
     [Serializable]
     public struct EnvTileTypeSpecialData : IBufferElementData
     {
-        public EnvType type;
         public FixedList128Bytes<TileTypeToSpawnWeight> spawnableTiles;
+        public EnvType type;
     }
     public enum TileType
     {
@@ -35,10 +35,11 @@ namespace SparFlame.Components.SubGameplay
 
     public struct EnvSpawnPrefabData : IBufferElementData
     {
-        public EnvType Type;
+        public Entity Prefab;
         public float Prob;
         public int Amount;
-        public Entity Prefab;
+        public EnvType Type;
+
     }
 
     public enum EnvType
@@ -79,7 +80,7 @@ namespace SparFlame.Components.SubGameplay
     [Serializable]
     public struct TileTypeToSpawnWeight
     {
-        public TileType tileType;
         public float weight;
+        public TileType tileType;
     }
 }

@@ -14,24 +14,12 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct CityGarrisonAttr : IComponentData
     {
-        public int maxGarrisonCount;
         public float3 garrisonOutBias;
+        public int maxGarrisonCount;
     }
 
-    public struct CityData : IComponentData
-    {
-        
-    }
-
-    public struct CityNeedInitModelTag : IComponentData
-    {
-        
-    }
-
-    public struct CityLightModelRoot : IComponentData
-    {
-        
-    }
+    public struct CityNeedInitModelTag : IComponentData {}
+    public struct CityLightModelRoot : IComponentData { }
     public struct CityDarkModelRoot : IComponentData{}
     
     //-----------------Army Group--------------------------//
@@ -65,15 +53,14 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct CityTask : IBufferElementData
     {
-        public ResourceType resourceType;
-        public int storageAddAmount;
-        public float finishTotalHours;
         public long fromBuildingSingleId;
+        public float finishTotalHours;
         public float hoursPerUnit;
+        public int storageAddAmount;
         
+        public ResourceType resourceType;
         public CityTaskType taskType;
     }
-    
     
     [Serializable]
     public struct CityResourceEntry : IBufferElementData

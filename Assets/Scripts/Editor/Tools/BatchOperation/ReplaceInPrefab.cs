@@ -86,17 +86,17 @@ public class PrefabDarkToLightReplacer : EditorWindow
                 string trimmedName =correspondingNamePrefix + child.name[originalNamePrefix.Length..]; // 去除前缀
                 GameObject bestMatch = null;
 
-                // 模糊匹配：只要 light prefab 名在 trimmedName 中出现就匹配
+                // Fuzzy match
                 foreach (var kvp in lightPrefabDict)
                 {
                     if (trimmedName.Contains(kvp.Key))
                     {
                         bestMatch = kvp.Value;
-                        break; // 找到第一个匹配的就用（可根据需要改成最长匹配等策略）
+                        break; // Find first match then exit
                     }
                 }
 
-                if (bestMatch != null)
+                if (bestMatch)
                 {
                     GameObject newLight = PrefabUtility.InstantiatePrefab(bestMatch) as GameObject;
                     newLight.transform.SetParent(child.parent, false);
@@ -105,11 +105,11 @@ public class PrefabDarkToLightReplacer : EditorWindow
                     newLight.transform.localScale = child.localScale;
                     newLight.name = bestMatch.name;
 
-                    GameObject.DestroyImmediate(child.gameObject);
+                    DestroyImmediate(child.gameObject);
                 }
                 else
                 {
-                    Debug.LogWarning($"[模糊匹配失败] 无法为 {child.name} 找到合适的 Light prefab。");
+                    Debug.LogWarning($"Fuzzy match false : cannot find {child.name} Light prefab。");
                 }
             }
         }

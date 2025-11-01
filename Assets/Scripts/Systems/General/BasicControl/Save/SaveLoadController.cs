@@ -139,10 +139,17 @@ namespace SparFlame.Systems.General.BasicControl
 
         private void OnDestroy()
         {
-            if(_saveSlotQuery != default)
-                _saveSlotQuery.Dispose();
-            if(_currentSubGameStatusQuery != default)
-                _currentSubGameStatusQuery.Dispose();
+            try
+            {
+                if(_saveSlotQuery != default)
+                    _saveSlotQuery.Dispose();
+                if(_currentSubGameStatusQuery != default)
+                    _currentSubGameStatusQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         #endregion

@@ -75,7 +75,7 @@ namespace Editor
                     int resolutionPerPatch = 16;
                     terrainData.SetDetailResolution(detailResolution, resolutionPerPatch);
 
-                    // ✅ 保存 TerrainData 为 .asset 文件
+                    // 保存 TerrainData 为 .asset 文件
                     string assetPath = $"{saveFolder}/TerrainData_{x}_{z}.asset";
                     AssetDatabase.CreateAsset(terrainData, assetPath);
 
@@ -89,7 +89,7 @@ namespace Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"✅ 成功生成 {gridSize}x{gridSize} 的 Terrain，并将所有 TerrainData 保存到：{saveFolder}");
+            Debug.Log($"成功生成 {gridSize}x{gridSize} 的 Terrain，并将所有 TerrainData 保存到：{saveFolder}");
         }
     }
 }

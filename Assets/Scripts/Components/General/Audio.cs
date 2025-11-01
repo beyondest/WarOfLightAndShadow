@@ -39,7 +39,7 @@ namespace SparFlame.Components.General
     
     public struct AudioRequest : IComponentData
     {
-        public AudioName Name;
         public float3 Position;
+        public AudioName Name;
     }
 }

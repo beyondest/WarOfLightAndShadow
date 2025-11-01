@@ -1,8 +1,8 @@
-﻿using System.ComponentModel;
-using Unity.Entities;
+﻿using Unity.Entities;
 
 namespace SparFlame.Components.General
 {
+    // --------------------- AI Distinguish Tag -----------------//
     public struct AITag : IComponentData
     {
         
@@ -13,26 +13,23 @@ namespace SparFlame.Components.General
         
     }
     
+    // ------------------ Game Status Tag ------------------------//
     public struct MainGamingTag : IComponentData
     {
         
     }
-    // For systems that do not need game status data, require for update this one only
+    
     public struct SubGamingTag : IComponentData
     {
        
     }
     
+    // ------------------- Gameplay Entity Tag ---------------------//
     public struct MainGameplayEntityTag : IComponentData
     {
         
     }
     public struct SubGameplayEntityTag : IComponentData
-    {
-        
-    }
-
-    public struct ReassignMainGameplayAITagRequest : IComponentData
     {
         
     }

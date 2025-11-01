@@ -14,7 +14,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
     {
         private ComponentLookup<MovingStateTag> _movingStateLookup;
         private ComponentLookup<PlayerTag> _playerTagLookup;
-
+        private SurroundingLookups _surroundingLookups;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -28,19 +28,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
             state.RequireForUpdate<SubGamingTag>();
             _playerTagLookup = state.GetComponentLookup<PlayerTag>(true);
             _movingStateLookup = state.GetComponentLookup<MovingStateTag>(true);
-        }
-
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state)
-        {
-            var debug = new MovementDebug();
-            if (SystemAPI.HasSingleton<DebugTag>())
-            {
-                SystemAPI.TryGetSingleton(out debug);
-            }
-            _playerTagLookup.Update(ref state);
-            _movingStateLookup.Update(ref state);
-            var lookups = new SurroundingLookups
+            _surroundingLookups = new SurroundingLookups
             {
                 LocalTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 BoxColliderSizeLookup = SystemAPI.GetComponentLookup<BoxColliderSize>(true),
@@ -53,7 +41,19 @@ namespace SparFlame.Systems.SubGameplay.Movement
                 IdleStateLookup = SystemAPI.GetComponentLookup<IdleStateTag>(true),
                 FormationMovingTagLookup = SystemAPI.GetComponentLookup<FormationMovingTag>(true),
             };
-            
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            var debug = new MovementDebug();
+            if (SystemAPI.HasSingleton<DebugTag>())
+            {
+                SystemAPI.TryGetSingleton(out debug);
+            }
+            _playerTagLookup.Update(ref state);
+            _movingStateLookup.Update(ref state);
+            _surroundingLookups.Update(ref state);
             var job1 =  new SeekTargetJobPlus
             {
                 ElapsedTime = SystemAPI.GetSingleton<GameTimeData>().ElapsedTime,
@@ -70,7 +70,7 @@ namespace SparFlame.Systems.SubGameplay.Movement
             {
                 AvoidanceConfig = SystemAPI.GetSingleton<AvoidanceConfig>(),
                 SeparationConfig = SystemAPI.GetSingleton<SeparationConfig>(),
-                Lookups = lookups,
+                Lookups = _surroundingLookups,
             }.ScheduleParallel(state.Dependency);
             
             state.Dependency = new UnitFinalTransformApplyJob

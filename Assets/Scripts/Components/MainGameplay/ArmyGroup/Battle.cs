@@ -5,8 +5,8 @@ namespace SparFlame.Components.MainGameplay
 {
     public struct BeforeBattleArmyGroupSnapShot : IComponentData
     {
-        public int UnitCount;
         public float MaxHp;
+        public int UnitCount;
     }
 
     public struct ArmyGroupStatChangeRequest : IComponentData

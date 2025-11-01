@@ -296,7 +296,7 @@ namespace SparFlame.UI.General
         {
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BeforeBattleArmyGroupTotalSnapshot>());
             EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<CurrentSubMapInfo>());
-            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BattleRealStart>());
+            EntityManager.DestroyEntity(SystemAPI.GetSingletonEntity<BattleStartRequest>());
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (_, entity) in SystemAPI.Query<RefRO<BeforeBattleArmyGroupSnapShot>>().WithEntityAccess())
             {

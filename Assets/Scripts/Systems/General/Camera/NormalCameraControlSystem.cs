@@ -63,7 +63,7 @@ namespace SparFlame.Systems.General.Camera
                 RoamingCameraController.Instance.OnEndRoamingCamera += () =>
                 {
                     _isRoaming = false;
-                    EntityManager.CreateSingleton(new BattleRealStart());
+                    EntityManager.CreateSingleton(new BattleStartRequest());
                 };
             }
         }

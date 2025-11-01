@@ -2,23 +2,6 @@
 
 namespace SparFlame.Components.Input
 {
-    public struct SubGameplayCursorData : IComponentData
-    {
-        public SubGameplayCursorType LeftCursorType;
-        public SubGameplayCursorType RightCursorType;
-    }
-
-    public struct MainGameplayCursorData : IComponentData
-    {
-        public MainGameplayCursorType CursorType;
-    }
-
-    public struct CircleCursorData : IComponentData
-    {
-        public float FillAmount;
-    }
-
-
     public enum MainGameplayCursorType
     {
         None = 0,
@@ -29,7 +12,6 @@ namespace SparFlame.Components.Input
         Intercept = 5,
         CheckInfo = 6
     }
-    
     
     public enum SubGameplayCursorType
     {
@@ -57,7 +39,6 @@ namespace SparFlame.Components.Input
         Garrison,
         Harvest,
         Retreat,
-
         
         // Zoom Cursors
         ZoomIn,
@@ -68,4 +49,22 @@ namespace SparFlame.Components.Input
         // UI 
         UI,
     }
+    
+    public struct SubGameplayCursorData : IComponentData
+    {
+        public SubGameplayCursorType LeftCursorType;
+        public SubGameplayCursorType RightCursorType;
+    }
+
+    public struct MainGameplayCursorData : IComponentData
+    {
+        public MainGameplayCursorType CursorType;
+    }
+
+    public struct CircleCursorData : IComponentData
+    {
+        public float FillAmount;
+    }
+
+
 }

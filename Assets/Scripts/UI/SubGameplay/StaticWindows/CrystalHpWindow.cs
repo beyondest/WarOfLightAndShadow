@@ -54,10 +54,17 @@ namespace SparFlame.UI.SubGameplay.StaticWindows
 
         private void OnDestroy()
         {
-            if(_crystalQuery != default)
-                _crystalQuery.Dispose();
-            if(_subGameStatusQuery != default)
-                _subGameStatusQuery.Dispose();
+            try
+            {
+                if(_crystalQuery != default)
+                    _crystalQuery.Dispose();
+                if(_subGameStatusQuery != default)
+                    _subGameStatusQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
     }
 }

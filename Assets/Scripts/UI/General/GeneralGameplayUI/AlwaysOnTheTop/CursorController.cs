@@ -142,21 +142,25 @@ namespace SparFlame.UI.General
                     cursorLeftImage.enabled = false;
                 }
             }
-           
-
-            
         }
 
         private void OnDestroy()
         {
-            if(_subGameplayCursorData != default)
-                _subGameplayCursorData.Dispose();
-            if(_circleCursorData != default)
-                _circleCursorData.Dispose();
-            if(_mainGameplayCursorData != default)
-                _mainGameplayCursorData.Dispose();
-            if(_gameStatus != default)
-                _gameStatus.Dispose();
+            try
+            {
+                if (_subGameplayCursorData != default)
+                    _subGameplayCursorData.Dispose();
+                if (_circleCursorData != default)
+                    _circleCursorData.Dispose();
+                if (_mainGameplayCursorData != default)
+                    _mainGameplayCursorData.Dispose();
+                if (_gameStatus != default)
+                    _gameStatus.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private static bool HandleFocus()

@@ -6,7 +6,6 @@ using System.Collections;
 using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
 using Unity.Collections;
-using UnityEngine.AI;
 
 namespace SparFlame.Systems.SubGameplay.Movement
 {
@@ -119,8 +118,15 @@ namespace SparFlame.Systems.SubGameplay.Movement
 
         private void OnDestroy()
         {
-            if (_updateNavMeshRequest != default)
-                _updateNavMeshRequest.Dispose();
+            try
+            {
+                if (_updateNavMeshRequest != default)
+                    _updateNavMeshRequest.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private IEnumerator UpdateNavMesh(FactionTag factionTag)

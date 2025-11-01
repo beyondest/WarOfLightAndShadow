@@ -1,12 +1,12 @@
 ﻿using System;
 using Unity.Entities;
-
+using Random = Unity.Mathematics.Random;
 namespace SparFlame.Components.General
 {
 
     public struct GeneralRandom : IComponentData
     {
-        public Unity.Mathematics.Random Rnd;
+        public Random Rnd;
     }
 
     [Serializable]
@@ -15,7 +15,6 @@ namespace SparFlame.Components.General
         public long baseValue;
         public long addValue;
     }
-    
 
     [Serializable]
     public struct PlayerFactionData : IComponentData

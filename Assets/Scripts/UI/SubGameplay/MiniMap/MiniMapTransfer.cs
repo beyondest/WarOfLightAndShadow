@@ -18,6 +18,7 @@ namespace SparFlame.UI.SubGameplay
         private bool _isDragging;
         private float _length;
 
+    
         protected override void OnCreate()
         {
             RequireForUpdate<CurrentSubMapInfo>();

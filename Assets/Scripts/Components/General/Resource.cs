@@ -1,18 +1,36 @@
 ﻿using System;
 using Sirenix.OdinInspector;
-using SparFlame.Core.Interfaces;
 using Unity.Entities;
 using Range = SparFlame.Core.Structs.Range;
 
 namespace SparFlame.Components.General
 {
+    public interface IEntityPrefabData<T> : IBufferElementData where T : Enum
+    {
+        public Entity Prefab { get; set; }
+        public T Type { get; set; }
+        public int PrefabId { get; set; }
+    }
+
+    /// <summary>
+    /// Every IResourceManager should be put in bootStrapper scene,
+    /// and if it is to be destroyed, you have to manually release resource and unregister
+    /// </summary>
+    public interface IResourceManager
+    {
+        float InitProgress { get; }
+        bool IsInitialized { get; }
+        void LoadResources();
+        void UnloadResources();
+    }
+
     [Serializable]
     public struct CostResourceTypeAmountPair
     {
-        [HideLabel] public ResourceType type;
         [HideLabel] public int amount;
+        [HideLabel] public ResourceType type;
     }
-    
+
     public struct CostList : IBufferElementData
     {
         public ResourceType Type;
@@ -57,27 +75,27 @@ namespace SparFlame.Components.General
     [Serializable]
     public struct ResourceData : IBufferElementData
     {
-        public ResourceType resourceType;
+        public float amountPerHour;
         public int availableAmount;
         public int storage;
-        public float amountPerHour;
+        public ResourceType resourceType;
     }
 
     [Serializable]
     public struct PopulationResourceData : IComponentData
     {
-        public ResourceType populationResourceType;
         public int storage;
         public int occupiedCount;
         public int virtualOccupiedCount;
+        public ResourceType populationResourceType;
     }
 
     [Serializable]
     public struct PopulationStorageAddTask : IBufferElementData
     {
         public long fromBuildingSingleId;
-        public int addAmount;
         public float finishTotalHours;
+        public int addAmount;
     }
 
     [Serializable]
@@ -85,11 +103,9 @@ namespace SparFlame.Components.General
     {
         public long fromBuildingSingleId;
         public float hoursPerUnit;
-        
-        public int remainingConjuredUnitCount;
         public float accumulatedHours;
+        public int remainingConjuredUnitCount;
     }
-
 
     public enum ResourceRequestType
     {
@@ -104,34 +120,22 @@ namespace SparFlame.Components.General
         IncreaseGenerateSpeed = 9,
         ConjureUnitByTask = 10,
         ConjureBuildingDestroyed = 11,
-
-        // Storage add will not be used because it is handled by city resource system, in tasks method
-        // StorageAdd = 5,
     }
 
-    // public enum ResourceBuildingDestroyType
-    // {
-    //     ConstructionStateDestroyed = 0,
-    //     StorageDecreaseOnly = 1
-    // }
 
     public struct ResourceChangeRequest : IComponentData
     {
-        public ResourceType ResourceType;
         public Entity City;
+        public long FromBuildingSingleId;
+        public float HoursPerUnit;
+        public float FinishTotalHours;
 
         /// <summary>
-        /// This value must be positive
+        /// This value MUST be POSITIVE
         /// </summary>
         public int AbsAmount;
 
-        public float HoursPerUnit;
-
         public ResourceRequestType RequestType;
-
-        public long FromBuildingSingleId;
-
-        public float FinishTotalHours;
-        // public ResourceBuildingDestroyType DestroyType;
+        public ResourceType ResourceType;
     }
 }

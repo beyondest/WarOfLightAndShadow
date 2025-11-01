@@ -7,10 +7,9 @@ namespace SparFlame.Components.SubGameplay
 
     public struct GenerateAttr : IComponentData
     {
-        public ResourceType GenerateResourceType;
         public float GenerateSpeedHoursPerUnit;
         public int MinCultivatorsRequireToGenerate;
-
+        public ResourceType GenerateResourceType;
     }
     
     public struct GeneratingTag : IComponentData

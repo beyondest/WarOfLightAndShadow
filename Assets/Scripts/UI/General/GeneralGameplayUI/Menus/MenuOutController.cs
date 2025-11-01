@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using SparFlame.Components.General;
 using SparFlame.Systems.General.BasicControl;
@@ -183,8 +184,15 @@ namespace SparFlame.UI.General
 
         private void OnDestroy()
         {
-            if(_subGameStatusQuery != default)
-                _subGameStatusQuery.Dispose();
+            try
+            {
+                if (_subGameStatusQuery != default)
+                    _subGameStatusQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         #endregion

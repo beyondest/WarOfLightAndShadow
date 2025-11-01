@@ -9,13 +9,12 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace SparFlame.Core.Utils
 {
 
-
     public class ResourceOperation : IEnumerator
     {
         private readonly IEnumerator _routine;
         private bool _done;
 
-        public ResourceOperation(IEnumerator routine)
+        protected ResourceOperation(IEnumerator routine)
         {
             _routine = routine;
         }

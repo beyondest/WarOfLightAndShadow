@@ -6,25 +6,25 @@ using System.Collections.Generic;
 
 namespace Editor
 {
-    public class SplitItemsFromSOEditor : EditorWindow
+    public class SplitItemsFromSoEditor : EditorWindow
     {
-        ScriptableObject sourceSO;
+        private ScriptableObject _sourceSo;
         int countToSplit = 1;
 
         [MenuItem("Tools/Database/Split SO Items")]
         public static void Open()
         {
-            GetWindow<SplitItemsFromSOEditor>("Split SO Items");
+            GetWindow<SplitItemsFromSoEditor>("Split SO Items");
         }
         private void OnGUI()
         {
-            sourceSO = (ScriptableObject)EditorGUILayout.ObjectField("Source SO", sourceSO, typeof(ScriptableObject),
+            _sourceSo = (ScriptableObject)EditorGUILayout.ObjectField("Source SO", _sourceSo, typeof(ScriptableObject),
                 false);
             countToSplit = EditorGUILayout.IntField("Count to Split", countToSplit);
 
             if (GUILayout.Button("Split"))
             {
-                if (sourceSO != null)
+                if (_sourceSo)
                 {
                     SplitItems();
                 }
@@ -38,7 +38,7 @@ namespace Editor
         private void SplitItems()
         {
             // 通过反射找到 items 字段
-            var itemsField = sourceSO.GetType()
+            var itemsField = _sourceSo.GetType()
                 .GetField("items", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (itemsField == null)
@@ -47,7 +47,7 @@ namespace Editor
                 return;
             }
 
-            var itemsValue = itemsField.GetValue(sourceSO) as IList;
+            var itemsValue = itemsField.GetValue(_sourceSo) as IList;
             if (itemsValue == null)
             {
                 Debug.LogError("'items' field is not a List or is null.");
@@ -72,7 +72,7 @@ namespace Editor
                 itemsValue.RemoveAt(itemsValue.Count - 1); // always remove from end
             }
 
-            var newSO = ScriptableObject.CreateInstance(sourceSO.GetType());
+            var newSo = ScriptableObject.CreateInstance(_sourceSo.GetType());
 
             var newItemsList = (IList)System.Activator.CreateInstance(itemsValue.GetType());
             foreach (var item in newItems)
@@ -80,19 +80,19 @@ namespace Editor
                 newItemsList.Add(item);
             }
 
-            itemsField.SetValue(newSO, newItemsList);
+            itemsField.SetValue(newSo, newItemsList);
 
-            string sourcePath = AssetDatabase.GetAssetPath(sourceSO);
+            string sourcePath = AssetDatabase.GetAssetPath(_sourceSo);
             string sourceDir = System.IO.Path.GetDirectoryName(sourcePath);
-            string newSOPath = AssetDatabase.GenerateUniqueAssetPath(sourceDir + "/" + sourceSO.name + "_Split.asset");
+            string newSoPath = AssetDatabase.GenerateUniqueAssetPath(sourceDir + "/" + _sourceSo.name + "_Split.asset");
 
-            AssetDatabase.CreateAsset(newSO, newSOPath);
+            AssetDatabase.CreateAsset(newSo, newSoPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            EditorUtility.SetDirty(sourceSO);
+            EditorUtility.SetDirty(_sourceSo);
 
-            Debug.Log($"Split {countToSplit} items into new SO: {newSOPath}");
+            Debug.Log($"Split {countToSplit} items into new SO: {newSoPath}");
         }
     }
 }

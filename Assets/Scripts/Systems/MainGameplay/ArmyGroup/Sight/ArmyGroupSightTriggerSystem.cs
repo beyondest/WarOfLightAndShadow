@@ -20,6 +20,7 @@ namespace SparFlame.Systems.SubGameplay.Interact
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            state.RequireForUpdate<SubGameStatusData>();
             state.RequireForUpdate<SimulationSingleton>();
             state.RequireForUpdate<ArmyGroupSightData>();
             state.RequireForUpdate<GameStatusData>();

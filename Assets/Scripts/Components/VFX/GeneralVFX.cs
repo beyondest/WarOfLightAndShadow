@@ -78,45 +78,40 @@ namespace SparFlame.Components.VFX
     public struct VFXRequest : IComponentData
     {
         /// <summary>
-        /// If this vfx need to follow someone, this should not be Entity.Null
+        /// Only Valid if this is projectile
         /// </summary>
-        public Entity VFXTrackTarget;
-
-        public VFXRequestType RequestType;
-        
+        public StatChangeRequest StatChangeRequest;
+        public VFXSubFilter Filter;
         /// <summary>
         /// Spawn Position
         /// </summary>
         public float3 SpawnPosition;
         
         public float3 ParabolaTargetPosition;
-        
         /// <summary>
-        /// Specify which vfx prefab to use in prefab database 
+        /// If this vfx need to follow someone, this should not be Entity.Null
         /// </summary>
-        public VFXName VFXName;
+        public Entity VFXTrackTarget;
 
-        
         /// <summary>
         /// If 0, this vfx is either instantly (means it will be killed when play is stopped or projectile reach the target )
         /// or lives forever until manually killed
         /// </summary>
         public float KeepDuration;
-        
-        public VFXSubFilter Filter;
-        
+        public VFXRequestType RequestType;
         /// <summary>
-        /// If this is projectile
+        /// Specify which vfx prefab to use in prefab database 
         /// </summary>
-        public StatChangeRequest StatChangeRequest;
+        public VFXName VFXName;
     }
 
     public struct VFXSubFilter
     {
-        public bool FactionFilterEnable;
         public FactionTag Faction;
-        public bool TierFilterEnable;
         public Tier Tier;
+        public bool FactionFilterEnable;
+        public bool TierFilterEnable;
+
     }
     
     
@@ -125,36 +120,34 @@ namespace SparFlame.Components.VFX
 
     public struct ProjectileInitData : IComponentData
     {
-        public VFXName HitEffectName;
         public float BaseRelativeHeight;
         public float HorizontalSpeed;
         public float MaxFlightDistance;
         // How much height the projectile will start above the sender(archer or tower)
         public float InitialHeight;
+        public VFXName HitEffectName;
         public ProjectileType ProjectileType;
     }
-
-  
     
     public struct VFXPrefabDataPair
     {
-        public Entity Prefab;
-        public VFXType VFXType;
         public ProjectileInitData PData;
         public VFXSubFilter Filter;
-        public bool KillUntilAllStopPlay;
+        public Entity Prefab;
+        public VFXType VFXType;
         public float MaxWaitTimeForAllStopPlay;
+        public bool KillUntilAllStopPlay;
     }
     
     public struct VFXConfigData : IBufferElementData
     {
-        public VFXName Name;
         public VFXPrefabDataPair Pair;
+        public VFXName Name;
     }
 
     public struct TrackedByVFX : IBufferElementData
     {
-        public VFXName Name;
         public Entity VFX;
+        public VFXName Name;
     }
 }

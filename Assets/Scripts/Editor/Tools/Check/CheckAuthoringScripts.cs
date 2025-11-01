@@ -9,7 +9,7 @@ namespace Editor
     public class UnusedAuthoringFinder : EditorWindow
     {
         private List<string> _unusedScripts = new();
-        private string _searchFolder = "Assets/Scripts"; // 默认路径
+        private string _searchFolder = "Assets/Scripts"; 
         private Vector2 _scroll;
 
         [MenuItem("Tools/Check/Check Unused Authoring Scripts")]

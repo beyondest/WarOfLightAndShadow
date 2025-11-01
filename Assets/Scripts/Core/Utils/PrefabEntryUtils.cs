@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using Unity.Collections;
 using Unity.Entities;
 using Range = SparFlame.Core.Structs.Range;
@@ -7,7 +7,6 @@ namespace SparFlame.Core.Utils
 {
     public static class PrefabEntryUtils
     {
-        
         public struct ProbabilityPrefabEntry
         {
             public Entity Prefab;
@@ -47,4 +46,4 @@ namespace SparFlame.Core.Utils
             return fallBack;
         }
     }
-}
+}*/

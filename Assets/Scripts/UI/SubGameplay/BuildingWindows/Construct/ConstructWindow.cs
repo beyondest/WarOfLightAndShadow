@@ -167,7 +167,14 @@ namespace SparFlame.UI.SubGameplay
 
         private void OnDestroy()
         {
-            if(_factionQuery != default)_factionQuery.Dispose();
+            try
+            {
+                if(_factionQuery != default)_factionQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private void UpdateCandidates()

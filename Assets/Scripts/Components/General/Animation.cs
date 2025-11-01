@@ -1,8 +1,6 @@
 ﻿using System;
 using Latios.Kinemation;
 using SparFlame.Components.SubGameplay;
-using SparFlame.Core.Structs;
-using Unity.Collections;
 using Unity.Entities;
 namespace SparFlame.Components.General
 {
@@ -18,17 +16,14 @@ namespace SparFlame.Components.General
 
     public struct AnimationStateData : IComponentData
     {
-        public UnitAnimationState State;
         public float PlaySpeed;
-        
         public float ClipAStartTime;
         public float ClipBStartTime;
         public float ClipAWeight;
         public float ClipBWeight;
-
-        // Blend A To B
         public int ClipAIndex;
         public int ClipBIndex;
+        public UnitAnimationState State;
         public bool Blending;
     }
     

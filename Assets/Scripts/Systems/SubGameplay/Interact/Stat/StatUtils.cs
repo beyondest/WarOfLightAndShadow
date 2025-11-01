@@ -54,7 +54,6 @@ namespace SparFlame.Systems.SubGameplay.Interact
             {
                 ColorId = (int)popNumberType,
                 Position = interacteePos,
-                Scale = 1f,
                 Value = absAmount
             });
             ecb.AddComponent<SubGameplayEntityTag>(index, popNumberRequest);

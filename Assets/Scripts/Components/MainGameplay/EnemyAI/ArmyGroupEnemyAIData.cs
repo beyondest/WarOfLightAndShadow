@@ -21,8 +21,8 @@ namespace SparFlame.Components.MainGameplay
     [Serializable]
     public struct ArmyGroupThreatenData : IComponentData
     {
-        public UnitType mainUnitType;
         public float totalThreatenValue;
+        public UnitType mainUnitType;
     }
 
     public struct ArmyGroupCommandData : IComponentData
@@ -41,7 +41,6 @@ namespace SparFlame.Components.MainGameplay
         public float levelCoefficientB;
         public float levelCoefficientC;
         // unit threaten value = base + EnemyAIUtils.EvaluateLevelAddThreaten(level, a, b, c)
-        
         public float towerBaseThreatenValue;
         public float towerTierMultiplier;
     }
@@ -54,8 +53,7 @@ namespace SparFlame.Components.MainGameplay
         public float invadeChance;
     }
     
- 
-
+    // ------------------------- Enemy Army Group Save Units After Conjuring Component --------------//
 
     public struct EnemyArmyGroupShouldSaveTag : IComponentData
     {
@@ -68,9 +66,6 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
     }
 
-    public struct FakeUnitTag : IComponentData
-    {
-        
-    }
+    public struct FakeUnitTag : IComponentData{}
 
 }

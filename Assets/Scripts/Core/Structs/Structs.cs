@@ -11,27 +11,27 @@ namespace SparFlame.Core.Structs
         public float upper;
     }
 
-    public struct IntPair : IEquatable<IntPair>
+    public readonly struct IntPair : IEquatable<IntPair>
     {
-        public int A;
-        public int B;
+        private readonly int _a;
+        private readonly int _b;
 
         public IntPair(int a, int b)
         {
             if (a < b)
             {
-                A = a;
-                B = b;
+                _a = a;
+                _b = b;
             }
             else
             {
-                A = b;
-                B = a;
+                _a = b;
+                _b = a;
             }
         }
 
-        public bool Equals(IntPair other) => A == other.A && B == other.B;
-        public override int GetHashCode() => (A * 73856093) ^ (B * 19349663);
+        public bool Equals(IntPair other) => _a == other._a && _b == other._b;
+        public override int GetHashCode() => (_a * 73856093) ^ (_b * 19349663);
     }
 
     public struct QueriesGroup: IDisposable

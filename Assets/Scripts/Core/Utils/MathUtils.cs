@@ -47,51 +47,6 @@ namespace SparFlame.Core.Utils
             return points;
         }
 
-
-        /// <summary>
-        /// Returns an interval [lower, upper] with a range width of l, wrapping x, and the position of x in the interval is random
-        /// </summary>
-        public static (float lower, float upper) GenerateRandomBoundsAround(float x, float l,
-            Unity.Mathematics.Random rng)
-        {
-            var t = rng.NextFloat(0f, 1f);
-            var lower = x - l * t;
-            var upper = lower + l;
-
-            return (lower, upper);
-        }
-
-
-        public static List<TGet> GetChildrenFromMatching<TGet, TItems>(
-            List<TItems> sourceList,
-            Func<TItems, bool> condition,
-            Func<TItems, TGet> childSelector)
-        {
-            var result = new List<TGet>();
-
-            foreach (var item in sourceList)
-            {
-                if (condition(item))
-                {
-                    var childrenComponents = childSelector(item);
-                    if (childrenComponents != null)
-                    {
-                        result.Add(childrenComponents); // 保留顺序
-                    }
-                }
-            }
-
-            return result;
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetSeedByIndexTimeBias(int index, int seedBias, float elapsedTime)
-        {
-            return math.hash(new int2(index + seedBias, (int)(elapsedTime * 10000)));
-        }
-
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static quaternion NextQuaternion(ref Random random, bool onlyXZ = true)
         {
@@ -111,24 +66,22 @@ namespace SparFlame.Core.Utils
         public static void GetSnapGridPosition(in float3 hitPosition, float rotationAngle,
             float3 boxColliderSize, float gridSize, out float3 gridPosition)
         {
-            // 1. 计算旋转后占用格子数
+            // Calculate how many grids it occupies in each direction
             var rawSizeX = (int)math.ceil(boxColliderSize.x / gridSize);
             var rawSizeZ = (int)math.ceil(boxColliderSize.z / gridSize);
 
-            // 是否旋转90/270度（调换X和Z）
+            // Whether to rotate 90 degrees
             var rotated90 = math.abs(math.abs(math.round(rotationAngle) % 180) - 90) < 0.001f;
-
-
+            
             var sizeX = rotated90 ? rawSizeZ : rawSizeX;
             var sizeZ = rotated90 ? rawSizeX : rawSizeZ;
             // if (rotated90)
             // {
             //     Debug.Log($"rawx {rawSizeX}, newx {sizeX}, rawz {rawSizeZ}, newz {sizeZ}");
             // }
-            // 2. 对齐方式：使得坐标落在合法中心点上
+            // Snap the position to half grid point, which is grid center
             var halfGrid = gridSize / 2f;
 
-            // 计算 snappedX（如果是偶数格，就落在偶数 * halfGrid，如果是奇数格，就落在奇数 * halfGrid）
             var xRaw = math.floor(hitPosition.x / halfGrid) * halfGrid;
             var zRaw = math.floor(hitPosition.z / halfGrid) * halfGrid;
 

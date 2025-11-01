@@ -6,12 +6,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using SparFlame.Components.General;
-using SparFlame.Components.MainGameplay;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using Unity.Entities.Serialization;
-using UnityEngine;
 
 namespace SparFlame.Systems.General.BasicControl
 {

@@ -2,8 +2,12 @@
 
 namespace SparFlame.Components.MainGameplay
 {
-    public struct ArmyGroupSightRequest : IComponentData
+    public struct ArmyGroupGenerateSightRequest : IComponentData
     {
         public Entity Prefab;
+    }
+    public struct ArmyGroupSightTarget : IBufferElementData
+    {
+        public Entity Entity;
     }
 }

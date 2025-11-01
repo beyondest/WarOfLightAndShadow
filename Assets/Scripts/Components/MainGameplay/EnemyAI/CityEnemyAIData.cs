@@ -1,5 +1,4 @@
 ﻿using Unity.Entities;
-using Random = Unity.Mathematics.Random;
 
 namespace SparFlame.Components.MainGameplay
 {
@@ -26,8 +25,8 @@ namespace SparFlame.Components.MainGameplay
     public interface ICityArmyGroupPrefabElement
     {
         Entity Prefab { get; set; }
-        int PrefabId { get; set; }
         float NeedHours { get; set; }
+        int PrefabId { get; set; }
     }
     
     // Need to be initialized each time enter game; no need to be saved
@@ -43,18 +42,16 @@ namespace SparFlame.Components.MainGameplay
     public struct AttackArmyGroupPrefab : IBufferElementData,ICityArmyGroupPrefabElement
     {
         public Entity Prefab { get; set; }
-        public int PrefabId { get; set; }
         public float NeedHours { get; set; }
+        public int PrefabId { get; set; }
     }
 
     public struct DefendArmyGroupPrefab : IBufferElementData,ICityArmyGroupPrefabElement
     {
         public Entity Prefab { get; set; }
-        public int PrefabId { get; set; }
         public float NeedHours { get; set; }
+        public int PrefabId { get; set; }
     }
-
-
 
     public struct AttackArmyGroup : IBufferElementData, ICityArmyGroupElement
     {
@@ -84,23 +81,23 @@ namespace SparFlame.Components.MainGameplay
     public struct InvadeTarget : IBufferElementData
     {
         public Entity City;
-        public int CityPrefabId;
         public long SingleId;
+        public int CityPrefabId;
     }
 
 
     public struct ArmyGroupConjureStack : IBufferElementData
     {
-        public int PrefabId;
         public float NeedHours;
+        public int PrefabId;
         public EnemyArmyGroupDuty Duty;
     }
 
     public struct CityAIData : IComponentData
     {
         public float StartConjuringTotalHours;
-        public EnemyCityStrategy Strategy;
         public int FightCountWithPlayer;
+        public EnemyCityStrategy Strategy;
         public bool IsFocusOnPlayer;
     }
 

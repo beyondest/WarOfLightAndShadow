@@ -150,10 +150,7 @@ namespace SparFlame.UI.SubGameplay
             customInputActions.GeneralShortcut.CloseWindow.performed += _ => Hide();
         }
 
-        private void OnDestroy()
-        {
-            
-        }
+    
 
         #endregion
 

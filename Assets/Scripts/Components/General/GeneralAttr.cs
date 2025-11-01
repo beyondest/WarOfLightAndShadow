@@ -17,8 +17,6 @@ namespace SparFlame.Components.General
         Tier1 = 3,
         Tier2 = 4,
         Tier3 = 5,
-        // Tier4 = 6,
-        // Tier5 = 7,
     }
 
     public enum SubFactionTag
@@ -40,23 +38,21 @@ namespace SparFlame.Components.General
         Self = 2
     }
 
+    // ----------------------- Single ID/Prefab ID ------------------------//
     [Serializable]
     public struct GlobalSingleId : IComponentData
     {
         public long value;
     }
     public struct AssignGlobalSingleIDRequest : IComponentData{}
-
     [Serializable]
     public struct PrefabId : IComponentData
     {
         public int value;
     }
    
-    public struct NeedSaveTag : IComponentData, IEnableableComponent
-    {
-    }
 
+    // ---------------- Rnd -------------------------------//
     [Serializable]
     public struct Rnd : IComponentData
     {

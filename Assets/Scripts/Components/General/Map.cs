@@ -12,5 +12,4 @@ namespace SparFlame.Components.General
     {
         public MapInfo MapInfo;
     }
-    
 }

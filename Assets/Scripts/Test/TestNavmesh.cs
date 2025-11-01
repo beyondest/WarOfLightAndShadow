@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Unity.Collections;
 using UnityEngine.AI;
 using UnityEngine.Experimental.AI;
@@ -11,6 +12,7 @@ namespace SparFlame.Test
     {
         public NavMeshAgent agent;
         public Vector3 extents = Vector3.one;
+        [Obsolete("Obsolete")]
         void Update()
         {
             var query = new NavMeshQuery(NavMeshWorld.GetDefaultWorld(), Allocator.Temp);

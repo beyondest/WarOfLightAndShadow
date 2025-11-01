@@ -1,4 +1,5 @@
 ﻿using SparFlame.Components.General;
+using SparFlame.Components.MainGameplay;
 using Unity.Entities;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace SparFlame.Database
             public override void Bake(EcoDatabaseAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                var ecoBuffer = AddBuffer<EcoEntityData>(entity);
+                var ecoBuffer = AddBuffer<EcoTypeToEcoConfig>(entity);
                 var items = DatabaseManager.EcoDatabaseSo.items;
                 foreach (var item in items)
                 {
@@ -22,7 +23,7 @@ namespace SparFlame.Database
                         CameraMinCoordinate = item.camMinCoordinate,
                     });
                     
-                    ecoBuffer.Add(new EcoEntityData
+                    ecoBuffer.Add(new EcoTypeToEcoConfig
                     {
                         EcoType = item.ecoType,
                         EcoEntity = ecoEntity,

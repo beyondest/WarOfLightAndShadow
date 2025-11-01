@@ -18,9 +18,10 @@ namespace SparFlame.Components.SubGameplay
 
     public struct ExpStaticConfig : IBufferElementData
     {
+        public Entity NextTierPrefab;
+
         public int PrefabId;
         public Tier MaxTier;
-        public Entity NextTierPrefab;
 
         public int MaxLevel;
         public int StatPerLevel;
@@ -69,49 +70,7 @@ namespace SparFlame.Components.SubGameplay
         private readonly RefRO<ExpData> _expData;
         private readonly RefRO<PrefabId> _prefabId;
 
-        /*
-        public void UpGradeWhenThisIsInstance<TAbility>(
-            in NativeHashMap<int, ExpStaticConfig> expDatabase,
-            ref TAbility ability
-        ) where TAbility : IInteractAbility
-        {
-            var config = expDatabase[_prefabId.ValueRO.value];
-            const int addLevel = 1;
-            _statData.ValueRW.maxValue += config.StatPerLevel * addLevel;
-            _statData.ValueRW.curValue = _statData.ValueRW.maxValue;
-
-            _movableData.ValueRW.MoveSpeed += config.MoveSpeedPerLevel * addLevel;
-
-            _expData.ValueRW.curLevel++;
-            _expData.ValueRW.maxValue += config.ExpGainPerLevel * addLevel;
-
-            switch (ability.InteractType)
-            {
-                case InteractType.Attack:
-                    ability.Amount += config.AttackAmountPerLevel;
-                    ability.Range += config.AttackRangePerLevel;
-                    ability.Speed += config.AttackSpeedPerLevel;
-                    ability.Targets += config.AttackTargetsPerLevel;
-                    break;
-                case InteractType.Heal:
-                    ability.Amount += config.HealAmountPerLevel;
-                    ability.Range += config.HealRangePerLevel;
-                    ability.Speed += config.HealSpeedPerLevel;
-                    ability.Targets += config.HealTargetsPerLevel;
-                    break;
-                case InteractType.Harvest:
-                    ability.Amount += config.HarvestAmountPerLevel;
-                    ability.Range += config.HarvestRangePerLevel;
-                    ability.Speed += config.HarvestSpeedPerLevel;
-                    ability.Targets += config.HarvestTargetsPerLevel;
-                    break;
-                default:
-                    BurstSafe.UnexpectedEnum(ability.InteractType);
-                    break;
-            }
-        }
-        */
-
+   
         public void SetLevelDataWhenThisIsPrefab<TAbility>(int level,
             in NativeHashMap<int, ExpStaticConfig> expDatabase,
             ref StatData statData, ref MovableData movableData, ref ExpData expData, ref TAbility prefabAbility
@@ -157,5 +116,49 @@ namespace SparFlame.Components.SubGameplay
                     break;
             }
         }
+        
+        /*
+   public void UpGradeWhenThisIsInstance<TAbility>(
+       in NativeHashMap<int, ExpStaticConfig> expDatabase,
+       ref TAbility ability
+   ) where TAbility : IInteractAbility
+   {
+       var config = expDatabase[_prefabId.ValueRO.value];
+       const int addLevel = 1;
+       _statData.ValueRW.maxValue += config.StatPerLevel * addLevel;
+       _statData.ValueRW.curValue = _statData.ValueRW.maxValue;
+
+       _movableData.ValueRW.MoveSpeed += config.MoveSpeedPerLevel * addLevel;
+
+       _expData.ValueRW.curLevel++;
+       _expData.ValueRW.maxValue += config.ExpGainPerLevel * addLevel;
+
+       switch (ability.InteractType)
+       {
+           case InteractType.Attack:
+               ability.Amount += config.AttackAmountPerLevel;
+               ability.Range += config.AttackRangePerLevel;
+               ability.Speed += config.AttackSpeedPerLevel;
+               ability.Targets += config.AttackTargetsPerLevel;
+               break;
+           case InteractType.Heal:
+               ability.Amount += config.HealAmountPerLevel;
+               ability.Range += config.HealRangePerLevel;
+               ability.Speed += config.HealSpeedPerLevel;
+               ability.Targets += config.HealTargetsPerLevel;
+               break;
+           case InteractType.Harvest:
+               ability.Amount += config.HarvestAmountPerLevel;
+               ability.Range += config.HarvestRangePerLevel;
+               ability.Speed += config.HarvestSpeedPerLevel;
+               ability.Targets += config.HarvestTargetsPerLevel;
+               break;
+           default:
+               BurstSafe.UnexpectedEnum(ability.InteractType);
+               break;
+       }
+   }
+   */
+
     }
 }

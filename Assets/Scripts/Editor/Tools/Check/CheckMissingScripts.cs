@@ -13,7 +13,7 @@ public class FindMissingScriptsWindow : EditorWindow
 
     private ScanMode scanMode = ScanMode.Scene;
 
-    private DefaultAsset prefabFolder; // 用户指定的文件夹
+    private DefaultAsset prefabFolder; 
 
     [MenuItem("Tools/Check/Find Missing Scripts")]
     public static void ShowWindow()
@@ -46,7 +46,7 @@ public class FindMissingScriptsWindow : EditorWindow
             }
             else
             {
-                Debug.LogWarning("请先选择一个文件夹！");
+                Debug.LogWarning("Choose a folder first！");
             }
         }
     }

@@ -19,7 +19,6 @@ namespace SparFlame.Components.MainGameplay
         public Entity ArmyGroup;
     }
 
-
     public struct ArmyGroupHoldOnTag : IComponentData
     {
         

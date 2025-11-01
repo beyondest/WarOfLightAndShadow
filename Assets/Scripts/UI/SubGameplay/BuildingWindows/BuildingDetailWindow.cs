@@ -278,12 +278,19 @@ namespace SparFlame.UI.SubGameplay
 
         private void OnDestroy()
         {
-            if (_gamingTag != default)
-                _gamingTag.Dispose();
-            if (_playerFactionQuery != default)
-                _playerFactionQuery.Dispose();
-            if (_worldTimeQuery != default)
-                _worldTimeQuery.Dispose();
+            try
+            {
+                if (_gamingTag != default)
+                    _gamingTag.Dispose();
+                if (_playerFactionQuery != default)
+                    _playerFactionQuery.Dispose();
+                if (_worldTimeQuery != default)
+                    _worldTimeQuery.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         #endregion

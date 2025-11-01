@@ -1,5 +1,6 @@
 ﻿using SparFlame.Components.General;
 using SparFlame.Components.SubGameplay;
+using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,7 +10,7 @@ using Unity.Transforms;
 
 namespace SparFlame.Systems.SubGameplay.Movement.CBR
 {
-    public struct SurroundingLookups
+    public struct SurroundingLookups : IStructLookup
     {
         [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
         [ReadOnly] public ComponentLookup<BoxColliderSize> BoxColliderSizeLookup;
@@ -21,6 +22,19 @@ namespace SparFlame.Systems.SubGameplay.Movement.CBR
         [ReadOnly] public ComponentLookup<MovingStateTag> MovingStateLookup;
         [ReadOnly] public ComponentLookup<IdleStateTag> IdleStateLookup;
         [ReadOnly] public ComponentLookup<FormationMovingTag> FormationMovingTagLookup;
+        public void Update(ref SystemState state)
+        {
+            LocalTransformLookup.Update(ref state);
+            BoxColliderSizeLookup.Update(ref state);
+            VelocityLookup.Update(ref state);
+            // TriggerDataLookup.Update(ref state);
+            AttackStateLookup.Update(ref state);            
+            HealStateLookup.Update(ref state);
+            AutoGiveWayLookup.Update(ref state);
+            MovingStateLookup.Update(ref state);            
+            IdleStateLookup.Update(ref state);
+            FormationMovingTagLookup.Update(ref state);
+        }
     }
 
     [BurstCompile]

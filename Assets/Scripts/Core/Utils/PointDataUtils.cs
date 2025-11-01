@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿/*using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using SparFlame.Core.Interfaces;
 using Unity.Collections;
@@ -62,4 +62,4 @@ namespace SparFlame.Core.Utils
             return list[list.Length - 1];
         }
     }
-}
+}*/

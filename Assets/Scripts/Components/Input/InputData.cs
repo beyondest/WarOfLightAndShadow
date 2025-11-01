@@ -2,7 +2,7 @@
 using Unity.Mathematics;
 namespace SparFlame.Components.Input
 {
-    
+    // WHYNOT using callback but use update
     public enum ClickFlag
     {
         Start,
@@ -30,16 +30,16 @@ namespace SparFlame.Components.Input
     /// </summary>
     public struct InputMouseData : IComponentData
     {
-        public ClickFlag ClickFlag;
-        public ClickType ClickType;
-        /// <summary>
-        /// if no raycast hit , hitEntity is Entity.Null
-        /// </summary>
-        public Entity HitEntity;
         public float3 HitPosition;
         public float3 MousePosition;
-        public bool IsOverUI;
         public float3 HitNormal;
+        /// <summary>
+        /// If no raycast hit , hitEntity will be Entity.Null
+        /// </summary>
+        public Entity HitEntity;
+        public ClickFlag ClickFlag;
+        public ClickType ClickType;
+        public bool IsOverUI;
     }
 
 
@@ -64,19 +64,18 @@ namespace SparFlame.Components.Input
     
     public struct InputCameraFlyData : IComponentData
     {
-        public bool Enabled;
         public float2 LookDelta;
         public float2 Move;
+        public float2 Zoom;
         public bool SpeedUp;
         public bool FlyUp;
         public bool FlyDown;
-        public float2 Zoom;
+        public bool Enabled;
 
     }
     
     public struct InputCameraNormalData : IComponentData
     {
-        public bool Enabled;
         public float2 Movement;
         public float2 ZoomCamera;
         public float RotateCamera;
@@ -84,19 +83,21 @@ namespace SparFlame.Components.Input
         public bool DraggingCamera;
         public bool DragCameraStart;
         public bool SpeedUp;
+        public bool Enabled;
+
     }
     public struct InputConjureData : IComponentData
     {
+        public int HotKeyIndex;
         public bool Enabled;
         public bool FullConjure;
-        public int HotKeyIndex;
     }
     public struct InputConstructData : IComponentData
     {
+        public float Rotate;
         public bool Enabled;
         public bool Build;
         public bool Cancel;
-        public float Rotate;
         public bool LeftRotate;
         public bool RightRotate;
         public bool Snap;
@@ -104,8 +105,8 @@ namespace SparFlame.Components.Input
         public bool Recycle;
         public bool Store;
         public bool MoveBuilding;
-        public bool Exit;   // Exit by Button
-        public bool Enter;  // Enter by Button
+        public bool Exit;   
+        public bool Enter; 
     }
     
     public struct InputUnitControlData : IComponentData

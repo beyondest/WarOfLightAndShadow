@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
-using SparFlame.Core.Interfaces;
+using SparFlame.Components.General;
 using SparFlame.Core.Utils;
 using SparFlame.Systems.General.BasicControl;
 using Unity.Entities;

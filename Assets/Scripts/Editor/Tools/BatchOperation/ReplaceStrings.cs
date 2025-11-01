@@ -15,25 +15,25 @@ namespace Editor
         }
 
         private string folderPath = "Assets/";
-        private List<ReplacePair> replaceList = new List<ReplacePair>();
+        private readonly List<ReplacePair> replaceList = new();
         private Vector2 scrollPos;
 
         [MenuItem("Tools/BatchOperation/Replace Strings")]
         static void Init()
         {
-            GetWindow<FileNameStringReplacer>("文件名替换工具");
+            GetWindow<FileNameStringReplacer>("Replace Strings");
         }
 
         private void OnGUI()
         {
-            GUILayout.Label("批量替换文件名中的字符串", EditorStyles.boldLabel);
+            GUILayout.Label("Batch Replace Strings ", EditorStyles.boldLabel);
 
-            GUILayout.Label("目标文件夹路径（相对 Assets）:");
+            GUILayout.Label("Target folder（ Assets）:");
             folderPath = EditorGUILayout.TextField(folderPath);
 
-            if (GUILayout.Button("选择文件夹"))
+            if (GUILayout.Button("Choose folder"))
             {
-                string selectedPath = EditorUtility.OpenFolderPanel("选择文件夹", Application.dataPath, "");
+                string selectedPath = EditorUtility.OpenFolderPanel("Choose folder", Application.dataPath, "");
                 if (!string.IsNullOrEmpty(selectedPath) && selectedPath.StartsWith(Application.dataPath))
                 {
                     folderPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
@@ -41,7 +41,7 @@ namespace Editor
             }
 
             EditorGUILayout.Space();
-            GUILayout.Label("替换规则列表:");
+            GUILayout.Label("Target strings : Replace into strings:");
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Height(200));
 
             for (int i = 0; i < replaceList.Count; i++)
@@ -60,16 +60,16 @@ namespace Editor
 
             EditorGUILayout.EndScrollView();
 
-            if (GUILayout.Button("添加替换项"))
+            if (GUILayout.Button("Add rule"))
             {
                 replaceList.Add(new ReplacePair());
             }
 
             EditorGUILayout.Space();
 
-            if (GUILayout.Button("执行文件名替换"))
+            if (GUILayout.Button("Execute"))
             {
-                if (EditorUtility.DisplayDialog("确认替换", $"将替换 {folderPath} 中所有文件名，是否继续？", "是", "否"))
+                if (EditorUtility.DisplayDialog("Confirm", $"Change file names in {folderPath} ？", "Yes", "No"))
                 {
                     ReplaceFileNames();
                 }
@@ -83,7 +83,7 @@ namespace Editor
                     folderPath);
             if (!Directory.Exists(fullPath))
             {
-                Debug.LogError("路径不存在: " + fullPath);
+                Debug.LogError("Path not exits: " + fullPath);
                 return;
             }
 
@@ -112,18 +112,18 @@ namespace Editor
                     if (!File.Exists(newFullPath))
                     {
                         File.Move(file, newFullPath);
-                        Debug.Log($"文件重命名: {fileName}{extension} → {newFileName}{extension}");
+                        Debug.Log($"File name replaced: {fileName}{extension} → {newFileName}{extension}");
                         renamedCount++;
                     }
                     else
                     {
-                        Debug.LogWarning($"跳过重命名，目标已存在: {newFullPath}");
+                        Debug.LogWarning($"Target file already exists: {newFullPath}");
                     }
                 }
             }
 
             AssetDatabase.Refresh();
-            EditorUtility.DisplayDialog("完成", $"共重命名 {renamedCount} 个文件", "确定");
+            EditorUtility.DisplayDialog("Complete", $"Renamed {renamedCount} files", "Confirm");
         }
     }
 }

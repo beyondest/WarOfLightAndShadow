@@ -10,8 +10,8 @@ namespace SparFlame.Components.SubGameplay
 
     public struct DarkShieldTauntedBuff : IComponentData,IEnableableComponent
     {
-        public float TauntTime;
         public Entity TauntedBy;
+        public float TauntTime;
     }
     
     public struct DarkMagicDamageBuff : IComponentData, IEnableableComponent

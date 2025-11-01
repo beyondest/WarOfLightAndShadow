@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using SparFlame.Components.General;
 using SparFlame.Components.MainGameplay;
-using SparFlame.Core.Interfaces;
 using SparFlame.Core.Utils;
 using SparFlame.Database;
 using UnityEngine;
@@ -31,6 +30,7 @@ namespace SparFlame.Systems.General.BasicControl
         [SerializeField] private SceneGroup darkInitSceneGroup;
         [SerializeField] private SceneGroup mainWorldSceneGroup;
         [SerializeField] private SceneGroup subWorldSceneGroup;
+        [SerializeField] private SceneGroup debugInitSceneGroup;
         [SerializeField] private float checkInterval = 0.1f;
 
         public class Operation : ResourceOperation
@@ -44,9 +44,8 @@ namespace SparFlame.Systems.General.BasicControl
             private readonly SceneController _sceneController;
         }
 
-        // Interface
         public static SceneController Instance;
-        public Action EcsStartLoadScene;
+        public event Action OnEcsStartLoadScene;
 
         public bool IsInitialized => _normalSceneLoaded && _subsceneLoaded;
         public float InitProgress => IsInitialized ? 1f : (_normalSceneLoadProgress + _subsceneLoadProgress) / 2f;
@@ -57,8 +56,12 @@ namespace SparFlame.Systems.General.BasicControl
 
         public Operation UnloadSceneGroupAsync(List<SceneGroupType> sceneGroupTypes) =>
             new(SelfUnloadSceneGroup(sceneGroupTypes));
-        
 
+        public void LoadDebugInitSubscene()
+        {
+            StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(debugInitSceneGroup, null));
+            _currentLoadingSubGameplaySceneGroup.AddSceneGroup(debugInitSceneGroup);
+        }
         // After select faction
         public void LoadResources()
         {
@@ -134,7 +137,7 @@ namespace SparFlame.Systems.General.BasicControl
 
             StartCoroutine(_normalSceneLoader.LoadSceneGroupAsync(sceneGroup, _loading,
                 onSceneGroupLoaded: _onNormalSceneLoaded));
-            EcsStartLoadScene?.Invoke();
+            OnEcsStartLoadScene?.Invoke();
 
             foreach (var subsceneData in sceneGroup.subscenes)
             {

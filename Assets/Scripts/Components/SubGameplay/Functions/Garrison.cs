@@ -7,8 +7,8 @@ namespace SparFlame.Components.SubGameplay
 {
     public struct GarrisonAttr : IComponentData
     {
-        public int MaxGarrisonCount;
         public float3 MoveOutPositionBias; // Only useful when building is alive
+        public int MaxGarrisonCount;
     }
 
     public struct GarrisonPositions : IBufferElementData
@@ -18,17 +18,17 @@ namespace SparFlame.Components.SubGameplay
 
     public struct AllowGarrisonUnit : IBufferElementData
     {
-        public UnitType UnitType;
         public int SubTypeIndex;
+        public UnitType UnitType;
     }
     
     [Serializable]
     public struct GarrisonTypeData : IBufferElementData
     {
-        // For show sprite info in UI, actually only need id, but this makes it find faster
-        public UnitType unitType;
         public int id;
         public int count;
+        // For show sprite info in UI, actually only need id, but this makes it find faster
+        public UnitType unitType;
     }
     
     /// <summary>
@@ -44,14 +44,13 @@ namespace SparFlame.Components.SubGameplay
     /// <summary>
     /// The only way to Garrison Count ++
     /// This request needs to be dealt in main thread, cause add buffer cannot parallel
-    /// 
     /// </summary>
     public struct GarrisonInBuildingRequest : IComponentData
     {
         public Entity BuildingEntity;
-        public UnitType UnitType;
-        public int Id;
         public Entity UnitEntity;
+        public int Id;
+        public UnitType UnitType;
     }
 
     /// <summary>
@@ -59,14 +58,11 @@ namespace SparFlame.Components.SubGameplay
     /// </summary>
     public struct InGarrison : IComponentData
     {
-        public Entity BuildingEntity;
-        public bool InBuilding;
-        public long SingleId; // For saving
         public float3 BeforePos;
+        public Entity BuildingEntity;
+        public long SingleId; // For saving
+        public bool InBuilding;
     }
-
-   
-
 
     // public struct UnderDefence : IComponentData
     // {
@@ -127,7 +123,7 @@ namespace SparFlame.Components.SubGameplay
             in LocalTransform buildingTransform,
             float3 posBias)
         {
-            quaternion buildingRotation = buildingTransform.Rotation;
+            var buildingRotation = buildingTransform.Rotation;
             var rotatedBias = math.mul(buildingRotation, posBias);
             var targetPos = buildingTransform.Position + rotatedBias;
             inGarrison.BeforePos = selfTransform.Position;

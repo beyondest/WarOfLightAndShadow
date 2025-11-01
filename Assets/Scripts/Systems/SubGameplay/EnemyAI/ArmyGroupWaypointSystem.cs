@@ -23,7 +23,7 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
             state.RequireForUpdate<FormationConfig>();
             state.RequireForUpdate<GameTimeData>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            state.RequireForUpdate<BattleRealStart>();
+            state.RequireForUpdate<BattleStartRequest>();
             _wayPointQuery = SystemAPI.QueryBuilder().WithAll<SubGameplayArmyGroupWaypointData>()
                 .WithAll<LocalTransform>().WithNone<ArmyGroupAttr>()
                 .Build();
@@ -34,11 +34,11 @@ namespace SparFlame.Systems.SubGameplay.EnemyAI
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var battleRealStart = SystemAPI.GetSingleton<BattleRealStart>();
+            var battleRealStart = SystemAPI.GetSingleton<BattleStartRequest>();
             if (!battleRealStart.Initialized)
             {
                 InitializeForThisBattleField(ref state);
-                SystemAPI.SetSingleton(new BattleRealStart { Initialized = true });
+                SystemAPI.SetSingleton(new BattleStartRequest { Initialized = true });
             }
 
             _basicStateData.Update(ref state);

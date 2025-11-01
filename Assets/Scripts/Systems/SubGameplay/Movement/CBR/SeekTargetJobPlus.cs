@@ -4,7 +4,6 @@ using SparFlame.Core.Utils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
 

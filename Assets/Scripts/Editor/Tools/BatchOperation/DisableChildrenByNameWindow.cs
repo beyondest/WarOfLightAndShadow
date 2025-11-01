@@ -16,8 +16,8 @@ namespace Editor
 
         private void OnGUI()
         {
-            GUILayout.Label("批量禁用子物体", EditorStyles.boldLabel);
-            targetName = EditorGUILayout.TextField("匹配名称包含:", targetName);
+            GUILayout.Label("Disable Children by name", EditorStyles.boldLabel);
+            targetName = EditorGUILayout.TextField("Match Name:", targetName);
             shouldDelete = EditorGUILayout.Toggle("Should Delete", shouldDelete);
             if (GUILayout.Button("Delete or disable children with specific name"))
             {
@@ -29,14 +29,14 @@ namespace Editor
         {
             if (string.IsNullOrEmpty(targetName))
             {
-                Debug.LogWarning("请输入匹配字符串！");
+                Debug.LogWarning("Match name is null or empty");
                 return;
             }
 
             GameObject[] selectedObjects = Selection.gameObjects;
             if (selectedObjects.Length == 0)
             {
-                Debug.LogWarning("请先在层级面板中选择至少一个物体！");
+                Debug.LogWarning("Selected objects not found！");
                 return;
             }
 
@@ -63,7 +63,7 @@ namespace Editor
                 }
             }
 
-            Debug.Log($"已禁用 {count} 个子物体（匹配：{targetName}）");
+            Debug.Log($"Disable Count {count} ：Match : {targetName}");
         }
     }
 }

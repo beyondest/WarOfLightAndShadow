@@ -29,13 +29,13 @@ namespace SparFlame.Components.SubGameplay
 
     public struct Surroundings : IComponentData
     {
-        public bool MoveSuccess;
+        public float3 PrePos;
         public Entity FrontEntity;
         public Entity LeftEntity;
         public Entity RightEntity;
-        public int CompromiseTimes;
-        public float3 PrePos;
         public float RecordPosTime;
+        public int CompromiseTimes;
+        public bool MoveSuccess;
     }
 
     public struct SeekTarget : IComponentData
@@ -49,8 +49,8 @@ namespace SparFlame.Components.SubGameplay
     public struct GroundInfo : IComponentData
     {
         public float3 Normal;
-        public bool Hit;
         public float3 HitPosition;
+        public bool Hit;
     }
     public struct Velocity : IComponentData
     {
@@ -66,24 +66,21 @@ namespace SparFlame.Components.SubGameplay
     {
         public float3 Value;
     }
-    // public struct Acceleration : IComponentData
-    // {
-    //     public float3 Value;
-    // }
     
     [Serializable]
     public struct NavAgentComponent : IComponentData
     {
-        public NavAgentCalculateInfo calculationInfo;
-        public bool enableCalculation;
         public float3 targetPosition;
-        public bool calculationComplete;
-        public int currentWaypoint;
+        public float3 extents;
         public float nextPathCalculateTime;
         public float calculateInterval;
-        public float3 extents;
-        public bool forceCalculate;
+        public int currentWaypoint;
         public int agentId;
+                public NavAgentCalculateInfo calculationInfo;
+                public bool enableCalculation;
+                public bool calculationComplete;
+        public bool forceCalculate;
+                
     }
     public enum NavAgentCalculateInfo
     {
@@ -208,21 +205,21 @@ namespace SparFlame.Components.SubGameplay
     }
     public struct VolumeObstacleDestroyRequest : IComponentData
     {
+        public Entity FromEntity;
         /// <summary>
         /// If destroy resource, then request from faction is neutral, otherwise is ally or enemy
         /// </summary>
         public FactionTag RequestFromFaction;
-        public Entity FromEntity;
     }
 
     public struct DoorControlRequest : IComponentData
     {
-        /// <summary>
-        /// Open = true, close = false
-        /// </summary>
-        public bool OpenOrClose;
-        public FactionTag RequestFromFaction;
         public Entity FromEntity;
+        public FactionTag RequestFromFaction;
+                /// <summary>
+                /// Open = true, close = false
+                /// </summary>
+                public bool OpenOrClose;
     }
     
     public struct UpdateNavMeshRequest : IComponentData
@@ -254,8 +251,8 @@ namespace SparFlame.Components.SubGameplay
     public struct AutoGiveWayData : IComponentData
     {
         public float3 OriPosition;
-        public AutoGiveWayState State;
         public float AccumulatedTime;
+        public AutoGiveWayState State;
     }
 
     public struct GridColliderTarget : IBufferElementData

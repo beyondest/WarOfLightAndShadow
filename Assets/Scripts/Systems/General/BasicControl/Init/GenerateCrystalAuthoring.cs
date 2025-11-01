@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using System;
+using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -23,4 +24,6 @@ namespace SparFlame.Systems.General.BasicControl.Init
     {
         public float3 Position;
     }
+
+  
 }

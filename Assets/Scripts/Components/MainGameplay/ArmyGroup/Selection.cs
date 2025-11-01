@@ -6,18 +6,13 @@ namespace SparFlame.Components.MainGameplay
 {
     public struct ArmyGroupSelectionData : IComponentData
     {
-        public int CurrentSelectCount;
-        public FactionTag CurrentSelectFaction;
         public float2 SelectionBoxStartPos;
         public float2 SelectionBoxEndPos;
+        public int CurrentSelectCount;
+        public FactionTag CurrentSelectFaction;
         public bool DragSelectStart;
         public bool IsDragSelecting;
     }
     public struct ArmyGroupSelected : IComponentData, IEnableableComponent{}
-
-
-    public struct LockArmyGroupSelectedWorkForDrag : IComponentData,IEnableableComponent
-    {
-        
-    }
+    public struct LockArmyGroupSelectedWorkForDrag : IComponentData,IEnableableComponent {}
 }
